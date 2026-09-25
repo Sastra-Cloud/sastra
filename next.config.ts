@@ -3,9 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // PDFKit loads font metrics relative to its installed package at runtime.
   serverExternalPackages: ["pdfkit"],
-  experimental: {
-    viewTransition: true,
-  },
+  // React's <ViewTransition> is on by default since Next 16.3; the former
+  // experimental.viewTransition flag no longer exists.
   async headers() {
     // A stale service worker is the #1 cause of "stuck on an old version".
     return [
