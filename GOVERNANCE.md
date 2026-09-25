@@ -1,7 +1,7 @@
 # Governance
 
-Sastra is maintained by Sastra Cloud, the company that also runs the hosted
-service. The application is fully open source under the AGPL-3.0; the hosted
+Sastra is maintained by Lectio, the company that also runs the hosted
+service, Sastra Cloud. The application is fully open source under the AGPL-3.0; the hosted
 service adds operations (provisioning, billing, upgrades, backups, support), not
 features. Self-hosted and hosted installations run the same releases.
 
