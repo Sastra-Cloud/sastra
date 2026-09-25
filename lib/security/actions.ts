@@ -8,12 +8,18 @@ import { requireRole } from "@/lib/auth/guards";
 import {
   getDependencySecurityStatus,
   recordDependencyAuditRequested,
+  syncDependencyAuditFromFeed,
 } from "@/lib/security/dependency-monitor";
-import { dispatchDependencySecurityWorkflow } from "@/lib/security/github-workflow";
+import {
+  dependencySecurityWorkflowConfigured,
+  dispatchDependencySecurityWorkflow,
+} from "@/lib/security/github-workflow";
+import { securityStatusFeedConfigured } from "@/lib/security/status-feed";
 
 /**
- * Start the signed GitHub dependency audit. External work is progress-based:
- * this only reports that GitHub accepted the request; the webhook settles it.
+ * Refresh the dependency audit. With a GitHub workflow token this starts the
+ * signed audit (progress-based: GitHub accepts the request, the webhook
+ * settles it). Otherwise it fetches the published result for this version.
  */
 export async function runDependencySecurityCheck(): Promise<ActionResult> {
   const { user } = await requireRole("super_admin");
@@ -29,6 +35,26 @@ export async function runDependencySecurityCheck(): Promise<ActionResult> {
       ok: false,
       error: { message: "A dependency security check is already running." },
     };
+  }
+
+  if (!dependencySecurityWorkflowConfigured()) {
+    if (!securityStatusFeedConfigured()) {
+      return { ok: false, error: { message: "Security checks are switched off for this installation." } };
+    }
+    const synced = await syncDependencyAuditFromFeed();
+    if (!synced.synced) {
+      return {
+        ok: false,
+        error: {
+          message:
+            synced.reason === "no-entry"
+              ? "No published check result for this version yet. Try again after the daily audit."
+              : "Couldn't reach the published check results. Check your internet and try again.",
+        },
+      };
+    }
+    revalidatePath("/settings/security");
+    return { ok: true };
   }
 
   const dispatched = await dispatchDependencySecurityWorkflow();

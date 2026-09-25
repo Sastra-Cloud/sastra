@@ -95,6 +95,7 @@ Set these on the application (Coolify → Environment Variables). They mirror
 | `DB_IDLE_TIMEOUT` | ➖ | seconds before an idle connection closes, default `120`; `0` keeps connections open |
 | `DB_PREPARE` | ➖ | `false` behind a transaction-mode pooler (PgBouncer); Neon `-pooler` hosts are detected automatically |
 | `SASTRA_VERSION` / `SASTRA_REVISION` | ➖ | set by the release image build; reported by `/api/version` and `/api/ready` |
+| `SECURITY_STATUS_URL` | ➖ | where the daily published dependency-audit results are read from; defaults to the public repository's feed, forks set their own, `off` disables |
 | `SENTRY_DSN` | ➖ | optional — server error monitoring; unset = no-op |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | ➖ | Web Push public key (`npx web-push generate-vapid-keys`); unset = push off |
 | `VAPID_PRIVATE_KEY` | ➖ | Web Push private key (server secret); pair of the public key above |

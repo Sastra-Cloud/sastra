@@ -2774,7 +2774,7 @@
 
 ## `lib/security/dependency-monitor.ts`
 
-- DependencySecurityStatus, alertSuperAdmins, checkDependencyAuditFreshness, getDependencySecurityStatus, recordDependencyAudit, recordDependencyAuditRequested
+- DependencySecurityStatus, FeedSyncResult, alertSuperAdmins, checkDependencyAuditFreshness, getDependencySecurityStatus, recordDependencyAudit, recordDependencyAuditRequested, syncDependencyAuditFromFeed
 
 ## `lib/security/github-workflow.ts`
 
@@ -2783,6 +2783,10 @@
 ## `lib/security/request-origin.ts`
 
 - hasTrustedRequestOrigin
+
+## `lib/security/status-feed.ts`
+
+- DEFAULT_SECURITY_STATUS_URL, SecurityStatusEntry, SecurityStatusFeed, fetchSecurityStatusFeed, parseSecurityStatusFeed, securityStatusFeedConfigured, securityStatusFeedUrl, securityStatusRefFor, selectSecurityStatus
 
 ## `lib/settings/guidance-actions.ts`
 

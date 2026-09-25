@@ -10,6 +10,13 @@ import {
 } from "@/lib/email/security-alert";
 import { logger } from "@/lib/logger";
 import { notifyMany } from "@/lib/notifications";
+import { runningVersion } from "@/lib/ops/version";
+
+import {
+  fetchSecurityStatusFeed,
+  securityStatusFeedUrl,
+  selectSecurityStatus,
+} from "./status-feed";
 
 const AUDIT_EVENTS = [
   "dependency_audit_passed",
@@ -131,6 +138,8 @@ export async function alertSuperAdmins(kind: SecurityAlertKind) {
 export async function recordDependencyAudit(input: {
   status: "passed" | "failed";
   checkedAt: Date;
+  /** Where the result came from; shown nowhere, kept for the audit trail. */
+  method?: "github_actions" | "status_feed";
 }) {
   const event =
     input.status === "passed"
@@ -169,7 +178,7 @@ export async function recordDependencyAudit(input: {
     }
     await tx.insert(securityEvents).values({
       event,
-      method: "github_actions",
+      method: input.method ?? "github_actions",
       createdAt: input.checkedAt,
     });
     return event === "dependency_audit_failed" &&
@@ -177,6 +186,35 @@ export async function recordDependencyAudit(input: {
   });
 
   if (shouldAlert) await alertSuperAdmins("failed");
+}
+
+export type FeedSyncResult =
+  | { synced: true; status: "passed" | "failed"; ref: string }
+  | { synced: false; reason: "disabled" | "unreachable" | "no-entry" };
+
+/**
+ * Pull the published audit result for the running version and record it as
+ * if the workflow had reported it. Idempotent: an already-recorded or older
+ * result is ignored by recordDependencyAudit.
+ */
+export async function syncDependencyAuditFromFeed(): Promise<FeedSyncResult> {
+  const url = securityStatusFeedUrl();
+  if (!url) return { synced: false, reason: "disabled" };
+  let feed;
+  try {
+    feed = await fetchSecurityStatusFeed({ url });
+  } catch {
+    feed = null;
+  }
+  if (!feed) return { synced: false, reason: "unreachable" };
+  const selected = selectSecurityStatus(feed, runningVersion());
+  if (!selected) return { synced: false, reason: "no-entry" };
+  await recordDependencyAudit({
+    status: selected.status,
+    checkedAt: selected.checkedAt,
+    method: "status_feed",
+  });
+  return { synced: true, status: selected.status, ref: selected.ref };
 }
 
 export async function checkDependencyAuditFreshness(now = new Date()) {

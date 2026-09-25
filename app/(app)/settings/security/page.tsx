@@ -11,6 +11,7 @@ import { getDatabaseTransportSecurityStatus } from "@/lib/security/database-tran
 import { getDependencySecurityStatus } from "@/lib/security/dependency-monitor";
 import { SecurityMonitorStatus } from "@/components/settings/security-monitor-status";
 import { dependencySecurityWorkflowConfigured } from "@/lib/security/github-workflow";
+import { securityStatusFeedConfigured } from "@/lib/security/status-feed";
 
 export const metadata = { title: "Security settings" };
 export const dynamic = "force-dynamic";
@@ -43,7 +44,7 @@ export default async function SecuritySettingsPage() {
         <SecurityMonitorStatus
           status={dependencyStatus}
           databaseStatus={databaseStatus}
-          checkConfigured={dependencySecurityWorkflowConfigured()}
+          checkConfigured={dependencySecurityWorkflowConfigured() || securityStatusFeedConfigured()}
         />
       ) : null}
       <SecurityManager passkeys={passkeys} trustedBrowsers={trustedBrowsers} />

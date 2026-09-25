@@ -1,18 +1,26 @@
 name: Daily dependency security check
 
+# Audits production dependencies on main and the three newest release tags,
+# publishes the results as security-status.json on the `security-status`
+# branch (read by every installation's Security page), and optionally reports
+# main's result to one instance's webhook.
 on:
   schedule:
     - cron: "23 11 * * *"
   workflow_dispatch:
+  release:
+    types: [published]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
         with:
@@ -23,34 +31,58 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - run: pnpm install --frozen-lockfile
+      - name: Audit main and the newest release tags
+        id: audit
+        run: |
+          set -u
+          refs="main $(git tag -l 'v*' --sort=-v:refname | head -3 | tr '\n' ' ')"
+          latest="$(git tag -l 'v*' --sort=-v:refname | head -1)"
+          out="$RUNNER_TEMP/security-status.json"
+          echo '{}' > "$RUNNER_TEMP/refs.json"
+          main_status=passed
+          for ref in $refs; do
+            git checkout -q "$ref"
+            commit="$(git rev-parse HEAD)"
+            pnpm install --frozen-lockfile --ignore-scripts >/dev/null
+            if pnpm audit --prod --audit-level=high; then status=passed; else status=failed; fi
+            [ "$ref" = "main" ] && main_status="$status"
+            checked_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            node -e '
+              const fs=require("fs"); const [file, ref, status, checkedAt, commit]=process.argv.slice(1);
+              const refs=JSON.parse(fs.readFileSync(file,"utf8")); refs[ref]={status, checkedAt, commit};
+              fs.writeFileSync(file, JSON.stringify(refs));
+            ' "$RUNNER_TEMP/refs.json" "$ref" "$status" "$checked_at" "$commit"
+            echo "$ref: $status"
+          done
+          git checkout -q main
+          node -e '
+            const fs=require("fs"); const [file, out, repo, latest]=process.argv.slice(1);
+            const refs=JSON.parse(fs.readFileSync(file,"utf8"));
+            fs.writeFileSync(out, JSON.stringify({ schemaVersion: 1, repository: repo, checkedAt: new Date().toISOString(), refs, latestRelease: latest || null }, null, 2) + "\n");
+          ' "$RUNNER_TEMP/refs.json" "$out" "$GITHUB_REPOSITORY" "$latest"
+          cat "$out"
+          echo "main_status=$main_status" >> "$GITHUB_OUTPUT"
 
-      - name: Audit production dependencies and report to Sastra
+      - name: Publish security-status.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q --orphan security-status
+          git rm -rfq .
+          cp "$RUNNER_TEMP/security-status.json" security-status.json
+          git add security-status.json
+          git commit -qm "Dependency audit results $(date -u +%Y-%m-%d)"
+          git push --force origin security-status
+
+      - name: Report main's result to one instance's webhook (optional)
+        if: vars.SECURITY_STATUS_WEBHOOK_URL != ''
         env:
           STATUS_URL: ${{ vars.SECURITY_STATUS_WEBHOOK_URL }}
           STATUS_SECRET: ${{ secrets.SECURITY_STATUS_WEBHOOK_SECRET }}
+          AUDIT_STATUS: ${{ steps.audit.outputs.main_status }}
         run: |
-          if [ -z "$STATUS_URL" ] || [ -z "$STATUS_SECRET" ]; then
-            echo "::error::Configure SECURITY_STATUS_WEBHOOK_URL and SECURITY_STATUS_WEBHOOK_SECRET."
-            exit 1
-          fi
-
-          set +e
-          pnpm audit --prod --audit-level=high
-          audit_exit=$?
-          set -e
-
-          if [ "$audit_exit" -eq 0 ]; then
-            audit_status="passed"
-          else
-            audit_status="failed"
-          fi
-
-          checked_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           curl --fail-with-body --silent --show-error \
             -X POST "$STATUS_URL" \
             -H "Authorization: Bearer $STATUS_SECRET" \
             -H "Content-Type: application/json" \
-            --data "{\"status\":\"$audit_status\",\"checkedAt\":\"$checked_at\"}"
-
-          exit "$audit_exit"
+            --data "{\"status\":\"$AUDIT_STATUS\",\"checkedAt\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}"

@@ -133,12 +133,14 @@ pre-check never accepts a suggestion on its own: everything a manager reviews
 today is still reviewed. Turn the card off to go back to the standard behavior.
 Its spending appears in **Settings → Costs** with the other AI providers. Ordinary admins cannot change or deactivate
 admins or super admins. Sastra's
-daily GitHub production-dependency audit also appears on **Security** for super
-admins. When the deployment has a narrowly scoped GitHub Actions token, an
-assured super admin can select **Check again** to start the same signed audit
-without leaving Sastra. The card shows **Checking** until GitHub reports the
-real result. This action cannot edit dependencies or push source code: security
-updates still require a reviewed commit that passes CI. A newly failing audit
+daily production-dependency audit also appears on **Security** for super
+admins. The result for the version you run is published by the Sastra project
+and read automatically; nothing needs to be configured. **Check again** fetches
+the latest published result. When the deployment also has a narrowly scoped
+GitHub Actions token, the same button starts the signed audit itself and the
+card shows **Checking** until GitHub reports the real result. This action
+cannot edit dependencies or push source code: security updates still require a
+reviewed commit that passes CI. A newly failing audit
 or a report overdue by more than 36 hours sends an
 in-app notification, push notification when enabled, and direct operational
 email only to active super admins. The same daily security monitor verifies

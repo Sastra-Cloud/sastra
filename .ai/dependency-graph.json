@@ -682,7 +682,8 @@
     "@/lib/security/database-transport",
     "@/lib/security/dependency-monitor",
     "@/components/settings/security-monitor-status",
-    "@/lib/security/github-workflow"
+    "@/lib/security/github-workflow",
+    "@/lib/security/status-feed"
   ],
   "app/(app)/settings/standups/[id]/page.tsx": [
     "next/link",
@@ -6568,7 +6569,8 @@
     "@/lib/auth/assurance",
     "@/lib/auth/guards",
     "@/lib/security/dependency-monitor",
-    "@/lib/security/github-workflow"
+    "@/lib/security/github-workflow",
+    "@/lib/security/status-feed"
   ],
   "lib/security/database-transport.ts": [
     "drizzle-orm",
@@ -6582,7 +6584,9 @@
     "@/lib/db/schema",
     "@/lib/email/security-alert",
     "@/lib/logger",
-    "@/lib/notifications"
+    "@/lib/notifications",
+    "@/lib/ops/version",
+    "./status-feed"
   ],
   "lib/security/github-workflow.test.ts": [
     "vitest",
@@ -6598,6 +6602,13 @@
     "./request-origin"
   ],
   "lib/security/request-origin.ts": [],
+  "lib/security/status-feed.test.ts": [
+    "vitest",
+    "./status-feed"
+  ],
+  "lib/security/status-feed.ts": [
+    "@/lib/ops/source-url"
+  ],
   "lib/settings/guidance-actions.ts": [
     "next/cache",
     "drizzle-orm",

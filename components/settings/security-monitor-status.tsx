@@ -59,7 +59,7 @@ const COPY = {
     label: "Awaiting first check",
     title: "Waiting for the first security check",
     description:
-      "The daily GitHub security workflow has not reported to Sastra yet.",
+      "No audit result has been published for this version yet.",
     icon: Clock3,
     badge: "outline" as const,
     cardClassName: "",
@@ -104,8 +104,9 @@ export function SecurityMonitorStatus({
               Dependency security
             </CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">
-              GitHub checks production packages daily. Only active super admins
-              receive failure or overdue alerts.
+              Production packages are audited daily and the result for this
+              version is published. Only active super admins receive failure or
+              overdue alerts.
             </p>
           </div>
           <Badge className={copy.badgeClassName} variant={copy.badge}>
@@ -143,7 +144,7 @@ export function SecurityMonitorStatus({
                   ? status.state === "running"
                     ? `Started ${timeAgo(status.checkedAt)}`
                     : `Last checked ${timeAgo(status.checkedAt)}`
-                  : "Configure the GitHub webhook to start reporting."}
+                  : "Results arrive with the daily published audit."}
               </p>
             </div>
           </div>
@@ -151,7 +152,7 @@ export function SecurityMonitorStatus({
             <p className="max-w-2xl text-xs text-muted-foreground">
               {checkConfigured
                 ? "Run a fresh signed audit after dependency updates. Source changes still require review and CI."
-                : "To run checks here, configure the GitHub workflow token and repository in Coolify."}
+                : "Security checks are switched off for this installation (SECURITY_STATUS_URL=off)."}
             </p>
             <DependencySecurityCheckButton
               configured={checkConfigured}

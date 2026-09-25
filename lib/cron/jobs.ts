@@ -51,7 +51,10 @@ import {
 import { ensureLicenseFeePayments } from "@/lib/rights/license-fee-recurring";
 import { ensureLicenseRenewalReminders } from "@/lib/rights/renewal-recurring";
 import { checkDatabaseTransportSecurity } from "@/lib/security/database-transport";
-import { checkDependencyAuditFreshness } from "@/lib/security/dependency-monitor";
+import {
+  checkDependencyAuditFreshness,
+  syncDependencyAuditFromFeed,
+} from "@/lib/security/dependency-monitor";
 import { markMissedRuns, startDueStandups } from "@/lib/standup/engine";
 import { generateDueReports } from "@/lib/standup/insights";
 import { generateDueRecurringTasks } from "@/lib/tasks/recurring";
@@ -594,6 +597,8 @@ const securityMonitor: ScheduledJob = {
     return dailyDue(now, lastRunAt, workspace.timezone, "03:30");
   },
   async run() {
+    // Published audit results first, so the freshness check sees them.
+    const feed = await syncDependencyAuditFromFeed();
     const [dependency, database] = await Promise.all([
       checkDependencyAuditFreshness(),
       checkDatabaseTransportSecurity(),
@@ -605,7 +610,7 @@ const securityMonitor: ScheduledJob = {
       note: `dependencies ${dependency.state} · database ${database.state}${
         dependency.alerted || database.alerted ? " · alerted" : ""
       }`,
-      result: { dependency, database },
+      result: { dependency, database, feed },
     };
   },
 };
