@@ -19,6 +19,7 @@ const PUBLIC_PREFIXES = [
   "/api/email/inbound",
   "/api/health", // container healthcheck (liveness)
   "/api/ready", // deploy-time readiness (database, schema, bootstrap)
+  "/api/version", // build id and release version; no database, no secrets
   "/api/internal/management", // control plane; HMAC-signed, 404 when self-hosted
   // PWA assets must load without a session — the browser fetches the manifest
   // WITHOUT credentials, and the service worker registers before login.

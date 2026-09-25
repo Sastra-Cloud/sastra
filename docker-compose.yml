@@ -8,15 +8,15 @@ services:
     container_name: sastra-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ppp
-      POSTGRES_PASSWORD: ppp
+      POSTGRES_USER: sastra
+      POSTGRES_PASSWORD: sastra
       POSTGRES_DB: sastra
     ports:
       - "5433:5432"
     volumes:
       - sastra-pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ppp -d sastra"]
+      test: ["CMD-SHELL", "pg_isready -U sastra -d sastra"]
       interval: 5s
       timeout: 5s
       retries: 10

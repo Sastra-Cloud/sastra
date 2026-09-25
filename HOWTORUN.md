@@ -63,7 +63,7 @@ pnpm db:migrate && pnpm db:seed
 ```bash
 docker build -t sastra .
 docker run --rm -p 3000:3000 --env-file .env \
-  -e DATABASE_URL="postgres://ppp:ppp@host.docker.internal:5433/sastra" \
+  -e DATABASE_URL="postgres://sastra:sastra@host.docker.internal:5433/sastra" \
   -e SMTP_HOST="host.docker.internal" \
   sastra
 # The container applies DB migrations on start, then serves on :3000.
