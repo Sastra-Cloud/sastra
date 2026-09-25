@@ -584,6 +584,7 @@
     "@/lib/ai/usage",
     "@/lib/ai/keys",
     "@/components/settings/ai-key-card",
+    "@/lib/hosted/mode",
     "@/lib/ai/typesafe",
     "@/components/settings/typesafe-toggle",
     "@/components/ui/badge",
@@ -3874,13 +3875,15 @@
     "@/lib/auth/guards",
     "@/lib/crypto/secret-box",
     "@/lib/db",
-    "@/lib/db/schema"
+    "@/lib/db/schema",
+    "@/lib/hosted/mode"
   ],
   "lib/ai/keys.ts": [
     "drizzle-orm",
     "@/lib/db",
     "@/lib/db/schema",
-    "@/lib/crypto/secret-box"
+    "@/lib/crypto/secret-box",
+    "@/lib/hosted/mode"
   ],
   "lib/ai/model-actions.ts": [
     "next/cache",
@@ -3968,7 +3971,6 @@
     "@/lib/db/schema",
     "@/lib/assistant/budget-math",
     "@/lib/hosted/mode",
-    "@/lib/ai/keys",
     "@/lib/ai/amount-format",
     "./usage-costs",
     "./usage"

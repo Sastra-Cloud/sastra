@@ -6,6 +6,7 @@ import { isSuperAdminRole } from "@/lib/auth/policy";
 import { getAiUsageSettings } from "@/lib/ai/usage";
 import { getOpenRouterApiKeyStatus } from "@/lib/ai/keys";
 import { AiKeyCard } from "@/components/settings/ai-key-card";
+import { isHostedInstance } from "@/lib/hosted/mode";
 import { typesafeConfigured } from "@/lib/ai/typesafe";
 import { TypesafeToggle } from "@/components/settings/typesafe-toggle";
 import { Badge } from "@/components/ui/badge";
@@ -54,7 +55,8 @@ export default async function AiSettingsPage() {
           Costs & usage
         </Button>
       </section>
-      <AiKeyCard status={keyStatus} />
+      {/* Sastra Cloud runs AI on the plan's credits only; the key card is a self-hosted feature. */}
+      {isHostedInstance() ? null : <AiKeyCard status={keyStatus} />}
       {usageSettings ? (
         <TypesafeToggle
           defaultEnabled={usageSettings.typesafeEnabled}

@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { aiUsageSettings } from "@/lib/db/schema";
 import { openSecret, SecretBoxError } from "@/lib/crypto/secret-box";
+import { isHostedInstance } from "@/lib/hosted/mode";
 
 const SETTINGS_ID = "workspace";
 const CACHE_TTL_MS = 60_000;
@@ -34,6 +35,11 @@ function envKey(): string | null {
 }
 
 async function loadResolvedKey(): Promise<ResolvedKey> {
+  // Hosted workspaces run only on the plan's capped key; a stored key is never used.
+  if (isHostedInstance()) {
+    const fromEnv = envKey();
+    return { apiKey: fromEnv, source: fromEnv ? "env" : "none", storedKeyUnreadable: false };
+  }
   const [row] = await db
     .select({ sealed: aiUsageSettings.openrouterApiKeyEncrypted })
     .from(aiUsageSettings)

@@ -16,7 +16,6 @@ import {
   monthStartUtc,
 } from "@/lib/assistant/budget-math";
 import { hostedAccountUrl, isHostedInstance } from "@/lib/hosted/mode";
-import { getOpenRouterApiKeyStatus } from "@/lib/ai/keys";
 import type { AiAmountUnit } from "@/lib/ai/amount-format";
 import {
   CLOUDFLARE_VOICE_NEURONS_PER_AUDIO_MINUTE,
@@ -408,13 +407,12 @@ export async function getProjectAiSpend(projectId: string, now = new Date()) {
 
 export async function getAiUsageSettingsReport(now = new Date()) {
   const hosted = isHostedInstance();
-  const [settings, workspaceBudget, cloudflareBudget, r2Estimate, keyStatus] =
+  const [settings, workspaceBudget, cloudflareBudget, r2Estimate] =
     await Promise.all([
       getAiUsageSettings(),
       getWorkspaceAiBudgetStatus(now),
       getCloudflareBudgetStatus(now),
       getR2CurrentMonthlyEstimate(now),
-      getOpenRouterApiKeyStatus(),
     ]);
 
   return {
@@ -422,8 +420,6 @@ export async function getAiUsageSettingsReport(now = new Date()) {
     budgetManagedByPlan: hosted,
     /** Hosted workspaces see credits only; self-hosted admins see provider dollars. */
     unit: (hosted ? "credits" : "usd") as AiAmountUnit,
-    /** A workspace-entered AI key bypasses the plan's credits entirely. */
-    ownKey: hosted && keyStatus.source === "settings",
     accountUrl: hosted ? hostedAccountUrl() : null,
     settings: {
       workspaceAiMonthlyBudgetUsd:

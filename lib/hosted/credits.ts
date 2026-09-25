@@ -7,7 +7,7 @@ export const CREDITS_PER_USD = 200;
 
 /** Shown wherever AI stops because the month's credits are gone. */
 export const CREDITS_USED_UP_MESSAGE =
-  "Your AI credits are used up for this month. They refill on the 1st. Buy more credits or add your own AI key.";
+  "Your AI credits are used up for this month. They refill on the 1st. Buy more credits to keep going.";
 
 /** Dollar cap that backs a number of credits. */
 export function creditsToUsd(credits: number): number {

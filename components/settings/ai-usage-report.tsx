@@ -81,8 +81,6 @@ type UsageSettingsReport = {
   budgetManagedByPlan: boolean;
   /** Credits on Sastra Cloud; dollars when self-hosted. */
   unit: AiAmountUnit;
-  /** The workspace uses its own AI key, so the plan's credits are untouched. */
-  ownKey: boolean;
   /** Where a hosted customer buys credits or changes the plan. */
   accountUrl: string | null;
   settings: {
@@ -196,28 +194,21 @@ function UsageLimitControls({ report }: { report: UsageSettingsReport }) {
         <CardTitle>{credits ? "AI credits this month" : "Monthly limits"}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {credits && report.ownKey ? (
-          <p className="rounded-lg border p-3 text-sm">
-            <span className="font-medium">Using your own AI key.</span> Your plan's
-            credits are not used while it is saved in Settings ▸ AI.
-          </p>
-        ) : (
-          <div className={cn("grid gap-3", !credits && "lg:grid-cols-2")}>
+        <div className={cn("grid gap-3", !credits && "lg:grid-cols-2")}>
+          <BudgetMeter
+            title={credits ? "AI credits" : "Workspace/admin AI"}
+            status={report.workspaceBudget}
+            unit={unit}
+          />
+          {!credits ? (
             <BudgetMeter
-              title={credits ? "AI credits" : "Workspace/admin AI"}
-              status={report.workspaceBudget}
+              title="Workers AI voice and R2"
+              status={report.cloudflareBudget}
               unit={unit}
             />
-            {!credits ? (
-              <BudgetMeter
-                title="Workers AI voice and R2"
-                status={report.cloudflareBudget}
-                unit={unit}
-              />
-            ) : null}
-          </div>
-        )}
-        {credits && !report.ownKey && workspaceStatus.enabled && workspaceStatus.blocked ? (
+          ) : null}
+        </div>
+        {credits && workspaceStatus.enabled && workspaceStatus.blocked ? (
           <p className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm" role="status">
             {CREDITS_USED_UP_MESSAGE}
             {report.accountUrl ? (

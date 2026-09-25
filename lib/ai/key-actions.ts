@@ -9,6 +9,10 @@ import { requireCapability } from "@/lib/auth/guards";
 import { sealSecret, secretBoxConfigured } from "@/lib/crypto/secret-box";
 import { db } from "@/lib/db";
 import { aiUsageSettings } from "@/lib/db/schema";
+import { isHostedInstance } from "@/lib/hosted/mode";
+
+const HOSTED_MESSAGE =
+  "On Sastra Cloud, AI runs on your plan's credits. A separate AI key cannot be added.";
 
 const SETTINGS_ID = "workspace";
 
@@ -34,6 +38,7 @@ export async function updateOpenRouterApiKey(input: {
   apiKey: string;
 }): Promise<ActionResult<SavedOpenRouterKey>> {
   const { user } = await requireCapability("ai.configure");
+  if (isHostedInstance()) return { ok: false, error: { message: HOSTED_MESSAGE } };
   const parsed = apiKeySchema.safeParse(input?.apiKey);
   if (!parsed.success) {
     return {
@@ -82,6 +87,7 @@ export async function updateOpenRouterApiKey(input: {
 /** Remove the stored key. AI falls back to `OPENROUTER_API_KEY` if that is set. */
 export async function removeOpenRouterApiKey(): Promise<ActionResult> {
   const { user } = await requireCapability("ai.configure");
+  if (isHostedInstance()) return { ok: false, error: { message: HOSTED_MESSAGE } };
   const now = new Date();
   await db
     .insert(aiUsageSettings)

@@ -107,17 +107,16 @@ confirmed.
   credits** instead of dollars: how many of this month's credits are used, by
   which task and model, and per teammate. Credits refill on the 1st. The page
   warns when about 80% are used; when they are used up, AI features pause
-  until the 1st, until you buy a credit pack from your account page, or until
-  you add your own AI key in **Settings → AI** (your own key does not use
-  credits). The workspace AI limit comes from your plan and cannot be edited
-  here.
+  until the 1st or until you buy a credit pack from your account page. The
+  workspace AI limit comes from your plan and cannot be edited here.
 - **AI** — review what the assistant has learned and choose which model (a
   `provider/model` slug) powers each AI task. The **AI key** card holds the
   OpenRouter key Sastra sends AI work with. Paste a key that starts with
   `sk-or-` and choose **Save key**; it is stored encrypted, only its last four
   characters are shown afterwards, and it is used instead of any key set on the
   server. **Remove key** goes back to the server key, or turns AI off when there
-  is none. Model routing stays in the collapsed **Advanced** section because it
+  is none. On Sastra Cloud this card is not shown: AI runs on the plan's
+  credits. Model routing stays in the collapsed **Advanced** section because it
   rarely needs changing. Cost reports and usage limits are in
   **Settings → Costs**.
 
