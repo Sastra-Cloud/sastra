@@ -7,6 +7,7 @@ one server. Put a reverse proxy with HTTPS in front (Caddy, Traefik, nginx).
 mkdir sastra && cd sastra
 curl -fsSLO https://raw.githubusercontent.com/Sastra-Cloud/sastra/main/deploy/compose/docker-compose.yml
 curl -fsSL  https://raw.githubusercontent.com/Sastra-Cloud/sastra/main/deploy/compose/.env.example -o .env
+# (each GitHub release also attaches these two files as docker-compose.yml and compose.env.example)
 # edit .env: POSTGRES_PASSWORD, BETTER_AUTH_URL, BETTER_AUTH_SECRET, CRON_SECRET,
 #            APP_ENCRYPTION_KEY, email, storage, INITIAL_ADMIN_EMAIL/TOKEN
 docker compose up -d

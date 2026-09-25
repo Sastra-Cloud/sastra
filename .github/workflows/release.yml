@@ -10,6 +10,7 @@ permissions:
   contents: write
   packages: write
   id-token: write
+  actions: write
 
 jobs:
   image:
@@ -59,10 +60,22 @@ jobs:
         run: |
           for tag in $TAGS; do cosign sign --yes "${tag}@${DIGEST}"; done
 
-      - name: Attach SBOM and Compose bundle to the release
+      # GitHub does not allow release assets whose names start with a dot.
+      - name: Stage the Compose bundle for the release
+        run: cp deploy/compose/.env.example "$RUNNER_TEMP/compose.env.example"
+
+      - name: Attach the Compose bundle to the release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: |
             deploy/compose/docker-compose.yml
-            deploy/compose/.env.example
+            ${{ runner.temp }}/compose.env.example
+
+      # Events created with GITHUB_TOKEN never trigger other workflows, so the
+      # `release: published` trigger on the audit workflow does not fire from
+      # here. A workflow_dispatch is the documented exception.
+      - name: Audit the new tag and publish security-status.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run security-monitor.yml --ref main
