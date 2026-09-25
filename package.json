@@ -76,7 +76,7 @@
     "react-dom": "19.2.7",
     "react-easy-crop": "^6.0.2",
     "react-hook-form": "^7.80.0",
-    "react-markdown": "^9.1.0",
+    "react-markdown": "^10.1.0",
     "recharts": "^3.9.0",
     "remark-gfm": "^4.0.1",
     "server-only": "^0.0.1",
