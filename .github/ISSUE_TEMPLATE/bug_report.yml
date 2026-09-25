@@ -1,0 +1,37 @@
+name: Bug report
+description: Something is broken or behaves wrongly.
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: From `GET /api/version` on your instance, or the release tag.
+      placeholder: "1.2.0 (abc1234)"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How is it installed?
+      options:
+        - Sastra Cloud
+        - Self-hosted with the Compose bundle
+        - Self-hosted on Coolify
+        - Self-hosted on Railway
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Container logs around the time of the problem, with secrets removed.
+      render: shell

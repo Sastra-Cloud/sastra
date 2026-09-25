@@ -1,0 +1,1 @@
+ALTER TABLE "email_messages" ADD COLUMN "message_id_header" text;

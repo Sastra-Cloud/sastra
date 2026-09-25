@@ -1,0 +1,1 @@
+ALTER TABLE "dictionary_terms" ADD COLUMN "aliases" text[] DEFAULT '{}'::text[] NOT NULL;

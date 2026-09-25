@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "chat_channels_project_name_uq" ON "chat_channels" USING btree ("project_id","name");

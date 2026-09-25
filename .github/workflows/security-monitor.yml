@@ -1,0 +1,56 @@
+name: Daily dependency security check
+
+on:
+  schedule:
+    - cron: "23 11 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Audit production dependencies and report to Sastra
+        env:
+          STATUS_URL: ${{ vars.SECURITY_STATUS_WEBHOOK_URL }}
+          STATUS_SECRET: ${{ secrets.SECURITY_STATUS_WEBHOOK_SECRET }}
+        run: |
+          if [ -z "$STATUS_URL" ] || [ -z "$STATUS_SECRET" ]; then
+            echo "::error::Configure SECURITY_STATUS_WEBHOOK_URL and SECURITY_STATUS_WEBHOOK_SECRET."
+            exit 1
+          fi
+
+          set +e
+          pnpm audit --prod --audit-level=high
+          audit_exit=$?
+          set -e
+
+          if [ "$audit_exit" -eq 0 ]; then
+            audit_status="passed"
+          else
+            audit_status="failed"
+          fi
+
+          checked_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          curl --fail-with-body --silent --show-error \
+            -X POST "$STATUS_URL" \
+            -H "Authorization: Bearer $STATUS_SECRET" \
+            -H "Content-Type: application/json" \
+            --data "{\"status\":\"$audit_status\",\"checkedAt\":\"$checked_at\"}"
+
+          exit "$audit_exit"

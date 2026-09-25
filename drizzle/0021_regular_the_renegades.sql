@@ -1,0 +1,2 @@
+ALTER TABLE "document_imports" ADD COLUMN "target_project_id" uuid;--> statement-breakpoint
+ALTER TABLE "document_imports" ADD CONSTRAINT "document_imports_target_project_id_projects_id_fk" FOREIGN KEY ("target_project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;

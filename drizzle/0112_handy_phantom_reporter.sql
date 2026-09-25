@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "guidance_level" text DEFAULT 'on' NOT NULL;

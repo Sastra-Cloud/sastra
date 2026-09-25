@@ -1,0 +1,25 @@
+name: Feature request
+description: Suggest a change or an addition.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is hard today?
+      description: Describe the situation, not the solution. Who is affected and how often?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+      description: Your idea, if you have one. Sketches and examples are welcome.
+  - type: dropdown
+    id: role
+    attributes:
+      label: Your role
+      options:
+        - Team member
+        - Manager
+        - Admin
+        - Self-hoster / operator

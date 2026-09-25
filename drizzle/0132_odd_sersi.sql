@@ -1,0 +1,1 @@
+ALTER TABLE "partners" ADD COLUMN "billing_address" text;

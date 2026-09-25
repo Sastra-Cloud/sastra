@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Non-blocking for now: the audit result still reaches the in-app
+      # Security page below, but known advisories must not stop typecheck,
+      # lint, tests, and build from running.
+      - name: Production dependency audit
+        id: production-audit
+        continue-on-error: true
+        run: pnpm audit --prod --audit-level=high
+
+      - name: Report production dependency audit to Sastra
+        if: always() && github.event_name == 'push' && vars.SECURITY_STATUS_WEBHOOK_URL != ''
+        env:
+          STATUS_URL: ${{ vars.SECURITY_STATUS_WEBHOOK_URL }}
+          STATUS_SECRET: ${{ secrets.SECURITY_STATUS_WEBHOOK_SECRET }}
+          AUDIT_OUTCOME: ${{ steps.production-audit.outcome }}
+        run: |
+          if [ -z "$STATUS_URL" ] || [ -z "$STATUS_SECRET" ]; then
+            echo "::error::Configure SECURITY_STATUS_WEBHOOK_URL and SECURITY_STATUS_WEBHOOK_SECRET."
+            exit 1
+          fi
+
+          if [ "$AUDIT_OUTCOME" = "success" ]; then
+            audit_status="passed"
+          else
+            audit_status="failed"
+          fi
+
+          checked_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          curl --fail-with-body --silent --show-error \
+            -X POST "$STATUS_URL" \
+            -H "Authorization: Bearer $STATUS_SECRET" \
+            -H "Content-Type: application/json" \
+            --data "{\"status\":\"$audit_status\",\"checkedAt\":\"$checked_at\"}"
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+        env:
+          # Placeholders — all app pages are dynamic, so the build never hits the DB.
+          # postgres.js connects lazily, so a dummy URL is fine for compilation.
+          DATABASE_URL: postgres://user:pass@localhost:5432/db
+          BETTER_AUTH_SECRET: ci-placeholder-secret-not-used-at-runtime
+          BETTER_AUTH_URL: http://localhost:3243

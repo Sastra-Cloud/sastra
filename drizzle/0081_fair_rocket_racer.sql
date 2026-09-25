@@ -1,0 +1,1 @@
+ALTER TABLE "projects" ADD COLUMN "estimated_duration_months" integer;

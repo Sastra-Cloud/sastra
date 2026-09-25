@@ -1,0 +1,1 @@
+ALTER TABLE "ai_usage_settings" ADD COLUMN "typesafe_enabled" boolean DEFAULT false NOT NULL;

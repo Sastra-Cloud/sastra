@@ -1,0 +1,1 @@
+ALTER TABLE "chat_messages" ADD COLUMN "updated_at" timestamp DEFAULT now() NOT NULL;

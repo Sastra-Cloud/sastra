@@ -1,0 +1,582 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-heading);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --motion-press: 130ms;
+  --motion-state: 190ms;
+  --motion-layout: 280ms;
+  --brand-orange: oklch(0.61 0.17 40);
+  --brand-coral: oklch(0.69 0.14 35);
+  --brand-violet: oklch(0.36 0.09 292);
+  --brand-paper: oklch(0.96 0.01 85);
+  --background: oklch(0.982 0.008 83);
+  --foreground: oklch(0.22 0.035 292);
+  --card: oklch(0.997 0.003 83);
+  --card-foreground: oklch(0.22 0.035 292);
+  --popover: oklch(0.997 0.003 83);
+  --popover-foreground: oklch(0.22 0.035 292);
+  --primary: var(--brand-orange);
+  --primary-foreground: oklch(0.985 0.006 83);
+  --secondary: oklch(0.94 0.018 83);
+  --secondary-foreground: oklch(0.27 0.055 292);
+  --muted: oklch(0.94 0.018 83);
+  --muted-foreground: oklch(0.52 0.04 292);
+  --accent: oklch(0.93 0.035 39);
+  --accent-foreground: oklch(0.34 0.09 40);
+  --destructive: oklch(0.57 0.21 29);
+  --destructive-foreground: oklch(0.985 0.006 83);
+  --success: oklch(0.55 0.13 152);
+  --success-foreground: oklch(0.985 0.006 83);
+  --warning: oklch(0.74 0.13 73);
+  --warning-foreground: oklch(0.24 0.035 73);
+  --info: var(--brand-violet);
+  --info-foreground: oklch(0.985 0.006 83);
+  --border: oklch(0.85 0.022 83);
+  --input: oklch(0.85 0.022 83);
+  --ring: var(--brand-coral);
+  --chart-1: var(--brand-orange);
+  --chart-2: var(--brand-violet);
+  --chart-3: var(--brand-coral);
+  --chart-4: oklch(0.56 0.12 152);
+  --chart-5: oklch(0.72 0.12 73);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.97 0.012 83);
+  --sidebar-foreground: oklch(0.24 0.045 292);
+  --sidebar-primary: var(--brand-violet);
+  --sidebar-primary-foreground: oklch(0.985 0.006 83);
+  --sidebar-accent: oklch(0.925 0.025 83);
+  --sidebar-accent-foreground: oklch(0.27 0.055 292);
+  --sidebar-border: oklch(0.86 0.02 83);
+  --sidebar-ring: var(--brand-coral);
+}
+
+.dark {
+  --background: oklch(0.18 0.035 292);
+  --foreground: oklch(0.965 0.008 83);
+  --card: oklch(0.24 0.045 292);
+  --card-foreground: oklch(0.965 0.008 83);
+  --popover: oklch(0.24 0.045 292);
+  --popover-foreground: oklch(0.965 0.008 83);
+  --primary: var(--brand-coral);
+  --primary-foreground: oklch(0.17 0.035 292);
+  --secondary: oklch(0.29 0.045 292);
+  --secondary-foreground: oklch(0.94 0.014 83);
+  --muted: oklch(0.29 0.045 292);
+  --muted-foreground: oklch(0.76 0.035 292);
+  --accent: oklch(0.33 0.07 292);
+  --accent-foreground: oklch(0.97 0.008 83);
+  --destructive: oklch(0.69 0.18 29);
+  --destructive-foreground: oklch(0.17 0.035 292);
+  --success: oklch(0.68 0.14 152);
+  --success-foreground: oklch(0.17 0.035 292);
+  --warning: oklch(0.82 0.13 73);
+  --warning-foreground: oklch(0.17 0.035 292);
+  --info: oklch(0.74 0.085 292);
+  --info-foreground: oklch(0.17 0.035 292);
+  --border: oklch(0.98 0.008 83 / 13%);
+  --input: oklch(0.98 0.008 83 / 18%);
+  --ring: var(--brand-coral);
+  --chart-1: var(--brand-coral);
+  --chart-2: oklch(0.74 0.085 292);
+  --chart-3: var(--brand-orange);
+  --chart-4: oklch(0.68 0.14 152);
+  --chart-5: oklch(0.82 0.13 73);
+  --sidebar: oklch(0.145 0.04 292);
+  --sidebar-foreground: oklch(0.93 0.012 83);
+  --sidebar-primary: var(--brand-coral);
+  --sidebar-primary-foreground: oklch(0.17 0.035 292);
+  --sidebar-accent: oklch(0.24 0.045 292);
+  --sidebar-accent-foreground: oklch(0.965 0.008 83);
+  --sidebar-border: oklch(0.98 0.008 83 / 12%);
+  --sidebar-ring: var(--brand-coral);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+  h1, h2, h3, h4 {
+    @apply text-balance;
+  }
+}
+
+@media (max-width: 767px) and (pointer: coarse) {
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  html:has([data-chat-conversation]),
+  body:has([data-chat-conversation]) {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+}
+
+@layer utilities {
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .surface-shadow {
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 0.58) inset,
+      0 2px 8px oklch(0.14 0.04 292 / 0.08);
+  }
+
+  .dark .surface-shadow {
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 0.06) inset,
+      0 2px 8px oklch(0.08 0.035 292 / 0.24);
+  }
+
+  /* View Transitions are opt-in. Prevent the browser root crossfade from
+     animating unrelated links while the Projects continuity pilot is enabled. */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+
+  ::view-transition-group(.project-mark-morph),
+  ::view-transition-group(.project-title-morph) {
+    animation-duration: var(--motion-layout);
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  ::view-transition-image-pair(.project-mark-morph) {
+    animation-name: project-morph-blur;
+  }
+
+  ::view-transition-old(.project-title-morph) {
+    display: none;
+  }
+
+  ::view-transition-new(.project-title-morph) {
+    animation: none;
+    object-fit: none;
+    object-position: left top;
+  }
+
+  @keyframes project-morph-blur {
+    30% {
+      filter: blur(2px);
+    }
+  }
+
+  @keyframes chat-project-channel-panel-in {
+    from {
+      grid-template-rows: 0fr;
+      max-height: 0;
+      opacity: 0;
+      transform: translateY(-6px) scale(0.985);
+    }
+    to {
+      grid-template-rows: 1fr;
+      max-height: 18rem;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes chat-project-channel-item-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes chat-project-channel-panel-out {
+    from {
+      grid-template-rows: 1fr;
+      max-height: 18rem;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    to {
+      grid-template-rows: 0fr;
+      max-height: 0;
+      opacity: 0;
+      transform: translateY(-4px) scale(0.985);
+    }
+  }
+
+  @keyframes chat-project-channel-item-out {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-3px);
+    }
+  }
+
+  @keyframes optimistic-item-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px) scale(0.99);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .optimistic-item-in {
+    animation: optimistic-item-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .chat-project-channel-panel {
+    grid-template-rows: 1fr;
+    max-height: 18rem;
+    transform-origin: top;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .chat-project-channel-panel[data-state="opening"] {
+      animation: chat-project-channel-panel-in 280ms
+        cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .chat-project-channel-panel[data-state="opening"] .chat-project-channel-item {
+      animation: chat-project-channel-item-in 220ms
+        cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .chat-project-channel-panel[data-state="closing"] {
+      pointer-events: none;
+      animation: chat-project-channel-panel-out 220ms
+        cubic-bezier(0.55, 0, 0.2, 1) both;
+    }
+
+    .chat-project-channel-panel[data-state="closing"] .chat-project-channel-item {
+      animation: chat-project-channel-item-out 210ms
+        cubic-bezier(0.55, 0, 0.2, 1) both;
+    }
+  }
+}
+
+@media (pointer: coarse) {
+  [data-slot="button"],
+  [data-slot="input"],
+  [data-slot="select-trigger"],
+  [data-slot="select-item"] {
+    min-block-size: 2.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
+
+/* Private wiki reading and authoring surfaces. */
+.wiki-reader-paper,
+.wiki-editor-paper {
+  overflow: clip;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: 0 1px 2px oklch(0.22 0.035 292 / 0.04),
+    0 14px 35px oklch(0.22 0.035 292 / 0.05);
+}
+
+.wiki-editor-content {
+  padding: 2rem 1rem 4rem;
+}
+
+.wiki-prose {
+  min-width: 0;
+  color: var(--foreground);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.wiki-prose > * + * {
+  margin-top: 1.1rem;
+}
+
+.wiki-prose > :where(p, ul, ol, blockquote, h2, h3, .wiki-callout) {
+  max-inline-size: 75ch;
+}
+
+.wiki-prose h2,
+.wiki-prose h3 {
+  scroll-margin-top: 5rem;
+  color: var(--foreground);
+  font-family: var(--font-heading);
+  font-weight: 650;
+  line-height: 1.22;
+  text-wrap: balance;
+}
+
+.wiki-prose h2 {
+  margin-top: 2.8rem;
+  font-size: 1.65rem;
+}
+
+.wiki-prose h3 {
+  margin-top: 2rem;
+  font-size: 1.25rem;
+}
+
+.wiki-prose a {
+  color: var(--primary);
+  font-weight: 520;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklch, var(--primary), transparent 55%);
+  text-underline-offset: 0.2em;
+}
+
+.wiki-prose ul:not(.wiki-task-list),
+.wiki-prose ol {
+  padding-left: 1.5rem;
+}
+
+.wiki-prose ul:not(.wiki-task-list) {
+  list-style: disc;
+}
+
+.wiki-prose ol {
+  list-style: decimal;
+}
+
+.wiki-prose li + li {
+  margin-top: 0.35rem;
+}
+
+.wiki-prose blockquote {
+  border: 1px solid color-mix(in oklch, var(--primary), transparent 72%);
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklch, var(--primary), transparent 94%);
+  padding: 0.9rem 1rem;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+.wiki-prose code:not(pre code) {
+  border-radius: 0.35rem;
+  background: var(--muted);
+  padding: 0.12rem 0.34rem;
+  font-size: 0.9em;
+}
+
+.wiki-prose pre {
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  background: oklch(0.2 0.025 292);
+  padding: 1rem;
+  color: oklch(0.95 0.01 83);
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+
+.wiki-prose hr {
+  margin-block: 2rem;
+  border-color: var(--border);
+}
+
+.wiki-callout {
+  display: flex;
+  gap: 0.75rem;
+  border: 1px solid color-mix(in oklch, var(--info), transparent 70%);
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklch, var(--info), transparent 91%);
+  padding: 0.9rem 1rem;
+}
+
+.wiki-callout > div > :first-child {
+  margin-top: 0;
+}
+
+.wiki-callout-tip {
+  border-color: color-mix(in oklch, var(--success), transparent 70%);
+  background: color-mix(in oklch, var(--success), transparent 91%);
+}
+
+.wiki-callout-warning {
+  border-color: color-mix(in oklch, var(--warning), transparent 65%);
+  background: color-mix(in oklch, var(--warning), transparent 89%);
+}
+
+.wiki-task-list {
+  display: grid;
+  gap: 0.55rem;
+  padding-left: 0;
+  list-style: none;
+}
+
+.wiki-task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.wiki-task-item input {
+  margin-top: 0.35rem;
+  inline-size: 1rem;
+  block-size: 1rem;
+  accent-color: var(--primary);
+}
+
+.wiki-media-frame {
+  margin-block: 1.75rem;
+}
+
+.wiki-media-frame figcaption {
+  margin-top: 0.6rem;
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.wiki-editor-image {
+  margin-inline: auto;
+  max-block-size: 42rem;
+  max-inline-size: 100%;
+  border-radius: var(--radius-lg);
+  object-fit: contain;
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.wiki-editor-media-placeholder {
+  display: grid;
+  min-block-size: 10rem;
+  place-items: center;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklch, var(--muted), transparent 55%);
+  padding: 1.5rem;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+
+.wiki-editor-embed-placeholder {
+  gap: 1.25rem;
+}
+
+.wiki-editor-embed-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+.wiki-editor-embed-summary > svg {
+  inline-size: 2rem;
+  block-size: 2rem;
+  color: var(--primary);
+}
+
+.wiki-editor-embed-provider,
+.wiki-editor-embed-hint {
+  margin: 0;
+}
+
+.wiki-editor-embed-provider {
+  color: var(--foreground);
+  font-weight: 650;
+}
+
+.wiki-editor-embed-hint {
+  font-size: 0.82rem;
+}
+
+.wiki-editor-embed.ProseMirror-selectednode .wiki-editor-media-placeholder {
+  outline: 2px solid color-mix(in oklch, var(--primary), transparent 35%);
+  outline-offset: 2px;
+}
+
+.wiki-editor-content > :first-child,
+.wiki-prose > :first-child {
+  margin-top: 0;
+}
+
+@media (min-width: 640px) {
+  .wiki-editor-content {
+    padding-inline: 2rem;
+  }
+}

@@ -1,0 +1,1 @@
+ALTER TABLE "project_budget_settings" ADD COLUMN "partner_contact_last_name" text;

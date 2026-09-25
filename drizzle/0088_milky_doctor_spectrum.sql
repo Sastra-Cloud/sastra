@@ -1,0 +1,1 @@
+ALTER TABLE "wiki_pages" ADD CONSTRAINT "wiki_pages_published_revision_id_wiki_revisions_id_fk" FOREIGN KEY ("published_revision_id") REFERENCES "public"."wiki_revisions"("id") ON DELETE set null ON UPDATE no action;

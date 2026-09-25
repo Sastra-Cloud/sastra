@@ -1,0 +1,2 @@
+ALTER TABLE "print_runs" ALTER COLUMN "language_expansion_factor" SET DEFAULT '1.50';--> statement-breakpoint
+ALTER TABLE "project_print_settings" ALTER COLUMN "language_expansion_factor" SET DEFAULT '1.50';

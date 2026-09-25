@@ -1,0 +1,13 @@
+Sastra
+Copyright (C) 2026 Sastra Cloud and contributors
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version. See LICENSE for the full text.
+
+The Sastra name and logo are trademarks and are not covered by the AGPL; see
+TRADEMARKS.md.
+
+Sastra ships with third-party open-source packages listed in package.json and
+pnpm-lock.yaml, each under its own license.

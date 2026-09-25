@@ -1,0 +1,1 @@
+ALTER TABLE "email_project_suggestions" ADD COLUMN "video_production_mode" "video_production_mode";

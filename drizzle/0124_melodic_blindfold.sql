@@ -1,0 +1,1 @@
+ALTER TABLE "project_print_settings" ADD COLUMN "measurement_unit" text DEFAULT 'in' NOT NULL;

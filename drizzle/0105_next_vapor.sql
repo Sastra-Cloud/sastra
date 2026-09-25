@@ -1,0 +1,2 @@
+CREATE TYPE "public"."print_funding_status" AS ENUM('not_assessed', 'no_funding', 'seeking_funding', 'partially_funded', 'funded', 'not_required');--> statement-breakpoint
+ALTER TABLE "projects" ADD COLUMN "print_funding_status" "print_funding_status" DEFAULT 'not_assessed' NOT NULL;

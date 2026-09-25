@@ -1,0 +1,1 @@
+ALTER TABLE "agreement_documents" ADD COLUMN "embedding_version" integer DEFAULT 1 NOT NULL;

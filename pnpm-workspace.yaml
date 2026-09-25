@@ -1,0 +1,6 @@
+ignoredBuiltDependencies:
+  - sharp
+  - unrs-resolver
+# Disable the publish-age supply-chain gate so reproducible builds aren't blocked
+# by very-recently-published transitive deps (e.g. electron-to-chromium, hono).
+minimumReleaseAge: 0

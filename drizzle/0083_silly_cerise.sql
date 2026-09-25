@@ -1,0 +1,1 @@
+ALTER TABLE "workspace_settings" ADD COLUMN "capacity_groups" jsonb DEFAULT '[{"key":"books","name":"Books","concurrency":3,"kinds":["book"]},{"key":"media","name":"Articles & podcasts","concurrency":3,"kinds":["article","podcast","other"]}]'::jsonb NOT NULL;

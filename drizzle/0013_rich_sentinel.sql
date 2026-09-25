@@ -1,0 +1,1 @@
+ALTER TABLE "budget_items" DROP COLUMN "amount_needed";

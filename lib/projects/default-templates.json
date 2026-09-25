@@ -1,0 +1,542 @@
+[
+  {
+    "key": "book-translation",
+    "name": "Book Translation",
+    "description": "Full book translation pipeline with per-chapter fan-out across translation, editing and proofreading.",
+    "phases": [
+      {
+        "name": "Rights & Permissions",
+        "color": "#475569",
+        "durationDays": 14,
+        "tasks": [
+          {
+            "name": "Secure translation rights",
+            "roleKey": "rights",
+            "offsetDays": 0
+          },
+          {
+            "name": "Confirm audio/video & reprint rights as needed",
+            "roleKey": "rights",
+            "offsetDays": 3
+          },
+          {
+            "name": "File signed MoU / agreement",
+            "roleKey": "rights",
+            "offsetDays": 10
+          }
+        ]
+      },
+      {
+        "name": "Translation",
+        "color": "#2563eb",
+        "durationDays": 30,
+        "tasks": [
+          {
+            "name": "Translate",
+            "roleKey": "translation",
+            "perUnit": true,
+            "offsetDays": 0
+          }
+        ]
+      },
+      {
+        "name": "Editing",
+        "color": "#7c3aed",
+        "durationDays": 14,
+        "tasks": [
+          {
+            "name": "Edit",
+            "roleKey": "first_edit",
+            "perUnit": true,
+            "offsetDays": 0
+          }
+        ]
+      },
+      {
+        "name": "Proofreading",
+        "color": "#0891b2",
+        "durationDays": 10,
+        "tasks": [
+          {
+            "name": "Proofread",
+            "roleKey": "proofread",
+            "perUnit": true,
+            "offsetDays": 0
+          }
+        ]
+      },
+      {
+        "name": "Layout",
+        "color": "#ca8a04",
+        "durationDays": 10,
+        "tasks": [
+          {
+            "name": "Lay out interior",
+            "roleKey": "layout",
+            "offsetDays": 0
+          },
+          {
+            "name": "Design cover",
+            "roleKey": "illustration",
+            "offsetDays": 2
+          }
+        ]
+      },
+      {
+        "name": "Marketing",
+        "color": "#ea580c",
+        "durationDays": 21,
+        "tasks": [
+          {
+            "name": "Write blurb, description & promo copy",
+            "roleKey": "marketing",
+            "offsetDays": 0
+          },
+          {
+            "name": "Define content angles + content calendar",
+            "roleKey": "marketing",
+            "offsetDays": 2
+          },
+          {
+            "name": "Pre-launch social teasers",
+            "roleKey": "marketing",
+            "offsetDays": 5
+          },
+          {
+            "name": "Launch-day announcement posts",
+            "roleKey": "marketing",
+            "offsetDays": 14
+          },
+          {
+            "name": "Reader / launch email sequence",
+            "roleKey": "marketing",
+            "offsetDays": 7
+          },
+          {
+            "name": "Reviewer / influencer / podcast outreach",
+            "roleKey": "marketing",
+            "offsetDays": 3
+          },
+          {
+            "name": "Catalog/landing page + SEO & AI discoverability",
+            "roleKey": "marketing",
+            "offsetDays": 10
+          },
+          {
+            "name": "Post-launch follow-up & re-engagement",
+            "roleKey": "marketing",
+            "offsetDays": 21
+          }
+        ]
+      },
+      {
+        "name": "Launch",
+        "color": "#16a34a",
+        "durationDays": 3,
+        "tasks": [
+          {
+            "name": "Final review & sign-off",
+            "roleKey": "final_edit",
+            "offsetDays": 0
+          },
+          {
+            "name": "Publish & distribute",
+            "roleKey": "marketing",
+            "offsetDays": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "article-translation",
+    "name": "Article Collection",
+    "description": "A collection of articles with per-article translation, editing, proofreading, and publication.",
+    "phases": [
+      {
+        "name": "Rights & Permissions",
+        "color": "#475569",
+        "durationDays": 7,
+        "tasks": [
+          {
+            "name": "Secure translation/reprint rights",
+            "roleKey": "rights",
+            "offsetDays": 0
+          }
+        ]
+      },
+      {
+        "name": "Translation",
+        "color": "#2563eb",
+        "durationDays": 7,
+        "tasks": [
+          {
+            "name": "Translate article",
+            "roleKey": "translation",
+            "perUnit": true,
+            "offsetDays": 0
+          }
+        ]
+      },
+      {
+        "name": "Editing",
+        "color": "#7c3aed",
+        "durationDays": 4,
+        "tasks": [
+          {
+            "name": "Edit article",
+            "roleKey": "first_edit",
+            "perUnit": true,
+            "offsetDays": 0
+          }
+        ]
+      },
+      {
+        "name": "Proofreading",
+        "color": "#0891b2",
+        "durationDays": 2,
+        "tasks": [
+          {
+            "name": "Proofread article",
+            "roleKey": "proofread",
+            "perUnit": true,
+            "offsetDays": 0
+          }
+        ]
+      },
+      {
+        "name": "Marketing",
+        "color": "#ea580c",
+        "durationDays": 21,
+        "tasks": [
+          {
+            "name": "Write blurb, description & promo copy",
+            "roleKey": "marketing",
+            "offsetDays": 0
+          },
+          {
+            "name": "Define content angles + content calendar",
+            "roleKey": "marketing",
+            "offsetDays": 2
+          },
+          {
+            "name": "Pre-launch social teasers",
+            "roleKey": "marketing",
+            "offsetDays": 5
+          },
+          {
+            "name": "Launch-day announcement posts",
+            "roleKey": "marketing",
+            "offsetDays": 14
+          },
+          {
+            "name": "Reader / launch email sequence",
+            "roleKey": "marketing",
+            "offsetDays": 7
+          },
+          {
+            "name": "Reviewer / influencer / podcast outreach",
+            "roleKey": "marketing",
+            "offsetDays": 3
+          },
+          {
+            "name": "Catalog/landing page + SEO & AI discoverability",
+            "roleKey": "marketing",
+            "offsetDays": 10
+          },
+          {
+            "name": "Post-launch follow-up & re-engagement",
+            "roleKey": "marketing",
+            "offsetDays": 21
+          }
+        ]
+      },
+      {
+        "name": "Publication",
+        "color": "#16a34a",
+        "durationDays": 3,
+        "tasks": [
+          {
+            "name": "Final review & sign-off",
+            "roleKey": "final_edit",
+            "perUnit": true,
+            "offsetDays": 0
+          },
+          {
+            "name": "Publish article",
+            "roleKey": "marketing",
+            "perUnit": true,
+            "offsetDays": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "article-av",
+    "name": "Article Collection + Audio/Video",
+    "description": "Per-article translation plus audio and/or video production for each item in the collection.",
+    "phases": [
+      {
+        "name": "Rights & Permissions",
+        "color": "#475569",
+        "durationDays": 10,
+        "tasks": [
+          {
+            "name": "Secure translation rights",
+            "roleKey": "rights",
+            "offsetDays": 0
+          },
+          {
+            "name": "Confirm audio & video rights",
+            "roleKey": "rights",
+            "offsetDays": 2
+          }
+        ]
+      },
+      {
+        "name": "Translation",
+        "color": "#2563eb",
+        "durationDays": 7,
+        "tasks": [
+          {
+            "name": "Translate article",
+            "roleKey": "translation",
+            "perUnit": true,
+            "offsetDays": 0
+          }
+        ]
+      },
+      {
+        "name": "Editing",
+        "color": "#7c3aed",
+        "durationDays": 4,
+        "tasks": [
+          {
+            "name": "Edit article",
+            "roleKey": "first_edit",
+            "perUnit": true,
+            "offsetDays": 0
+          }
+        ]
+      },
+      {
+        "name": "Proofreading",
+        "color": "#0891b2",
+        "durationDays": 2,
+        "tasks": [
+          {
+            "name": "Proofread article",
+            "roleKey": "proofread",
+            "perUnit": true,
+            "offsetDays": 0
+          }
+        ]
+      },
+      {
+        "name": "Audio / Video Production",
+        "color": "#dc2626",
+        "durationDays": 14,
+        "tasks": [
+          {
+            "name": "Record narration",
+            "roleKey": "audio",
+            "perUnit": true,
+            "offsetDays": 0
+          },
+          {
+            "name": "Edit & master audio",
+            "roleKey": "audio",
+            "perUnit": true,
+            "offsetDays": 4
+          },
+          {
+            "name": "Produce video version",
+            "roleKey": "video",
+            "perUnit": true,
+            "offsetDays": 7
+          }
+        ]
+      },
+      {
+        "name": "Marketing",
+        "color": "#ea580c",
+        "durationDays": 21,
+        "tasks": [
+          {
+            "name": "Write blurb, description & promo copy",
+            "roleKey": "marketing",
+            "offsetDays": 0
+          },
+          {
+            "name": "Define content angles + content calendar",
+            "roleKey": "marketing",
+            "offsetDays": 2
+          },
+          {
+            "name": "Pre-launch social teasers",
+            "roleKey": "marketing",
+            "offsetDays": 5
+          },
+          {
+            "name": "Launch-day announcement posts",
+            "roleKey": "marketing",
+            "offsetDays": 14
+          },
+          {
+            "name": "Reader / launch email sequence",
+            "roleKey": "marketing",
+            "offsetDays": 7
+          },
+          {
+            "name": "Reviewer / influencer / podcast outreach",
+            "roleKey": "marketing",
+            "offsetDays": 3
+          },
+          {
+            "name": "Catalog/landing page + SEO & AI discoverability",
+            "roleKey": "marketing",
+            "offsetDays": 10
+          },
+          {
+            "name": "Post-launch follow-up & re-engagement",
+            "roleKey": "marketing",
+            "offsetDays": 21
+          }
+        ]
+      },
+      {
+        "name": "Publication",
+        "color": "#16a34a",
+        "durationDays": 3,
+        "tasks": [
+          {
+            "name": "Final review & sign-off",
+            "roleKey": "final_edit",
+            "perUnit": true,
+            "offsetDays": 0
+          },
+          {
+            "name": "Publish article",
+            "roleKey": "marketing",
+            "perUnit": true,
+            "offsetDays": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "podcast-production",
+    "name": "Podcast Production",
+    "description": "Episode-based translation, audio/video production, review, publication, and promotion workflow.",
+    "phases": [
+      {
+        "name": "Rights & Permissions",
+        "color": "#475569",
+        "durationDays": 10,
+        "tasks": [
+          {
+            "name": "Confirm translation, audio & distribution rights",
+            "roleKey": "rights",
+            "offsetDays": 0
+          },
+          {
+            "name": "File signed agreement and attribution requirements",
+            "roleKey": "rights",
+            "offsetDays": 3
+          }
+        ]
+      },
+      {
+        "name": "Translation",
+        "color": "#2563eb",
+        "durationDays": 7,
+        "tasks": [
+          {
+            "name": "Translate episode script",
+            "roleKey": "translation",
+            "perUnit": true,
+            "offsetDays": 0
+          }
+        ]
+      },
+      {
+        "name": "Audio Production",
+        "color": "#16a34a",
+        "durationDays": 7,
+        "tasks": [
+          {
+            "name": "Record episode narration",
+            "roleKey": "audio",
+            "perUnit": true,
+            "offsetDays": 0
+          },
+          {
+            "name": "Edit and master episode audio",
+            "roleKey": "audio",
+            "perUnit": true,
+            "offsetDays": 2
+          }
+        ]
+      },
+      {
+        "name": "Review & Approval",
+        "color": "#0891b2",
+        "durationDays": 3,
+        "tasks": [
+          {
+            "name": "Proofread translated episode script",
+            "roleKey": "proofread",
+            "perUnit": true,
+            "offsetDays": 0
+          },
+          {
+            "name": "Review final episode audio",
+            "roleKey": "final_edit",
+            "perUnit": true,
+            "offsetDays": 1
+          }
+        ]
+      },
+      {
+        "name": "Video Production",
+        "color": "#dc2626",
+        "durationDays": 5,
+        "tasks": [
+          {
+            "name": "Produce episode video version",
+            "roleKey": "video",
+            "perUnit": true,
+            "offsetDays": 0
+          }
+        ]
+      },
+      {
+        "name": "Publication & Promotion",
+        "color": "#ea580c",
+        "durationDays": 4,
+        "tasks": [
+          {
+            "name": "Prepare show notes and publishing metadata",
+            "roleKey": "marketing",
+            "perUnit": true,
+            "offsetDays": 0
+          },
+          {
+            "name": "Publish and distribute episode",
+            "roleKey": "marketing",
+            "perUnit": true,
+            "offsetDays": 1
+          },
+          {
+            "name": "Promote published episode",
+            "roleKey": "marketing",
+            "perUnit": true,
+            "offsetDays": 2
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,1 @@
+ALTER TYPE "public"."gmail_connection_type" ADD VALUE 'imap' BEFORE 'dwd';

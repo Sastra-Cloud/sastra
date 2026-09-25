@@ -1,0 +1,124 @@
+# Routes
+
+## Pages
+
+- `/agenda` -> `app/(app)/agenda/page.tsx`
+- `/agreements/[id]` -> `app/(app)/agreements/[id]/page.tsx`
+- `/agreements` -> `app/(app)/agreements/page.tsx`
+- `/agreements/review/[importId]` -> `app/(app)/agreements/review/[importId]/page.tsx`
+- `/assistant` -> `app/(app)/assistant/page.tsx`
+- `/chat/[channelId]` -> `app/(app)/chat/[channelId]/page.tsx`
+- `/chat` -> `app/(app)/chat/page.tsx`
+- `/correspondence/[threadId]` -> `app/(app)/correspondence/[threadId]/page.tsx`
+- `/correspondence/[threadId]/review` -> `app/(app)/correspondence/[threadId]/review/page.tsx`
+- `/correspondence` -> `app/(app)/correspondence/page.tsx`
+- `/dashboard` -> `app/(app)/dashboard/page.tsx`
+- `/donations` -> `app/(app)/donations/page.tsx`
+- `/help` -> `app/(app)/help/page.tsx`
+- `/notifications` -> `app/(app)/notifications/page.tsx`
+- `/overview/due-dates` -> `app/(app)/overview/due-dates/page.tsx`
+- `/overview` -> `app/(app)/overview/page.tsx`
+- `/projects/[slug]/budget` -> `app/(app)/projects/[slug]/budget/page.tsx`
+- `/projects/[slug]/chat` -> `app/(app)/projects/[slug]/chat/page.tsx`
+- `/projects/[slug]/episodes` -> `app/(app)/projects/[slug]/episodes/page.tsx`
+- `/projects/[slug]/members` -> `app/(app)/projects/[slug]/members/page.tsx`
+- `/projects/[slug]` -> `app/(app)/projects/[slug]/page.tsx`
+- `/projects/[slug]/print` -> `app/(app)/projects/[slug]/print/page.tsx`
+- `/projects/[slug]/rights` -> `app/(app)/projects/[slug]/rights/page.tsx`
+- `/projects/[slug]/tasks/generate` -> `app/(app)/projects/[slug]/tasks/generate/page.tsx`
+- `/projects/[slug]/tasks` -> `app/(app)/projects/[slug]/tasks/page.tsx`
+- `/projects/[slug]/tasks/pipeline` -> `app/(app)/projects/[slug]/tasks/pipeline/page.tsx`
+- `/projects/import/[importId]` -> `app/(app)/projects/import/[importId]/page.tsx`
+- `/projects/import` -> `app/(app)/projects/import/page.tsx`
+- `/projects/new` -> `app/(app)/projects/new/page.tsx`
+- `/projects` -> `app/(app)/projects/page.tsx`
+- `/projects/plan/[draftId]` -> `app/(app)/projects/plan/[draftId]/page.tsx`
+- `/projects/plan` -> `app/(app)/projects/plan/page.tsx`
+- `/schedule` -> `app/(app)/schedule/page.tsx`
+- `/security-check` -> `app/(app)/security-check/page.tsx`
+- `/settings/ai` -> `app/(app)/settings/ai/page.tsx`
+- `/settings/costs` -> `app/(app)/settings/costs/page.tsx`
+- `/settings/dictionary` -> `app/(app)/settings/dictionary/page.tsx`
+- `/settings/email` -> `app/(app)/settings/email/page.tsx`
+- `/settings/notifications` -> `app/(app)/settings/notifications/page.tsx`
+- `/settings` -> `app/(app)/settings/page.tsx`
+- `/settings/partners` -> `app/(app)/settings/partners/page.tsx`
+- `/settings/printers` -> `app/(app)/settings/printers/page.tsx`
+- `/settings/profile` -> `app/(app)/settings/profile/page.tsx`
+- `/settings/publishers` -> `app/(app)/settings/publishers/page.tsx`
+- `/settings/roles` -> `app/(app)/settings/roles/page.tsx`
+- `/settings/security` -> `app/(app)/settings/security/page.tsx`
+- `/settings/standups/[id]` -> `app/(app)/settings/standups/[id]/page.tsx`
+- `/settings/standups` -> `app/(app)/settings/standups/page.tsx`
+- `/settings/team` -> `app/(app)/settings/team/page.tsx`
+- `/settings/templates` -> `app/(app)/settings/templates/page.tsx`
+- `/settings/workspace` -> `app/(app)/settings/workspace/page.tsx`
+- `/standups` -> `app/(app)/standups/page.tsx`
+- `/tasks` -> `app/(app)/tasks/page.tsx`
+- `/wiki/[subjectSlug]/[pageSlug]/edit` -> `app/(app)/wiki/[subjectSlug]/[pageSlug]/edit/page.tsx`
+- `/wiki/[subjectSlug]/[pageSlug]` -> `app/(app)/wiki/[subjectSlug]/[pageSlug]/page.tsx`
+- `/wiki` -> `app/(app)/wiki/page.tsx`
+- `/wiki/trash` -> `app/(app)/wiki/trash/page.tsx`
+- `/workload` -> `app/(app)/workload/page.tsx`
+- `/forgot-password` -> `app/(auth)/forgot-password/page.tsx`
+- `/invite/[token]` -> `app/(auth)/invite/[token]/page.tsx`
+- `/login` -> `app/(auth)/login/page.tsx`
+- `/reset-password` -> `app/(auth)/reset-password/page.tsx`
+- `/setup` -> `app/(setup)/setup/page.tsx`
+- `/offline` -> `app/offline/page.tsx`
+- `/` -> `app/page.tsx`
+- `/unsubscribe` -> `app/unsubscribe/page.tsx`
+
+## API Route Handlers
+
+- `POST` `/api/assistant/transcribe` -> `app/api/assistant/transcribe/route.ts`
+- `GET | POST` `/api/auth/[...all]` -> `app/api/auth/[...all]/route.ts`
+- `GET` `/api/chat/[channelId]/recent` -> `app/api/chat/[channelId]/recent/route.ts`
+- `GET | POST` `/api/cron/agreement-index` -> `app/api/cron/agreement-index/route.ts`
+- `GET | POST` `/api/cron/assistant-reflection` -> `app/api/cron/assistant-reflection/route.ts`
+- `GET | POST` `/api/cron/donation-upload-cleanup` -> `app/api/cron/donation-upload-cleanup/route.ts`
+- `GET | POST` `/api/cron/gmail-poll` -> `app/api/cron/gmail-poll/route.ts`
+- `GET | POST` `/api/cron/notification-emails` -> `app/api/cron/notification-emails/route.ts`
+- `GET | POST` `/api/cron/recompute-blockers` -> `app/api/cron/recompute-blockers/route.ts`
+- `GET | POST` `/api/cron/security-monitor` -> `app/api/cron/security-monitor/route.ts`
+- `GET | POST` `/api/cron/standup` -> `app/api/cron/standup/route.ts`
+- `POST` `/api/cron/tick` -> `app/api/cron/tick/route.ts`
+- `GET | POST` `/api/cron/weekly-digest` -> `app/api/cron/weekly-digest/route.ts`
+- `GET | POST` `/api/cron/wiki-media-cleanup` -> `app/api/cron/wiki-media-cleanup/route.ts`
+- `GET | POST` `/api/cron/wiki-search-index` -> `app/api/cron/wiki-search-index/route.ts`
+- `GET` `/api/dev/agent-login` -> `app/api/dev/agent-login/route.ts`
+- `POST` `/api/donations/files/complete` -> `app/api/donations/files/complete/route.ts`
+- `POST` `/api/donations/files/presign` -> `app/api/donations/files/presign/route.ts`
+- `POST` `/api/email/inbound/resend` -> `app/api/email/inbound/resend/route.ts`
+- `POST` `/api/email/inbound` -> `app/api/email/inbound/route.ts`
+- `GET` `/api/files/[id]/download` -> `app/api/files/[id]/download/route.ts`
+- `POST` `/api/files/complete` -> `app/api/files/complete/route.ts`
+- `POST` `/api/files/presign` -> `app/api/files/presign/route.ts`
+- `GET` `/api/health` -> `app/api/health/route.ts`
+- `POST` `/api/internal/management/bootstrap` -> `app/api/internal/management/bootstrap/route.ts`
+- `POST` `/api/internal/management/entitlements` -> `app/api/internal/management/entitlements/route.ts`
+- `GET` `/api/internal/management/status` -> `app/api/internal/management/status/route.ts`
+- `GET` `/api/invoices/[invoiceId]` -> `app/api/invoices/[invoiceId]/route.ts`
+- `GET` `/api/notifications/recent` -> `app/api/notifications/recent/route.ts`
+- `POST` `/api/presence/heartbeat` -> `app/api/presence/heartbeat/route.ts`
+- `GET` `/api/presence` -> `app/api/presence/route.ts`
+- `GET` `/api/projects/[slug]/budget/export` -> `app/api/projects/[slug]/budget/export/route.ts`
+- `GET` `/api/projects/[slug]/budget/partner-pdf` -> `app/api/projects/[slug]/budget/partner-pdf/route.ts`
+- `POST` `/api/push/subscribe` -> `app/api/push/subscribe/route.ts`
+- `POST` `/api/push/unsubscribe` -> `app/api/push/unsubscribe/route.ts`
+- `GET` `/api/ready` -> `app/api/ready/route.ts`
+- `GET` `/api/reports/portfolio` -> `app/api/reports/portfolio/route.ts`
+- `GET` `/api/reports/rights` -> `app/api/reports/rights/route.ts`
+- `GET` `/api/reports/time` -> `app/api/reports/time/route.ts`
+- `POST` `/api/security/dependency-status` -> `app/api/security/dependency-status/route.ts`
+- `POST` `/api/unsubscribe` -> `app/api/unsubscribe/route.ts`
+- `GET` `/api/users/[id]/avatar` -> `app/api/users/[id]/avatar/route.ts`
+- `GET` `/api/version` -> `app/api/version/route.ts`
+- `GET | PUT` `/api/wiki/media/[id]/captions` -> `app/api/wiki/media/[id]/captions/route.ts`
+- `GET` `/api/wiki/media/[id]/image` -> `app/api/wiki/media/[id]/image/route.ts`
+- `GET` `/api/wiki/media/[id]/poster` -> `app/api/wiki/media/[id]/poster/route.ts`
+- `GET` `/api/wiki/media/[id]/video-token` -> `app/api/wiki/media/[id]/video-token/route.ts`
+- `POST` `/api/wiki/media/image/complete` -> `app/api/wiki/media/image/complete/route.ts`
+- `POST` `/api/wiki/media/image/presign` -> `app/api/wiki/media/image/presign/route.ts`
+- `POST` `/api/wiki/media/video/complete` -> `app/api/wiki/media/video/complete/route.ts`
+- `POST` `/api/wiki/media/video/upload` -> `app/api/wiki/media/video/upload/route.ts`

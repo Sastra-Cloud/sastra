@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security problem
+    url: https://github.com/Sastra-Cloud/sastra/blob/main/SECURITY.md
+    about: Please report security issues by email, not as a public issue.
+  - name: Questions and self-hosting help
+    url: https://github.com/Sastra-Cloud/sastra/discussions
+    about: Ask in Discussions.

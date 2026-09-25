@@ -1,0 +1,2 @@
+ALTER TABLE "agreement_documents" ADD COLUMN "index_status" text DEFAULT 'pending' NOT NULL;--> statement-breakpoint
+CREATE INDEX "agreement_documents_index_status_idx" ON "agreement_documents" USING btree ("index_status","updated_at");

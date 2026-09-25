@@ -1,0 +1,1 @@
+ALTER TYPE "public"."blocker_type" ADD VALUE 'schedule';

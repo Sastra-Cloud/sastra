@@ -1,0 +1,1 @@
+ALTER TABLE "assistant_lessons" ADD COLUMN "rollout_percent" integer DEFAULT 0 NOT NULL;

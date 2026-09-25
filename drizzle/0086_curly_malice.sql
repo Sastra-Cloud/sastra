@@ -1,0 +1,4 @@
+ALTER TABLE "invoices" ADD COLUMN "source_file_id" uuid;--> statement-breakpoint
+ALTER TABLE "document_imports" ADD COLUMN "target_mou_payment_id" uuid;--> statement-breakpoint
+ALTER TABLE "invoices" ADD CONSTRAINT "invoices_source_file_id_files_id_fk" FOREIGN KEY ("source_file_id") REFERENCES "public"."files"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "document_imports" ADD CONSTRAINT "document_imports_target_mou_payment_id_mou_payments_id_fk" FOREIGN KEY ("target_mou_payment_id") REFERENCES "public"."mou_payments"("id") ON DELETE set null ON UPDATE no action;

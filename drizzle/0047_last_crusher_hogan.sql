@@ -1,0 +1,1 @@
+ALTER TABLE "project_budget_settings" ADD COLUMN "source_page_count" integer DEFAULT 0 NOT NULL;

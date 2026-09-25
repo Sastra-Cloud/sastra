@@ -1,0 +1,1 @@
+ALTER TABLE "email_drafts" ADD COLUMN "evidence" jsonb;

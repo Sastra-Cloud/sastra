@@ -1,0 +1,3 @@
+ALTER TYPE "public"."project_kind" ADD VALUE 'video_series';--> statement-breakpoint
+ALTER TABLE "workspace_settings" ALTER COLUMN "capacity_groups" SET DEFAULT '[{"key":"books","name":"Books","concurrency":3,"kinds":["book"]},{"key":"media","name":"Articles, podcasts & video","concurrency":3,"kinds":["article","podcast","video_series","other"]}]'::jsonb;--> statement-breakpoint
+ALTER TABLE "workspace_settings" ADD COLUMN "duration_months_video_series" integer DEFAULT 10 NOT NULL;

@@ -1,0 +1,1 @@
+ALTER TABLE "workspace_settings" ADD COLUMN "invoice_payment_details" jsonb;

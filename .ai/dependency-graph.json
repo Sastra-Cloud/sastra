@@ -1,0 +1,7015 @@
+{
+  "app/(app)/agenda/page.tsx": [
+    "next/navigation"
+  ],
+  "app/(app)/agreements/[id]/page.tsx": [
+    "@/lib/budget/invoice-details",
+    "next/link",
+    "@/components/agreements/payment-delivery",
+    "@/components/agreements/invoice-send",
+    "@/lib/email/draft-store",
+    "@/lib/workspace/queries",
+    "next/navigation",
+    "lucide-react",
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/agreements/queries",
+    "@/lib/files/queries",
+    "@/lib/format",
+    "@/components/cockpit",
+    "@/components/ui/card",
+    "@/components/files/file-attachments",
+    "@/components/agreements/agreement-controls"
+  ],
+  "app/(app)/agreements/page.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/agreements/queries",
+    "@/components/cockpit",
+    "@/components/ui/card",
+    "@/lib/format"
+  ],
+  "app/(app)/agreements/review/[importId]/page.tsx": [
+    "date-fns-tz",
+    "@/lib/workspace/queries",
+    "next/link",
+    "next/navigation",
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/components/cockpit",
+    "@/components/agreements/funding-review",
+    "@/components/imports/retry-import-button"
+  ],
+  "app/(app)/assistant/page.tsx": [
+    "@/lib/auth/guards",
+    "@/lib/assistant/budget",
+    "@/lib/assistant/queries",
+    "@/lib/assistant/memory",
+    "@/components/assistant/assistant-workspace"
+  ],
+  "app/(app)/chat/[channelId]/page.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/chat/queries",
+    "@/lib/mentions/roster",
+    "@/components/chat/channel-members-sheet",
+    "@/components/chat/chat-thread",
+    "@/components/chat/project-channel-tabs",
+    "@/components/page-skeleton",
+    "@/lib/users/avatar"
+  ],
+  "app/(app)/chat/layout.tsx": [
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/chat/queries",
+    "@/components/chat/chat-workspace-shell"
+  ],
+  "app/(app)/chat/page.tsx": [
+    "@/components/chat/chat-workspace-shell"
+  ],
+  "app/(app)/correspondence/[threadId]/page.tsx": [
+    "next/link",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "next/navigation",
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/email/queries",
+    "@/lib/gmail",
+    "@/lib/projects/queries",
+    "@/components/cockpit",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/correspondence/thread-controls",
+    "@/components/correspondence/thread-message-list",
+    "@/components/correspondence/thread-reply",
+    "@/lib/notifications/queries",
+    "@/lib/email/task-suggestions",
+    "@/components/tasks/email-task-suggestions",
+    "@/lib/projects/visibility",
+    "@/lib/email/follow-ups",
+    "@/components/correspondence/external-follow-up-card",
+    "@/components/correspondence/email-rights-reviews",
+    "@/lib/email/rights-review",
+    "@/lib/email/project-update-suggestions",
+    "@/components/correspondence/project-update-suggestions",
+    "@/lib/partners/queries",
+    "@/lib/email/draft-store",
+    "@/lib/workspace/queries"
+  ],
+  "app/(app)/correspondence/[threadId]/review/page.tsx": [
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/email/queries",
+    "@/lib/imports/queries",
+    "@/lib/imports/match",
+    "@/lib/notifications/queries",
+    "@/components/cockpit",
+    "@/components/correspondence/project-suggestion-review"
+  ],
+  "app/(app)/correspondence/page.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/email/queries",
+    "@/lib/projects/queries",
+    "@/lib/gmail",
+    "@/components/cockpit",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/lib/format",
+    "@/lib/utils"
+  ],
+  "app/(app)/dashboard/loading.tsx": [
+    "@/components/page-skeleton"
+  ],
+  "app/(app)/dashboard/page.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/tasks/queries",
+    "@/lib/projects/queries",
+    "@/lib/format",
+    "@/components/badges",
+    "@/components/portfolio/stat-card",
+    "@/components/tasks/my-tasks-list",
+    "@/components/tasks/create-task-dialog",
+    "@/components/dashboard/manager-review-queue",
+    "@/components/projects/print-funding-badge",
+    "@/components/pwa/push-nudge",
+    "@/components/dashboard/onboarding-checklist",
+    "@/lib/onboarding/queries",
+    "@/lib/flow",
+    "@/lib/tasks/attention",
+    "@/lib/notifications/queries",
+    "@/lib/auth/policy",
+    "@/lib/projects/visibility",
+    "@/lib/projects/dashboard-order",
+    "@/lib/projects/print-funding",
+    "@/lib/projects/status-queries"
+  ],
+  "app/(app)/donations/page.tsx": [
+    "lucide-react",
+    "@/components/cockpit",
+    "@/components/donations/donation-import-button",
+    "@/components/donations/donations-workspace",
+    "@/lib/auth/guards",
+    "@/lib/donations/queries"
+  ],
+  "app/(app)/error.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/components/ui/button",
+    "@/components/cockpit"
+  ],
+  "app/(app)/help/page.tsx": [
+    "lucide-react",
+    "@/components/cockpit",
+    "@/components/help/help-browser",
+    "@/lib/help/content"
+  ],
+  "app/(app)/layout.tsx": [
+    "next/headers",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/tasks/time-queries",
+    "@/components/app-shell",
+    "@/lib/workspace/queries",
+    "next/navigation",
+    "@/lib/guidance/queries",
+    "@/lib/ops/version",
+    "@/lib/ops/source-url"
+  ],
+  "app/(app)/loading.tsx": [
+    "@/components/ui/skeleton"
+  ],
+  "app/(app)/not-found.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/components/ui/button",
+    "@/components/cockpit"
+  ],
+  "app/(app)/notifications/page.tsx": [
+    "@/lib/auth/guards",
+    "@/lib/notifications/queries",
+    "@/components/notifications/notifications-list",
+    "@/components/cockpit"
+  ],
+  "app/(app)/overview/due-dates/page.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/projects/queries",
+    "@/components/motion/reveal",
+    "@/components/portfolio/missing-due-dates",
+    "@/components/cockpit"
+  ],
+  "app/(app)/overview/loading.tsx": [
+    "@/components/page-skeleton"
+  ],
+  "app/(app)/overview/page.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/projects/queries",
+    "@/lib/blockers/queries",
+    "@/lib/tasks/queries",
+    "@/lib/standup/view-queries",
+    "@/lib/activity/queries",
+    "@/lib/cron/runs",
+    "@/lib/agenda/queries",
+    "@/lib/agenda/bucket",
+    "@/lib/forecast/queries",
+    "@/lib/projects/status-queries",
+    "@/lib/format",
+    "@/components/badges",
+    "@/components/ui/card",
+    "@/components/portfolio/stat-card",
+    "@/components/motion/reveal",
+    "@/components/motion/animated-number",
+    "@/components/agenda/agenda-view",
+    "@/components/blockers/refresh-health",
+    "@/components/portfolio/charts/rag-donut",
+    "@/components/portfolio/charts/trend-line",
+    "@/components/portfolio/capacity-heatmap",
+    "@/components/portfolio/portfolio-table",
+    "@/components/timeline/timeline",
+    "@/lib/flow"
+  ],
+  "app/(app)/projects/[slug]/budget/loading.tsx": [
+    "@/components/page-skeleton"
+  ],
+  "app/(app)/projects/[slug]/budget/page.tsx": [
+    "next/link",
+    "next/navigation",
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/projects/queries",
+    "@/lib/mentions/roster",
+    "@/lib/episodes/queries",
+    "@/lib/budget/queries",
+    "@/lib/rights/queries",
+    "@/lib/ai/usage-queries",
+    "@/lib/budget/reconcile",
+    "@/lib/print/queries",
+    "@/lib/print/quote-economics",
+    "@/lib/projects/surface-notes-queries",
+    "lucide-react",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/budget/cashflow-card",
+    "@/components/budget/reconciliation-panel",
+    "@/components/budget/budget-manager",
+    "@/components/budget/proposal-panel",
+    "@/lib/proposals/queries",
+    "@/lib/partners/queries",
+    "@/components/budget/funding-receipts",
+    "@/components/budget/mou-payments",
+    "@/components/budget/royalties-card",
+    "@/components/budget/royalty-payments",
+    "@/components/rights/license-fee-payments",
+    "@/components/projects/project-surface-notes",
+    "@/lib/utils",
+    "@/lib/agreements/queries",
+    "@/lib/budget/approval-queries",
+    "@/components/budget/budget-approval-panel",
+    "@/components/budget/budget-attention-summary",
+    "@/components/guidance/guidance-panel",
+    "@/components/guidance/walk-me-through",
+    "@/components/budget/budget-section",
+    "@/lib/budget/attention",
+    "@/lib/budget/reconcile-math",
+    "@/lib/budget/compute",
+    "@/lib/email/draft-store",
+    "@/lib/workspace/queries",
+    "@/lib/donations/queries"
+  ],
+  "app/(app)/projects/[slug]/chat/loading.tsx": [
+    "@/components/page-skeleton"
+  ],
+  "app/(app)/projects/[slug]/chat/page.tsx": [
+    "next/navigation",
+    "@/lib/auth/guards",
+    "@/lib/projects/queries",
+    "@/lib/mentions/roster",
+    "@/lib/chat/queries",
+    "@/components/chat/project-chat-view"
+  ],
+  "app/(app)/projects/[slug]/episodes/loading.tsx": [
+    "@/components/page-skeleton"
+  ],
+  "app/(app)/projects/[slug]/episodes/page.tsx": [
+    "next/navigation",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/projects/kinds",
+    "@/lib/projects/queries",
+    "@/lib/episodes/queries",
+    "@/components/episodes/episodes-manager"
+  ],
+  "app/(app)/projects/[slug]/layout.tsx": [
+    "next/link",
+    "next/navigation",
+    "react",
+    "lucide-react",
+    "@/components/cockpit",
+    "@/lib/projects/queries",
+    "@/lib/print/queries",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/components/badges",
+    "@/components/projects/project-tabs",
+    "@/components/imports/project-import-button",
+    "@/components/projects/complete-project-button",
+    "@/lib/format",
+    "@/lib/utils",
+    "@/lib/agreements/queries",
+    "@/lib/projects/kinds",
+    "@/components/projects/print-funding-badge",
+    "@/components/projects/book-format-badge",
+    "@/lib/projects/print-funding",
+    "@/lib/projects/funding-queries",
+    "@/components/ui/button",
+    "@/components/projects/project-title-context"
+  ],
+  "app/(app)/projects/[slug]/loading.tsx": [
+    "@/components/page-skeleton"
+  ],
+  "app/(app)/projects/[slug]/members/loading.tsx": [
+    "@/components/page-skeleton"
+  ],
+  "app/(app)/projects/[slug]/members/page.tsx": [
+    "next/navigation",
+    "@/lib/projects/queries",
+    "@/lib/capacity/queries",
+    "@/lib/planning/queries",
+    "@/lib/planning/groups",
+    "@/components/projects/members-manager"
+  ],
+  "app/(app)/projects/[slug]/page.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/projects/queries",
+    "@/lib/projects/funding-queries",
+    "@/lib/planning/queries",
+    "@/lib/planning/capacity",
+    "@/lib/mentions/roster",
+    "@/lib/files/queries",
+    "@/lib/rights/queries",
+    "@/lib/obligations/queries",
+    "@/lib/blockers/queries",
+    "@/lib/activity/queries",
+    "@/lib/tasks/queries",
+    "@/lib/blockers/snapshots",
+    "@/lib/forecast/velocity",
+    "@/lib/standup/view-queries",
+    "@/components/ui/card",
+    "@/components/ui/badge",
+    "@/components/ui/help-tip",
+    "@/components/files/file-attachments",
+    "@/components/projects/project-drive-folder",
+    "@/components/projects/project-settings-dialog",
+    "@/components/projects/manager-health-band",
+    "@/components/blockers/refresh-health",
+    "@/components/projects/overdue-reason",
+    "@/components/projects/status-update",
+    "@/lib/projects/status-queries",
+    "@/components/timeline/gantt",
+    "@/lib/format",
+    "@/lib/projects/kinds",
+    "@/lib/utils",
+    "@/lib/email/follow-ups",
+    "@/lib/email/queries",
+    "@/components/correspondence/external-follow-up-card",
+    "@/components/correspondence/project-correspondence-preview"
+  ],
+  "app/(app)/projects/[slug]/print/loading.tsx": [
+    "@/components/page-skeleton"
+  ],
+  "app/(app)/projects/[slug]/print/page.tsx": [
+    "next/navigation",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/projects/queries",
+    "@/lib/print/queries",
+    "@/lib/files/queries",
+    "@/components/print/print-manager",
+    "@/components/guidance/guidance-panel",
+    "@/components/guidance/walk-me-through",
+    "@/lib/email/draft-store"
+  ],
+  "app/(app)/projects/[slug]/rights/loading.tsx": [
+    "@/components/page-skeleton"
+  ],
+  "app/(app)/projects/[slug]/rights/page.tsx": [
+    "next/navigation",
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/projects/queries",
+    "@/lib/mentions/roster",
+    "@/lib/rights/queries",
+    "@/lib/projects/surface-notes-queries",
+    "@/lib/files/queries",
+    "@/lib/email/queries",
+    "@/lib/obligations/queries",
+    "@/components/rights/rights-manager",
+    "@/components/rights/compliance-card",
+    "@/components/rights/project-correspondence",
+    "@/components/projects/project-surface-notes",
+    "@/lib/agreement-chat/actions"
+  ],
+  "app/(app)/projects/[slug]/tasks/generate/loading.tsx": [
+    "@/components/page-skeleton"
+  ],
+  "app/(app)/projects/[slug]/tasks/generate/page.tsx": [
+    "next/link",
+    "next/navigation",
+    "drizzle-orm",
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/projects/queries",
+    "@/components/projects/plan-wizard"
+  ],
+  "app/(app)/projects/[slug]/tasks/loading.tsx": [
+    "@/components/page-skeleton"
+  ],
+  "app/(app)/projects/[slug]/tasks/page.tsx": [
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/projects/queries",
+    "@/lib/print/queries",
+    "@/lib/tasks/queries",
+    "@/components/ui/button",
+    "@/components/ui/badge",
+    "@/components/ui/card",
+    "@/components/tasks/task-board",
+    "@/components/tasks/create-task-dialog",
+    "@/components/tasks/recurring-list",
+    "@/lib/utils",
+    "@/lib/projects/kinds",
+    "@/lib/projects/visibility"
+  ],
+  "app/(app)/projects/[slug]/tasks/pipeline/loading.tsx": [
+    "@/components/page-skeleton"
+  ],
+  "app/(app)/projects/[slug]/tasks/pipeline/page.tsx": [
+    "next/link",
+    "next/navigation",
+    "drizzle-orm",
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/tasks/queries",
+    "@/components/projects/pipeline-view",
+    "@/lib/projects/kinds"
+  ],
+  "app/(app)/projects/import/[importId]/page.tsx": [
+    "next/link",
+    "next/navigation",
+    "drizzle-orm",
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/imports/queries",
+    "@/lib/budget/queries",
+    "@/lib/budget/compute",
+    "@/components/imports/import-review",
+    "@/components/cockpit"
+  ],
+  "app/(app)/projects/import/page.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/imports/queries",
+    "@/lib/imports/match",
+    "@/components/ui/badge",
+    "@/components/ui/card",
+    "@/components/imports/import-uploader",
+    "@/components/imports/import-list-refresh",
+    "@/components/imports/retry-import-button",
+    "@/components/imports/discard-import-button",
+    "@/components/cockpit"
+  ],
+  "app/(app)/projects/loading.tsx": [
+    "@/components/projects/projects-route-loading"
+  ],
+  "app/(app)/projects/new/page.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/projects/queries",
+    "@/components/projects/new-project-entry",
+    "@/lib/workspace/queries",
+    "@/components/cockpit"
+  ],
+  "app/(app)/projects/page.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/lib/projects/queries",
+    "@/components/projects/projects-browser",
+    "@/components/motion/reveal",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy"
+  ],
+  "app/(app)/projects/plan/[draftId]/page.tsx": [
+    "next/navigation",
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/components/ai/planner-workspace"
+  ],
+  "app/(app)/projects/plan/page.tsx": [
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/ai/planner-actions",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/cockpit"
+  ],
+  "app/(app)/schedule/page.tsx": [
+    "@/lib/auth/guards",
+    "@/lib/schedule/queries",
+    "@/lib/planning/queries",
+    "@/lib/capacity/queries",
+    "@/components/schedule/schedule-board",
+    "@/components/schedule/team-capacity-view",
+    "@/components/ui/tabs"
+  ],
+  "app/(app)/security-check/page.tsx": [
+    "lucide-react",
+    "@/components/auth/admin-security-check",
+    "@/components/ui/card",
+    "@/components/cockpit",
+    "@/lib/auth/guards",
+    "@/lib/auth/auth",
+    "next/headers"
+  ],
+  "app/(app)/settings/ai/page.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/ai/usage",
+    "@/lib/ai/keys",
+    "@/components/settings/ai-key-card",
+    "@/lib/ai/typesafe",
+    "@/components/settings/typesafe-toggle",
+    "@/components/ui/badge",
+    "@/lib/ai/queries",
+    "@/components/settings/ai-models-manager",
+    "@/components/settings/assistant-learning-manager",
+    "@/components/settings/email-learning-manager",
+    "@/lib/assistant/learning-queries",
+    "@/lib/email/signal-lessons-queries",
+    "@/components/ui/button",
+    "@/lib/email/task-rule-queries",
+    "@/components/tasks/email-task-learning-rules"
+  ],
+  "app/(app)/settings/costs/page.tsx": [
+    "@/lib/auth/guards",
+    "@/lib/ai/usage-queries",
+    "@/lib/assistant/usage-math",
+    "@/components/settings/ai-usage-report"
+  ],
+  "app/(app)/settings/dictionary/page.tsx": [
+    "@/lib/dictionary/actions",
+    "@/components/settings/dictionary-manager"
+  ],
+  "app/(app)/settings/email/page.tsx": [
+    "next/link",
+    "lucide-react",
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/gmail",
+    "@/lib/email/send",
+    "@/components/ui/card",
+    "@/components/ui/badge",
+    "@/lib/format",
+    "@/lib/workspace/queries",
+    "@/components/ui/button",
+    "@/lib/auth/policy"
+  ],
+  "app/(app)/settings/layout.tsx": [
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/components/cockpit",
+    "@/components/settings/settings-nav",
+    "@/lib/auth/policy"
+  ],
+  "app/(app)/settings/notifications/page.tsx": [
+    "@/lib/auth/guards",
+    "@/lib/notifications/queries",
+    "@/components/settings/notification-prefs",
+    "@/components/settings/push-settings",
+    "@/components/settings/email-task-preferences"
+  ],
+  "app/(app)/settings/page.tsx": [
+    "next/navigation"
+  ],
+  "app/(app)/settings/partners/page.tsx": [
+    "@/lib/auth/guards",
+    "@/lib/partners/queries",
+    "@/components/settings/partners-manager"
+  ],
+  "app/(app)/settings/printers/page.tsx": [
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/print/history-queries",
+    "@/components/ui/card",
+    "@/lib/format"
+  ],
+  "app/(app)/settings/profile/page.tsx": [
+    "@/lib/auth/guards",
+    "@/lib/tasks/time-service",
+    "@/components/settings/profile-form",
+    "@/components/settings/avatar-uploader",
+    "@/components/settings/auto-timer-toggle",
+    "@/components/settings/guidance-toggle"
+  ],
+  "app/(app)/settings/publishers/page.tsx": [
+    "@/lib/auth/guards",
+    "@/lib/rights/queries",
+    "@/components/settings/publishers-manager"
+  ],
+  "app/(app)/settings/roles/page.tsx": [
+    "@/lib/auth/guards",
+    "@/lib/team/queries",
+    "@/components/settings/roles-manager"
+  ],
+  "app/(app)/settings/security/page.tsx": [
+    "next/headers",
+    "next/navigation",
+    "@/components/settings/security-manager",
+    "@/lib/auth/auth",
+    "@/lib/auth/assurance",
+    "@/lib/auth/assurance-actions",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/security/database-transport",
+    "@/lib/security/dependency-monitor",
+    "@/components/settings/security-monitor-status",
+    "@/lib/security/github-workflow"
+  ],
+  "app/(app)/settings/standups/[id]/page.tsx": [
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/standup/queries",
+    "@/lib/projects/queries",
+    "@/components/settings/standup-editor"
+  ],
+  "app/(app)/settings/standups/page.tsx": [
+    "next/link",
+    "@/lib/auth/guards",
+    "@/lib/standup/queries",
+    "@/components/ui/card",
+    "@/components/ui/badge",
+    "@/components/settings/standup-create-form",
+    "@/lib/workspace/queries"
+  ],
+  "app/(app)/settings/team/page.tsx": [
+    "@/lib/auth/guards",
+    "@/lib/team/queries",
+    "@/lib/capacity/queries",
+    "@/lib/planning/queries",
+    "@/lib/assistant/queries",
+    "@/components/settings/team-manager",
+    "@/components/settings/role-capacity-matrix",
+    "@/lib/auth/policy"
+  ],
+  "app/(app)/settings/templates/page.tsx": [
+    "drizzle-orm",
+    "@/components/settings/templates-manager",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/workspace/queries"
+  ],
+  "app/(app)/settings/workspace/page.tsx": [
+    "@/components/settings/workspace-branding-card",
+    "@/components/settings/workspace-settings-form",
+    "@/components/settings/invoice-sequence-card",
+    "@/lib/auth/guards",
+    "@/lib/workspace/queries"
+  ],
+  "app/(app)/standups/loading.tsx": [
+    "@/components/page-skeleton"
+  ],
+  "app/(app)/standups/page.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/standup/view-queries",
+    "@/components/cockpit",
+    "@/components/portfolio/stat-card",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/lib/utils"
+  ],
+  "app/(app)/tasks/page.tsx": [
+    "lucide-react",
+    "date-fns-tz",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/agenda/queries",
+    "@/lib/projects/queries",
+    "@/lib/tasks/queries",
+    "@/lib/tasks/my-work",
+    "@/lib/tasks/time-queries",
+    "@/lib/tasks/time-service",
+    "@/lib/workspace/queries",
+    "@/components/tasks/my-work-hub",
+    "@/lib/email/task-suggestions",
+    "@/lib/email/task-rule-queries",
+    "@/lib/projects/visibility",
+    "@/lib/email/follow-ups"
+  ],
+  "app/(app)/wiki/[subjectSlug]/[pageSlug]/edit/page.tsx": [
+    "next/navigation",
+    "@/components/cockpit",
+    "@/components/wiki/wiki-editor",
+    "@/lib/auth/guards",
+    "@/lib/db/schema",
+    "@/lib/wiki/queries",
+    "@/lib/workspace/queries"
+  ],
+  "app/(app)/wiki/[subjectSlug]/[pageSlug]/page.tsx": [
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "@/components/cockpit",
+    "@/components/ui/button",
+    "@/components/wiki/wiki-document",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/db/schema",
+    "@/lib/wiki/content",
+    "@/lib/wiki/queries"
+  ],
+  "app/(app)/wiki/layout.tsx": [
+    "@/components/wiki/wiki-workspace",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/wiki/queries"
+  ],
+  "app/(app)/wiki/page.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/components/cockpit",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/wiki/wiki-workspace",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/wiki/queries"
+  ],
+  "app/(app)/wiki/trash/page.tsx": [
+    "lucide-react",
+    "@/components/cockpit",
+    "@/components/wiki/wiki-trash",
+    "@/lib/auth/guards",
+    "@/lib/wiki/queries"
+  ],
+  "app/(app)/workload/loading.tsx": [
+    "@/components/page-skeleton"
+  ],
+  "app/(app)/workload/page.tsx": [
+    "@/lib/auth/guards",
+    "@/lib/tasks/queries",
+    "@/lib/projects/queries",
+    "@/lib/standup/view-queries",
+    "@/components/workload/workload-view",
+    "@/components/workload/workload-board"
+  ],
+  "app/(auth)/forgot-password/page.tsx": [
+    "@/components/auth/auth-card-shell",
+    "@/components/auth/forgot-password-form"
+  ],
+  "app/(auth)/invite/[token]/page.tsx": [
+    "next/link",
+    "@/lib/team/queries",
+    "@/components/ui/card",
+    "@/components/theme-toggle",
+    "@/components/brand",
+    "@/components/auth/accept-invite-form"
+  ],
+  "app/(auth)/login/actions.ts": [
+    "node:crypto",
+    "next/headers",
+    "next/navigation",
+    "drizzle-orm",
+    "@/lib/auth/auth",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/auth/provisioning"
+  ],
+  "app/(auth)/login/page.tsx": [
+    "react",
+    "@/components/auth/auth-card-shell",
+    "@/components/auth/login-form",
+    "@/components/auth/bootstrap-admin-form",
+    "@/lib/auth/provisioning",
+    "./actions"
+  ],
+  "app/(auth)/reset-password/page.tsx": [
+    "@/components/auth/auth-card-shell",
+    "@/components/auth/reset-password-form",
+    "@/lib/auth/password-reset"
+  ],
+  "app/(setup)/setup/page.tsx": [
+    "next/navigation",
+    "lucide-react",
+    "@/components/brand",
+    "@/components/settings/workspace-setup-form",
+    "@/components/theme-toggle",
+    "@/lib/auth/guards",
+    "@/lib/workspace/queries"
+  ],
+  "app/api/assistant/transcribe/route.ts": [
+    "next/server",
+    "@/lib/ai/usage",
+    "@/lib/ai/usage-costs",
+    "@/lib/auth/guards",
+    "@/lib/dictionary/correct",
+    "@/lib/dictionary/hint"
+  ],
+  "app/api/auth/[...all]/route.ts": [
+    "better-auth/next-js",
+    "@/lib/auth/auth"
+  ],
+  "app/api/chat/[channelId]/recent/route.ts": [
+    "next/server",
+    "@/lib/auth/guards",
+    "@/lib/chat/access",
+    "@/lib/chat/queries"
+  ],
+  "app/api/cron/agreement-index/route.ts": [
+    "@/lib/cron/legacy-route"
+  ],
+  "app/api/cron/assistant-reflection/route.ts": [
+    "@/lib/cron/legacy-route"
+  ],
+  "app/api/cron/donation-upload-cleanup/route.ts": [
+    "@/lib/cron/legacy-route"
+  ],
+  "app/api/cron/gmail-poll/route.ts": [
+    "@/lib/cron/legacy-route"
+  ],
+  "app/api/cron/notification-emails/route.ts": [
+    "@/lib/cron/legacy-route"
+  ],
+  "app/api/cron/recompute-blockers/route.ts": [
+    "@/lib/cron/legacy-route"
+  ],
+  "app/api/cron/security-monitor/route.ts": [
+    "@/lib/cron/legacy-route"
+  ],
+  "app/api/cron/standup/route.ts": [
+    "@/lib/cron/legacy-route"
+  ],
+  "app/api/cron/tick/route.ts": [
+    "next/server",
+    "@/lib/cron/auth",
+    "@/lib/cron/jobs",
+    "@/lib/cron/scheduled"
+  ],
+  "app/api/cron/weekly-digest/route.ts": [
+    "@/lib/cron/legacy-route"
+  ],
+  "app/api/cron/wiki-media-cleanup/route.ts": [
+    "@/lib/cron/legacy-route"
+  ],
+  "app/api/cron/wiki-search-index/route.ts": [
+    "@/lib/cron/legacy-route"
+  ],
+  "app/api/dev/agent-login/route.ts": [
+    "node:crypto",
+    "better-auth/cookies",
+    "next/server",
+    "@/lib/auth/auth",
+    "@/lib/dev/agent-login"
+  ],
+  "app/api/donations/files/complete/route.ts": [
+    "next/server",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/assurance",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/r2",
+    "@/lib/security/request-origin"
+  ],
+  "app/api/donations/files/presign/route.ts": [
+    "node:crypto",
+    "next/server",
+    "zod",
+    "@/lib/auth/assurance",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/r2",
+    "@/lib/security/request-origin"
+  ],
+  "app/api/email/inbound/resend/route.ts": [
+    "next/server",
+    "@/lib/email/resend-webhook",
+    "@/lib/gmail"
+  ],
+  "app/api/email/inbound/route.ts": [
+    "next/server",
+    "@/lib/email/inbound-signature",
+    "@/lib/gmail",
+    "@/lib/r2"
+  ],
+  "app/api/files/[id]/download/route.ts": [
+    "next/server",
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/ai/usage",
+    "@/lib/chat/access",
+    "@/lib/r2",
+    "@/lib/auth/assurance"
+  ],
+  "app/api/files/complete/route.ts": [
+    "next/server",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/ai/usage",
+    "@/lib/r2",
+    "@/lib/auth/policy",
+    "@/lib/print/payment-tasks",
+    "@/lib/agreement-chat/indexing",
+    "@/lib/chat/access"
+  ],
+  "app/api/files/presign/route.ts": [
+    "crypto",
+    "next/server",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/r2"
+  ],
+  "app/api/health/route.ts": [],
+  "app/api/internal/management/bootstrap/route.ts": [
+    "drizzle-orm",
+    "next/server",
+    "zod",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/hosted/entitlements",
+    "@/lib/hosted/management-guard",
+    "@/lib/tokens"
+  ],
+  "app/api/internal/management/entitlements/route.ts": [
+    "next/server",
+    "zod",
+    "@/lib/hosted/entitlements",
+    "@/lib/hosted/management-guard"
+  ],
+  "app/api/internal/management/status/route.ts": [
+    "drizzle-orm",
+    "next/server",
+    "@/package.json",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/ai/usage",
+    "@/lib/hosted/credits",
+    "@/lib/hosted/entitlements",
+    "@/lib/hosted/management-guard",
+    "@/lib/hosted/mode",
+    "@/lib/workspace/queries"
+  ],
+  "app/api/invoices/[invoiceId]/route.ts": [
+    "next/server",
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "app/api/notifications/recent/route.ts": [
+    "next/server",
+    "@/lib/auth/guards",
+    "@/lib/notifications/queries"
+  ],
+  "app/api/presence/heartbeat/route.ts": [
+    "next/server",
+    "@/lib/auth/guards",
+    "@/lib/presence/queries"
+  ],
+  "app/api/presence/route.ts": [
+    "next/server",
+    "@/lib/auth/guards",
+    "@/lib/presence/queries"
+  ],
+  "app/api/projects/[slug]/budget/export/route.ts": [
+    "next/server",
+    "@/lib/auth/guards",
+    "@/lib/projects/queries",
+    "@/lib/budget/quotation-file"
+  ],
+  "app/api/projects/[slug]/budget/partner-pdf/route.ts": [
+    "next/server",
+    "@/lib/auth/guards",
+    "@/lib/budget/pdf",
+    "@/lib/budget/queries",
+    "@/lib/projects/queries",
+    "@/lib/workspace/queries"
+  ],
+  "app/api/push/subscribe/route.ts": [
+    "next/server",
+    "@/lib/auth/guards",
+    "@/lib/notifications/push"
+  ],
+  "app/api/push/unsubscribe/route.ts": [
+    "next/server",
+    "@/lib/auth/guards",
+    "@/lib/notifications/push"
+  ],
+  "app/api/ready/route.ts": [
+    "node:fs",
+    "node:path",
+    "drizzle-orm",
+    "next/server",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/ops/readiness",
+    "@/lib/ops/version"
+  ],
+  "app/api/reports/portfolio/route.ts": [
+    "next/server",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/reports/export"
+  ],
+  "app/api/reports/rights/route.ts": [
+    "next/server",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/reports/export"
+  ],
+  "app/api/reports/time/route.ts": [
+    "next/server",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/reports/export"
+  ],
+  "app/api/security/dependency-status/route.ts": [
+    "node:crypto",
+    "next/server",
+    "zod",
+    "@/lib/security/dependency-monitor"
+  ],
+  "app/api/unsubscribe/route.ts": [
+    "next/server",
+    "@/lib/notifications/email-queue"
+  ],
+  "app/api/users/[id]/avatar/route.ts": [
+    "drizzle-orm",
+    "next/server",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "app/api/version/route.ts": [
+    "@/lib/ops/version"
+  ],
+  "app/api/wiki/media/[id]/captions/route.ts": [
+    "drizzle-orm",
+    "next/server",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/r2",
+    "@/lib/security/request-origin",
+    "@/lib/wiki/queries"
+  ],
+  "app/api/wiki/media/[id]/image/route.ts": [
+    "next/server",
+    "@/lib/auth/guards",
+    "@/lib/r2",
+    "@/lib/wiki/queries"
+  ],
+  "app/api/wiki/media/[id]/poster/route.ts": [
+    "next/server",
+    "@/lib/auth/guards",
+    "@/lib/r2",
+    "@/lib/wiki/queries"
+  ],
+  "app/api/wiki/media/[id]/video-token/route.ts": [
+    "next/server",
+    "@/lib/auth/guards",
+    "@/lib/r2",
+    "@/lib/wiki/queries"
+  ],
+  "app/api/wiki/media/image/complete/route.ts": [
+    "drizzle-orm",
+    "next/server",
+    "sharp",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/r2",
+    "@/lib/security/request-origin"
+  ],
+  "app/api/wiki/media/image/presign/route.ts": [
+    "node:crypto",
+    "drizzle-orm",
+    "next/server",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/r2",
+    "@/lib/security/request-origin"
+  ],
+  "app/api/wiki/media/video/complete/route.ts": [
+    "drizzle-orm",
+    "next/server",
+    "zod",
+    "@/lib/ai/usage",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/r2",
+    "@/lib/security/request-origin",
+    "@/lib/wiki/video"
+  ],
+  "app/api/wiki/media/video/upload/route.ts": [
+    "node:crypto",
+    "drizzle-orm",
+    "next/server",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/r2",
+    "@/lib/security/request-origin",
+    "@/lib/wiki/video"
+  ],
+  "app/layout.tsx": [
+    "@/components/ui/app-dialogs",
+    "next",
+    "next/font/google",
+    "@/components/theme-provider",
+    "@/components/motion/motion-provider",
+    "@/components/ui/sonner",
+    "@/components/pwa/service-worker-register",
+    "@/components/pwa/pwa-provider"
+  ],
+  "app/manifest.ts": [
+    "next"
+  ],
+  "app/offline/page.tsx": [],
+  "app/page.tsx": [
+    "next/navigation"
+  ],
+  "app/unsubscribe/page.tsx": [
+    "@/components/ui/card",
+    "@/components/ui/button",
+    "@/lib/notifications/actions"
+  ],
+  "components/agenda/agenda-view.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/lib/format",
+    "@/lib/agenda/bucket",
+    "@/lib/utils"
+  ],
+  "components/agreements/agreement-controls.tsx": [
+    "next/link",
+    "react",
+    "lucide-react",
+    "next/navigation",
+    "sonner",
+    "@/lib/agreements/actions",
+    "@/lib/budget/actions",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea"
+  ],
+  "components/agreements/funding-review.test.tsx": [
+    "vitest",
+    "react",
+    "./funding-review",
+    "@/lib/imports/schema",
+    "@/lib/agreements/funding-actions"
+  ],
+  "components/agreements/funding-review.tsx": [
+    "react",
+    "@base-ui/react/combobox",
+    "lucide-react",
+    "next/navigation",
+    "sonner",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/lib/agreements/funding-actions",
+    "@/lib/agreements/funding-review",
+    "@/lib/imports/types"
+  ],
+  "components/agreements/invoice-send.tsx": [
+    "@/components/email/outgoing-attachment-review",
+    "react",
+    "next/navigation",
+    "sonner",
+    "@/lib/budget/actions",
+    "@/lib/email/draft-actions",
+    "@/lib/email/draft-types",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/textarea"
+  ],
+  "components/agreements/payment-delivery.tsx": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "@/lib/agreements/actions",
+    "@/components/ui/button",
+    "@/components/ui/input"
+  ],
+  "components/ai/planner-workspace.tsx": [
+    "react",
+    "lucide-react",
+    "sonner",
+    "@/lib/ai/planner-actions",
+    "@/lib/ai/types",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/lib/utils"
+  ],
+  "components/app-nav.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "motion/react",
+    "lucide-react",
+    "@/components/ui/tooltip",
+    "@/lib/utils"
+  ],
+  "components/app-shell.tsx": [
+    "react",
+    "next/link",
+    "lucide-react",
+    "@/components/app-nav",
+    "@/components/brand",
+    "@/components/source-link",
+    "@/components/ui/button",
+    "@/components/topbar",
+    "@/components/assistant/floating-assistant",
+    "@/components/guidance/guidance-provider",
+    "@/components/presence/presence-provider",
+    "@/components/pwa/pull-to-refresh",
+    "@/components/route-scroll-manager",
+    "@/lib/tasks/time-queries",
+    "@/lib/utils",
+    "@/components/time/active-timer-provider",
+    "@/components/cockpit",
+    "@/lib/auth/policy"
+  ],
+  "components/assistant/assistant-message-content.test.tsx": [
+    "vitest",
+    "./assistant-message-content"
+  ],
+  "components/assistant/assistant-message-content.tsx": [
+    "next/link"
+  ],
+  "components/assistant/assistant-workspace.tsx": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "lucide-react",
+    "@/lib/assistant/actions",
+    "@/lib/assistant/queries",
+    "@/lib/assistant/budget-math",
+    "@/lib/assistant/memory",
+    "@/components/assistant/memory-manager",
+    "@/components/assistant/assistant-message-content",
+    "@/components/tasks/learn-terms",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/textarea",
+    "@/components/motion/animated-bar",
+    "@/components/motion/reveal",
+    "@/lib/utils",
+    "@/hooks/use-prop-state",
+    "Walk me through this"
+  ],
+  "components/assistant/floating-assistant.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "@/lib/assistant/actions",
+    "@/lib/assistant/launcher",
+    "@/components/assistant/assistant-workspace",
+    "@/components/ui/button",
+    "@/components/ui/sheet",
+    "@/lib/utils"
+  ],
+  "components/assistant/memory-manager.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "lucide-react",
+    "next/navigation",
+    "sonner",
+    "@/lib/assistant/actions",
+    "@/lib/assistant/memory",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/dialog",
+    "@/components/ui/select",
+    "@/components/ui/textarea",
+    "@/hooks/use-prop-state"
+  ],
+  "components/auth/accept-invite-form.tsx": [
+    "react",
+    "@/lib/team/actions",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label"
+  ],
+  "components/auth/admin-security-check.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/auth/assurance-actions",
+    "@/lib/auth/client",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label"
+  ],
+  "components/auth/auth-card-shell.tsx": [
+    "react",
+    "@/components/brand",
+    "@/components/source-link",
+    "@/lib/ops/source-url",
+    "@/lib/ops/version",
+    "@/components/theme-toggle",
+    "@/components/ui/card"
+  ],
+  "components/auth/bootstrap-admin-form.tsx": [
+    "react",
+    "@/app/(auth)/login/actions",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label"
+  ],
+  "components/auth/forgot-password-form.tsx": [
+    "react",
+    "next/link",
+    "lucide-react",
+    "sonner",
+    "@/lib/auth/client",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label"
+  ],
+  "components/auth/login-form.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "sonner",
+    "lucide-react",
+    "@/lib/auth/client",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label"
+  ],
+  "components/auth/reset-password-form.tsx": [
+    "react",
+    "next/link",
+    "lucide-react",
+    "sonner",
+    "@/lib/auth/client",
+    "@/lib/auth/password-reset",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label"
+  ],
+  "components/auth/sign-out-button.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/auth/client",
+    "@/components/ui/button",
+    "@/components/ui/dropdown-menu",
+    "@/lib/utils"
+  ],
+  "components/badges.tsx": [
+    "@/components/ui/badge",
+    "@/lib/utils"
+  ],
+  "components/blockers/refresh-health.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/blockers/actions",
+    "@/components/ui/button",
+    "@/lib/utils"
+  ],
+  "components/brand.tsx": [
+    "@/lib/utils"
+  ],
+  "components/budget/approval-decision-controls.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/budget/approval-actions",
+    "@/components/ui/button",
+    "@/components/ui/textarea"
+  ],
+  "components/budget/budget-approval-panel.tsx": [
+    "react",
+    "next/navigation",
+    "next/link",
+    "lucide-react",
+    "sonner",
+    "@/lib/budget/approval-actions",
+    "@/components/budget/approval-decision-controls",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/checkbox",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/lib/utils"
+  ],
+  "components/budget/budget-attention-summary.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/lib/budget/attention",
+    "@/lib/utils"
+  ],
+  "components/budget/budget-manager.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/link",
+    "next/navigation",
+    "sonner",
+    "lucide-react",
+    "@/lib/budget/actions",
+    "@/lib/partners/actions",
+    "@/lib/budget/compute",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/help-tip",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/lib/utils",
+    "@/hooks/use-prop-state",
+    "@/hooks/use-optimistic-action",
+    "@/components/budget/partner-quote-panel"
+  ],
+  "components/budget/budget-section.tsx": [
+    "react",
+    "lucide-react"
+  ],
+  "components/budget/cashflow-card.tsx": [
+    "lucide-react",
+    "@/lib/budget/reconcile-math",
+    "@/components/portfolio/charts/trend-line"
+  ],
+  "components/budget/completion-date-planner.tsx": [
+    "react",
+    "lucide-react",
+    "@/lib/schedule/plan",
+    "@/lib/planning/capacity",
+    "@/lib/planning/actions",
+    "@/components/ui/button",
+    "@/components/ui/dialog",
+    "@/lib/utils"
+  ],
+  "components/budget/funding-receipts.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/budget/actions",
+    "@/lib/donations/actions",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/lib/utils",
+    "@/hooks/use-prop-state"
+  ],
+  "components/budget/invoice-import-button.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/button",
+    "@/lib/files/upload-client",
+    "@/lib/imports/actions"
+  ],
+  "components/budget/mou-payments.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/budget/actions",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/hooks/use-prop-state",
+    "@/components/budget/invoice-import-button",
+    "@/lib/budget/compute",
+    "@/components/email/outgoing-attachment-review",
+    "@/components/email/outgoing-email-status",
+    "@/components/email/email-draft-controls",
+    "@/lib/email/draft-actions",
+    "@/lib/email/draft-types"
+  ],
+  "components/budget/partner-quote-panel.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/hooks/use-prop-state",
+    "@/lib/budget/actions",
+    "@/lib/budget/compute",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/help-tip",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/lib/utils"
+  ],
+  "components/budget/proposal-panel.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/format",
+    "@/components/budget/completion-date-planner",
+    "@/components/email/outgoing-attachment-review",
+    "@/components/ui/card",
+    "@/components/ui/button",
+    "@/components/ui/badge",
+    "@/components/ui/checkbox",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/lib/proposals/actions",
+    "@/lib/print/actions",
+    "@/hooks/use-prop-state",
+    "@/components/email/email-draft-controls",
+    "@/lib/email/draft-actions",
+    "@/lib/email/draft-types"
+  ],
+  "components/budget/reconciliation-panel.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/budget/actions",
+    "@/lib/budget/reconcile-math",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/hooks/use-prop-state"
+  ],
+  "components/budget/royalties-card.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/budget/actions",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/components/ui/label"
+  ],
+  "components/budget/royalty-payments.tsx": [
+    "react",
+    "next/navigation",
+    "next/link",
+    "sonner",
+    "lucide-react",
+    "@/lib/budget/actions",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/hooks/use-prop-state"
+  ],
+  "components/chat/channel-list.tsx": [
+    "react",
+    "next/link",
+    "lucide-react",
+    "@/lib/chat/queries",
+    "@/lib/users/avatar",
+    "@/lib/utils",
+    "./chat-navigation-context",
+    "./create-channel-dialog",
+    "./project-pin-toggle",
+    "./new-direct-message-popover"
+  ],
+  "components/chat/channel-members-sheet.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "@/lib/chat/actions",
+    "@/lib/chat/channel-members",
+    "@/lib/chat/queries",
+    "@/hooks/use-optimistic-action",
+    "@/components/ui/button",
+    "@/components/ui/sheet",
+    "@/components/ui/user-avatar"
+  ],
+  "components/chat/chat-navigation-context.tsx": [
+    "react",
+    "next/navigation"
+  ],
+  "components/chat/chat-thread.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "lucide-react",
+    "sonner",
+    "@/lib/chat/queries",
+    "@/lib/users/avatar",
+    "@/lib/chat/actions",
+    "@/components/ui/attachment",
+    "@/components/ui/bubble",
+    "@/components/ui/button",
+    "@/components/ui/marker",
+    "@/components/ui/message",
+    "@/components/ui/message-scroller",
+    "@/components/ui/popover",
+    "@/components/mentions/mention-input",
+    "@/components/mentions/mention-text",
+    "@/lib/mentions/roster",
+    "@/lib/format",
+    "@/lib/utils",
+    "@/components/chat/voice-recorder",
+    "@/components/chat/voice-message-player",
+    "@/components/chat/chat-navigation-context"
+  ],
+  "components/chat/chat-workspace-shell.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "@/lib/chat/queries",
+    "@/components/chat/channel-list",
+    "@/components/chat/chat-navigation-context",
+    "@/lib/chat/navigation",
+    "@/lib/utils"
+  ],
+  "components/chat/create-channel-dialog.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/chat/actions",
+    "@/lib/chat/queries",
+    "@/components/chat/chat-navigation-context",
+    "@/components/ui/button",
+    "@/components/ui/checkbox",
+    "@/components/ui/dialog",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/user-avatar"
+  ],
+  "components/chat/new-direct-message-popover.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/chat/actions",
+    "@/lib/chat/queries",
+    "@/components/chat/chat-navigation-context",
+    "@/lib/users/avatar",
+    "@/components/ui/button",
+    "@/components/ui/popover"
+  ],
+  "components/chat/project-channel-tabs.test.tsx": [
+    "node:fs",
+    "node:path",
+    "vitest"
+  ],
+  "components/chat/project-channel-tabs.tsx": [
+    "lucide-react",
+    "@/lib/chat/queries",
+    "@/components/cockpit",
+    "@/components/chat/chat-navigation-context",
+    "@/components/motion/tab-link",
+    "@/lib/utils"
+  ],
+  "components/chat/project-chat-view.tsx": [
+    "react",
+    "@/lib/chat/queries",
+    "@/lib/mentions/roster",
+    "@/components/chat/chat-thread",
+    "@/components/chat/project-channel-tabs"
+  ],
+  "components/chat/project-pin-toggle.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/chat/actions",
+    "@/components/ui/button",
+    "@/lib/utils"
+  ],
+  "components/chat/voice-message-player.tsx": [
+    "react",
+    "lucide-react",
+    "@/lib/utils"
+  ],
+  "components/chat/voice-recorder.tsx": [
+    "react",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/button"
+  ],
+  "components/cockpit.test.tsx": [
+    "react-dom/server",
+    "vitest",
+    "./cockpit"
+  ],
+  "components/cockpit.tsx": [
+    "react",
+    "@/lib/utils"
+  ],
+  "components/correspondence/email-rights-reviews.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/checkbox",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/select",
+    "@/lib/email/rights-review-actions",
+    "@/lib/db/schema",
+    "@/lib/email/rights-review-selection"
+  ],
+  "components/correspondence/external-follow-up-card.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/email/follow-ups",
+    "@/lib/email/follow-up-actions",
+    "@/lib/projects/status-actions",
+    "@/components/ui/button",
+    "@/components/ui/badge",
+    "@/components/ui/textarea",
+    "@/components/ui/dropdown-menu",
+    "@/lib/utils",
+    "@/lib/format"
+  ],
+  "components/correspondence/message-reprocess-button.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/button",
+    "@/lib/email/actions",
+    "@/components/correspondence/reprocess-feedback"
+  ],
+  "components/correspondence/project-correspondence-preview.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/lib/email/queries",
+    "@/lib/format",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/lib/utils"
+  ],
+  "components/correspondence/project-suggestion-review.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/email/actions",
+    "@/lib/imports/match",
+    "@/lib/email/queries",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/components/ui/select"
+  ],
+  "components/correspondence/project-update-suggestions.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/button",
+    "@/components/ui/textarea",
+    "@/lib/email/actions",
+    "@/lib/email/project-update-suggestion-policy"
+  ],
+  "components/correspondence/reprocess-feedback.test.tsx": [
+    "vitest",
+    "./reprocess-feedback"
+  ],
+  "components/correspondence/reprocess-feedback.ts": [
+    "@/lib/email/actions"
+  ],
+  "components/correspondence/thread-controls.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/email/actions",
+    "@/components/ui/button",
+    "@/components/ui/badge",
+    "@/components/ui/checkbox",
+    "@/components/ui/dialog",
+    "@/components/ui/input",
+    "@/components/ui/textarea",
+    "@/components/ui/popover",
+    "@/components/ui/select",
+    "@/components/ui/label",
+    "@/hooks/use-optimistic-action",
+    "@/hooks/use-prop-state",
+    "@/components/correspondence/reprocess-feedback"
+  ],
+  "components/correspondence/thread-message-list.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/components/ui/badge",
+    "@/components/correspondence/message-reprocess-button",
+    "@/lib/format",
+    "@/lib/email/queries",
+    "@/lib/email/body-segments"
+  ],
+  "components/correspondence/thread-reply.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/navigation",
+    "sonner",
+    "lucide-react",
+    "@/lib/email/actions",
+    "@/lib/email/follow-up-actions",
+    "@/components/ui/button",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/components/email/outgoing-email-status",
+    "@/components/email/email-draft-controls",
+    "@/lib/email/draft-actions",
+    "@/lib/email/draft-types"
+  ],
+  "components/dashboard/manager-review-queue.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/lib/format",
+    "@/lib/utils"
+  ],
+  "components/dashboard/onboarding-checklist.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/components/guidance/guidance-provider",
+    "@/components/ui/button",
+    "@/lib/onboarding/queries",
+    "@/lib/utils",
+    "@/lib/auth/policy"
+  ],
+  "components/donations/donation-import-button.tsx": [
+    "react",
+    "lucide-react",
+    "next/navigation",
+    "sonner",
+    "@/components/ui/button",
+    "@/lib/donations/actions",
+    "@/lib/files/upload-client"
+  ],
+  "components/donations/donations-workspace.tsx": [
+    "@/lib/dialog-requests",
+    "lucide-react",
+    "react",
+    "next/navigation",
+    "sonner",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/lib/donations/actions",
+    "@/lib/donations/exact-match",
+    "@/lib/donations/types",
+    "@/lib/utils"
+  ],
+  "components/email/email-draft-controls.tsx": [
+    "lucide-react",
+    "@/components/ui/button"
+  ],
+  "components/email/outgoing-attachment-review.tsx": [
+    "react",
+    "lucide-react",
+    "@/lib/format",
+    "@/components/ui/button",
+    "@/components/ui/dialog"
+  ],
+  "components/email/outgoing-email-status.test.tsx": [
+    "react-dom/server",
+    "vitest",
+    "./outgoing-email-status"
+  ],
+  "components/email/outgoing-email-status.tsx": [
+    "lucide-react",
+    "@/lib/utils"
+  ],
+  "components/episodes/episodes-manager.tsx": [
+    "next/link",
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/hooks/use-prop-state",
+    "@/lib/episodes/actions",
+    "@/lib/episodes/queries",
+    "@/lib/episodes/workflow",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/dialog",
+    "@/components/ui/input",
+    "@/lib/utils"
+  ],
+  "components/files/file-attachments.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/files/queries",
+    "@/lib/files/actions",
+    "@/components/ui/button",
+    "@/components/ui/textarea",
+    "@/lib/format",
+    "@/hooks/use-optimistic-action",
+    "@/hooks/use-prop-state"
+  ],
+  "components/guidance/coach-card.tsx": [
+    "react",
+    "next/link",
+    "lucide-react",
+    "@/components/ui/button",
+    "@/components/guidance/guidance-provider",
+    "@/lib/utils"
+  ],
+  "components/guidance/guidance-panel.tsx": [
+    "react-markdown",
+    "remark-gfm",
+    "@/components/guidance/coach-card",
+    "@/lib/help/content"
+  ],
+  "components/guidance/guidance-provider.tsx": [
+    "react",
+    "@/hooks/use-optimistic-action",
+    "@/lib/guidance/actions",
+    "@/lib/guidance/state"
+  ],
+  "components/guidance/guided-steps.tsx": [
+    "react",
+    "lucide-react",
+    "@/components/ui/button",
+    "@/components/ui/stepper",
+    "@/lib/utils"
+  ],
+  "components/guidance/walk-me-through.tsx": [
+    "lucide-react",
+    "@/components/ui/button",
+    "@/lib/assistant/launcher"
+  ],
+  "components/help/help-browser.tsx": [
+    "next/link",
+    "react",
+    "lucide-react",
+    "react-markdown",
+    "remark-gfm",
+    "@/components/cockpit",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/sheet",
+    "@/lib/help/search",
+    "@/lib/utils"
+  ],
+  "components/imports/discard-import-button.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/imports/actions",
+    "@/components/ui/button"
+  ],
+  "components/imports/import-list-refresh.tsx": [
+    "react",
+    "next/navigation",
+    "@/lib/imports/actions"
+  ],
+  "components/imports/import-review.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/imports/actions",
+    "@/lib/imports/types",
+    "@/lib/imports/match",
+    "@/lib/imports/payments",
+    "@/lib/projects/kinds",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea"
+  ],
+  "components/imports/import-uploader.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/imports/actions",
+    "@/lib/files/upload-client",
+    "@/components/ui/button"
+  ],
+  "components/imports/project-import-button.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/imports/actions",
+    "@/lib/files/upload-client",
+    "@/components/ui/button"
+  ],
+  "components/imports/retry-import-button.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/imports/actions",
+    "@/components/ui/button"
+  ],
+  "components/mentions/mention-input.tsx": [
+    "react",
+    "react-dom",
+    "lucide-react",
+    "@/lib/mentions/actions",
+    "@/lib/mentions/roster",
+    "@/components/ui/textarea",
+    "@/components/ui/user-avatar",
+    "@/lib/utils"
+  ],
+  "components/mentions/mention-text.tsx": [
+    "react",
+    "@/lib/mentions/parse",
+    "@/lib/utils"
+  ],
+  "components/motion/animated-bar.tsx": [
+    "motion/react",
+    "@/lib/utils"
+  ],
+  "components/motion/animated-number.tsx": [
+    "react",
+    "motion/react"
+  ],
+  "components/motion/motion-provider.tsx": [
+    "motion/react"
+  ],
+  "components/motion/reveal.tsx": [
+    "react",
+    "motion/react",
+    "@/lib/utils"
+  ],
+  "components/motion/tab-link.tsx": [
+    "next/link",
+    "next/link",
+    "lucide-react",
+    "motion/react",
+    "@/lib/utils"
+  ],
+  "components/notifications/notification-bell.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/notifications/actions",
+    "@/lib/push/client",
+    "@/components/ui/button",
+    "@/components/ui/popover",
+    "@/lib/utils",
+    "@/lib/notifications/client-events"
+  ],
+  "components/notifications/notification-navigation.test.tsx": [
+    "vitest",
+    "react",
+    "react",
+    "./notification-bell",
+    "./notifications-list"
+  ],
+  "components/notifications/notifications-list.tsx": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "@/lib/notifications/actions",
+    "@/components/ui/button",
+    "@/lib/utils"
+  ],
+  "components/page-skeleton.tsx": [
+    "react",
+    "lucide-react",
+    "@/components/ui/skeleton",
+    "@/lib/utils"
+  ],
+  "components/portfolio/capacity-heatmap.tsx": [
+    "@/lib/utils",
+    "@/lib/capacity",
+    "@/lib/time"
+  ],
+  "components/portfolio/charts/rag-donut.tsx": [
+    "recharts"
+  ],
+  "components/portfolio/charts/trend-line.tsx": [
+    "react",
+    "recharts"
+  ],
+  "components/portfolio/missing-due-dates.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/badges",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/hooks/use-optimistic-action",
+    "@/lib/schedule/actions",
+    "@/lib/utils"
+  ],
+  "components/portfolio/portfolio-table.tsx": [
+    "react",
+    "next/link",
+    "lucide-react",
+    "@/components/badges",
+    "@/lib/format",
+    "@/lib/forecast/velocity",
+    "@/lib/utils"
+  ],
+  "components/portfolio/stat-card.tsx": [
+    "lucide-react",
+    "@/components/ui/card",
+    "@/lib/utils"
+  ],
+  "components/presence/presence-menu.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/components/auth/sign-out-button",
+    "@/components/presence/presence-provider",
+    "@/components/ui/badge",
+    "@/components/ui/user-avatar",
+    "@/components/ui/dropdown-menu",
+    "@/lib/presence/status",
+    "@/lib/utils"
+  ],
+  "components/presence/presence-provider.tsx": [
+    "react",
+    "@/lib/presence/actions",
+    "@/lib/presence/status"
+  ],
+  "components/print/print-correspondence-card.tsx": [
+    "react",
+    "next/link",
+    "lucide-react",
+    "sonner",
+    "@/lib/email/actions",
+    "@/lib/email/queries",
+    "@/components/ui/badge",
+    "@/components/ui/card",
+    "@/components/ui/dialog",
+    "@/components/correspondence/thread-message-list"
+  ],
+  "components/print/print-manager.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/print/actions",
+    "@/lib/files/upload-client",
+    "@/hooks/use-optimistic-action",
+    "@/hooks/use-prop-state",
+    "@/lib/files/queries",
+    "@/lib/print/review-flags",
+    "@/lib/print/estimate",
+    "@/components/ui/badge",
+    "@/components/ui/card",
+    "@/components/ui/button",
+    "@/components/ui/checkbox",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/components/ui/help-tip",
+    "@/components/files/file-attachments",
+    "@/components/print/print-correspondence-card",
+    "@/components/print/quote-comparison",
+    "@/lib/print/quote-economics",
+    "@/lib/print/quote-reconciliation",
+    "@/lib/print/quote-run-specs",
+    "@/lib/utils",
+    "@/lib/budget/compute",
+    "@/lib/format",
+    "@/components/email/outgoing-attachment-review",
+    "@/components/email/email-draft-controls",
+    "@/components/email/outgoing-email-status",
+    "@/lib/email/draft-actions",
+    "@/lib/email/draft-types"
+  ],
+  "components/print/quote-comparison.tsx": [
+    "lucide-react",
+    "@/components/ui/badge",
+    "@/components/ui/help-tip",
+    "@/lib/print/quote-economics",
+    "@/lib/utils"
+  ],
+  "components/projects/book-format-badge.tsx": [
+    "lucide-react",
+    "@/lib/projects/book-format",
+    "@/lib/projects/print-funding",
+    "@/lib/utils"
+  ],
+  "components/projects/complete-project-button.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/projects/actions",
+    "@/components/ui/button"
+  ],
+  "components/projects/manager-health-band.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/components/ui/card",
+    "@/components/portfolio/charts/trend-line",
+    "@/lib/format",
+    "@/lib/forecast/velocity",
+    "@/lib/utils"
+  ],
+  "components/projects/members-manager.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/projects/member-actions",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/user-avatar",
+    "@/hooks/use-prop-state"
+  ],
+  "components/projects/new-project-entry.tsx": [
+    "react",
+    "lucide-react",
+    "@/components/guidance/guidance-provider",
+    "@/components/projects/new-project-form",
+    "@/components/projects/new-project-guided",
+    "@/components/ui/button"
+  ],
+  "components/projects/new-project-form.tsx": [
+    "react",
+    "@/lib/projects/actions",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/lib/projects/kinds",
+    "@/lib/projects/print-funding"
+  ],
+  "components/projects/new-project-guided.tsx": [
+    "react",
+    "lucide-react",
+    "@/lib/projects/actions",
+    "@/components/guidance/guided-steps",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/lib/projects/kinds",
+    "@/lib/projects/print-funding"
+  ],
+  "components/projects/overdue-reason.tsx": [
+    "lucide-react",
+    "@/lib/format",
+    "@/lib/projects/overdue",
+    "@/components/ui/help-tip"
+  ],
+  "components/projects/pipeline-view.tsx": [
+    "@/lib/tasks/queries",
+    "@/lib/utils"
+  ],
+  "components/projects/plan-wizard.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/projects/task-plan-actions",
+    "@/lib/ai/types",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/lib/projects/kinds"
+  ],
+  "components/projects/print-funding-badge.tsx": [
+    "lucide-react",
+    "@/lib/projects/print-funding",
+    "@/lib/utils"
+  ],
+  "components/projects/project-card.tsx": [
+    "next/link",
+    "react",
+    "@/components/ui/card",
+    "@/components/badges",
+    "@/components/motion/animated-bar",
+    "@/lib/format",
+    "@/lib/projects/deadline",
+    "@/lib/projects/queries",
+    "@/lib/utils",
+    "@/lib/projects/kinds",
+    "@/components/projects/print-funding-badge",
+    "@/components/projects/book-format-badge",
+    "@/lib/projects/print-funding"
+  ],
+  "components/projects/project-drive-folder.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/tasks/drive-picker",
+    "@/lib/projects/drive-actions",
+    "@/components/ui/button",
+    "@/hooks/use-prop-state"
+  ],
+  "components/projects/project-settings-dialog.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/projects/actions",
+    "@/lib/schedule/actions",
+    "@/lib/format",
+    "@/lib/projects/kinds",
+    "@/lib/projects/print-funding",
+    "@/components/ui/button",
+    "@/components/ui/sheet",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/hooks/use-prop-state",
+    "@/components/projects/project-title-context",
+    "@/lib/projects/title-editor-state",
+    "@/lib/projects/status"
+  ],
+  "components/projects/project-surface-notes.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "lucide-react",
+    "sonner",
+    "@/lib/projects/surface-notes-actions",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/mentions/mention-input",
+    "@/components/mentions/mention-text",
+    "@/lib/mentions/roster",
+    "@/lib/utils",
+    "@/hooks/use-prop-state"
+  ],
+  "components/projects/project-tabs.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "@/components/cockpit",
+    "@/components/motion/tab-link",
+    "@/lib/projects/kinds"
+  ],
+  "components/projects/project-title-context.tsx": [
+    "next/link",
+    "lucide-react",
+    "react",
+    "@/components/ui/button"
+  ],
+  "components/projects/projects-browser.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "@/components/badges",
+    "@/components/projects/project-card",
+    "@/components/projects/print-funding-badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/components/ui/select",
+    "@/components/ui/sheet",
+    "@/components/motion/reveal",
+    "@/lib/format",
+    "@/lib/projects/deadline",
+    "@/lib/projects/queries",
+    "@/lib/projects/kinds",
+    "@/lib/projects/visibility",
+    "@/lib/projects/print-funding",
+    "@/lib/projects/book-format"
+  ],
+  "components/projects/projects-route-loading.tsx": [
+    "next/navigation",
+    "@/components/page-skeleton"
+  ],
+  "components/projects/status-update.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/navigation",
+    "sonner",
+    "lucide-react",
+    "@/lib/projects/status-queries",
+    "@/lib/projects/status-actions",
+    "@/components/ui/card",
+    "@/components/ui/button",
+    "@/components/ui/badge",
+    "@/components/ui/user-avatar",
+    "@/components/mentions/mention-input",
+    "@/components/mentions/mention-text",
+    "@/components/tasks/create-task-dialog",
+    "@/lib/mentions/roster",
+    "@/lib/format",
+    "@/hooks/use-prop-state"
+  ],
+  "components/pwa/enable-push-flow.tsx": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "lucide-react",
+    "@/hooks/use-push-setup",
+    "@/lib/push/setup-state",
+    "@/components/ui/button",
+    "@/components/ui/dialog",
+    "@/components/motion/reveal",
+    "@/lib/utils"
+  ],
+  "components/pwa/pull-to-refresh.tsx": [
+    "react",
+    "lucide-react",
+    "@/lib/pwa/pull-to-refresh",
+    "@/lib/utils"
+  ],
+  "components/pwa/push-nudge.tsx": [
+    "react",
+    "lucide-react",
+    "@/hooks/use-push-setup",
+    "@/components/pwa/enable-push-flow",
+    "@/components/motion/reveal",
+    "@/components/ui/button"
+  ],
+  "components/pwa/pwa-provider.tsx": [
+    "react",
+    "@/lib/push/client"
+  ],
+  "components/pwa/service-worker-register.tsx": [
+    "react",
+    "sonner"
+  ],
+  "components/rights/agreement-chat-sheet.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "lucide-react",
+    "sonner",
+    "@/lib/agreement-chat/actions",
+    "@/lib/agreement-chat/index-status",
+    "@/components/ui/button",
+    "@/components/ui/textarea",
+    "@/components/ui/sheet",
+    "@/lib/utils",
+    "@/hooks/use-prop-state"
+  ],
+  "components/rights/compliance-card.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/obligations/actions",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/components/ui/textarea",
+    "@/lib/utils",
+    "@/hooks/use-prop-state"
+  ],
+  "components/rights/license-fee-payments.tsx": [
+    "react",
+    "next/navigation",
+    "next/link",
+    "sonner",
+    "lucide-react",
+    "@/lib/rights/actions",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/hooks/use-prop-state"
+  ],
+  "components/rights/project-correspondence.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/lib/email/queries",
+    "@/components/ui/card",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/lib/format",
+    "@/lib/utils"
+  ],
+  "components/rights/rights-manager.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/navigation",
+    "next/link",
+    "sonner",
+    "lucide-react",
+    "@/lib/rights/actions",
+    "@/lib/files/queries",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/help-tip",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/components/files/file-attachments",
+    "@/components/rights/license-fee-payments",
+    "@/lib/utils",
+    "@/lib/rights/derive",
+    "@/components/rights/agreement-chat-sheet",
+    "@/lib/agreement-chat/actions"
+  ],
+  "components/route-scroll-manager.test.tsx": [
+    "vitest",
+    "./route-scroll-manager"
+  ],
+  "components/route-scroll-manager.tsx": [
+    "react",
+    "next/navigation"
+  ],
+  "components/schedule/schedule-board.tsx": [
+    "react",
+    "next/navigation",
+    "next/link",
+    "sonner",
+    "lucide-react",
+    "@/lib/schedule/plan",
+    "@/lib/schedule/actions",
+    "@/lib/planning/capacity",
+    "@/lib/planning/groups",
+    "@/lib/projects/deadline",
+    "@/lib/timeline/scale",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/dialog",
+    "@/components/ui/popover",
+    "@/lib/utils",
+    "@/lib/projects/kinds"
+  ],
+  "components/schedule/team-capacity-view.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/lib/capacity/roles",
+    "@/lib/utils",
+    "@/lib/projects/kinds"
+  ],
+  "components/settings/ai-key-card.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/hooks/use-prop-state",
+    "@/lib/actions/result",
+    "@/lib/ai/key-actions",
+    "@/lib/ai/keys",
+    "@/lib/dialog-requests"
+  ],
+  "components/settings/ai-models-manager.tsx": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "@/lib/ai/model-actions",
+    "@/lib/ai/model-catalog",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/select"
+  ],
+  "components/settings/ai-usage-report.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/portfolio/stat-card",
+    "@/components/motion/animated-bar",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/checkbox",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/table",
+    "@/lib/ai/usage-actions",
+    "@/lib/ai/model-catalog",
+    "@/lib/assistant/usage-math",
+    "@/lib/ai/amount-format",
+    "@/lib/hosted/credits",
+    "@/lib/ai/usage-queries",
+    "@/lib/utils",
+    "@/components/settings/charts/usage-area-chart",
+    "@/components/settings/charts/usage-model-donut",
+    "@/components/ui/user-avatar"
+  ],
+  "components/settings/assistant-learning-manager.tsx": [
+    "react",
+    "lucide-react",
+    "next/navigation",
+    "sonner",
+    "@/lib/assistant/learning-actions",
+    "@/lib/assistant/learning-queries",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/hooks/use-prop-state"
+  ],
+  "components/settings/auto-timer-toggle.tsx": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "@/lib/tasks/time-actions"
+  ],
+  "components/settings/avatar-crop-dialog.tsx": [
+    "react",
+    "react-easy-crop",
+    "@/components/ui/dialog",
+    "@/components/ui/button",
+    "@/lib/files/crop-image"
+  ],
+  "components/settings/avatar-uploader.tsx": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "lucide-react",
+    "@/lib/files/crop-image",
+    "@/lib/team/actions",
+    "@/components/ui/button",
+    "@/components/ui/user-avatar",
+    "@/components/settings/avatar-crop-dialog"
+  ],
+  "components/settings/capacity-groups-editor.tsx": [
+    "react",
+    "lucide-react",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/lib/projects/kinds",
+    "@/lib/planning/groups"
+  ],
+  "components/settings/charts/usage-area-chart.tsx": [
+    "react",
+    "recharts",
+    "@/lib/ai/amount-format"
+  ],
+  "components/settings/charts/usage-model-donut.tsx": [
+    "recharts",
+    "@/lib/ai/amount-format"
+  ],
+  "components/settings/dependency-security-check-button.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/button",
+    "@/lib/security/actions"
+  ],
+  "components/settings/dictionary-manager.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/navigation",
+    "sonner",
+    "lucide-react",
+    "@/lib/dictionary/actions",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/dialog",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/hooks/use-prop-state"
+  ],
+  "components/settings/email-learning-manager.tsx": [
+    "react",
+    "lucide-react",
+    "next/navigation",
+    "sonner",
+    "@/lib/email/signal-lessons-actions",
+    "@/lib/email/signal-lessons-queries",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/hooks/use-prop-state"
+  ],
+  "components/settings/email-task-preferences.tsx": [
+    "react",
+    "lucide-react",
+    "sonner",
+    "@/lib/email/task-suggestion-actions",
+    "@/components/ui/card"
+  ],
+  "components/settings/guidance-toggle.tsx": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "@/lib/settings/guidance-actions"
+  ],
+  "components/settings/invoice-sequence-card.tsx": [
+    "react",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/lib/workspace/actions"
+  ],
+  "components/settings/notification-prefs.tsx": [
+    "lucide-react",
+    "react",
+    "@/lib/notifications/actions",
+    "@/lib/notifications/email-policy",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/hooks/use-optimistic-action",
+    "@/lib/utils"
+  ],
+  "components/settings/partners-manager.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/navigation",
+    "sonner",
+    "lucide-react",
+    "@/lib/partners/actions",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/hooks/use-prop-state"
+  ],
+  "components/settings/profile-form.tsx": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "@/lib/team/actions",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label"
+  ],
+  "components/settings/publishers-manager.tsx": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "lucide-react",
+    "@/lib/rights/actions",
+    "@/lib/rights/holder-match",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/dialog",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/hooks/use-prop-state"
+  ],
+  "components/settings/push-devices.tsx": [
+    "react",
+    "lucide-react",
+    "@/lib/notifications/actions",
+    "@/hooks/use-optimistic-action",
+    "@/lib/format",
+    "@/components/ui/button",
+    "@/components/ui/dialog"
+  ],
+  "components/settings/push-settings.tsx": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "lucide-react",
+    "@/lib/notifications/actions",
+    "@/components/pwa/enable-push-flow",
+    "@/components/settings/push-devices",
+    "@/components/settings/test-push-button",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/button",
+    "@/components/ui/help-tip"
+  ],
+  "components/settings/role-capacity-matrix.tsx": [
+    "react",
+    "sonner",
+    "lucide-react",
+    "@/lib/capacity/actions",
+    "@/components/ui/card",
+    "@/lib/utils",
+    "@/hooks/use-prop-state"
+  ],
+  "components/settings/roles-manager.tsx": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "@/lib/team/roles-actions",
+    "@/lib/capacity/actions",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/hooks/use-prop-state"
+  ],
+  "components/settings/security-manager.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "lucide-react",
+    "next/navigation",
+    "sonner",
+    "@/lib/auth/assurance-actions",
+    "@/lib/auth/client",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label"
+  ],
+  "components/settings/security-monitor-status.tsx": [
+    "lucide-react",
+    "@/components/ui/badge",
+    "@/components/ui/card",
+    "@/lib/security/database-transport",
+    "@/lib/security/dependency-monitor",
+    "@/lib/format",
+    "@/lib/utils",
+    "@/components/settings/dependency-security-check-button"
+  ],
+  "components/settings/settings-nav.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "@/components/motion/tab-link",
+    "@/components/ui/sheet",
+    "@/lib/utils"
+  ],
+  "components/settings/standup-create-form.tsx": [
+    "react",
+    "@/lib/standup/config-actions",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/components/ui/label"
+  ],
+  "components/settings/standup-editor.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/navigation",
+    "@dnd-kit/core",
+    "@dnd-kit/modifiers",
+    "@dnd-kit/sortable",
+    "@dnd-kit/utilities",
+    "lucide-react",
+    "sonner",
+    "@/lib/standup/config-actions",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/help-tip",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/lib/utils",
+    "@/hooks/use-prop-state"
+  ],
+  "components/settings/team-manager.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/navigation",
+    "sonner",
+    "lucide-react",
+    "@/lib/team/actions",
+    "@/lib/assistant/actions",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/help-tip",
+    "@/components/ui/input",
+    "@/components/ui/user-avatar",
+    "@/lib/format",
+    "@/hooks/use-prop-state",
+    "@/lib/utils",
+    "@/lib/auth/policy"
+  ],
+  "components/settings/templates-manager.tsx": [
+    "react",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/lib/projects/template-actions"
+  ],
+  "components/settings/test-push-button.tsx": [
+    "react",
+    "sonner",
+    "lucide-react",
+    "@/lib/notifications/actions",
+    "@/components/ui/button"
+  ],
+  "components/settings/typesafe-toggle.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/badge",
+    "@/lib/ai/usage-actions"
+  ],
+  "components/settings/workspace-branding-card.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/card",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/lib/files/upload-client",
+    "@/lib/workspace/actions",
+    "@/hooks/use-prop-state"
+  ],
+  "components/settings/workspace-settings-form.tsx": [
+    "@/lib/files/upload-client",
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/lib/workspace/actions",
+    "@/lib/workspace/queries",
+    "@/components/settings/capacity-groups-editor",
+    "@/lib/planning/groups"
+  ],
+  "components/settings/workspace-setup-form.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/lib/workspace/actions"
+  ],
+  "components/source-link.tsx": [
+    "lucide-react",
+    "@/lib/utils"
+  ],
+  "components/tasks/create-task-dialog.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/tasks/actions",
+    "@/lib/tasks/recurring-actions",
+    "@/components/tasks/drive-picker",
+    "@/components/ui/button",
+    "@/components/ui/dialog",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/lib/tasks/queries",
+    "@/lib/tasks/actions",
+    "@/lib/tasks/drive-file-selection"
+  ],
+  "components/tasks/drive-picker.tsx": [
+    "react",
+    "sonner",
+    "lucide-react",
+    "@/lib/auth/client",
+    "@/lib/tasks/drive-actions",
+    "@/lib/tasks/drive-file-selection",
+    "@/components/ui/button",
+    "@/components/ui/label"
+  ],
+  "components/tasks/email-task-learning-rules.tsx": [
+    "react",
+    "lucide-react",
+    "next/navigation",
+    "sonner",
+    "@/lib/email/task-suggestion-actions",
+    "@/lib/email/task-rule-queries",
+    "@/components/ui/button",
+    "@/components/ui/badge",
+    "@/hooks/use-prop-state"
+  ],
+  "components/tasks/email-task-suggestions.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/email/task-suggestion-actions",
+    "@/lib/email/task-suggestions",
+    "@/lib/format",
+    "@/lib/utils",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/select",
+    "@/components/ui/textarea",
+    "@/hooks/use-prop-state"
+  ],
+  "components/tasks/learn-terms.ts": [
+    "sonner",
+    "@/lib/dictionary/actions"
+  ],
+  "components/tasks/my-tasks-list.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/link",
+    "next/navigation",
+    "motion/react",
+    "lucide-react",
+    "@/lib/tasks/queries",
+    "@/lib/tasks/actions",
+    "@/components/badges",
+    "@/components/tasks/task-complete-button",
+    "@/components/ui/badge",
+    "@/lib/format",
+    "@/lib/utils",
+    "sonner",
+    "@/hooks/use-prop-state",
+    "@/components/tasks/task-detail-dialog",
+    "@/components/tasks/task-attachment-shortcut"
+  ],
+  "components/tasks/my-work-hub.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "motion/react",
+    "sonner",
+    "@/lib/agenda/bucket",
+    "@/lib/agenda/bucket",
+    "@/lib/tasks/queries",
+    "@/lib/tasks/time-queries",
+    "@/lib/tasks/attention",
+    "@/lib/tasks/my-work",
+    "@/lib/tasks/actions",
+    "@/lib/tasks/time-actions",
+    "@/components/agenda/agenda-view",
+    "@/components/badges",
+    "@/components/tasks/create-task-dialog",
+    "@/components/tasks/personal-task-board",
+    "@/components/tasks/task-complete-button",
+    "@/components/tasks/task-detail-dialog",
+    "@/components/tasks/task-attachment-shortcut",
+    "@/components/ui/button",
+    "@/components/ui/select",
+    "@/lib/format",
+    "@/lib/time",
+    "@/lib/utils",
+    "@/hooks/use-prop-state",
+    "@/components/time/active-timer-provider",
+    "@/components/tasks/email-task-suggestions",
+    "@/lib/email/task-suggestions",
+    "@/components/tasks/email-task-learning-rules",
+    "@/lib/email/task-rule-queries",
+    "@/lib/email/follow-ups",
+    "@/components/correspondence/external-follow-up-card"
+  ],
+  "components/tasks/personal-task-board.tsx": [
+    "react",
+    "@dnd-kit/core",
+    "lucide-react",
+    "@/lib/tasks/queries",
+    "@/components/badges",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/tasks/task-attachment-shortcut",
+    "@/components/ui/select",
+    "@/lib/flow",
+    "@/lib/format",
+    "@/lib/time",
+    "@/lib/utils"
+  ],
+  "components/tasks/recurring-list.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/navigation",
+    "sonner",
+    "lucide-react",
+    "@/lib/tasks/recurring-actions",
+    "@/lib/tasks/queries",
+    "@/lib/format",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/dialog",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/hooks/use-prop-state"
+  ],
+  "components/tasks/task-attachment-shortcut.test.tsx": [
+    "react-dom/server",
+    "vitest",
+    "./task-attachment-shortcut"
+  ],
+  "components/tasks/task-attachment-shortcut.tsx": [
+    "lucide-react",
+    "@/lib/utils"
+  ],
+  "components/tasks/task-board.tsx": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "@dnd-kit/core",
+    "lucide-react",
+    "@/lib/tasks/queries",
+    "@/lib/tasks/actions",
+    "@/lib/tasks/time-actions",
+    "@/components/badges",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/dialog",
+    "@/components/ui/dropdown-menu",
+    "@/components/tasks/create-task-dialog",
+    "@/components/tasks/task-detail-dialog",
+    "@/components/tasks/task-attachment-shortcut",
+    "@/components/tasks/learn-terms",
+    "@/components/ui/help-tip",
+    "@/lib/flow",
+    "@/lib/format",
+    "@/lib/tasks/board-order",
+    "@/lib/utils",
+    "@/hooks/use-prop-state",
+    "@/hooks/use-optimistic-action",
+    "@/components/time/active-timer-provider"
+  ],
+  "components/tasks/task-complete-button.tsx": [
+    "react",
+    "motion/react",
+    "lucide-react",
+    "@/lib/utils"
+  ],
+  "components/tasks/task-detail-dialog.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/navigation",
+    "sonner",
+    "lucide-react",
+    "date-fns",
+    "@/lib/tasks/queries",
+    "@/lib/tasks/actions",
+    "@/lib/tasks/comment-actions",
+    "@/lib/tasks/drive-actions",
+    "@/components/tasks/drive-picker",
+    "@/components/tasks/learn-terms",
+    "@/components/tasks/task-time-section",
+    "@/components/ui/dialog",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/components/mentions/mention-input",
+    "@/components/mentions/mention-text",
+    "@/components/badges",
+    "@/components/budget/approval-decision-controls",
+    "@/lib/budget/approval-actions",
+    "@/lib/utils",
+    "@/lib/notifications/client-events",
+    "@/lib/email/task-suggestion-actions"
+  ],
+  "components/tasks/task-time-section.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "next/navigation",
+    "sonner",
+    "lucide-react",
+    "date-fns",
+    "@/lib/tasks/time-actions",
+    "@/lib/tasks/time-queries",
+    "@/lib/time",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/lib/utils",
+    "@/components/time/active-timer-provider"
+  ],
+  "components/tasks/tasks-hub.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "@/lib/tasks/queries",
+    "@/components/tasks/my-tasks-list",
+    "@/components/tasks/task-detail-dialog",
+    "@/components/tasks/create-task-dialog",
+    "@/components/ui/button",
+    "@/lib/format",
+    "@/lib/tasks/attention",
+    "@/lib/utils"
+  ],
+  "components/theme-provider.tsx": [
+    "react",
+    "next-themes"
+  ],
+  "components/theme-toggle.tsx": [
+    "react",
+    "lucide-react",
+    "next-themes",
+    "@/components/ui/button"
+  ],
+  "components/time/active-timer-provider.tsx": [
+    "react",
+    "@/hooks/use-prop-state",
+    "@/lib/tasks/time-queries"
+  ],
+  "components/time/timer-widget.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "@/lib/tasks/time-actions",
+    "@/lib/time",
+    "@/components/ui/popover",
+    "@/components/ui/button",
+    "@/components/time/active-timer-provider",
+    "sonner"
+  ],
+  "components/timeline/gantt.tsx": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "@/lib/tasks/actions",
+    "@/lib/projects/phase-actions",
+    "@/lib/timeline/scale",
+    "@/lib/utils",
+    "@/hooks/use-prop-state"
+  ],
+  "components/timeline/timeline-responsive.test.tsx": [
+    "react-dom/server",
+    "vitest",
+    "./gantt",
+    "./timeline"
+  ],
+  "components/timeline/timeline.tsx": [
+    "next/link",
+    "@/lib/utils"
+  ],
+  "components/topbar.tsx": [
+    "react",
+    "next/link",
+    "lucide-react",
+    "@/components/ui/user-avatar",
+    "@/components/presence/presence-menu",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/sheet",
+    "@/components/app-nav",
+    "@/components/brand",
+    "@/components/theme-toggle",
+    "@/components/notifications/notification-bell",
+    "@/components/auth/sign-out-button",
+    "@/components/time/timer-widget",
+    "@/lib/utils",
+    "@/lib/auth/policy"
+  ],
+  "components/ui/app-dialogs.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "@/lib/dialog-requests",
+    "@/components/ui/dialog",
+    "@/components/ui/button",
+    "@/components/ui/input"
+  ],
+  "components/ui/attachment.tsx": [
+    "react",
+    "@base-ui/react/merge-props",
+    "@base-ui/react/use-render",
+    "class-variance-authority",
+    "@/components/ui/button",
+    "@/lib/utils"
+  ],
+  "components/ui/avatar.tsx": [
+    "react",
+    "@base-ui/react/avatar",
+    "@/lib/utils"
+  ],
+  "components/ui/badge.tsx": [
+    "@base-ui/react/merge-props",
+    "@base-ui/react/use-render",
+    "class-variance-authority",
+    "@/lib/utils"
+  ],
+  "components/ui/bubble.tsx": [
+    "react",
+    "@base-ui/react/merge-props",
+    "@base-ui/react/use-render",
+    "class-variance-authority",
+    "@/lib/utils"
+  ],
+  "components/ui/button.tsx": [
+    "@base-ui/react/button",
+    "class-variance-authority",
+    "@/lib/utils"
+  ],
+  "components/ui/card.tsx": [
+    "react",
+    "@/lib/utils"
+  ],
+  "components/ui/checkbox.tsx": [
+    "@base-ui/react/checkbox",
+    "@/lib/utils",
+    "lucide-react"
+  ],
+  "components/ui/dialog.tsx": [
+    "react",
+    "@base-ui/react/dialog",
+    "@/lib/utils",
+    "@/components/ui/button",
+    "lucide-react"
+  ],
+  "components/ui/dropdown-menu.tsx": [
+    "react",
+    "@base-ui/react/menu",
+    "@/lib/utils",
+    "lucide-react"
+  ],
+  "components/ui/field.tsx": [
+    "react",
+    "class-variance-authority",
+    "@/lib/utils",
+    "@/components/ui/label",
+    "@/components/ui/separator"
+  ],
+  "components/ui/form.tsx": [
+    "react",
+    "@radix-ui/react-slot",
+    "react-hook-form",
+    "@/lib/utils",
+    "@/components/ui/label"
+  ],
+  "components/ui/help-tip.tsx": [
+    "react",
+    "lucide-react",
+    "@/components/ui/popover",
+    "@/lib/utils"
+  ],
+  "components/ui/input.tsx": [
+    "react",
+    "@base-ui/react/input",
+    "@/lib/utils"
+  ],
+  "components/ui/label.tsx": [
+    "react",
+    "@/lib/utils"
+  ],
+  "components/ui/marker.tsx": [
+    "react",
+    "@base-ui/react/merge-props",
+    "@base-ui/react/use-render",
+    "class-variance-authority",
+    "@/lib/utils"
+  ],
+  "components/ui/message-scroller.tsx": [
+    "react",
+    "lucide-react",
+    "@shadcn/react/message-scroller",
+    "@/components/ui/button",
+    "@/lib/utils"
+  ],
+  "components/ui/message.tsx": [
+    "react",
+    "@/lib/utils"
+  ],
+  "components/ui/popover.tsx": [
+    "react",
+    "@base-ui/react/popover",
+    "@/lib/utils"
+  ],
+  "components/ui/scroll-area.tsx": [
+    "react",
+    "@base-ui/react/scroll-area",
+    "@/lib/utils"
+  ],
+  "components/ui/select.tsx": [
+    "react",
+    "@base-ui/react/select",
+    "@/lib/utils",
+    "lucide-react"
+  ],
+  "components/ui/separator.tsx": [
+    "@base-ui/react/separator",
+    "@/lib/utils"
+  ],
+  "components/ui/sheet.tsx": [
+    "react",
+    "@base-ui/react/dialog",
+    "@/lib/utils",
+    "@/components/ui/button",
+    "lucide-react"
+  ],
+  "components/ui/sidebar.tsx": [
+    "react",
+    "@base-ui/react/merge-props",
+    "@base-ui/react/use-render",
+    "class-variance-authority",
+    "@/hooks/use-mobile",
+    "@/lib/utils",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/separator",
+    "@/components/ui/sheet",
+    "@/components/ui/skeleton",
+    "@/components/ui/tooltip",
+    "lucide-react"
+  ],
+  "components/ui/skeleton.tsx": [
+    "@/lib/utils"
+  ],
+  "components/ui/sonner.tsx": [
+    "next-themes",
+    "sonner",
+    "lucide-react"
+  ],
+  "components/ui/stepper.tsx": [
+    "react",
+    "lucide-react",
+    "@/lib/utils"
+  ],
+  "components/ui/table.tsx": [
+    "react",
+    "@/lib/utils"
+  ],
+  "components/ui/tabs.tsx": [
+    "@base-ui/react/tabs",
+    "class-variance-authority",
+    "@/lib/utils"
+  ],
+  "components/ui/textarea.tsx": [
+    "react",
+    "@/lib/utils"
+  ],
+  "components/ui/tooltip.tsx": [
+    "@base-ui/react/tooltip",
+    "@/lib/utils"
+  ],
+  "components/ui/user-avatar.tsx": [
+    "@/components/ui/avatar",
+    "@/components/presence/presence-provider",
+    "@/lib/users/avatar",
+    "@/lib/utils"
+  ],
+  "components/wiki/wiki-document.test.tsx": [
+    "react-dom/server",
+    "vitest",
+    "./wiki-document"
+  ],
+  "components/wiki/wiki-document.tsx": [
+    "react",
+    "lucide-react",
+    "@/lib/db/schema",
+    "@/lib/utils",
+    "./wiki-private-video"
+  ],
+  "components/wiki/wiki-editor-extensions.test.tsx": [
+    "vitest",
+    "./wiki-editor-extensions"
+  ],
+  "components/wiki/wiki-editor-extensions.ts": [
+    "@tiptap/core",
+    "@tiptap/extension-placeholder",
+    "@tiptap/extension-task-item",
+    "@tiptap/extension-task-list",
+    "@tiptap/starter-kit",
+    "@tiptap/react",
+    "./wiki-external-embed-node-view"
+  ],
+  "components/wiki/wiki-editor.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "@tiptap/react",
+    "lucide-react",
+    "next/navigation",
+    "sonner",
+    "@/components/ui/button",
+    "@/components/ui/dialog",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/lib/db/schema",
+    "@/lib/wiki/actions",
+    "@/lib/wiki/content",
+    "@/lib/wiki/video-client",
+    "./wiki-external-embed-node-view",
+    "./wiki-editor-extensions",
+    "./wiki-revision-history"
+  ],
+  "components/wiki/wiki-external-embed-node-view.tsx": [
+    "@tiptap/react",
+    "lucide-react",
+    "@/components/ui/button"
+  ],
+  "components/wiki/wiki-private-video.tsx": [
+    "react",
+    "lucide-react"
+  ],
+  "components/wiki/wiki-revision-history.tsx": [
+    "@/lib/dialog-requests",
+    "react",
+    "lucide-react",
+    "next/navigation",
+    "sonner",
+    "@/components/ui/button",
+    "@/components/ui/sheet",
+    "@/lib/wiki/actions"
+  ],
+  "components/wiki/wiki-trash.tsx": [
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/button",
+    "@/hooks/use-optimistic-action",
+    "@/lib/wiki/actions"
+  ],
+  "components/wiki/wiki-workspace.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/button",
+    "@/components/ui/dialog",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/sheet",
+    "@/components/ui/textarea",
+    "@/lib/wiki/actions",
+    "@/lib/wiki/queries",
+    "@/lib/utils",
+    "@/hooks/use-prop-state"
+  ],
+  "components/workload/workload-board.tsx": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "@dnd-kit/core",
+    "@dnd-kit/sortable",
+    "@dnd-kit/utilities",
+    "lucide-react",
+    "@/lib/tasks/actions",
+    "@/components/badges",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/help-tip",
+    "@/components/motion/animated-bar",
+    "@/lib/flow",
+    "@/lib/format",
+    "@/lib/capacity",
+    "@/lib/time",
+    "@/lib/utils",
+    "@/hooks/use-prop-state",
+    "@/components/tasks/task-attachment-shortcut"
+  ],
+  "components/workload/workload-view.tsx": [
+    "react",
+    "@/lib/tasks/queries",
+    "@/components/tasks/task-detail-dialog",
+    "@/components/workload/workload-board"
+  ],
+  "hooks/use-mobile.ts": [
+    "react"
+  ],
+  "hooks/use-optimistic-action.ts": [
+    "react",
+    "sonner",
+    "@/lib/actions/result",
+    "@/lib/actions/optimistic-machine"
+  ],
+  "hooks/use-prop-state.ts": [
+    "react"
+  ],
+  "hooks/use-push-setup.ts": [
+    "react",
+    "@/lib/push/client",
+    "@/lib/push/setup-state",
+    "@/components/pwa/pwa-provider"
+  ],
+  "lib/actions/interaction-policy.test.ts": [
+    "node:fs",
+    "node:path",
+    "typescript",
+    "vitest",
+    "./interaction-policy"
+  ],
+  "lib/actions/interaction-policy.ts": [],
+  "lib/actions/optimistic-machine.test.ts": [
+    "vitest",
+    "./optimistic-machine"
+  ],
+  "lib/actions/optimistic-machine.ts": [],
+  "lib/actions/result.ts": [],
+  "lib/activity/log.ts": [
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/logger"
+  ],
+  "lib/activity/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/after-response.ts": [
+    "next/server",
+    "@/lib/logger"
+  ],
+  "lib/agenda/bucket.test.ts": [
+    "vitest",
+    "./bucket"
+  ],
+  "lib/agenda/bucket.ts": [],
+  "lib/agenda/queries.ts": [
+    "drizzle-orm",
+    "date-fns-tz",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./bucket",
+    "@/lib/workspace/queries",
+    "@/lib/auth/policy"
+  ],
+  "lib/agreement-chat/actions.test.ts": [
+    "vitest",
+    "./answer",
+    "./retrieval"
+  ],
+  "lib/agreement-chat/actions.ts": [
+    "next/server",
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/ai/usage",
+    "@/lib/ai/openrouter",
+    "@/lib/assistant/budget",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./answer",
+    "./indexing",
+    "./prompt",
+    "./retrieval"
+  ],
+  "lib/agreement-chat/answer.ts": [
+    "@/lib/db/schema",
+    "./retrieval"
+  ],
+  "lib/agreement-chat/chunks.test.ts": [
+    "vitest",
+    "./chunks"
+  ],
+  "lib/agreement-chat/chunks.ts": [
+    "node:crypto"
+  ],
+  "lib/agreement-chat/index-status.test.ts": [
+    "vitest",
+    "./index-status"
+  ],
+  "lib/agreement-chat/index-status.ts": [],
+  "lib/agreement-chat/indexing.ts": [
+    "node:crypto",
+    "drizzle-orm",
+    "@/lib/ai/openrouter",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/r2",
+    "./chunks",
+    "./index-status",
+    "pdfjs-dist/legacy/build/pdf.mjs",
+    "mammoth"
+  ],
+  "lib/agreement-chat/prompt.test.ts": [
+    "vitest",
+    "./prompt"
+  ],
+  "lib/agreement-chat/prompt.ts": [],
+  "lib/agreement-chat/retrieval.test.ts": [
+    "vitest",
+    "./retrieval"
+  ],
+  "lib/agreement-chat/retrieval.ts": [
+    "drizzle-orm",
+    "@/lib/ai/openrouter",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/agreements/actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./readiness-engine"
+  ],
+  "lib/agreements/funding-actions.test.ts": [
+    "vitest",
+    "./funding-actions"
+  ],
+  "lib/agreements/funding-actions.ts": [
+    "drizzle-orm",
+    "next/cache",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./funding-review",
+    "./readiness-engine"
+  ],
+  "lib/agreements/funding-intake.ts": [
+    "node:crypto",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/r2",
+    "@/lib/imports/extraction",
+    "@/lib/notifications"
+  ],
+  "lib/agreements/funding-review.test.ts": [
+    "vitest",
+    "./funding-review",
+    "@/lib/imports/schema"
+  ],
+  "lib/agreements/funding-review.ts": [],
+  "lib/agreements/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/agreements/readiness-engine.ts": [
+    "drizzle-orm",
+    "date-fns-tz",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/notifications",
+    "./readiness",
+    "@/lib/workspace/queries"
+  ],
+  "lib/agreements/readiness.test.ts": [
+    "vitest",
+    "./readiness"
+  ],
+  "lib/agreements/readiness.ts": [],
+  "lib/ai/amount-format.test.ts": [
+    "vitest",
+    "./amount-format"
+  ],
+  "lib/ai/amount-format.ts": [
+    "@/lib/hosted/credits"
+  ],
+  "lib/ai/error-details.test.ts": [
+    "vitest",
+    "./error-details"
+  ],
+  "lib/ai/error-details.ts": [],
+  "lib/ai/key-actions.ts": [
+    "next/cache",
+    "zod",
+    "@/lib/actions/result",
+    "@/lib/ai/keys",
+    "@/lib/auth/guards",
+    "@/lib/crypto/secret-box",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/ai/keys.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/crypto/secret-box"
+  ],
+  "lib/ai/model-actions.ts": [
+    "next/cache",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/ai/model-catalog.ts": [],
+  "lib/ai/openrouter.ts": [
+    "openai",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/ai/usage",
+    "@/lib/ai/retry",
+    "@/lib/hosted/credits",
+    "@/lib/hosted/mode",
+    "@/lib/ai/keys",
+    "./types"
+  ],
+  "lib/ai/plan-schema.ts": [
+    "zod",
+    "./types"
+  ],
+  "lib/ai/planner-actions.ts": [
+    "next/navigation",
+    "next/cache",
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/chat/project-channels",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/slug",
+    "@/lib/projects/materialize",
+    "./openrouter",
+    "./plan-schema",
+    "./types",
+    "@/lib/workspace/queries"
+  ],
+  "lib/ai/prompts.ts": [
+    "@/lib/ai/plan-schema",
+    "@/lib/imports/schema",
+    "@/lib/print/extract-schema",
+    "@/lib/print/text-extract-schema"
+  ],
+  "lib/ai/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/ai/model-catalog"
+  ],
+  "lib/ai/retry.test.ts": [
+    "vitest",
+    "./retry"
+  ],
+  "lib/ai/retry.ts": [],
+  "lib/ai/types.ts": [],
+  "lib/ai/typesafe.test.ts": [
+    "vitest",
+    "@typesafe-ai/sdk",
+    "./typesafe"
+  ],
+  "lib/ai/typesafe.ts": [
+    "@typesafe-ai/sdk",
+    "@/lib/after-response",
+    "./usage"
+  ],
+  "lib/ai/usage-actions.ts": [
+    "next/cache",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/hosted/mode"
+  ],
+  "lib/ai/usage-costs.test.ts": [
+    "vitest",
+    "./usage-costs"
+  ],
+  "lib/ai/usage-costs.ts": [],
+  "lib/ai/usage-queries.ts": [
+    "drizzle-orm",
+    "@/lib/assistant/usage-math",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/assistant/budget-math",
+    "@/lib/hosted/mode",
+    "@/lib/ai/keys",
+    "@/lib/ai/amount-format",
+    "./usage-costs",
+    "./usage"
+  ],
+  "lib/ai/usage.ts": [
+    "drizzle-orm",
+    "@/lib/assistant/budget-math",
+    "@/lib/hosted/credits",
+    "@/lib/hosted/mode",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./usage-costs"
+  ],
+  "lib/app-hostname.ts": [],
+  "lib/assistant/actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/projects/queries",
+    "@/lib/print/queries",
+    "./agent",
+    "./budget",
+    "./context",
+    "./budget-math",
+    "./queries",
+    "./tools",
+    "./trace",
+    "./memory"
+  ],
+  "lib/assistant/agent-util.test.ts": [
+    "vitest",
+    "./agent-util",
+    "./types"
+  ],
+  "lib/assistant/agent-util.ts": [
+    "./types"
+  ],
+  "lib/assistant/agent.ts": [
+    "openai",
+    "drizzle-orm",
+    "uuidv7",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/ai/openrouter",
+    "@/lib/ai/usage",
+    "./types",
+    "./agent-util",
+    "./tools",
+    "./budget",
+    "@/lib/ai/amount-format",
+    "@/lib/hosted/mode",
+    "./context",
+    "./memory",
+    "./pending",
+    "./reflection",
+    "./prompt",
+    "@/lib/help/content",
+    "./routing-jev",
+    "./trace",
+    "./learning-signals"
+  ],
+  "lib/assistant/budget-math.test.ts": [
+    "vitest",
+    "./budget-math"
+  ],
+  "lib/assistant/budget-math.ts": [],
+  "lib/assistant/budget.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./budget-math"
+  ],
+  "lib/assistant/context.ts": [
+    "drizzle-orm",
+    "@/lib/ai/openrouter",
+    "@/lib/ai/usage",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./budget",
+    "./types"
+  ],
+  "lib/assistant/evals.ts": [
+    "drizzle-orm",
+    "@/lib/ai/openrouter",
+    "@/lib/ai/usage",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./reflection"
+  ],
+  "lib/assistant/launcher.ts": [],
+  "lib/assistant/learning-actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./evals",
+    "./reflection"
+  ],
+  "lib/assistant/learning-queries.ts": [
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/assistant/learning-signals.test.ts": [
+    "vitest",
+    "./learning-signals",
+    "./learning-signals"
+  ],
+  "lib/assistant/learning-signals.ts": [
+    "./types"
+  ],
+  "lib/assistant/memory.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./types"
+  ],
+  "lib/assistant/pending.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/assistant/project-queries.test.ts": [
+    "vitest",
+    "./project-queries"
+  ],
+  "lib/assistant/project-queries.ts": [
+    "drizzle-orm",
+    "drizzle-orm/pg-core",
+    "@/lib/db/read-only",
+    "@/lib/db/schema",
+    "@/lib/projects/print-funding"
+  ],
+  "lib/assistant/prompt.ts": [
+    "./types"
+  ],
+  "lib/assistant/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./budget-math",
+    "./tools",
+    "./usage-math"
+  ],
+  "lib/assistant/reflection.ts": [
+    "node:crypto",
+    "drizzle-orm",
+    "@/lib/ai/openrouter",
+    "@/lib/ai/usage",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./types",
+    "./trace",
+    "./learning-signals"
+  ],
+  "lib/assistant/routing-jev.test.ts": [
+    "vitest",
+    "./routing-jev"
+  ],
+  "lib/assistant/routing-jev.ts": [
+    "@typesafe-ai/sdk",
+    "@/lib/ai/typesafe",
+    "./routing",
+    "./tools"
+  ],
+  "lib/assistant/routing.test.ts": [
+    "vitest",
+    "./routing"
+  ],
+  "lib/assistant/routing.ts": [
+    "./tools"
+  ],
+  "lib/assistant/tools.test.ts": [
+    "vitest",
+    "./tools"
+  ],
+  "lib/assistant/tools.ts": [
+    "openai",
+    "drizzle-orm",
+    "zod",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/projects/queries",
+    "@/lib/assistant/project-queries",
+    "@/lib/tasks/queries",
+    "@/lib/team/queries",
+    "@/lib/agenda/queries",
+    "@/lib/print/history-queries",
+    "@/lib/help/content",
+    "@/lib/wiki/search-index",
+    "@/lib/tasks/actions",
+    "@/lib/tasks/recurring-actions",
+    "@/lib/projects/actions",
+    "@/lib/projects/create-from-blueprint",
+    "@/lib/projects/project-blueprint",
+    "@/lib/projects/member-actions",
+    "@/lib/chat/actions",
+    "@/lib/budget/queries",
+    "@/lib/budget/actions",
+    "@/lib/rights/queries",
+    "@/lib/rights/actions",
+    "@/lib/email/queries",
+    "@/lib/email/actions",
+    "@/lib/rights/holder-match",
+    "@/lib/gmail",
+    "@/lib/obligations/actions",
+    "@/lib/obligations/queries",
+    "./memory",
+    "./pending",
+    "./types",
+    "@/lib/ai/types",
+    "./agent-util",
+    "@/lib/workspace/queries",
+    "@/lib/email/operational-drafts",
+    "@/lib/email/body-segments",
+    "@/lib/budget/compute",
+    "@/lib/planning/actions",
+    "@/lib/planning/capacity",
+    "@/lib/schedule/plan",
+    "@/lib/proposals/actions"
+  ],
+  "lib/assistant/trace.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/assistant/types.ts": [],
+  "lib/assistant/usage-math.test.ts": [
+    "vitest",
+    "./usage-math"
+  ],
+  "lib/assistant/usage-math.ts": [
+    "./budget-math"
+  ],
+  "lib/auth/assurance-actions.ts": [
+    "node:crypto",
+    "next/navigation",
+    "drizzle-orm",
+    "zod",
+    "./assurance",
+    "./guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/email/security-code"
+  ],
+  "lib/auth/assurance.ts": [
+    "node:crypto",
+    "next/headers",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/tokens"
+  ],
+  "lib/auth/auth.ts": [
+    "better-auth",
+    "better-auth/adapters/drizzle",
+    "better-auth/api",
+    "better-auth/plugins",
+    "better-auth/next-js",
+    "@better-auth/passkey",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema/auth",
+    "@/lib/db/schema/app",
+    "@/lib/auth/assurance",
+    "@/lib/auth/provisioning",
+    "@/lib/hosted/entitlements",
+    "@/lib/email/magic-link",
+    "@/lib/email/password-reset",
+    "@/lib/auth/policy",
+    "@/lib/auth/password-reset"
+  ],
+  "lib/auth/client.ts": [
+    "better-auth/react",
+    "better-auth/client/plugins",
+    "@better-auth/passkey/client"
+  ],
+  "lib/auth/guards.ts": [
+    "next/headers",
+    "next/navigation",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./auth",
+    "./policy",
+    "./assurance"
+  ],
+  "lib/auth/password-reset.test.ts": [
+    "vitest",
+    "./password-reset"
+  ],
+  "lib/auth/password-reset.ts": [],
+  "lib/auth/policy.test.ts": [
+    "vitest",
+    "./policy"
+  ],
+  "lib/auth/policy.ts": [],
+  "lib/auth/provisioning.test.ts": [
+    "vitest",
+    "./provisioning"
+  ],
+  "lib/auth/provisioning.ts": [
+    "node:crypto"
+  ],
+  "lib/blockers/actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/blockers/engine",
+    "@/lib/cron/runs",
+    "@/lib/rights/task-reconciliation"
+  ],
+  "lib/blockers/compute.test.ts": [
+    "vitest",
+    "@/lib/blockers/compute"
+  ],
+  "lib/blockers/compute.ts": [
+    "@/lib/budget/compute"
+  ],
+  "lib/blockers/engine.ts": [
+    "drizzle-orm",
+    "@/lib/after-response",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/budget/compute",
+    "@/lib/notifications",
+    "@/lib/blockers/compute",
+    "@/lib/forecast/queries"
+  ],
+  "lib/blockers/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/blockers/snapshots.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/projects/queries"
+  ],
+  "lib/budget/actions.ts": [
+    "crypto",
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/blockers/engine",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/budget/royalty-recurring",
+    "@/lib/budget/compute",
+    "@/lib/budget/queries",
+    "@/lib/episodes/queries",
+    "@/lib/activity/log",
+    "@/lib/notifications",
+    "@/lib/format",
+    "@/lib/budget/mou-payments",
+    "@/lib/agreements/readiness",
+    "@/lib/budget/approval-service",
+    "@/lib/agreements/readiness-engine",
+    "@/lib/workspace/queries",
+    "@/lib/print/budget-sync",
+    "@/lib/budget/invoice-details",
+    "@/lib/budget/pdf",
+    "@/lib/r2",
+    "@/lib/r2",
+    "@/lib/gmail",
+    "@/lib/email/draft-store"
+  ],
+  "lib/budget/approval-actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/budget/approval-service",
+    "@/lib/budget/approval-queries",
+    "@/lib/notifications",
+    "@/lib/activity/log",
+    "@/lib/budget/approval-rules",
+    "@/lib/tasks/create",
+    "@/lib/tasks/due-date-notifications",
+    "@/lib/format"
+  ],
+  "lib/budget/approval-fingerprint.test.ts": [
+    "vitest",
+    "@/lib/budget/approval-fingerprint",
+    "@/lib/budget/queries"
+  ],
+  "lib/budget/approval-fingerprint.ts": [
+    "node:crypto",
+    "@/lib/budget/queries",
+    "@/lib/budget/compute"
+  ],
+  "lib/budget/approval-queries.ts": [
+    "drizzle-orm",
+    "drizzle-orm/pg-core",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/budget/approval-service"
+  ],
+  "lib/budget/approval-rules.test.ts": [
+    "vitest",
+    "@/lib/budget/approval-rules"
+  ],
+  "lib/budget/approval-rules.ts": [
+    "@/lib/db/schema/budget"
+  ],
+  "lib/budget/approval-service.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/budget/queries",
+    "@/lib/budget/approval-fingerprint",
+    "@/lib/notifications",
+    "@/lib/budget/approval-rules"
+  ],
+  "lib/budget/attention.test.ts": [
+    "vitest",
+    "@/lib/budget/attention"
+  ],
+  "lib/budget/attention.ts": [],
+  "lib/budget/compute.test.ts": [
+    "vitest",
+    "@/lib/budget/compute"
+  ],
+  "lib/budget/compute.ts": [],
+  "lib/budget/export.test.ts": [
+    "vitest",
+    "exceljs",
+    "@/lib/budget/export",
+    "@/lib/budget/queries"
+  ],
+  "lib/budget/export.ts": [
+    "exceljs",
+    "@/lib/budget/queries",
+    "@/lib/budget/compute"
+  ],
+  "lib/budget/invoice-description.test.ts": [
+    "vitest",
+    "./invoice-description"
+  ],
+  "lib/budget/invoice-description.ts": [],
+  "lib/budget/invoice-details.test.ts": [
+    "vitest",
+    "drizzle-orm",
+    "./invoice-details"
+  ],
+  "lib/budget/invoice-details.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./invoice-description"
+  ],
+  "lib/budget/invoice-preview.test.ts": [
+    "vitest",
+    "@/app/api/invoices/[invoiceId]/route",
+    "@/app/api/files/[id]/download/route"
+  ],
+  "lib/budget/invoice-regeneration.test.ts": [
+    "node:fs",
+    "typescript",
+    "vitest",
+    "zod"
+  ],
+  "lib/budget/mou-payments.test.ts": [
+    "vitest",
+    "./mou-payments"
+  ],
+  "lib/budget/mou-payments.ts": [],
+  "lib/budget/pdf.ts": [
+    "pdfkit",
+    "@/lib/workspace/queries"
+  ],
+  "lib/budget/presentation.test.ts": [
+    "vitest",
+    "./compute"
+  ],
+  "lib/budget/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/workspace/queries"
+  ],
+  "lib/budget/quotation-file.ts": [
+    "@/lib/budget/queries",
+    "@/lib/budget/export",
+    "@/lib/r2",
+    "@/lib/workspace/queries"
+  ],
+  "lib/budget/reconcile-math.test.ts": [
+    "vitest",
+    "./reconcile-math"
+  ],
+  "lib/budget/reconcile-math.ts": [],
+  "lib/budget/reconcile.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./reconcile-math"
+  ],
+  "lib/budget/royalty-recurring.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/tasks/create",
+    "@/lib/recurring/schedule"
+  ],
+  "lib/capacity.test.ts": [
+    "vitest",
+    "./capacity"
+  ],
+  "lib/capacity.ts": [],
+  "lib/capacity/actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/actions/result"
+  ],
+  "lib/capacity/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/capacity/roles",
+    "@/lib/planning/queries",
+    "@/lib/planning/groups"
+  ],
+  "lib/capacity/roles.test.ts": [
+    "vitest",
+    "./roles"
+  ],
+  "lib/capacity/roles.ts": [],
+  "lib/chat/access.ts": [
+    "drizzle-orm",
+    "@/lib/chat/channel-members",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/auth/policy"
+  ],
+  "lib/chat/actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "uuidv7",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/chat/access",
+    "@/lib/chat/channel-members",
+    "@/lib/chat/direct",
+    "@/lib/mentions/notify",
+    "@/lib/mentions/roster",
+    "@/lib/standup/engine",
+    "@/lib/notifications"
+  ],
+  "lib/chat/channel-members.test.ts": [
+    "vitest",
+    "./channel-members"
+  ],
+  "lib/chat/channel-members.ts": [],
+  "lib/chat/direct.test.ts": [
+    "vitest",
+    "./direct"
+  ],
+  "lib/chat/direct.ts": [],
+  "lib/chat/navigation.test.ts": [
+    "node:fs",
+    "node:path",
+    "vitest",
+    "@/lib/chat/navigation"
+  ],
+  "lib/chat/navigation.ts": [],
+  "lib/chat/project-channels.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/chat/queries.ts": [
+    "drizzle-orm",
+    "drizzle-orm/pg-core",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/chat/access",
+    "@/lib/chat/channel-members",
+    "@/lib/chat/sidebar-order",
+    "@/lib/files/queries",
+    "@/lib/projects/activity-time",
+    "@/lib/chat/project-channels"
+  ],
+  "lib/chat/sidebar-order.test.ts": [
+    "vitest",
+    "./sidebar-order"
+  ],
+  "lib/chat/sidebar-order.ts": [],
+  "lib/cron/auth.ts": [
+    "node:crypto"
+  ],
+  "lib/cron/jobs.ts": [
+    "drizzle-orm",
+    "next/server",
+    "@/lib/agreement-chat/indexing",
+    "@/lib/agreements/readiness-engine",
+    "@/lib/assistant/reflection",
+    "@/lib/blockers/engine",
+    "@/lib/blockers/snapshots",
+    "@/lib/budget/actions",
+    "@/lib/budget/royalty-recurring",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/agenda/queries",
+    "@/lib/agenda/bucket",
+    "@/lib/email/follow-ups",
+    "@/lib/email/signal-reflection",
+    "@/lib/email/task-reflection",
+    "@/lib/gmail",
+    "@/lib/notifications",
+    "@/lib/notifications/email-queue",
+    "@/lib/notifications/overdue",
+    "@/lib/projects/update-review",
+    "@/lib/r2",
+    "@/lib/rights/license-fee-recurring",
+    "@/lib/rights/renewal-recurring",
+    "@/lib/security/database-transport",
+    "@/lib/security/dependency-monitor",
+    "@/lib/standup/engine",
+    "@/lib/standup/insights",
+    "@/lib/tasks/recurring",
+    "@/lib/wiki/search-index",
+    "@/lib/workspace/queries",
+    "./runs",
+    "./schedule",
+    "./tick"
+  ],
+  "lib/cron/legacy-route.ts": [
+    "next/server",
+    "./auth",
+    "./jobs",
+    "./scheduled"
+  ],
+  "lib/cron/runs.ts": [
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/logger"
+  ],
+  "lib/cron/schedule.test.ts": [
+    "vitest",
+    "./schedule"
+  ],
+  "lib/cron/schedule.ts": [
+    "date-fns-tz"
+  ],
+  "lib/cron/scheduled.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/workspace/queries",
+    "./jobs",
+    "./schedule",
+    "./tick"
+  ],
+  "lib/cron/tick.test.ts": [
+    "vitest",
+    "./tick"
+  ],
+  "lib/cron/tick.ts": [
+    "./schedule"
+  ],
+  "lib/crypto/secret-box.test.ts": [
+    "vitest",
+    "./secret-box"
+  ],
+  "lib/crypto/secret-box.ts": [
+    "node:crypto"
+  ],
+  "lib/db/config.test.ts": [
+    "vitest",
+    "./config"
+  ],
+  "lib/db/config.ts": [],
+  "lib/db/index.ts": [
+    "drizzle-orm/postgres-js",
+    "postgres",
+    "./config",
+    "./schema"
+  ],
+  "lib/db/read-only.ts": [
+    "drizzle-orm/postgres-js",
+    "postgres",
+    "./config",
+    "./schema"
+  ],
+  "lib/db/schema/activity.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./projects"
+  ],
+  "lib/db/schema/agreement-chat.ts": [
+    "drizzle-orm",
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./files",
+    "./projects",
+    "./rights"
+  ],
+  "lib/db/schema/agreements.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./projects"
+  ],
+  "lib/db/schema/ai.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./projects",
+    "./enums",
+    "@/lib/ai/types"
+  ],
+  "lib/db/schema/app.ts": [
+    "drizzle-orm/pg-core",
+    "drizzle-orm",
+    "./auth"
+  ],
+  "lib/db/schema/assistant.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "@/lib/assistant/types"
+  ],
+  "lib/db/schema/auth.ts": [
+    "drizzle-orm/pg-core"
+  ],
+  "lib/db/schema/blockers.ts": [
+    "drizzle-orm/pg-core",
+    "./projects",
+    "./enums"
+  ],
+  "lib/db/schema/budget.ts": [
+    "drizzle-orm/pg-core",
+    "drizzle-orm",
+    "./projects",
+    "./files",
+    "./print",
+    "./tasks",
+    "./auth",
+    "./email",
+    "./partners",
+    "./enums",
+    "./agreements"
+  ],
+  "lib/db/schema/chat.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./projects",
+    "./enums"
+  ],
+  "lib/db/schema/cron.ts": [
+    "drizzle-orm/pg-core"
+  ],
+  "lib/db/schema/dictionary.ts": [
+    "drizzle-orm/pg-core",
+    "drizzle-orm",
+    "./auth"
+  ],
+  "lib/db/schema/donations.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./files",
+    "./budget",
+    "./projects",
+    "./agreements"
+  ],
+  "lib/db/schema/email-drafts.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./projects"
+  ],
+  "lib/db/schema/email.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./files",
+    "./projects",
+    "./project-updates",
+    "./tasks",
+    "./partners",
+    "./rights",
+    "./enums"
+  ],
+  "lib/db/schema/enums.ts": [
+    "drizzle-orm/pg-core"
+  ],
+  "lib/db/schema/files.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./enums"
+  ],
+  "lib/db/schema/hosted.ts": [
+    "drizzle-orm/pg-core"
+  ],
+  "lib/db/schema/imports.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./files",
+    "./projects",
+    "./budget",
+    "./enums",
+    "@/lib/imports/types"
+  ],
+  "lib/db/schema/index.ts": [
+    "./enums",
+    "./auth",
+    "./app",
+    "./templates",
+    "./projects",
+    "./agreements",
+    "./tasks",
+    "./files",
+    "./rights",
+    "./email",
+    "./email-drafts",
+    "./budget",
+    "./blockers",
+    "./snapshots",
+    "./activity",
+    "./cron",
+    "./chat",
+    "./ai",
+    "./imports",
+    "./notifications",
+    "./standup",
+    "./presence",
+    "./assistant",
+    "./recurring",
+    "./obligations",
+    "./dictionary",
+    "./time",
+    "./project-updates",
+    "./project-surface-notes",
+    "./print",
+    "./partners",
+    "./wiki",
+    "./agreement-chat",
+    "./donations",
+    "./hosted"
+  ],
+  "lib/db/schema/notifications.ts": [
+    "drizzle-orm/pg-core",
+    "./auth"
+  ],
+  "lib/db/schema/obligations.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./projects",
+    "./rights",
+    "./tasks",
+    "./recurring",
+    "./enums"
+  ],
+  "lib/db/schema/partners.ts": [
+    "drizzle-orm/pg-core",
+    "./auth"
+  ],
+  "lib/db/schema/presence.ts": [
+    "drizzle-orm/pg-core",
+    "./auth"
+  ],
+  "lib/db/schema/print.ts": [
+    "drizzle-orm/pg-core",
+    "drizzle-orm",
+    "./auth",
+    "./email",
+    "./files",
+    "./projects",
+    "@/lib/print/review-flags"
+  ],
+  "lib/db/schema/project-surface-notes.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./projects"
+  ],
+  "lib/db/schema/project-updates.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./projects",
+    "@/lib/projects/update-review-schema"
+  ],
+  "lib/db/schema/projects.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./app",
+    "./enums"
+  ],
+  "lib/db/schema/recurring.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./projects",
+    "./enums"
+  ],
+  "lib/db/schema/rights.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./projects",
+    "./tasks",
+    "./enums"
+  ],
+  "lib/db/schema/snapshots.ts": [
+    "drizzle-orm/pg-core",
+    "./projects"
+  ],
+  "lib/db/schema/standup.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./chat",
+    "./enums"
+  ],
+  "lib/db/schema/tasks.ts": [
+    "drizzle-orm/pg-core",
+    "drizzle-orm",
+    "./auth",
+    "./print",
+    "./projects",
+    "./enums"
+  ],
+  "lib/db/schema/templates.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./app"
+  ],
+  "lib/db/schema/time.ts": [
+    "drizzle-orm",
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./tasks"
+  ],
+  "lib/db/schema/wiki.ts": [
+    "drizzle-orm",
+    "drizzle-orm/pg-core",
+    "./auth"
+  ],
+  "lib/dev/agent-login.test.ts": [
+    "vitest",
+    "./agent-login"
+  ],
+  "lib/dev/agent-login.ts": [],
+  "lib/dialog-requests.test.ts": [
+    "vitest",
+    "node:fs",
+    "node:path",
+    "typescript",
+    "./dialog-requests"
+  ],
+  "lib/dialog-requests.ts": [],
+  "lib/dictionary/actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/dictionary/correct.test.ts": [
+    "vitest",
+    "./correct"
+  ],
+  "lib/dictionary/correct.ts": [],
+  "lib/dictionary/hint.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/dictionary/correct"
+  ],
+  "lib/donations/actions.ts": [
+    "node:crypto",
+    "drizzle-orm",
+    "next/cache",
+    "zod",
+    "@/lib/agreements/readiness",
+    "@/lib/agreements/readiness-engine",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/r2",
+    "@/lib/workspace/queries",
+    "./csv",
+    "./dedupe"
+  ],
+  "lib/donations/csv.test.ts": [
+    "vitest",
+    "./csv"
+  ],
+  "lib/donations/csv.ts": [
+    "node:crypto"
+  ],
+  "lib/donations/dedupe.test.ts": [
+    "vitest",
+    "./dedupe"
+  ],
+  "lib/donations/dedupe.ts": [],
+  "lib/donations/exact-match.test.ts": [
+    "vitest",
+    "./exact-match",
+    "./types"
+  ],
+  "lib/donations/exact-match.ts": [
+    "./types"
+  ],
+  "lib/donations/match.test.ts": [
+    "vitest",
+    "./match"
+  ],
+  "lib/donations/match.ts": [
+    "./csv",
+    "./types"
+  ],
+  "lib/donations/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/workspace/queries",
+    "./match",
+    "./types"
+  ],
+  "lib/donations/types.ts": [],
+  "lib/email/account-templates.test.ts": [
+    "vitest",
+    "./invite",
+    "./magic-link",
+    "./password-reset",
+    "./workflow-notification",
+    "./security-alert"
+  ],
+  "lib/email/actions.ts": [
+    "node:crypto",
+    "next/cache",
+    "next/server",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/chat/project-channels",
+    "@/lib/email/queries",
+    "@/lib/email/thread-link",
+    "@/lib/email/thread-projects",
+    "@/lib/email/rights-review",
+    "@/lib/email/project-signal",
+    "@/lib/gmail",
+    "@/lib/gmail/forwarded",
+    "@/lib/gmail/link",
+    "@/lib/print/email-link",
+    "@/lib/print/email-text-quote",
+    "@/lib/print/email-text-extract",
+    "@/lib/print/extract",
+    "@/lib/print/finance-attachment",
+    "@/lib/print/proof-attachment",
+    "@/lib/print/run-status",
+    "@/lib/print/payment-tasks",
+    "@/lib/print/quote-reconciliation",
+    "@/lib/slug",
+    "@/lib/notifications",
+    "@/lib/obligations/actions",
+    "@/lib/obligations/generate",
+    "@/lib/tasks/create",
+    "@/lib/rights/holder-match",
+    "@/lib/workspace/queries",
+    "@/lib/email/task-suggestions",
+    "@/lib/email/follow-up-policy",
+    "@/lib/email/draft-store",
+    "@/lib/email/counterparty-match",
+    "@/lib/email/follow-ups",
+    "@/lib/email/project-update-suggestions",
+    "@/lib/projects/status-actions"
+  ],
+  "lib/email/baseLayout.ts": [],
+  "lib/email/body-segments.test.ts": [
+    "vitest",
+    "./body-segments"
+  ],
+  "lib/email/body-segments.ts": [],
+  "lib/email/counterparty-match.test.ts": [
+    "vitest",
+    "./counterparty-match"
+  ],
+  "lib/email/counterparty-match.ts": [
+    "@/lib/email/project-signal-policy"
+  ],
+  "lib/email/draft-actions.ts": [
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/email/draft-types",
+    "@/lib/email/draft-store"
+  ],
+  "lib/email/draft-store.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./draft-types"
+  ],
+  "lib/email/draft-types.ts": [],
+  "lib/email/follow-up-actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/ai/openrouter",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/email/operational-drafts",
+    "@/lib/email/body-segments",
+    "@/lib/gmail",
+    "@/lib/workspace/queries",
+    "./follow-ups"
+  ],
+  "lib/email/follow-up-policy.test.ts": [
+    "vitest",
+    "./follow-up-policy"
+  ],
+  "lib/email/follow-up-policy.ts": [
+    "date-fns-tz",
+    "./body-segments"
+  ],
+  "lib/email/follow-ups.ts": [
+    "@/lib/auth/policy",
+    "drizzle-orm",
+    "@/lib/ai/openrouter",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/notifications",
+    "@/lib/workspace/queries",
+    "./follow-up-policy"
+  ],
+  "lib/email/inbound-signature.test.ts": [
+    "vitest",
+    "./inbound-signature"
+  ],
+  "lib/email/inbound-signature.ts": [
+    "node:crypto"
+  ],
+  "lib/email/invite.ts": [
+    "./baseLayout",
+    "./renderTemplate",
+    "./transport",
+    "./send",
+    "@/lib/workspace/queries"
+  ],
+  "lib/email/known-project-jev.ts": [],
+  "lib/email/known-project-match.test.ts": [
+    "vitest",
+    "./known-project-match"
+  ],
+  "lib/email/known-project-match.ts": [
+    "@typesafe-ai/sdk",
+    "@/lib/ai/openrouter",
+    "@/lib/ai/typesafe",
+    "@/lib/email/follow-up-policy",
+    "@/lib/email/known-project-jev"
+  ],
+  "lib/email/magic-link.ts": [
+    "./baseLayout",
+    "./renderTemplate",
+    "./transport",
+    "./send",
+    "@/lib/workspace/queries"
+  ],
+  "lib/email/message-preview.test.ts": [
+    "vitest",
+    "./message-preview"
+  ],
+  "lib/email/message-preview.ts": [
+    "@/lib/email/body-segments"
+  ],
+  "lib/email/notification-digest.test.ts": [
+    "vitest",
+    "./notification-digest"
+  ],
+  "lib/email/notification-digest.ts": [
+    "@/lib/app-hostname",
+    "./baseLayout",
+    "./transport",
+    "./send",
+    "./renderTemplate",
+    "@/lib/notifications/email-policy"
+  ],
+  "lib/email/operational-drafts.test.ts": [
+    "vitest",
+    "./operational-drafts"
+  ],
+  "lib/email/operational-drafts.ts": [],
+  "lib/email/password-reset.ts": [
+    "./baseLayout",
+    "./renderTemplate",
+    "./transport",
+    "./send",
+    "@/lib/workspace/queries"
+  ],
+  "lib/email/prescreen-policy.test.ts": [
+    "vitest",
+    "./known-project-jev",
+    "./rights-review-jev",
+    "./task-suggestions-jev"
+  ],
+  "lib/email/project-signal-jev.test.ts": [
+    "vitest",
+    "./project-signal-jev"
+  ],
+  "lib/email/project-signal-jev.ts": [],
+  "lib/email/project-signal-policy.test.ts": [
+    "vitest",
+    "./project-signal-policy"
+  ],
+  "lib/email/project-signal-policy.ts": [],
+  "lib/email/project-signal.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "@typesafe-ai/sdk",
+    "@/lib/ai/openrouter",
+    "@/lib/ai/typesafe",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/imports/match",
+    "@/lib/imports/queries",
+    "@/lib/email/signal-lessons-queries",
+    "@/lib/email/follow-up-policy",
+    "@/lib/email/counterparty-match",
+    "@/lib/notifications",
+    "@/lib/rights/holder-match",
+    "@/lib/workspace/queries",
+    "@/lib/email/project-signal-policy",
+    "@/lib/email/project-signal-jev"
+  ],
+  "lib/email/project-update-suggestion-policy.test.ts": [
+    "vitest",
+    "./project-update-suggestion-policy"
+  ],
+  "lib/email/project-update-suggestion-policy.ts": [
+    "zod"
+  ],
+  "lib/email/project-update-suggestions.ts": [
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/notifications",
+    "@/lib/email/project-update-suggestion-policy",
+    "@/lib/email/follow-up-policy"
+  ],
+  "lib/email/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/auth/guards",
+    "@/lib/db/schema",
+    "@/lib/gmail/message-id",
+    "@/lib/email/message-preview"
+  ],
+  "lib/email/renderTemplate.ts": [
+    "./transport"
+  ],
+  "lib/email/resend-webhook.test.ts": [
+    "vitest",
+    "./resend-webhook"
+  ],
+  "lib/email/resend-webhook.ts": [
+    "node:crypto"
+  ],
+  "lib/email/rights-review-actions.ts": [
+    "next/cache",
+    "next/server",
+    "drizzle-orm",
+    "zod",
+    "@/lib/agreement-chat/indexing",
+    "@/lib/activity/log",
+    "@/lib/auth/guards",
+    "@/lib/blockers/engine",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/rights/derive",
+    "@/lib/email/rights-review",
+    "@/lib/email/rights-review-selection",
+    "@/lib/rights/task-reconciliation"
+  ],
+  "lib/email/rights-review-jev.ts": [],
+  "lib/email/rights-review-selection.test.ts": [
+    "vitest",
+    "./rights-review-selection"
+  ],
+  "lib/email/rights-review-selection.ts": [],
+  "lib/email/rights-review.test.ts": [
+    "vitest",
+    "./rights-review"
+  ],
+  "lib/email/rights-review.ts": [
+    "@/lib/agreements/funding-intake",
+    "drizzle-orm",
+    "@typesafe-ai/sdk",
+    "@/lib/ai/openrouter",
+    "@/lib/ai/error-details",
+    "@/lib/ai/typesafe",
+    "@/lib/email/rights-review-jev",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/rights/holder-match",
+    "@/lib/r2",
+    "@/lib/auth/guards"
+  ],
+  "lib/email/security-alert.ts": [
+    "./baseLayout",
+    "./renderTemplate",
+    "./transport",
+    "./send",
+    "@/lib/workspace/queries"
+  ],
+  "lib/email/security-code.ts": [
+    "./baseLayout",
+    "./renderTemplate",
+    "./transport",
+    "./send",
+    "@/lib/workspace/queries"
+  ],
+  "lib/email/send.test.ts": [
+    "vitest",
+    "./send"
+  ],
+  "lib/email/send.ts": [
+    "node:crypto",
+    "nodemailer",
+    "./transport"
+  ],
+  "lib/email/signal-lessons-actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/email/signal-reflection"
+  ],
+  "lib/email/signal-lessons-queries.ts": [
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/email/signal-reflection.ts": [
+    "drizzle-orm",
+    "@/lib/ai/openrouter",
+    "@/lib/ai/usage",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/email/project-signal-policy"
+  ],
+  "lib/email/task-reflection.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./task-signal-policy"
+  ],
+  "lib/email/task-rule-queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/email/task-signal-policy.test.ts": [
+    "vitest",
+    "./task-signal-policy"
+  ],
+  "lib/email/task-signal-policy.ts": [
+    "node:crypto"
+  ],
+  "lib/email/task-suggestion-actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/activity/log",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/tokens",
+    "@/lib/tasks/create",
+    "./task-suggestions",
+    "./task-signal-policy"
+  ],
+  "lib/email/task-suggestions-jev.ts": [
+    "@typesafe-ai/sdk"
+  ],
+  "lib/email/task-suggestions.ts": [
+    "drizzle-orm",
+    "@/lib/ai/openrouter",
+    "@/lib/ai/typesafe",
+    "@/lib/email/task-suggestions-jev",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/notifications",
+    "@/lib/tasks/create",
+    "@/lib/workspace/queries",
+    "@/lib/email/follow-up-policy",
+    "@/lib/email/project-update-suggestion-policy",
+    "@/lib/gmail/forwarded",
+    "./task-signal-policy"
+  ],
+  "lib/email/thread-link.test.ts": [
+    "vitest",
+    "./thread-link"
+  ],
+  "lib/email/thread-link.ts": [],
+  "lib/email/thread-projects.ts": [
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/email/transport.ts": [
+    "@/lib/app-hostname",
+    "nodemailer"
+  ],
+  "lib/email/workflow-notification.ts": [
+    "./baseLayout",
+    "./transport",
+    "./send",
+    "./renderTemplate",
+    "@/lib/workspace/queries"
+  ],
+  "lib/episodes/actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/blockers/engine",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/projects/kinds",
+    "@/lib/budget/actions",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/tasks/create",
+    "@/lib/tasks/actions",
+    "@/lib/tasks/due-date-notifications",
+    "./workflow-service",
+    "./workflow"
+  ],
+  "lib/episodes/materialize.ts": [
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./workflow"
+  ],
+  "lib/episodes/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./workflow-service",
+    "./workflow"
+  ],
+  "lib/episodes/workflow-service.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/notifications",
+    "@/lib/tasks/create",
+    "@/lib/tasks/due-date-notifications",
+    "./workflow"
+  ],
+  "lib/episodes/workflow.test.ts": [
+    "vitest",
+    "./workflow"
+  ],
+  "lib/episodes/workflow.ts": [
+    "@/lib/projects/kinds"
+  ],
+  "lib/files/actions.ts": [
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/r2"
+  ],
+  "lib/files/crop-image.ts": [],
+  "lib/files/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/files/upload-client.ts": [
+    "sonner"
+  ],
+  "lib/flow.test.ts": [
+    "vitest",
+    "./flow"
+  ],
+  "lib/flow.ts": [],
+  "lib/forecast/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./velocity"
+  ],
+  "lib/forecast/velocity.test.ts": [
+    "vitest",
+    "./velocity"
+  ],
+  "lib/forecast/velocity.ts": [],
+  "lib/format.test.ts": [
+    "vitest",
+    "@/lib/format"
+  ],
+  "lib/format.ts": [],
+  "lib/gmail/config.ts": [],
+  "lib/gmail/forwarded.test.ts": [
+    "vitest",
+    "./forwarded"
+  ],
+  "lib/gmail/forwarded.ts": [],
+  "lib/gmail/imap.ts": [
+    "imapflow",
+    "./config"
+  ],
+  "lib/gmail/index.ts": [
+    "./config",
+    "./sync",
+    "./raw",
+    "./send"
+  ],
+  "lib/gmail/link.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/email/known-project-match"
+  ],
+  "lib/gmail/message-id.test.ts": [
+    "vitest",
+    "./message-id"
+  ],
+  "lib/gmail/message-id.ts": [
+    "node:crypto"
+  ],
+  "lib/gmail/normalize.test.ts": [
+    "vitest",
+    "mailparser",
+    "./normalize"
+  ],
+  "lib/gmail/normalize.ts": [
+    "mailparser",
+    "./types"
+  ],
+  "lib/gmail/raw.test.ts": [
+    "vitest",
+    "./raw"
+  ],
+  "lib/gmail/raw.ts": [
+    "node:crypto",
+    "mailparser",
+    "./message-id",
+    "./normalize",
+    "./types"
+  ],
+  "lib/gmail/send.ts": [
+    "node:crypto",
+    "nodemailer",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/email/send",
+    "./config",
+    "./sync",
+    "./message-id"
+  ],
+  "lib/gmail/sync.ts": [
+    "node:crypto",
+    "next/server",
+    "drizzle-orm",
+    "@/lib/after-response",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/r2",
+    "./config",
+    "./forwarded",
+    "./imap",
+    "./link",
+    "./raw",
+    "./types",
+    "@/lib/print/email-link",
+    "@/lib/print/email-text-quote",
+    "@/lib/print/email-text-extract",
+    "@/lib/email/thread-projects",
+    "@/lib/print/extract",
+    "@/lib/print/finance-attachment",
+    "@/lib/email/project-signal",
+    "@/lib/email/task-suggestions",
+    "@/lib/email/follow-ups",
+    "@/lib/email/rights-review",
+    "@/lib/email/follow-up-policy",
+    "@/lib/print/proof-attachment",
+    "@/lib/print/run-status",
+    "@/lib/email/project-update-suggestions"
+  ],
+  "lib/gmail/types.ts": [],
+  "lib/guidance/actions.ts": [
+    "drizzle-orm",
+    "@/lib/actions/result",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/guidance/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/guidance/state.test.ts": [
+    "vitest",
+    "@/lib/actions/optimistic-machine",
+    "./state"
+  ],
+  "lib/guidance/state.ts": [],
+  "lib/help/content.ts": [
+    "node:fs",
+    "node:path",
+    "./search",
+    "./search"
+  ],
+  "lib/help/search.test.ts": [
+    "vitest",
+    "./search"
+  ],
+  "lib/help/search.ts": [],
+  "lib/hosted/credits.test.ts": [
+    "vitest",
+    "./credits"
+  ],
+  "lib/hosted/credits.ts": [],
+  "lib/hosted/entitlement-order.test.ts": [
+    "vitest",
+    "./entitlement-order"
+  ],
+  "lib/hosted/entitlement-order.ts": [],
+  "lib/hosted/entitlements.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./credits",
+    "./entitlement-order",
+    "./mode",
+    "./seats"
+  ],
+  "lib/hosted/management-auth.test.ts": [
+    "vitest",
+    "./management-auth"
+  ],
+  "lib/hosted/management-auth.ts": [
+    "node:crypto"
+  ],
+  "lib/hosted/management-guard.ts": [
+    "next/server",
+    "./management-auth",
+    "./mode"
+  ],
+  "lib/hosted/mode.test.ts": [
+    "vitest",
+    "./mode"
+  ],
+  "lib/hosted/mode.ts": [],
+  "lib/hosted/seats.test.ts": [
+    "vitest",
+    "./seats"
+  ],
+  "lib/hosted/seats.ts": [],
+  "lib/imports/actions.ts": [
+    "next/navigation",
+    "next/server",
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/chat/project-channels",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./extraction",
+    "@/lib/budget/approval-service",
+    "@/lib/budget/queries",
+    "./schema",
+    "./types",
+    "@/lib/slug",
+    "@/lib/projects/kinds",
+    "@/lib/episodes/materialize",
+    "@/lib/episodes/workflow",
+    "./match",
+    "@/lib/rights/derive",
+    "@/lib/budget/compute",
+    "@/lib/blockers/engine",
+    "@/lib/obligations/generate",
+    "@/lib/activity/log",
+    "@/lib/imports/partner",
+    "@/lib/imports/payments",
+    "@/lib/imports/podcast-workflow",
+    "@/lib/agreements/readiness-engine",
+    "@/lib/rights/holder-match",
+    "@/lib/agreement-chat/indexing",
+    "@/lib/workspace/queries"
+  ],
+  "lib/imports/extraction.ts": [
+    "drizzle-orm",
+    "next/cache",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/r2",
+    "@/lib/ai/usage",
+    "@/lib/ai/openrouter",
+    "@/lib/ai/error-details",
+    "@/lib/workspace/queries",
+    "./fx",
+    "./schema",
+    "exceljs",
+    "mammoth"
+  ],
+  "lib/imports/fx.test.ts": [
+    "vitest",
+    "@/lib/imports/fx",
+    "@/lib/imports/schema"
+  ],
+  "lib/imports/fx.ts": [
+    "@/lib/imports/types"
+  ],
+  "lib/imports/match.test.ts": [
+    "vitest",
+    "./match"
+  ],
+  "lib/imports/match.ts": [],
+  "lib/imports/partner.test.ts": [
+    "vitest",
+    "@/lib/imports/partner",
+    "@/lib/imports/types"
+  ],
+  "lib/imports/partner.ts": [
+    "@/lib/imports/types"
+  ],
+  "lib/imports/payments.test.ts": [
+    "vitest",
+    "./payments",
+    "./schema"
+  ],
+  "lib/imports/payments.ts": [
+    "./types"
+  ],
+  "lib/imports/podcast-workflow.test.ts": [
+    "vitest",
+    "./podcast-workflow"
+  ],
+  "lib/imports/podcast-workflow.ts": [
+    "@/lib/episodes/workflow"
+  ],
+  "lib/imports/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/imports/schema"
+  ],
+  "lib/imports/schema.test.ts": [
+    "vitest",
+    "@/lib/imports/schema",
+    "@/lib/budget/compute"
+  ],
+  "lib/imports/schema.ts": [
+    "zod",
+    "@/lib/budget/compute",
+    "./types"
+  ],
+  "lib/imports/types.ts": [
+    "@/lib/budget/compute",
+    "@/lib/projects/kinds"
+  ],
+  "lib/logger.ts": [],
+  "lib/mentions/actions.ts": [
+    "@/lib/auth/guards",
+    "./roster"
+  ],
+  "lib/mentions/notify.ts": [
+    "@/lib/notifications",
+    "./parse"
+  ],
+  "lib/mentions/parse.test.ts": [
+    "vitest",
+    "./parse"
+  ],
+  "lib/mentions/parse.ts": [],
+  "lib/mentions/roster.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/notifications/actions.ts": [
+    "next/navigation",
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/notifications/push",
+    "@/lib/notifications/work-hours",
+    "@/lib/tokens",
+    "@/lib/actions/result",
+    "@/lib/notifications/email-policy",
+    "@/lib/notifications/email-queue"
+  ],
+  "lib/notifications/client-events.ts": [],
+  "lib/notifications/email-policy.test.ts": [
+    "vitest",
+    "./email-policy"
+  ],
+  "lib/notifications/email-policy.ts": [
+    "date-fns",
+    "date-fns-tz"
+  ],
+  "lib/notifications/email-queue.ts": [
+    "drizzle-orm",
+    "node:crypto",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/email/notification-digest",
+    "@/lib/tokens",
+    "./email-policy",
+    "./email-worker"
+  ],
+  "lib/notifications/email-worker.test.ts": [
+    "vitest",
+    "./email-worker"
+  ],
+  "lib/notifications/email-worker.ts": [
+    "@/lib/email/notification-digest",
+    "./email-policy"
+  ],
+  "lib/notifications/index.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/notifications/push",
+    "@/lib/notifications/email-queue",
+    "@/lib/logger",
+    "@/lib/after-response"
+  ],
+  "lib/notifications/overdue.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    ".",
+    "@/lib/workspace/queries",
+    "@/lib/agenda/queries",
+    "@/lib/tasks/due-date-copy"
+  ],
+  "lib/notifications/push-gate.test.ts": [
+    "vitest",
+    "@/lib/notifications/push-gate"
+  ],
+  "lib/notifications/push-gate.ts": [],
+  "lib/notifications/push.ts": [
+    "@/lib/app-hostname",
+    "web-push",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/logger",
+    "@/lib/presence/status",
+    "./queries",
+    "./push-gate"
+  ],
+  "lib/notifications/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/email/counterparty-match",
+    "./email-policy"
+  ],
+  "lib/notifications/work-hours.test.ts": [
+    "vitest",
+    "./push-gate",
+    "./work-hours"
+  ],
+  "lib/notifications/work-hours.ts": [],
+  "lib/obligations/actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/blockers/engine",
+    "@/lib/tasks/recurring-actions",
+    "./generate"
+  ],
+  "lib/obligations/generate.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/tasks/recurring-actions",
+    "@/lib/recurring/schedule"
+  ],
+  "lib/obligations/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/observability/sentry-scrub.test.ts": [
+    "vitest",
+    "./sentry-scrub"
+  ],
+  "lib/observability/sentry-scrub.ts": [],
+  "lib/onboarding/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/ops/readiness.test.ts": [
+    "vitest",
+    "./readiness"
+  ],
+  "lib/ops/readiness.ts": [],
+  "lib/ops/source-url.test.ts": [
+    "vitest",
+    "./source-url"
+  ],
+  "lib/ops/source-url.ts": [],
+  "lib/ops/version.ts": [
+    "node:fs",
+    "node:path",
+    "@/package.json"
+  ],
+  "lib/partners/actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/partners/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/planning/actions.ts": [
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/planning/capacity",
+    "@/lib/planning/queries",
+    "@/lib/planning/groups"
+  ],
+  "lib/planning/capacity.test.ts": [
+    "vitest",
+    "./capacity"
+  ],
+  "lib/planning/capacity.ts": [
+    "@/lib/projects/kinds"
+  ],
+  "lib/planning/groups.test.ts": [
+    "vitest",
+    "./groups"
+  ],
+  "lib/planning/groups.ts": [
+    "zod",
+    "@/lib/projects/kinds"
+  ],
+  "lib/planning/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/workspace/queries",
+    "@/lib/projects/kinds",
+    "@/lib/planning/capacity",
+    "@/lib/planning/groups"
+  ],
+  "lib/presence/actions.ts": [
+    "zod",
+    "@/lib/auth/guards",
+    "./queries"
+  ],
+  "lib/presence/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./status"
+  ],
+  "lib/presence/status.test.ts": [
+    "vitest",
+    "./status"
+  ],
+  "lib/presence/status.ts": [],
+  "lib/print/actions.ts": [
+    "@/lib/notifications",
+    "@/lib/print/payment-task-copy",
+    "@/lib/print/wire-payment-review",
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/ai/openrouter",
+    "@/lib/auth/guards",
+    "@/lib/blockers/engine",
+    "@/lib/budget/compute",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/gmail",
+    "@/lib/r2",
+    "@/lib/activity/log",
+    "@/lib/print/email-link",
+    "@/lib/print/estimate",
+    "@/lib/budget/queries",
+    "@/lib/budget/approval-service",
+    "@/lib/print/cross-check",
+    "@/lib/print/budget-sync",
+    "@/lib/print/run-status",
+    "@/lib/print/email-text-extract",
+    "@/lib/print/quote-reconciliation",
+    "@/lib/print/quote-run-specs",
+    "@/lib/print/payment-tasks",
+    "@/lib/print/extract",
+    "@/lib/print/queries",
+    "@/lib/workspace/queries",
+    "@/lib/email/operational-drafts",
+    "@/lib/format",
+    "@/lib/email/draft-store"
+  ],
+  "lib/print/budget-sync.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/print/estimate",
+    "@/lib/print/quote-economics",
+    "@/lib/budget/approval-service"
+  ],
+  "lib/print/cross-check.test.ts": [
+    "vitest",
+    "./cross-check",
+    "./parser"
+  ],
+  "lib/print/cross-check.ts": [
+    "@/lib/print/dates",
+    "@/lib/print/parser",
+    "@/lib/print/review-flags"
+  ],
+  "lib/print/dates.test.ts": [
+    "vitest",
+    "./dates"
+  ],
+  "lib/print/dates.ts": [],
+  "lib/print/email-link.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/print/parser",
+    "@/lib/email/thread-projects",
+    "@/lib/email/known-project-match"
+  ],
+  "lib/print/email-text-extract.ts": [
+    "drizzle-orm",
+    "@/lib/ai/openrouter",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/print/cross-check",
+    "@/lib/print/email-text-quote",
+    "@/lib/print/extract",
+    "@/lib/print/text-quote-reconcile",
+    "@/lib/print/extraction-jobs",
+    "@/lib/print/extract-schema",
+    "@/lib/print/parser",
+    "@/lib/print/quote-reconciliation",
+    "@/lib/print/review-flags",
+    "@/lib/print/text-extract-schema"
+  ],
+  "lib/print/email-text-quote.test.ts": [
+    "vitest",
+    "./email-text-quote"
+  ],
+  "lib/print/email-text-quote.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/email/follow-up-policy",
+    "@/lib/print/estimate",
+    "@/lib/print/parser",
+    "@/lib/print/queries"
+  ],
+  "lib/print/estimate.test.ts": [
+    "vitest",
+    "@/lib/print/estimate"
+  ],
+  "lib/print/estimate.ts": [],
+  "lib/print/extract-schema.test.ts": [
+    "vitest",
+    "./extract-schema"
+  ],
+  "lib/print/extract-schema.ts": [
+    "zod",
+    "@/lib/print/parser"
+  ],
+  "lib/print/extract.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "@/lib/ai/openrouter",
+    "@/lib/ai/retry",
+    "@/lib/ai/usage",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/r2",
+    "@/lib/print/extract-schema",
+    "@/lib/print/cross-check",
+    "@/lib/print/budget-sync",
+    "@/lib/print/extraction-jobs",
+    "@/lib/print/parser",
+    "@/lib/print/quote-reconciliation",
+    "@/lib/print/review-flags",
+    "mammoth"
+  ],
+  "lib/print/extraction-jobs.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/print/finance-attachment.test.ts": [
+    "vitest",
+    "./finance-attachment"
+  ],
+  "lib/print/finance-attachment.ts": [],
+  "lib/print/history-queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/print/parser.test.ts": [
+    "vitest",
+    "@/lib/print/parser"
+  ],
+  "lib/print/parser.ts": [
+    "@/lib/print/dates"
+  ],
+  "lib/print/payment-task-copy.test.ts": [
+    "vitest",
+    "./payment-task-copy"
+  ],
+  "lib/print/payment-task-copy.ts": [],
+  "lib/print/payment-tasks.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/notifications",
+    "@/lib/print/quote-reconciliation",
+    "@/lib/print/payment-task-copy",
+    "@/lib/tasks/create"
+  ],
+  "lib/print/proof-attachment.test.ts": [
+    "vitest",
+    "./proof-attachment"
+  ],
+  "lib/print/proof-attachment.ts": [],
+  "lib/print/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/budget/compute",
+    "@/lib/db/schema",
+    "@/lib/workspace/queries"
+  ],
+  "lib/print/quote-economics.test.ts": [
+    "vitest",
+    "@/lib/print/quote-economics"
+  ],
+  "lib/print/quote-economics.ts": [],
+  "lib/print/quote-reconciliation.test.ts": [
+    "vitest",
+    "@/lib/print/parser",
+    "@/lib/print/quote-reconciliation"
+  ],
+  "lib/print/quote-reconciliation.ts": [
+    "@/lib/print/parser"
+  ],
+  "lib/print/quote-run-specs.test.ts": [
+    "vitest",
+    "./quote-run-specs"
+  ],
+  "lib/print/quote-run-specs.ts": [
+    "@/lib/print/estimate"
+  ],
+  "lib/print/review-flags.ts": [],
+  "lib/print/run-status.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/print/text-extract-schema.ts": [
+    "@/lib/print/extract-schema"
+  ],
+  "lib/print/text-quote-reconcile.test.ts": [
+    "vitest",
+    "./parser",
+    "./text-quote-reconcile"
+  ],
+  "lib/print/text-quote-reconcile.ts": [
+    "@/lib/print/cross-check",
+    "@/lib/print/parser",
+    "@/lib/print/review-flags"
+  ],
+  "lib/print/wire-payment-review.test.ts": [
+    "vitest",
+    "./wire-payment-review"
+  ],
+  "lib/print/wire-payment-review.ts": [],
+  "lib/projects/actions.ts": [
+    "next/navigation",
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/activity/log",
+    "@/lib/blockers/engine",
+    "@/lib/budget/actions",
+    "@/lib/chat/project-channels",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/r2",
+    "@/lib/slug",
+    "./materialize",
+    "@/lib/agreements/readiness-engine",
+    "@/lib/workspace/queries",
+    "@/lib/episodes/materialize",
+    "@/lib/episodes/workflow",
+    "@/lib/episodes/workflow-service",
+    "@/lib/episodes/workflow",
+    "./kinds",
+    "./print-funding",
+    "./status"
+  ],
+  "lib/projects/activity-time.test.ts": [
+    "vitest",
+    "./activity-time"
+  ],
+  "lib/projects/activity-time.ts": [],
+  "lib/projects/book-format.test.ts": [
+    "vitest",
+    "./book-format"
+  ],
+  "lib/projects/book-format.ts": [
+    "./print-funding"
+  ],
+  "lib/projects/create-from-blueprint.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/budget/compute",
+    "@/lib/chat/project-channels",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/episodes/materialize",
+    "@/lib/episodes/workflow",
+    "@/lib/workspace/queries",
+    "@/lib/slug",
+    "./materialize",
+    "./project-blueprint"
+  ],
+  "lib/projects/dashboard-order.test.ts": [
+    "vitest",
+    "./dashboard-order"
+  ],
+  "lib/projects/dashboard-order.ts": [],
+  "lib/projects/deadline.test.ts": [
+    "vitest",
+    "./deadline"
+  ],
+  "lib/projects/deadline.ts": [],
+  "lib/projects/default-templates.test.ts": [
+    "vitest",
+    "./default-templates"
+  ],
+  "lib/projects/default-templates.ts": [],
+  "lib/projects/drive-actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/projects/funding-queries.ts": [
+    "drizzle-orm",
+    "react",
+    "@/lib/budget/compute",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./print-funding"
+  ],
+  "lib/projects/kinds.test.ts": [
+    "vitest",
+    "./kinds"
+  ],
+  "lib/projects/kinds.ts": [],
+  "lib/projects/materialize.ts": [
+    "date-fns",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/ai/types"
+  ],
+  "lib/projects/member-actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/projects/overdue.test.ts": [
+    "vitest",
+    "./overdue"
+  ],
+  "lib/projects/overdue.ts": [
+    "@/lib/format"
+  ],
+  "lib/projects/phase-actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/activity/log",
+    "@/lib/timeline/scale"
+  ],
+  "lib/projects/pipeline.ts": [
+    "date-fns",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/notifications",
+    "@/lib/tasks/due-date-notifications"
+  ],
+  "lib/projects/print-funding.test.ts": [
+    "vitest",
+    "./print-funding"
+  ],
+  "lib/projects/print-funding.ts": [],
+  "lib/projects/project-blueprint.test.ts": [
+    "vitest",
+    "./project-blueprint"
+  ],
+  "lib/projects/project-blueprint.ts": [
+    "zod",
+    "@/lib/budget/compute",
+    "./status"
+  ],
+  "lib/projects/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./print-funding",
+    "./funding-queries",
+    "./book-format",
+    "./activity-time",
+    "@/lib/db/schema"
+  ],
+  "lib/projects/status-actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/activity/log",
+    "@/lib/notifications",
+    "@/lib/mentions/notify",
+    "@/lib/mentions/roster",
+    "./status-queries"
+  ],
+  "lib/projects/status-queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./update-review-schema"
+  ],
+  "lib/projects/status.ts": [],
+  "lib/projects/surface-notes-actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/activity/log",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/mentions/notify",
+    "@/lib/mentions/roster",
+    "@/lib/projects/surface-notes-queries"
+  ],
+  "lib/projects/surface-notes-queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/projects/task-plan-actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/budget/queries",
+    "@/lib/r2",
+    "@/lib/ai/usage",
+    "@/lib/ai/openrouter",
+    "@/lib/ai/plan-schema",
+    "@/lib/ai/types",
+    "@/lib/projects/materialize",
+    "@/lib/blockers/engine",
+    "@/lib/activity/log",
+    "@/lib/workspace/queries",
+    "mammoth"
+  ],
+  "lib/projects/template-actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/activity/log",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/projects/title-editor-state.test.ts": [
+    "vitest",
+    "./title-editor-state"
+  ],
+  "lib/projects/title-editor-state.ts": [],
+  "lib/projects/update-review-schema.test.ts": [
+    "vitest",
+    "./update-review-schema"
+  ],
+  "lib/projects/update-review-schema.ts": [],
+  "lib/projects/update-review.ts": [
+    "drizzle-orm",
+    "@/lib/ai/openrouter",
+    "@/lib/ai/usage",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./update-review-schema"
+  ],
+  "lib/projects/visibility.test.ts": [
+    "vitest",
+    "./visibility"
+  ],
+  "lib/projects/visibility.ts": [],
+  "lib/proposals/actions.ts": [
+    "crypto",
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/format",
+    "@/lib/budget/queries",
+    "@/lib/budget/quotation-file",
+    "@/lib/budget/pdf",
+    "@/lib/budget/approval-fingerprint",
+    "@/lib/print/actions",
+    "@/lib/gmail",
+    "@/lib/r2",
+    "@/lib/activity/log",
+    "@/lib/budget/approval-service",
+    "@/lib/email/operational-drafts",
+    "@/lib/workspace/queries",
+    "@/lib/email/draft-store"
+  ],
+  "lib/proposals/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/push/client.ts": [],
+  "lib/push/setup-state.test.ts": [
+    "vitest",
+    "./setup-state"
+  ],
+  "lib/push/setup-state.ts": [],
+  "lib/pwa/pull-to-refresh.test.ts": [
+    "vitest",
+    "./pull-to-refresh"
+  ],
+  "lib/pwa/pull-to-refresh.ts": [],
+  "lib/r2/config.test.ts": [
+    "vitest",
+    "./config"
+  ],
+  "lib/r2/config.ts": [],
+  "lib/r2/index.test.ts": [
+    "vitest",
+    "./index"
+  ],
+  "lib/r2/index.ts": [
+    "@aws-sdk/client-s3",
+    "@aws-sdk/s3-request-presigner",
+    "@/lib/ai/usage",
+    "@/lib/r2/config"
+  ],
+  "lib/recurring/schedule.test.ts": [
+    "vitest",
+    "./schedule"
+  ],
+  "lib/recurring/schedule.ts": [],
+  "lib/reports/export.ts": [
+    "exceljs",
+    "drizzle-orm",
+    "drizzle-orm/pg-core",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/projects/queries",
+    "@/lib/forecast/queries"
+  ],
+  "lib/rights/actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/blockers/engine",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/notifications",
+    "@/lib/tasks/actions",
+    "@/lib/activity/log",
+    "@/lib/format",
+    "./license-fee-recurring",
+    "./derive",
+    "./holder-match"
+  ],
+  "lib/rights/derive.ts": [],
+  "lib/rights/holder-match.test.ts": [
+    "vitest",
+    "./holder-match"
+  ],
+  "lib/rights/holder-match.ts": [],
+  "lib/rights/license-fee-recurring.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/tasks/create"
+  ],
+  "lib/rights/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/rights/renewal-recurring.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/tasks/create"
+  ],
+  "lib/rights/task-reconciliation.test.ts": [
+    "vitest",
+    "./task-reconciliation"
+  ],
+  "lib/rights/task-reconciliation.ts": [
+    "drizzle-orm",
+    "@/lib/activity/log",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/schedule/actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/activity/log",
+    "@/lib/actions/result",
+    "@/lib/tasks/due-date-notifications",
+    "@/lib/tasks/create"
+  ],
+  "lib/schedule/plan.test.ts": [
+    "vitest",
+    "./plan",
+    "@/lib/planning/capacity"
+  ],
+  "lib/schedule/plan.ts": [
+    "@/lib/planning/capacity"
+  ],
+  "lib/schedule/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/security/actions.ts": [
+    "next/cache",
+    "@/lib/actions/result",
+    "@/lib/auth/assurance",
+    "@/lib/auth/guards",
+    "@/lib/security/dependency-monitor",
+    "@/lib/security/github-workflow"
+  ],
+  "lib/security/database-transport.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/security/dependency-monitor"
+  ],
+  "lib/security/dependency-monitor.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/email/security-alert",
+    "@/lib/logger",
+    "@/lib/notifications"
+  ],
+  "lib/security/github-workflow.test.ts": [
+    "vitest",
+    "./github-workflow"
+  ],
+  "lib/security/github-workflow.ts": [],
+  "lib/security/google-picker-csp.test.ts": [
+    "vitest",
+    "../../next.config"
+  ],
+  "lib/security/request-origin.test.ts": [
+    "vitest",
+    "./request-origin"
+  ],
+  "lib/security/request-origin.ts": [],
+  "lib/settings/guidance-actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/slug.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/standup/config-actions.ts": [
+    "next/navigation",
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./engine",
+    "./insights"
+  ],
+  "lib/standup/engine.ts": [
+    "drizzle-orm",
+    "date-fns-tz",
+    "uuidv7",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/notifications"
+  ],
+  "lib/standup/heuristic.test.ts": [
+    "vitest",
+    "@/lib/standup/heuristic"
+  ],
+  "lib/standup/heuristic.ts": [],
+  "lib/standup/insights.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/notifications",
+    "@/lib/ai/openrouter",
+    "@/lib/ai/keys",
+    "date-fns-tz",
+    "zod",
+    "@/lib/standup/heuristic"
+  ],
+  "lib/standup/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/standup/view-queries.ts": [
+    "drizzle-orm",
+    "date-fns-tz",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/tasks/actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/projects/pipeline",
+    "@/lib/notifications",
+    "@/lib/activity/log",
+    "@/lib/format",
+    "@/lib/episodes/workflow-service",
+    "./create",
+    "./time-service",
+    "./due-date-notifications",
+    "${row.title}"
+  ],
+  "lib/tasks/attention.test.ts": [
+    "vitest",
+    "./attention"
+  ],
+  "lib/tasks/attention.ts": [
+    "./queries"
+  ],
+  "lib/tasks/board-order.test.ts": [
+    "vitest",
+    "./board-order"
+  ],
+  "lib/tasks/board-order.ts": [],
+  "lib/tasks/comment-actions.ts": [
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/mentions/notify",
+    "@/lib/mentions/roster",
+    "./queries",
+    "./create"
+  ],
+  "lib/tasks/create.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/blockers/engine",
+    "@/lib/notifications",
+    "@/lib/activity/log",
+    "@/lib/format",
+    "@/lib/episodes/workflow"
+  ],
+  "lib/tasks/drive-actions.ts": [
+    "next/headers",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/auth/auth",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./create"
+  ],
+  "lib/tasks/drive-file-selection.test.ts": [
+    "vitest",
+    "./drive-file-selection"
+  ],
+  "lib/tasks/drive-file-selection.ts": [],
+  "lib/tasks/due-date-copy.ts": [
+    "@/lib/format"
+  ],
+  "lib/tasks/due-date-notifications.test.ts": [
+    "vitest",
+    "./due-date-copy"
+  ],
+  "lib/tasks/due-date-notifications.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/notifications",
+    "./due-date-copy"
+  ],
+  "lib/tasks/my-work.test.ts": [
+    "vitest",
+    "./my-work"
+  ],
+  "lib/tasks/my-work.ts": [
+    "date-fns-tz",
+    "@/lib/agenda/bucket"
+  ],
+  "lib/tasks/queries.ts": [
+    "drizzle-orm",
+    "drizzle-orm/pg-core",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/recurring/schedule",
+    "@/lib/format",
+    "./time-queries"
+  ],
+  "lib/tasks/recurring-actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/recurring/schedule",
+    "./create",
+    "./recurring",
+    "./due-date-notifications"
+  ],
+  "lib/tasks/recurring.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/recurring/schedule",
+    "./create"
+  ],
+  "lib/tasks/time-actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./create",
+    "./queries",
+    "./time-queries",
+    "./time-service"
+  ],
+  "lib/tasks/time-queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/tasks/time-service.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/team/actions.ts": [
+    "next/headers",
+    "next/navigation",
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/auth",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/email/invite",
+    "@/lib/hosted/entitlements",
+    "@/lib/notifications/email-queue",
+    "@/lib/r2",
+    "@/lib/tokens",
+    "@/lib/auth/provisioning",
+    "@/lib/users/avatar-data",
+    "./queries",
+    "@/lib/workspace/queries",
+    "@/lib/auth/policy"
+  ],
+  "lib/team/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/tokens",
+    "@/lib/db/schema"
+  ],
+  "lib/team/roles-actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/slug"
+  ],
+  "lib/time.test.ts": [
+    "vitest",
+    "./time"
+  ],
+  "lib/time.ts": [],
+  "lib/timeline/scale.test.ts": [
+    "vitest",
+    "./scale"
+  ],
+  "lib/timeline/scale.ts": [],
+  "lib/tokens.ts": [
+    "crypto"
+  ],
+  "lib/users/avatar-data.test.ts": [
+    "vitest",
+    "./avatar-data"
+  ],
+  "lib/users/avatar-data.ts": [],
+  "lib/users/avatar.test.ts": [
+    "vitest",
+    "./avatar"
+  ],
+  "lib/users/avatar.ts": [],
+  "lib/utils.ts": [
+    "clsx",
+    "tailwind-merge"
+  ],
+  "lib/wiki/actions.ts": [
+    "next/cache",
+    "next/server",
+    "drizzle-orm",
+    "zod",
+    "@/lib/actions/result",
+    "@/lib/activity/log",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/slug",
+    "@/lib/wiki/content",
+    "@/lib/wiki/search-chunks",
+    "@/lib/wiki/search-index"
+  ],
+  "lib/wiki/content.test.ts": [
+    "vitest",
+    "./content"
+  ],
+  "lib/wiki/content.ts": [
+    "zod",
+    "@/lib/db/schema/wiki"
+  ],
+  "lib/wiki/queries.ts": [
+    "drizzle-orm",
+    "@/lib/auth/policy",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/wiki/search-chunks.test.ts": [
+    "vitest",
+    "@/lib/db/schema/wiki",
+    "./search-chunks"
+  ],
+  "lib/wiki/search-chunks.ts": [
+    "@/lib/db/schema/wiki"
+  ],
+  "lib/wiki/search-index.ts": [
+    "drizzle-orm",
+    "@/lib/ai/openrouter",
+    "@/lib/assistant/budget",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./search-chunks"
+  ],
+  "lib/wiki/video-client.ts": [
+    "./video"
+  ],
+  "lib/wiki/video.test.ts": [
+    "vitest",
+    "./video"
+  ],
+  "lib/wiki/video.ts": [],
+  "lib/wiki/wiki-response-headers.test.ts": [
+    "vitest",
+    "../../next.config"
+  ],
+  "lib/workspace/actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/r2",
+    "@/lib/workspace/queries",
+    "@/lib/activity/log",
+    "@/lib/planning/groups"
+  ],
+  "lib/workspace/invoice-issuer.test.ts": [
+    "vitest",
+    "./queries"
+  ],
+  "lib/workspace/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "scripts/agent-browser-dev.mjs": [
+    "node:child_process",
+    "node:fs",
+    "node:process"
+  ],
+  "scripts/backfill-podcast-workflows.ts": [
+    "drizzle-orm",
+    "../lib/db",
+    "../lib/db/schema",
+    "../lib/episodes/workflow-service"
+  ],
+  "scripts/bootstrap-workspace.mjs": [
+    "postgres",
+    "../lib/projects/default-templates.json",
+    "user"
+  ],
+  "scripts/eval-assistant.ts": [
+    "openai",
+    "../lib/assistant/prompt",
+    "./eval/assistant-cases"
+  ],
+  "scripts/eval-jev-email-tasks.ts": [
+    "node:fs",
+    "node:os",
+    "node:path",
+    "@typesafe-ai/sdk",
+    "postgres",
+    "../lib/email/task-suggestions-jev"
+  ],
+  "scripts/eval-print-extraction.ts": [
+    "node:fs",
+    "node:path",
+    "node:url",
+    "openai",
+    "../lib/print/extract-schema",
+    "../lib/print/parser",
+    "../lib/print/text-extract-schema",
+    "../lib/ai/prompts",
+    "./eval/email-text-cases"
+  ],
+  "scripts/eval/assistant-cases.ts": [],
+  "scripts/eval/email-text-cases.ts": [],
+  "scripts/gen-icons.mjs": [
+    "sharp",
+    "png-to-ico",
+    "node:fs/promises"
+  ],
+  "scripts/generate-repo-map.mjs": [
+    "node:fs",
+    "node:path"
+  ],
+  "scripts/migrate.mjs": [
+    "drizzle-orm/postgres-js",
+    "drizzle-orm/postgres-js/migrator",
+    "postgres"
+  ],
+  "scripts/r2-cors.mjs": [
+    "@aws-sdk/client-s3"
+  ],
+  "scripts/seed-ligonier-podcast.ts": [
+    "drizzle-orm",
+    "drizzle-orm/postgres-js",
+    "postgres",
+    "../lib/db/schema"
+  ],
+  "scripts/seed-roles.mjs": [
+    "postgres"
+  ],
+  "scripts/seed.ts": [
+    "drizzle-orm",
+    "drizzle-orm/postgres-js",
+    "postgres",
+    "../lib/db/schema",
+    "../lib/projects/default-templates"
+  ]
+}
