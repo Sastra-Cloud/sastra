@@ -14,8 +14,9 @@ After deploying:
 2. Email: Railway blocks outbound SMTP on the Hobby plan, so set
    `RESEND_API_KEY` and `EMAIL_FROM` (a verified domain on Resend).
 3. Files: the template wires the Bucket's `S3_*` variables automatically.
-4. Set `INITIAL_ADMIN_EMAIL` and `INITIAL_ADMIN_TOKEN`, open `/login`, and create
-   the first admin.
+4. Set `ENABLE_INITIAL_ADMIN_BOOTSTRAP=true`, `INITIAL_ADMIN_EMAIL` and
+   `INITIAL_ADMIN_TOKEN`, open `/login`, and create the first admin. Then set the
+   flag back to `false`.
 5. The template includes a cron service that calls `/api/cron/tick` every
    minute. Keep it running.
 

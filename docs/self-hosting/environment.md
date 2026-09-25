@@ -43,6 +43,7 @@ Additional settings:
 | Variable | Required | Notes |
 |---|---|---|
 | `APP_ENCRYPTION_KEY` | ➖ | encrypts secrets stored in the database (the Settings ▸ AI key); falls back to `BETTER_AUTH_SECRET` |
+| `ENABLE_INITIAL_ADMIN_BOOTSTRAP` | ✅ (first run) | `true` shows **Create the first admin** on `/login` while no account exists; set it back to `false` after the first account is created |
 | `INITIAL_ADMIN_EMAIL` / `INITIAL_ADMIN_TOKEN` | ✅ (first run, production) | the only email allowed to create the first admin, and the one-time token typed on that screen; remove both after the first account exists |
 | `PORT` | ➖ | listening port, default `3000` |
 | `SASTRA_CLOUD_INSTANCE_ID` / `SASTRA_CLOUD_MANAGEMENT_SECRET` / `SASTRA_CLOUD_ACCOUNT_URL` | never for self-hosting | set only by the Sastra Cloud control plane; leave unset |

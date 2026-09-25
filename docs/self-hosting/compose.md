@@ -9,14 +9,16 @@ curl -fsSLO https://raw.githubusercontent.com/Sastra-Cloud/sastra/main/deploy/co
 curl -fsSL  https://raw.githubusercontent.com/Sastra-Cloud/sastra/main/deploy/compose/.env.example -o .env
 # (each GitHub release also attaches these two files as docker-compose.yml and compose.env.example)
 # edit .env: POSTGRES_PASSWORD, BETTER_AUTH_URL, BETTER_AUTH_SECRET, CRON_SECRET,
-#            APP_ENCRYPTION_KEY, email, storage, INITIAL_ADMIN_EMAIL/TOKEN
+#            APP_ENCRYPTION_KEY, email, storage, ENABLE_INITIAL_ADMIN_BOOTSTRAP=true
+#            plus INITIAL_ADMIN_EMAIL/TOKEN
 docker compose up -d
 docker compose logs -f migrate app
 ```
 
 Then open your URL: `/login` shows **Create the first admin**. Enter the email
 and token from `.env`, complete the workspace setup, and invite your team from
-**Settings ▸ Team**.
+**Settings ▸ Team**. Afterwards set `ENABLE_INITIAL_ADMIN_BOOTSTRAP=false` in
+`.env` and run `docker compose up -d` again so the screen cannot reappear.
 
 ## Files without an external bucket
 
