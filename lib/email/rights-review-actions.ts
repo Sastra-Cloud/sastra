@@ -12,8 +12,10 @@ import { recomputeProjectBlockers } from "@/lib/blockers/engine";
 import { db } from "@/lib/db";
 import {
   emailRightsReviews,
+  emailMessages,
   emailThreadProjects,
   fileAttachments,
+  files,
   licenseFeePayments,
   projects,
   rightsHolders,
@@ -24,6 +26,9 @@ import { deriveOverall, type RightsStep } from "@/lib/rights/derive";
 import { processEmailRightsReview } from "@/lib/email/rights-review";
 import { validatedAgreementProjectIds } from "@/lib/email/rights-review-selection";
 import { reconcileSatisfiedRightsTasks } from "@/lib/rights/task-reconciliation";
+import { recordDocumentCase } from "@/lib/document-learning/service";
+import { documentCueText } from "@/lib/document-learning/source";
+import { getObjectBuffer } from "@/lib/r2";
 
 const agreementSchema = z.object({
   kind: z.literal("signed_agreement"),
@@ -116,9 +121,77 @@ export async function retryEmailRightsReview(reviewId: string) {
   return {};
 }
 
+/** A manager can recover a document whose automatic classification was uncertain. */
+function manualProposal(kind: "signed_agreement" | "license_fee_receipt") {
+  return kind === "signed_agreement" ? {
+    kind, confidence: 0, reason: "Manager selected this workflow for manual review.",
+    agreement: { step: "license" as const, agreementType: "mou_plus_license" as const,
+      signedDate: null, holderName: null, holderId: null, territory: null,
+      commercialGranted: false, formats: { print: false, ebook: false, audio: false, video: false } },
+  } : {
+    kind, confidence: 0, reason: "Manager selected this workflow for manual review.",
+    payment: { amount: null, currency: null, paidDate: null, reference: null, suggestedPaymentId: null },
+  };
+}
+
+export async function setEmailRightsReviewKind(
+  reviewId: string,
+  kind: "signed_agreement" | "license_fee_receipt"
+) {
+  await requireRole("manager");
+  const proposal = manualProposal(kind);
+  const [row] = await db.update(emailRightsReviews)
+    .set({ kind, proposal, status: "ready", error: null, updatedAt: new Date() })
+    .where(and(eq(emailRightsReviews.id, reviewId), inArray(emailRightsReviews.status, ["failed", "ready", "dismissed"])))
+    .returning({ id: emailRightsReviews.id });
+  if (!row) return { error: "This review is no longer available." };
+  await refreshReview(reviewId);
+  return {};
+}
+
+/** Manually open a missed email attachment in the rights review flow. */
+export async function startManualEmailRightsReview(
+  threadId: string,
+  attachmentId: string,
+  kind: "signed_agreement" | "license_fee_receipt"
+) {
+  await requireRole("manager");
+  const [attachment] = await db.select({
+    messageId: emailMessages.id, fileId: files.id, r2Key: files.r2Key,
+    mimeType: files.mimeType, sizeBytes: files.sizeBytes,
+  }).from(fileAttachments)
+    .innerJoin(emailMessages, eq(emailMessages.id, fileAttachments.targetId))
+    .innerJoin(files, eq(files.id, fileAttachments.fileId))
+    .where(and(eq(fileAttachments.id, attachmentId), eq(fileAttachments.targetType, "email_message"),
+      eq(emailMessages.threadId, threadId), eq(files.status, "ready"))).limit(1);
+  if (!attachment || attachment.mimeType !== "application/pdf" || attachment.sizeBytes > 12 * 1024 * 1024) {
+    return { error: "Choose a saved PDF attachment under 12 MB." };
+  }
+  const [project] = await db.select({ projectId: emailThreadProjects.projectId })
+    .from(emailThreadProjects).where(eq(emailThreadProjects.threadId, threadId)).limit(1);
+  if (!project) return { error: "Link this email to a project before reviewing rights." };
+  const sourceText = await getObjectBuffer(attachment.r2Key)
+    .then((buffer) => documentCueText(buffer, attachment.mimeType)).catch(() => "");
+  const [existing] = await db.select({ id: emailRightsReviews.id, status: emailRightsReviews.status })
+    .from(emailRightsReviews).where(and(eq(emailRightsReviews.attachmentId, attachmentId),
+      eq(emailRightsReviews.projectId, project.projectId))).limit(1);
+  if (existing?.status === "approved") return { error: "This attachment was already approved." };
+  if (existing) {
+    await db.update(emailRightsReviews).set({ kind, proposal: manualProposal(kind), status: "ready",
+      sourceText, error: null, updatedAt: new Date() }).where(eq(emailRightsReviews.id, existing.id));
+  } else {
+    await db.insert(emailRightsReviews).values({ threadId, messageId: attachment.messageId,
+      projectId: project.projectId, attachmentId, fileId: attachment.fileId, kind,
+      proposal: manualProposal(kind), sourceText, status: "ready" });
+  }
+  revalidatePath(`/correspondence/${threadId}`);
+  return {};
+}
+
 export async function approveEmailRightsReview(
   reviewId: string,
-  input: z.input<typeof approvalSchema>
+  input: z.input<typeof approvalSchema>,
+  learnFromReview = true
 ) {
   const { user } = await requireRole("manager");
   const data = approvalSchema.parse(input);
@@ -425,6 +498,24 @@ export async function approveEmailRightsReview(
         .where(eq(emailRightsReviews.id, review.id));
     }
   });
+
+  if (learnFromReview) {
+    const [file] = await db.select({ originalName: files.originalName })
+      .from(files).where(eq(files.id, review.fileId)).limit(1);
+    const corrected = data.kind === "signed_agreement"
+      ? { kind: data.kind, step: data.step, agreementType: data.agreementType,
+          signedDate: data.signedDate, territory: data.territory,
+          commercialGranted: data.commercialGranted,
+          formats: { print: data.formatPrint, ebook: data.formatEbook,
+            audio: data.formatAudio, video: data.formatVideo } }
+      : { kind: data.kind, amount: data.amount, currency: data.currency, paidDate: data.paidDate };
+    await recordDocumentCase({
+      workflow: data.kind === "signed_agreement" ? "rights_agreement" : "rights_receipt",
+      source: "email_rights", sourceRef: review.id, sourceName: file?.originalName,
+      sourceText: review.sourceText, prediction: review.proposal as unknown as Record<string, unknown> | null,
+      corrected, createdBy: user.id,
+    }).catch((error) => console.error("Rights learning capture failed:", error));
+  }
 
   if (agreementAttachmentIds.length) {
     const attachmentIds = [...new Set(agreementAttachmentIds)];

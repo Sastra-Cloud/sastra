@@ -2,7 +2,7 @@
 title: "Correspondence (email intake)"
 category: "Communication"
 roles: [manager, admin]
-keywords: [search, pagination, next page, filters, subject, correspondence, email, inbox, gmail, webhook, resend, receiving email, original email file, thread, email history, newest email first, quoted history, forwarded history, recent correspondence, project email, project filter, expand message, reprocess message, reprocess thread, project status suggestion, email project update, post project update, publisher, rights, partner, printer, reply, triage, mailbox, waiting, external follow up, follow-up reminder, snooze, draft follow-up, multiple projects, review projects, link projects, many projects from one email, multi-project mou, shared agreement pdf, attach mou to several projects, video series, original video, translated video, production mode, grant reminder, funder deadline, grant report due date, reminder from email, grant obligation, final report due, recurring report, duplicate project, funder already funds, existing grant, link to existing grant, not a new project, dismiss reason, intake learning, learns from dismissals, negative rules, stop re-suggesting, approve lesson, forwarded email task, proof review task, reply to printer, meeting task, secretary, assistant, signed license, payment receipt, license fee, print proof, proof attachment, restore proof, reprocess proof, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice]
+keywords: [search, pagination, next page, filters, subject, correspondence, email, inbox, gmail, webhook, resend, receiving email, original email file, thread, email history, newest email first, quoted history, forwarded history, recent correspondence, project email, project filter, expand message, reprocess message, reprocess thread, review as document, missed attachment, manual rights review, uncertain classification, project status suggestion, email project update, post project update, publisher, rights, partner, printer, reply, triage, mailbox, waiting, external follow up, follow-up reminder, snooze, draft follow-up, multiple projects, review projects, link projects, many projects from one email, multi-project mou, shared agreement pdf, attach mou to several projects, video series, original video, translated video, production mode, grant reminder, funder deadline, grant report due date, reminder from email, grant obligation, final report due, recurring report, duplicate project, funder already funds, existing grant, link to existing grant, not a new project, dismiss reason, intake learning, learns from dismissals, negative rules, stop re-suggesting, approve lesson, forwarded email task, proof review task, reply to printer, meeting task, secretary, assistant, signed license, payment receipt, license fee, print proof, proof attachment, restore proof, reprocess proof, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice]
 order: 100
 summary: "Search project email by subject or linked project and review filtered pages of correspondence."
 ---
@@ -15,6 +15,15 @@ Triage status, project links, and assignees update immediately and roll back if
 saving fails. Reprocessing and sending replies show progress; replies require a
 final recipient confirmation and only show **sent** after the mailbox accepts
 them.
+
+For a PDF or image attachment that automatic screening missed, choose a
+workflow beside the attachment and select **Review as document**. A project
+document opens the regular import review; a signed rights agreement or license
+fee receipt opens a manual rights review after the thread is linked to a
+project. A print quote opens a suggested quote when the linked project has one
+print run; otherwise choose the intended run on its Print page. Uncertain rights
+classifications stay available for manual selection. These actions do not
+approve rights, record a payment, or accept a quote on their own.
 
 ## How email arrives
 

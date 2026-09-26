@@ -24,6 +24,27 @@ describe("assistant project blueprint tool", () => {
   });
 });
 
+describe("assistant chat pin tools", () => {
+  it("lists pins without approval and unpins only after approval", () => {
+    expect(getTool("list_pinned_messages")?.kind).toBe("read");
+    expect(isToolAllowed("member", "list_pinned_messages")).toBe(true);
+    expect(isWriteTool("unpin_chat_message")).toBe(true);
+    expect(isToolAllowed("member", "unpin_chat_message")).toBe(true);
+    expect(getTool("unpin_chat_message")?.parameters.required).toEqual([
+      "messageId",
+    ]);
+  });
+
+  it("is routed into pin conversations", () => {
+    const names = availableTools(
+      "member",
+      "What is pinned in the cover design channel? Unpin the old budget note."
+    ).map((tool) => (tool.type === "function" ? tool.function.name : ""));
+    expect(names).toContain("list_pinned_messages");
+    expect(names).toContain("unpin_chat_message");
+  });
+});
+
 describe("assistant current-project safeguards", () => {
   it("keeps current-project and correction tools available for short follow-ups", () => {
     const names = availableTools("manager", "yes").map((tool) =>

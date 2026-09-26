@@ -1,4 +1,4 @@
-import { jsonb, pgTable, text, timestamp, uuid, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, jsonb, pgTable, text, timestamp, uuid, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { user } from "./auth";
 import { files } from "./files";
@@ -36,10 +36,13 @@ export const documentImports = pgTable("document_imports", {
   sourceMessageId: uuid("source_message_id"),
   status: importStatus("status").notNull().default("uploaded"),
   extraction: jsonb("extraction").$type<ImportExtraction>(),
+  sourceText: text("source_text"),
+  learnFromReview: boolean("learn_from_review").notNull().default(true),
   reviewed: jsonb("reviewed").$type<ImportExtraction>(),
   committedProjectIds: uuid("committed_project_ids").array(),
   model: text("model"),
   error: text("error"),
+  errorKind: text("error_kind"),
   createdBy: text("created_by").references(() => user.id, {
     onDelete: "set null",
   }),

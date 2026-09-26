@@ -9,6 +9,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `app/(app)/settings/ai/page.tsx`
 - `app/(app)/settings/costs/page.tsx`
 - `app/(app)/settings/dictionary/page.tsx`
+- `app/(app)/settings/document-learning/page.tsx`
 - `app/(app)/settings/email/page.tsx`
 - `app/(app)/settings/layout.tsx`
 - `app/(app)/settings/notifications/page.tsx`
@@ -50,6 +51,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/settings/charts/usage-model-donut.tsx`
 - `components/settings/dependency-security-check-button.tsx`
 - `components/settings/dictionary-manager.tsx`
+- `components/settings/document-learning-manager.tsx`
 - `components/settings/email-learning-manager.tsx`
 - `components/settings/email-task-preferences.tsx`
 - `components/settings/field-errors.tsx`
@@ -94,6 +96,4 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/team/queries.ts`
 - `lib/team/roles-actions.ts`
 - `lib/users/avatar-data.test.ts`
-- `lib/users/avatar-data.ts`
-- `lib/users/avatar.test.ts`
-... 1 more
+... 3 more

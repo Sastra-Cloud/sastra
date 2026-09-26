@@ -16,6 +16,8 @@ import {
   projects,
 } from "@/lib/db/schema";
 import { presignGet } from "@/lib/r2";
+import { documentCueText } from "@/lib/document-learning/source";
+import { localDocumentGuidance } from "@/lib/document-learning/service";
 import {
   normalizePrintQuoteExtract,
   PRINT_QUOTE_JSON_SCHEMA,
@@ -160,6 +162,8 @@ export async function runPrintQuoteExtraction(input: {
   const res = await withTimeout(fetch(url), 30_000, "Downloading the invoice");
   if (!res.ok) throw new Error("Could not download the invoice from storage.");
   const buf = Buffer.from(await res.arrayBuffer());
+  const sourceText = await documentCueText(buf, file.mimeType);
+  const guidance = await localDocumentGuidance("print_quote", `${file.originalName}\n${sourceText}`);
 
   const mime = file.mimeType;
   let parts: DocPart[];
@@ -211,7 +215,7 @@ export async function runPrintQuoteExtraction(input: {
   // retry wrapper); no outer race needed here.
   const { data } = await aiStructuredFromDocument(
     "print_quote_extract",
-    PRINT_QUOTE_SYSTEM_PROMPT,
+    PRINT_QUOTE_SYSTEM_PROMPT + guidance,
     parts,
     { name: "print_quote_extraction", schema: PRINT_QUOTE_JSON_SCHEMA },
     { pdf, metering }

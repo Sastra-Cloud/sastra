@@ -19,6 +19,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/chat/chat-thread.tsx`
 - `components/chat/chat-workspace-shell.tsx`
 - `components/chat/create-channel-dialog.tsx`
+- `components/chat/message-pins.tsx`
 - `components/chat/new-direct-message-popover.tsx`
 - `components/chat/project-channel-tabs.test.tsx`
 - `components/chat/project-channel-tabs.tsx`
@@ -34,6 +35,11 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/chat/direct.ts`
 - `lib/chat/navigation.test.ts`
 - `lib/chat/navigation.ts`
+- `lib/chat/pin-actions.test.ts`
+- `lib/chat/pin-actions.ts`
+- `lib/chat/pin-state.test.ts`
+- `lib/chat/pin-state.ts`
+- `lib/chat/pins.ts`
 - `lib/chat/project-channels.ts`
 - `lib/chat/queries.ts`
 - `lib/chat/sidebar-order.test.ts`

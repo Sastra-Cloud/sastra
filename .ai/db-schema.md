@@ -104,6 +104,11 @@ Table and enum exports parsed from `lib/db/schema/`.
 
 - `dictionaryTerms` (pgTable)
 
+## `lib/db/schema/document-learning.ts`
+
+- `documentLearningCases` (pgTable)
+- `sharedDocumentLibrary` (pgTable)
+
 ## `lib/db/schema/donations.ts`
 
 - `donationAllocations` (pgTable)

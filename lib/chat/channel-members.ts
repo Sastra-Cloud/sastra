@@ -9,8 +9,14 @@ export type ChannelMembershipChange =
   | { type: "add"; member: ChannelMember }
   | { type: "remove"; member: ChannelMember };
 
+/**
+ * Channel kinds only their members can open (the rest are workspace-wide).
+ * A standup conversation's only member is the person answering it.
+ */
+export const MEMBER_SCOPED_CHANNEL_KINDS = ["direct", "custom", "standup"] as const;
+
 export function isMemberScopedChannel(kind: string) {
-  return kind === "direct" || kind === "custom";
+  return (MEMBER_SCOPED_CHANNEL_KINDS as readonly string[]).includes(kind);
 }
 
 export function updateChannelMembers(

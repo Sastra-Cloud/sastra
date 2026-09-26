@@ -981,6 +981,27 @@
       "when": 1790399413786,
       "tag": "0139_hosted_storage_limit",
       "breakpoints": true
+    },
+    {
+      "idx": 140,
+      "version": "7",
+      "when": 1790437745579,
+      "tag": "0140_chat_message_pins",
+      "breakpoints": true
+    },
+    {
+      "idx": 141,
+      "version": "7",
+      "when": 1790439841939,
+      "tag": "0141_standup_channel_members",
+      "breakpoints": true
+    },
+    {
+      "idx": 142,
+      "version": "7",
+      "when": 1790444895071,
+      "tag": "0142_yummy_blur",
+      "breakpoints": true
     }
   ]
 }

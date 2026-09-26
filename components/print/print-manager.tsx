@@ -1878,7 +1878,7 @@ export function PrintManager({
                   setRuns((current) => current.filter((item) => item.id !== run.id));
                   runAction(() => deletePrintRun(run.id), () => setRuns(previous));
                 }}
-                onAcceptQuote={(id) => {
+                onAcceptQuote={(id, learnFromReview) => {
                   const previousQuotes = quotes;
                   const previousRuns = runs;
                   const previousSettingsDraft = settingsDraft;
@@ -1951,7 +1951,7 @@ export function PrintManager({
                   }
                   runAction(
                     async () => {
-                      const result = await acceptPrintQuote(id);
+                      const result = await acceptPrintQuote(id, learnFromReview);
                       if (!result?.error && isFinalPaymentDocument) {
                         toast.success(
                           targetPayment
@@ -2322,7 +2322,7 @@ function RunPanel({
   onDraftRfq: () => void;
   onUpdate: (fields: Record<string, unknown>) => void;
   onDelete: () => void;
-  onAcceptQuote: (id: string) => void;
+  onAcceptQuote: (id: string, learnFromReview: boolean) => void;
   onRejectQuote: (id: string) => void;
   onReopenQuote: (id: string) => void;
   onEditQuote: (id: string, fields: Record<string, unknown>) => void;
@@ -2342,6 +2342,7 @@ function RunPanel({
   const [qtyDraft, setQtyDraft] = useState("");
   const [showOtherQuotes, setShowOtherQuotes] = useState(false);
   const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
+  const [quoteLearnOptOut, setQuoteLearnOptOut] = useState<Set<string>>(() => new Set());
   const [quoteEdit, setQuoteEdit] = useState({
     quantityCps: "",
     unitPrice: "",
@@ -3115,11 +3116,18 @@ function RunPanel({
                             </Button>
                           ) : (
                             <>
+                              <label className="col-span-2 flex min-h-9 items-center gap-2 text-xs sm:mr-2">
+                                <Checkbox checked={!quoteLearnOptOut.has(quote.id)} onCheckedChange={(value) => setQuoteLearnOptOut((current) => {
+                                  const next = new Set(current);
+                                  if (value === true) next.delete(quote.id); else next.add(quote.id);
+                                  return next;
+                                })} /> Use to improve future intake
+                              </label>
                               <Button
                                 variant="outline"
                                 size="xs"
                                 className="col-span-2 min-h-11 justify-center sm:col-span-1 sm:min-h-0"
-                                onClick={() => onAcceptQuote(quote.id)}
+                                onClick={() => onAcceptQuote(quote.id, !quoteLearnOptOut.has(quote.id))}
                                 disabled={pending}
                               >
                                 <CheckCircle2 className="size-3.5" />

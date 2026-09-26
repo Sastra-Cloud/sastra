@@ -126,6 +126,8 @@ export default async function ImportReviewPage({
           fileName={imp.fileName}
           status={imp.status}
           error={imp.error}
+          errorKind={imp.errorKind}
+          learnFromReview={imp.learnFromReview}
           initial={imp.reviewed ?? imp.extraction ?? null}
           committedProjectIds={imp.committedProjectIds ?? []}
           target={target}

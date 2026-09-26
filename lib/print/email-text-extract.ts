@@ -3,6 +3,7 @@ import "server-only";
 import { eq } from "drizzle-orm";
 
 import { aiStructured } from "@/lib/ai/openrouter";
+import { localDocumentGuidance } from "@/lib/document-learning/service";
 import { db } from "@/lib/db";
 import { printRuns } from "@/lib/db/schema";
 import { currencyStatedIn, selfCheckFlags } from "@/lib/print/cross-check";
@@ -44,10 +45,11 @@ async function aiExtractTextQuotes(
   bodyText: string,
   meta: { projectId: string; runId: string; actorUserId: string | null }
 ): Promise<ParsedPrinterQuote[]> {
+  const guidance = await localDocumentGuidance("print_quote", bodyText);
   const raw = await aiStructured(
     "print_text_quote_extract",
     [
-      { role: "system", content: PRINT_TEXT_QUOTE_SYSTEM_PROMPT },
+      { role: "system", content: PRINT_TEXT_QUOTE_SYSTEM_PROMPT + guidance },
       { role: "user", content: bodyText.slice(0, 20_000) },
     ],
     { name: "print_text_quotes", schema: PRINT_TEXT_QUOTE_JSON_SCHEMA },

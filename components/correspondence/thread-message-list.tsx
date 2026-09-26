@@ -10,6 +10,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { MessageReprocessButton } from "@/components/correspondence/message-reprocess-button";
+import { ReviewEmailAttachmentButton } from "@/components/correspondence/review-email-attachment-button";
 import { formatBytes, timeAgo } from "@/lib/format";
 import type { ThreadMessage } from "@/lib/email/queries";
 import { segmentEmailBody } from "@/lib/email/body-segments";
@@ -136,8 +137,7 @@ export function ThreadMessageList({
               {m.attachments.length ? (
                 <div className="flex flex-wrap gap-2 border-t pt-3">
                   {m.attachments.map((attachment) => (
-                    <Link
-                      key={attachment.id}
+                    <div key={attachment.id} className="flex min-w-0 flex-wrap items-center gap-2"><Link
                       href={`/api/files/${attachment.fileId}/download`}
                       className="inline-flex min-h-11 max-w-full items-center gap-2 rounded-md border bg-background px-3 text-xs font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
@@ -150,6 +150,8 @@ export function ThreadMessageList({
                       </span>
                       <Download className="size-3.5 shrink-0 text-muted-foreground" />
                     </Link>
+                    {attachment.mimeType === "application/pdf" || attachment.mimeType.startsWith("image/") ? <ReviewEmailAttachmentButton threadId={threadId} attachmentId={attachment.id} /> : null}
+                    </div>
                   ))}
                 </div>
               ) : null}

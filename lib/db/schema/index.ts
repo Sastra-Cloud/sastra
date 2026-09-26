@@ -17,6 +17,7 @@ export * from "./cron";
 export * from "./chat";
 export * from "./ai";
 export * from "./imports";
+export * from "./document-learning";
 export * from "./notifications";
 export * from "./standup";
 export * from "./presence";

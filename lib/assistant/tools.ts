@@ -44,6 +44,10 @@ import {
 } from "@/lib/projects/project-blueprint";
 import { addProjectMember } from "@/lib/projects/member-actions";
 import { postMessage } from "@/lib/chat/actions";
+import { canAccessChannel } from "@/lib/chat/access";
+import { unpinMessage } from "@/lib/chat/pin-actions";
+import { pinnedMessagePreview } from "@/lib/chat/pin-state";
+import { listAccessiblePins, type AccessiblePin } from "@/lib/chat/pins";
 import {
   listRoyaltyPayments,
 } from "@/lib/budget/queries";
@@ -396,6 +400,38 @@ async function resolveHolderId(name: string): Promise<string | null> {
 async function projectIdForSlug(slug: string): Promise<string | null> {
   const data = await getProjectBySlug(slug);
   return data?.project.id ?? null;
+}
+
+const uuidArg = z.string().uuid();
+
+function pinForModel(pin: AccessiblePin) {
+  return {
+    messageId: pin.messageId,
+    channelId: pin.channelId,
+    conversation: pin.conversation,
+    author: pin.authorName ?? "Unknown",
+    sentAt: pin.sentAt,
+    text: pinnedMessagePreview(pin),
+    attachments: pin.attachments.map((item) =>
+      item.kind === "voice" ? "Voice message" : item.name
+    ),
+    pinnedBy: pin.pinnedByName,
+    pinnedAt: pin.pinnedAt,
+  };
+}
+
+/** The pin on one message, only if the current user can read its conversation. */
+async function readablePin(
+  userId: string,
+  messageId: unknown
+): Promise<AccessiblePin | null> {
+  const parsed = uuidArg.safeParse(messageId);
+  if (!parsed.success) return null;
+  const [pin] = await listAccessiblePins(userId, {
+    messageId: parsed.data,
+    limit: 1,
+  });
+  return pin ?? null;
 }
 
 // ── registry ──────────────────────────────────────────────────────────────────
@@ -1244,6 +1280,82 @@ const TOOLS: ToolDef[] = [
     run: async (_ctx, args) => {
       await postMessage({ channelId: String(args.channelId), content: String(args.content) });
       return "Message posted.";
+    },
+  },
+  {
+    name: "list_pinned_messages",
+    description:
+      "List pinned chat messages, newest pin first, from conversations the current user can read (workspace and project channels, plus private channels and direct messages they belong to). Pass channelId for one conversation, or projectSlug for one project's channels; omit both for recent pins everywhere. Each pin returns messageId, channelId, conversation, author, text, pinnedBy, and pinnedAt. Use messageId with unpin_chat_message.",
+    kind: "read",
+    minRole: "member",
+    parameters: {
+      type: "object",
+      properties: {
+        channelId: {
+          type: "string",
+          description: "Only this conversation (chat channel id)",
+        },
+        projectSlug: {
+          type: "string",
+          description: "Only this project's chat channels",
+        },
+      },
+    },
+    run: async (ctx, args) => {
+      const channelId = optionalString(args.channelId);
+      if (channelId) {
+        const readable =
+          uuidArg.safeParse(channelId).success &&
+          (await canAccessChannel(channelId, ctx.userId));
+        if (!readable) return "No conversation with that id that you can read.";
+      }
+      const projectSlug = optionalString(args.projectSlug);
+      const projectId = projectSlug
+        ? await projectIdForSlug(projectSlug)
+        : undefined;
+      if (projectSlug && !projectId) return "No project with that slug.";
+      const pins = await listAccessiblePins(ctx.userId, {
+        channelId,
+        projectId: projectId ?? undefined,
+        limit: 30,
+      });
+      if (!pins.length) return "No pinned messages.";
+      return JSON.stringify(pins.map(pinForModel));
+    },
+  },
+  {
+    name: "unpin_chat_message",
+    description:
+      "Unpin a chat message for everyone in its conversation, after the user approves. Get messageId from list_pinned_messages. Anyone who can read the conversation may unpin. Returns the unpinned messageId.",
+    kind: "write",
+    minRole: "member",
+    parameters: {
+      type: "object",
+      properties: { messageId: { type: "string" } },
+      required: ["messageId"],
+    },
+    preview: async (ctx, args) => {
+      const pin = await readablePin(ctx.userId, args.messageId);
+      if (!pin) return "Unpin a chat message (it is not pinned or you cannot see it)";
+      return `Unpin ${pin.authorName ?? "Unknown"}'s message “${pinnedMessagePreview(
+        pin
+      ).slice(0, 120)}” in ${pin.conversation}`;
+    },
+    run: async (ctx, args) => {
+      const pin = await readablePin(ctx.userId, args.messageId);
+      if (!pin) {
+        throw new Error(
+          "That message is not pinned in a conversation you can read."
+        );
+      }
+      const result = await unpinMessage(pin.messageId);
+      if (!result.ok) throw new Error(result.error.message);
+      return JSON.stringify({
+        status: "unpinned",
+        messageId: pin.messageId,
+        channelId: pin.channelId,
+        conversation: pin.conversation,
+      });
     },
   },
   {
@@ -2484,11 +2596,17 @@ export function availableTools(
     if (/\b(project|member|role|channel|chat|message)\b/.test(text)) {
       [
         "post_chat_message",
+        "list_pinned_messages",
         "create_project",
         "create_project_with_budget",
         "add_project_member",
         "list_project_roles",
       ].forEach((name) => core.add(name));
+    }
+    if (/\b(pins?|pinned|unpin|unpinned)\b/.test(text)) {
+      ["list_pinned_messages", "unpin_chat_message"].forEach((name) =>
+        core.add(name)
+      );
     }
     if (/\b(recurring|repeat|weekly|monthly|quarterly|annual|schedule)\b/.test(text)) {
       ["list_recurring_tasks", "create_recurring_task"].forEach((name) => core.add(name));

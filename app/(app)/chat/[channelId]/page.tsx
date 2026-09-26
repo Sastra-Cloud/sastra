@@ -12,6 +12,7 @@ import {
   listDirectMessageCandidates,
   listProjectChannels,
 } from "@/lib/chat/queries";
+import { listChannelPins } from "@/lib/chat/pins";
 import {
   listAllMentionTargets,
   listMentionTargetsByIds,
@@ -19,6 +20,10 @@ import {
 } from "@/lib/mentions/roster";
 import { ChannelMembersSheet } from "@/components/chat/channel-members-sheet";
 import { ChatThread } from "@/components/chat/chat-thread";
+import {
+  MessagePinsProvider,
+  PinnedMessagesButton,
+} from "@/components/chat/message-pins";
 import { ProjectChannelTabs } from "@/components/chat/project-channel-tabs";
 import { ConversationLoadingSkeleton } from "@/components/page-skeleton";
 import { avatarSrc } from "@/lib/users/avatar";
@@ -40,11 +45,12 @@ export default async function ChatChannelPage({
   const isProject = channel.kind === "project";
   const isDirect = channel.kind === "direct";
   const isCustom = channel.kind === "custom";
-  const [projectChannels, directCandidates] = await Promise.all([
+  const [projectChannels, directCandidates, pins] = await Promise.all([
     isProject && channel.projectId
       ? listProjectChannels(channel.projectId, user.id)
       : Promise.resolve([]),
     isCustom ? listDirectMessageCandidates(user.id) : Promise.resolve([]),
+    listChannelPins(channel.id, user.id),
   ]);
 
   const Icon = isProject ? FolderKanban : isDirect ? null : Hash;
@@ -66,120 +72,128 @@ export default async function ChatChannelPage({
         : "Workspace channel";
 
   return (
-    <div className="flex h-full min-w-0 min-h-0 flex-col gap-2 lg:gap-3">
-      <div className="surface-shadow flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-xl border bg-card p-2 lg:gap-3 lg:p-4">
-        <div className="flex min-w-0 flex-1 items-center gap-2 lg:block">
-          <div className="flex min-w-0 items-center lg:hidden">
-            <Link
-              href="/chat"
-              className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <ArrowLeft className="size-5" />
-              <span className="sr-only">Back to chats</span>
-            </Link>
-          </div>
-          <div className="min-w-0">
-            <nav
-              aria-label="Chat breadcrumb"
-              className="mb-2 hidden min-w-0 items-center gap-1 text-xs font-medium text-muted-foreground lg:flex"
-            >
-              <Link href="/chat" className="hover:text-foreground">
-                Chat
+    <MessagePinsProvider
+      key={channel.id}
+      currentUserId={user.id}
+      currentUserName={user.name}
+      initialPins={pins}
+    >
+      <div className="flex h-full min-w-0 min-h-0 flex-col gap-2 lg:gap-3">
+        <div className="surface-shadow flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-xl border bg-card p-2 lg:gap-3 lg:p-4">
+          <div className="flex min-w-0 flex-1 items-center gap-2 lg:block">
+            <div className="flex min-w-0 items-center lg:hidden">
+              <Link
+                href="/chat"
+                className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <ArrowLeft className="size-5" />
+                <span className="sr-only">Back to chats</span>
               </Link>
-              <ChevronRight className="size-3.5" />
-              <span>
-                {isProject ? "Projects" : isDirect ? "Direct messages" : "Team"}
-              </span>
-              {isProject && projectTitle ? (
-                <>
-                  <ChevronRight className="size-3.5" />
-                  <span className="min-w-0 truncate">{projectTitle}</span>
-                </>
-              ) : null}
-              <ChevronRight className="size-3.5" />
-              <span className="truncate text-foreground">
-                {isDirect ? channel.directUserName : channel.name}
-              </span>
-            </nav>
-            <h1 className="flex min-w-0 items-center gap-2 text-base font-semibold lg:font-heading lg:text-2xl lg:tracking-tight">
-              {Icon ? (
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
-                  <Icon className="size-5" />
+            </div>
+            <div className="min-w-0">
+              <nav
+                aria-label="Chat breadcrumb"
+                className="mb-2 hidden min-w-0 items-center gap-1 text-xs font-medium text-muted-foreground lg:flex"
+              >
+                <Link href="/chat" className="hover:text-foreground">
+                  Chat
+                </Link>
+                <ChevronRight className="size-3.5" />
+                <span>
+                  {isProject ? "Projects" : isDirect ? "Direct messages" : "Team"}
                 </span>
-              ) : (
-                <DirectAvatar
-                  name={channel.directUserName}
-                  image={channel.directUserImage}
-                />
-              )}
-              <span className="min-w-0 truncate">
-                <span className="lg:hidden">{mobileTitle}</span>
+                {isProject && projectTitle ? (
+                  <>
+                    <ChevronRight className="size-3.5" />
+                    <span className="min-w-0 truncate">{projectTitle}</span>
+                  </>
+                ) : null}
+                <ChevronRight className="size-3.5" />
+                <span className="truncate text-foreground">
+                  {isDirect ? channel.directUserName : channel.name}
+                </span>
+              </nav>
+              <h1 className="flex min-w-0 items-center gap-2 text-base font-semibold lg:font-heading lg:text-2xl lg:tracking-tight">
+                {Icon ? (
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
+                    <Icon className="size-5" />
+                  </span>
+                ) : (
+                  <DirectAvatar
+                    name={channel.directUserName}
+                    image={channel.directUserImage}
+                  />
+                )}
+                <span className="min-w-0 truncate">
+                  <span className="lg:hidden">{mobileTitle}</span>
+                  <span className="hidden lg:inline">
+                    {isProject && projectTitle
+                      ? `${projectTitle} · ${channel.name}`
+                      : isDirect
+                        ? channel.directUserName
+                        : channel.name}
+                  </span>
+                </span>
+              </h1>
+              <p className="truncate text-xs text-muted-foreground lg:mt-1 lg:text-sm">
+                <span className="lg:hidden">{mobileContext}</span>
                 <span className="hidden lg:inline">
-                  {isProject && projectTitle
-                    ? `${projectTitle} · ${channel.name}`
+                  {isProject
+                    ? `Project ${channel.name.toLowerCase()} channel for focused decisions, files, and updates.`
                     : isDirect
-                      ? channel.directUserName
-                      : channel.name}
+                      ? "Private conversation between you and this teammate."
+                      : isCustom
+                        ? "Private team channel for selected teammates."
+                        : "Workspace-wide channel for everyone."}
                 </span>
-              </span>
-            </h1>
-            <p className="truncate text-xs text-muted-foreground lg:mt-1 lg:text-sm">
-              <span className="lg:hidden">{mobileContext}</span>
-              <span className="hidden lg:inline">
-                {isProject
-                  ? `Project ${channel.name.toLowerCase()} channel for focused decisions, files, and updates.`
-                  : isDirect
-                    ? "Private conversation between you and this teammate."
-                    : isCustom
-                      ? "Private team channel for selected teammates."
-                      : "Workspace-wide channel for everyone."}
-              </span>
-            </p>
+              </p>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <AssistantShortcut />
+            <PinnedMessagesButton />
+            {isCustom ? (
+              <ChannelMembersSheet
+                channelId={channel.id}
+                channelName={channel.name}
+                members={channel.channelMembers}
+                candidates={directCandidates}
+                currentUserId={user.id}
+                canManage={canManageMembers}
+              />
+            ) : null}
+            {isProject && projectSlug ? (
+              <Link
+                href={`/projects/${projectSlug}`}
+                className="inline-flex size-10 shrink-0 items-center justify-center gap-1.5 rounded-lg border bg-background text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:w-auto lg:px-3"
+              >
+                <span className="sr-only lg:not-sr-only">View project</span>
+                <ArrowRight className="size-4 lg:size-3.5" />
+              </Link>
+            ) : null}
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <AssistantShortcut />
-          {isCustom ? (
-            <ChannelMembersSheet
-              channelId={channel.id}
-              channelName={channel.name}
-              members={channel.channelMembers}
-              candidates={directCandidates}
-              currentUserId={user.id}
-              canManage={canManageMembers}
-            />
-          ) : null}
-          {isProject && projectSlug ? (
-            <Link
-              href={`/projects/${projectSlug}`}
-              className="inline-flex size-10 shrink-0 items-center justify-center gap-1.5 rounded-lg border bg-background text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:w-auto lg:px-3"
-            >
-              <span className="sr-only lg:not-sr-only">View project</span>
-              <ArrowRight className="size-4 lg:size-3.5" />
-            </Link>
-          ) : null}
-        </div>
-      </div>
-      {isProject && projectSlug && projectChannels.length > 0 ? (
-        <ProjectChannelTabs
-          slug={projectSlug}
-          channels={projectChannels}
-          activeId={channelId}
-          mode="chat"
-        />
-      ) : null}
-      <Suspense
-        key={channelId}
-        fallback={
-          <ConversationLoadingSkeleton
-            variant={isProject ? "project" : "team"}
-            fillAvailable
+        {isProject && projectSlug && projectChannels.length > 0 ? (
+          <ProjectChannelTabs
+            slug={projectSlug}
+            channels={projectChannels}
+            activeId={channelId}
+            mode="chat"
           />
-        }
-      >
-        <ChannelConversation channel={channel} user={user} />
-      </Suspense>
-    </div>
+        ) : null}
+        <Suspense
+          key={channelId}
+          fallback={
+            <ConversationLoadingSkeleton
+              variant={isProject ? "project" : "team"}
+              fillAvailable
+            />
+          }
+        >
+          <ChannelConversation channel={channel} user={user} />
+        </Suspense>
+      </div>
+    </MessagePinsProvider>
   );
 }
 

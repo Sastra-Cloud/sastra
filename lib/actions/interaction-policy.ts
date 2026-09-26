@@ -10,7 +10,7 @@ export type MutationInteractionMode =
 // no pending/progress UI) — treated like reads for the interaction contract.
 const READ = /^(reviewPrintWirePayment|get|list|load|current|is[A-Z]|sync|pushSupported)/;
 const DESTRUCTIVE = /^(delete|remove|revoke|clear|discard|trash)/;
-const PROGRESS = /^(send|draft|generate|publish|refresh|reprocess|repair|retry|upload|extract|startParse|startNow|startReprint|resume|applyImport|commitImport|attachAgreement|createImport|createProjectsFrom|enablePush|disablePush|runAssistant|request|invite|learn|seed)/;
+const PROGRESS = /^(send|submit|draft|generate|publish|refresh|reprocess|repair|retry|upload|extract|startParse|startNow|startReprint|resume|applyImport|commitImport|attachAgreement|createImport|createProjectsFrom|enablePush|disablePush|runAssistant|request|invite|learn|seed)/;
 const PROGRESS_ACTIONS = new Set([
   "updateWorkspaceSettings",
   "updateStandup",
@@ -45,12 +45,21 @@ const PROGRESS_ACTIONS = new Set([
   "verifyAdminSecurityCode",
   "updateVideoProductionMode",
   "updateOpenRouterApiKey", // credential save: never shown as done before the server confirms
+  "saveImportAsLesson",
+  "reviewEmailAttachmentAsDocument",
+  "enterImportManually",
+  "startManualEmailRightsReview",
+  "contributeDocumentCase",
+  "setImportTargetProject",
 ]);
 const CONFIRMED_DESTRUCTIVE_ACTIONS = new Set([
   "undoAutoCreatedEmailTask",
   "voidMouInvoice",
 ]);
 const OPTIMISTIC_ACTIONS = new Set([
+  // Chat message pins: predictable, reversible, and rolled back on failure.
+  "pinMessage",
+  "unpinMessage",
   "resetGuidanceTips",
   "applySuggestedPartnerRates",
   "applySuggestedPerCopyPrice",

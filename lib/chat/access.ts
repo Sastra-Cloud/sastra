@@ -2,7 +2,10 @@ import "server-only";
 
 import { and, eq, inArray } from "drizzle-orm";
 
-import { isMemberScopedChannel } from "@/lib/chat/channel-members";
+import {
+  MEMBER_SCOPED_CHANNEL_KINDS,
+  isMemberScopedChannel,
+} from "@/lib/chat/channel-members";
 import { db } from "@/lib/db";
 import {
   chatChannelMembers,
@@ -75,7 +78,7 @@ export async function requireMessageAccess(messageId: string, userId: string) {
 
 /**
  * Workspace files are otherwise shared, but a file attached to a member-scoped
- * direct or custom channel inherits that conversation's access boundary.
+ * conversation (direct, custom or standup) inherits its access boundary.
  */
 export async function canAccessFile(fileId: string, userId: string) {
   const [file] = await db
@@ -127,7 +130,7 @@ export async function canAccessFile(fileId: string, userId: string) {
     .where(
       and(
         eq(fileAttachments.fileId, fileId),
-        inArray(chatChannels.kind, ["direct", "custom"])
+        inArray(chatChannels.kind, [...MEMBER_SCOPED_CHANNEL_KINDS])
       )
     );
 

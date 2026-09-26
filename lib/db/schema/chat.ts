@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   index,
   pgTable,
@@ -82,11 +83,22 @@ export const chatMessages = pgTable(
     replyToId: uuid("reply_to_id"),
     editedAt: timestamp("edited_at"),
     deletedAt: timestamp("deleted_at"),
+    // A message has at most one shared pin per conversation. Anyone who can
+    // read the conversation may pin or unpin it; deleting the message clears it.
+    pinnedAt: timestamp("pinned_at"),
+    pinnedByUserId: text("pinned_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
-    // Bumped on status/edit/delete/attach so realtime can detect any change.
+    // Bumped on status/edit/delete/attach/pin so realtime can detect any change.
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
-  (t) => [index("chat_messages_channel_idx").on(t.channelId, t.id)]
+  (t) => [
+    index("chat_messages_channel_idx").on(t.channelId, t.id),
+    index("chat_messages_channel_pinned_idx")
+      .on(t.channelId, t.pinnedAt)
+      .where(sql`${t.pinnedAt} is not null`),
+  ]
 );
 
 export const messageReactions = pgTable(

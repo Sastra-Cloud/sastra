@@ -8,6 +8,8 @@ import {
   FileText,
   Loader2,
   Paperclip,
+  Pin,
+  PinOff,
   Send,
   SmilePlus,
   Trash2,
@@ -16,6 +18,7 @@ import {
 import { toast } from "sonner";
 
 import type { ChatMessageView } from "@/lib/chat/queries";
+import { pinnedByLabel, type ChatPinnedMessage } from "@/lib/chat/pin-state";
 import { useUserActive } from "@/hooks/use-user-active";
 import { avatarSrc } from "@/lib/users/avatar";
 import {
@@ -74,6 +77,7 @@ import {
 } from "@/components/chat/voice-recorder";
 import { VoiceMessagePlayer } from "@/components/chat/voice-message-player";
 import { useChatNavigation } from "@/components/chat/chat-navigation-context";
+import { useMessagePins } from "@/components/chat/message-pins";
 
 const QUICK_EMOJI = ["👍", "❤️", "🎉", "👀", "✅", "😄"];
 const NEAR_BOTTOM_PX = 96;
@@ -155,6 +159,8 @@ export function ChatThread({
   fillAvailable?: boolean;
 }) {
   const { pendingChannelId } = useChatNavigation();
+  const pins = useMessagePins();
+  const { beginPinsFetch } = pins;
   const conversationLoading =
     loading ||
     (pendingChannelId !== null && pendingChannelId !== channelId);
@@ -195,8 +201,13 @@ export function ChatThread({
     const refresh = async () => {
       if (document.hidden) return;
       try {
+        const receivePins = beginPinsFetch();
         const r = await fetch(recentUrl);
-        if (r.ok && !stopped) setMessages((await r.json()).messages);
+        if (!r.ok || stopped) return;
+        const data = await r.json();
+        if (stopped) return;
+        setMessages(data.messages);
+        receivePins(data.pins ?? []);
       } catch {
         /* transient */
       }
@@ -214,7 +225,7 @@ export function ChatThread({
       clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [channelId, active]);
+  }, [channelId, active, beginPinsFetch]);
 
   const latestMessageId = messages[messages.length - 1]?.id ?? null;
   const initialLatestMessageId =
@@ -293,6 +304,15 @@ export function ChatThread({
     }
   }
 
+  async function refreshRecent() {
+    const receivePins = beginPinsFetch();
+    const r = await fetch(`/api/chat/${channelId}/recent`);
+    if (!r.ok) return;
+    const data = await r.json();
+    setMessages(data.messages);
+    receivePins(data.pins ?? []);
+  }
+
   async function send() {
     const text = input.trim();
     if (!text && pendingFiles.length === 0 && !voiceDraft) return;
@@ -326,8 +346,7 @@ export function ChatThread({
         clientNonce,
       });
       // Refresh immediately so the message shows without waiting for the next tick.
-      const r = await fetch(`/api/chat/${channelId}/recent`);
-      if (r.ok) setMessages((await r.json()).messages);
+      await refreshRecent();
       setPendingMessages((current) => current.filter((message) => message.id !== optimisticMessage.id));
 
       if (hasFiles) {
@@ -357,8 +376,7 @@ export function ChatThread({
           URL.revokeObjectURL(voiceAtSend.url);
           setVoiceDraft(null);
         }
-        const r2 = await fetch(`/api/chat/${channelId}/recent`);
-        if (r2.ok) setMessages((await r2.json()).messages);
+        await refreshRecent();
       }
     } catch (error) {
       setPendingMessages((current) => current.filter((message) => message.id !== optimisticMessage.id));
@@ -408,10 +426,18 @@ export function ChatThread({
       previous = current;
       return current.filter((message) => message.id !== messageId);
     });
-    void deleteMessage(messageId).catch(() => {
+    const request = deleteMessage(messageId);
+    // Deleting a message also removes its pin for everyone.
+    pins.forgetMessage(messageId, request);
+    void request.catch(() => {
       setMessages(previous);
       toast.error("Could not delete the message.");
     });
+  }
+
+  function togglePin(message: ChatMessageView) {
+    if (pins.pinFor(message.id)) pins.unpin(message.id);
+    else pins.pin(message);
   }
 
   const visibleMessages = [...messages, ...pendingMessages];
@@ -493,16 +519,23 @@ export function ChatThread({
                 visibleMessages.map((m, index) => (
                   <MessageScrollerItem
                     key={m.id}
+                    data-message-id={m.id}
                     scrollAnchor={index === visibleMessages.length - 1}
-                    className={cn(m.id.startsWith("pending-") && "optimistic-item-in")}
+                    className={cn(
+                      "-mx-1.5 -my-1 rounded-xl px-1.5 py-1 transition-colors duration-500 motion-reduce:transition-none data-[pin-highlight=true]:bg-primary/10",
+                      m.id.startsWith("pending-") && "optimistic-item-in"
+                    )}
                   >
                     <MessageRow
                       m={m}
                       isOwn={m.userId === currentUserId}
                       members={members}
                       currentUserId={currentUserId}
+                      pin={pins.pinFor(m.id)}
+                      pinPending={pins.isPending(m.id)}
                       onReact={(emoji) => reactTo(m.id, emoji)}
                       onDelete={() => removeMessage(m.id)}
+                      onTogglePin={() => togglePin(m)}
                     />
                   </MessageScrollerItem>
                 ))
@@ -663,16 +696,23 @@ function MessageRow({
   isOwn,
   members,
   currentUserId,
+  pin,
+  pinPending,
   onReact,
   onDelete,
+  onTogglePin,
 }: {
   m: ChatMessageView;
   isOwn: boolean;
   members: MentionTarget[];
   currentUserId: string;
+  pin: ChatPinnedMessage | undefined;
+  pinPending: boolean;
   onReact: (emoji: string) => void;
   onDelete: () => void;
+  onTogglePin: () => void;
 }) {
+  const canPin = !m.id.startsWith("pending-");
   const initials = (m.authorName ?? "?")
     .split(" ")
     .map((s) => s[0])
@@ -723,6 +763,14 @@ function MessageRow({
             </span>
           ) : m.status === "failed" ? (
             <span className="shrink-0 text-destructive">attachment failed</span>
+          ) : null}
+          {pin ? (
+            <span className="inline-flex min-w-0 items-center gap-1 font-medium text-primary">
+              <Pin aria-hidden className="size-3 shrink-0" />
+              <span className="truncate">
+                {pinnedByLabel(pin, currentUserId)}
+              </span>
+            </span>
           ) : null}
         </MessageHeader>
 
@@ -848,6 +896,22 @@ function MessageRow({
               ))}
             </PopoverContent>
           </Popover>
+
+          {canPin ? (
+            <button
+              type="button"
+              aria-label={pin ? "Unpin message" : "Pin message"}
+              title={pin ? "Unpin message" : "Pin message"}
+              disabled={pinPending}
+              onClick={onTogglePin}
+              className={cn(
+                "flex size-11 items-center justify-center rounded-lg transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 lg:size-9",
+                pin ? "text-primary" : "text-muted-foreground"
+              )}
+            >
+              {pin ? <PinOff className="size-4" /> : <Pin className="size-4" />}
+            </button>
+          ) : null}
 
           {isOwn ? (
             <button

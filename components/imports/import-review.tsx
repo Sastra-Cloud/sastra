@@ -20,7 +20,10 @@ import {
   applyImportToProject,
   attachAgreementToProjects,
   commitImport,
+  enterImportManually,
   getImportStatus,
+  saveImportAsLesson,
+  setImportTargetProject,
   startParse,
   updateImportDraft,
   type BudgetMode,
@@ -44,6 +47,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const CATEGORIES: ExtractedBudgetLine["category"][] = [
   "translation",
@@ -140,6 +144,8 @@ export function ImportReview({
   fileName,
   status: initialStatus,
   error: initialError,
+  errorKind: initialErrorKind,
+  learnFromReview: initialLearnFromReview,
   initial,
   committedProjectIds,
   target,
@@ -149,6 +155,8 @@ export function ImportReview({
   fileName: string | null;
   status: string;
   error: string | null;
+  errorKind: string | null;
+  learnFromReview: boolean;
   initial: ImportExtraction | null;
   committedProjectIds: string[];
   target?: UpdateTarget | null;
@@ -157,8 +165,11 @@ export function ImportReview({
   const router = useRouter();
   const [status, setStatus] = useState(initialStatus);
   const [error, setError] = useState(initialError);
+  const [errorKind, setErrorKind] = useState(initialErrorKind);
   const [data, setData] = useState<ImportExtraction | null>(initial);
-  const [retrying, setRetrying] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"retry" | "manual" | null>(null);
+  const [learnFromReview, setLearnFromReview] = useState(initialLearnFromReview);
+  const [manualKind, setManualKind] = useState<"agreement" | "invoice">(target?.preferredPaymentId ? "invoice" : "agreement");
 
   // Parsing runs server-side (via after()); poll until it lands. Because the
   // work is detached from this request, leaving and returning resumes cleanly.
@@ -181,6 +192,7 @@ export function ImportReview({
       } else if (res.status === "failed") {
         setStatus("failed");
         setError(res.error);
+        setErrorKind(res.errorKind);
       } else {
         setStatus(res.status);
       }
@@ -230,13 +242,32 @@ export function ImportReview({
   }
 
   if (status === "extracted" && data) {
-    return target ? (
+    return <div className="space-y-4">
+      <label className="flex items-center gap-2 text-sm">Document type
+        <select className={selectClass} value={data.documentKind} onChange={async (event) => {
+          const kind = event.target.value as "agreement" | "invoice";
+          const next = { ...data, documentKind: kind, invoice: kind === "invoice" ? data.invoice ?? {
+            direction: "unknown" as const, invoiceNumber: null, issueDate: null, dueDate: null,
+            issuerName: null, recipientName: null, recipientEmail: null, projectTitle: null,
+            amount: null, currency: null, description: null,
+          } : null };
+          setData(next);
+          const result = await updateImportDraft(importId, next, learnFromReview).catch(() => ({ error: "Could not save document type." }));
+          if (result.error) { setData(data); toast.error(result.error); }
+        }}><option value="agreement">Agreement or funding document</option><option value="invoice">Invoice</option></select>
+      </label>
+      <label className="flex min-h-11 items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm">
+        <Checkbox checked={learnFromReview} onCheckedChange={(value) => setLearnFromReview(value === true)} />
+        Use this document to improve future intake
+      </label>
+      {target ? (
       data.documentKind === "invoice" && data.invoice ? (
         <InvoiceReviewForm
           importId={importId}
           fileName={fileName}
           target={target}
           initial={data}
+          learnFromReview={learnFromReview}
           onReextract={reextract}
         />
       ) : (
@@ -245,33 +276,38 @@ export function ImportReview({
           fileName={fileName}
           target={target}
           initial={data}
+          learnFromReview={learnFromReview}
           onReextract={reextract}
           onApplied={() => router.push(`/projects/${target.slug}`)}
         />
       )
+    ) : data.documentKind === "invoice" ? (
+      <StandaloneInvoiceReview importId={importId} initial={data} existingProjects={existingProjects} learnFromReview={learnFromReview} />
     ) : (
       <ReviewForm
         importId={importId}
         fileName={fileName}
         initial={data}
+        learnFromReview={learnFromReview}
         existingProjects={existingProjects}
         onReextract={reextract}
         onCommitted={() => router.push("/projects")}
       />
-    );
+      )}
+    </div>;
   }
 
   // uploaded / parsing / failed → server-side parse in progress.
   async function retry() {
-    if (retrying) return;
-    setRetrying(true);
+    if (pendingAction) return;
+    setPendingAction("retry");
     try {
       const res = await startParse(importId);
       if (res.error) throw new Error(res.error);
       setError(null);
       setStatus("parsing");
     } catch { toast.error("Couldn't retry. Your upload is saved; try again."); }
-    finally { setRetrying(false); }
+    finally { setPendingAction(null); }
   }
 
   const failed = status === "failed";
@@ -297,7 +333,7 @@ export function ImportReview({
 
         <div className="space-y-2">
           <p className="font-medium">
-            {failed ? "We couldn’t read this document" : "Reading your document"}
+            {failed ? errorKind === "provider" ? "AI service unavailable" : "We couldn’t read this document" : "Reading your document"}
           </p>
           {fileName ? (
             <span className="mx-auto inline-flex max-w-72 items-center gap-1.5 rounded-full border bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground">
@@ -313,8 +349,9 @@ export function ImportReview({
               {error ??
                 "Something went wrong while extracting the details. Your upload is saved — try again."}
             </p>
-            <Button onClick={retry} disabled={retrying}>
-              {retrying ? (
+            {errorKind === "provider" ? <p className="max-w-sm text-xs text-muted-foreground">A teaching example cannot repair a provider outage. Retry when the service is available or enter the fields manually.</p> : null}
+            <Button onClick={retry} disabled={pendingAction !== null}>
+              {pendingAction === "retry" ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
                   Retrying…
@@ -323,6 +360,18 @@ export function ImportReview({
                 "Try again"
               )}
             </Button>
+            <Button variant="outline" disabled={pendingAction !== null} onClick={async () => {
+              setPendingAction("manual");
+              try {
+                const result = await enterImportManually(importId, manualKind);
+                if (result.error || !result.reviewed) throw new Error(result.error);
+                setData(result.reviewed);
+                setStatus("extracted");
+                setError(null);
+              } catch { toast.error("Could not open manual review. Your file is saved."); }
+              finally { setPendingAction(null); }
+            }}>{pendingAction === "manual" ? <><Loader2 className="size-4 animate-spin" /> Opening manual review…</> : "Enter details manually"}</Button>
+            <select aria-label="Manual document type" className={selectClass} value={manualKind} disabled={pendingAction !== null} onChange={(event) => setManualKind(event.target.value as "agreement" | "invoice")}><option value="agreement">Agreement or funding document</option><option value="invoice">Invoice</option></select>
           </>
         ) : (
           <>
@@ -1426,6 +1475,58 @@ function ReextractButton({ onReextract }: { onReextract: () => Promise<void> }) 
   );
 }
 
+function TeachOnlyButton({ importId, doc }: { importId: string; doc: ImportExtraction }) {
+  const [saving, setSaving] = useState(false);
+  return <Button type="button" variant="outline" disabled={saving} onClick={async () => {
+    setSaving(true);
+    try {
+      const result = await saveImportAsLesson(importId, doc);
+      if (result.error) throw new Error(result.error);
+      toast.success("Teaching example saved. No project or payment was changed.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save the example.");
+    } finally { setSaving(false); }
+  }}>{saving ? <><Loader2 className="size-4 animate-spin" /> Saving…</> : "Save teaching example only"}</Button>;
+}
+
+function StandaloneInvoiceReview({ importId, initial, existingProjects, learnFromReview }: {
+  importId: string; initial: ImportExtraction; existingProjects: ExistingProject[]; learnFromReview: boolean;
+}) {
+  const router = useRouter();
+  const [doc, setDoc] = useState(initial);
+  const [projectId, setProjectId] = useState("");
+  const [pending, setPending] = useState(false);
+  const invoice = doc.invoice!;
+  const setInvoice = (patch: Partial<NonNullable<ImportExtraction["invoice"]>>) => setDoc((current) => ({ ...current, invoice: { ...current.invoice!, ...patch } }));
+  useAutosave(importId, doc);
+  return <div className="space-y-4">
+    <div><h1 className="font-heading text-2xl font-semibold">Review invoice</h1><p className="text-sm text-muted-foreground">Correct the document fields. Choose a project to continue to its payment review, or save only as a teaching example.</p></div>
+    <Card><CardContent className="grid gap-3 py-4 sm:grid-cols-2">
+      <label className="space-y-1 text-sm">Invoice number<Input value={invoice.invoiceNumber ?? ""} onChange={(event) => setInvoice({ invoiceNumber: event.target.value })} /></label>
+      <label className="space-y-1 text-sm">Issue date<Input type="date" value={invoice.issueDate ?? ""} onChange={(event) => setInvoice({ issueDate: event.target.value || null })} /></label>
+      <label className="space-y-1 text-sm">Amount<Input type="number" step="0.01" value={invoice.amount ?? ""} onChange={(event) => setInvoice({ amount: event.target.value ? Number(event.target.value) : null })} /></label>
+      <label className="space-y-1 text-sm">Currency<Input value={invoice.currency ?? ""} onChange={(event) => setInvoice({ currency: event.target.value.toUpperCase() })} /></label>
+      <label className="space-y-1 text-sm">Billed to<Input value={invoice.recipientName ?? ""} onChange={(event) => setInvoice({ recipientName: event.target.value || null })} /></label>
+      <label className="space-y-1 text-sm">Description<Input value={invoice.description ?? ""} onChange={(event) => setInvoice({ description: event.target.value || null })} /></label>
+    </CardContent></Card>
+    <div className="flex flex-wrap items-center gap-2 border-t pt-4">
+      <TeachOnlyButton importId={importId} doc={doc} />
+      <select aria-label="Project for invoice" className={selectClass + " min-h-10"} value={projectId} onChange={(event) => setProjectId(event.target.value)}><option value="">Choose a project</option>{existingProjects.map((project) => <option key={project.id} value={project.id}>{project.title}</option>)}</select>
+      <Button disabled={!projectId || pending} onClick={async () => {
+        setPending(true);
+        try {
+          const saved = await updateImportDraft(importId, doc, learnFromReview);
+          if (saved.error) throw new Error(saved.error);
+          const result = await setImportTargetProject(importId, projectId);
+          if (result.error) throw new Error(result.error);
+          router.refresh();
+        } catch (error) { toast.error(error instanceof Error ? error.message : "Could not continue review."); }
+        finally { setPending(false); }
+      }}>{pending ? "Opening…" : "Continue to payment review"}</Button>
+    </div>
+  </div>;
+}
+
 // ── Create mode ──────────────────────────────────────────────────────────────
 
 type Disposition = { mode: "create" } | { mode: "update"; projectId: string };
@@ -1434,6 +1535,7 @@ function ReviewForm({
   importId,
   fileName,
   initial,
+  learnFromReview,
   existingProjects,
   onReextract,
   onCommitted,
@@ -1441,6 +1543,7 @@ function ReviewForm({
   importId: string;
   fileName: string | null;
   initial: ImportExtraction;
+  learnFromReview: boolean;
   existingProjects: ExistingProject[];
   onReextract: () => Promise<void>;
   onCommitted: () => void;
@@ -1506,7 +1609,7 @@ function ReviewForm({
     }
     setCommitting(true);
     try {
-      const saved = await updateImportDraft(importId, doc);
+      const saved = await updateImportDraft(importId, doc, learnFromReview);
       if (saved.error) {
         toast.error(saved.error);
         setCommitting(false);
@@ -1793,6 +1896,7 @@ function ReviewForm({
       )}
 
       <div className="flex justify-end gap-2 border-t pt-4">
+        <TeachOnlyButton importId={importId} doc={doc} />
         <Button
           onClick={commit}
           disabled={
@@ -1829,12 +1933,14 @@ function InvoiceReviewForm({
   fileName,
   target,
   initial,
+  learnFromReview,
   onReextract,
 }: {
   importId: string;
   fileName: string | null;
   target: UpdateTarget;
   initial: ImportExtraction;
+  learnFromReview: boolean;
   onReextract: () => Promise<void>;
 }) {
   const invoice = initial.invoice!;
@@ -1884,7 +1990,7 @@ function InvoiceReviewForm({
     }
     setSaving(true);
     try {
-      const saved = await updateImportDraft(importId, doc);
+      const saved = await updateImportDraft(importId, doc, learnFromReview);
       if (saved.error) throw new Error(saved.error);
       const result = await applyImportedInvoice(importId, {
         paymentId,
@@ -2066,6 +2172,7 @@ function InvoiceReviewForm({
       </Card>
 
       <div className="flex justify-end border-t pt-4">
+        <TeachOnlyButton importId={importId} doc={doc} />
         <Button
           onClick={save}
           disabled={
@@ -2094,6 +2201,7 @@ function UpdateReviewForm({
   fileName,
   target,
   initial,
+  learnFromReview,
   onReextract,
   onApplied,
 }: {
@@ -2101,6 +2209,7 @@ function UpdateReviewForm({
   fileName: string | null;
   target: UpdateTarget;
   initial: ImportExtraction;
+  learnFromReview: boolean;
   onReextract: () => Promise<void>;
   onApplied: () => void;
 }) {
@@ -2128,7 +2237,7 @@ function UpdateReviewForm({
   async function apply() {
     setCommitting(true);
     try {
-      const saved = await updateImportDraft(importId, doc);
+      const saved = await updateImportDraft(importId, doc, learnFromReview);
       if (saved.error) {
         toast.error(saved.error);
         setCommitting(false);
@@ -2271,6 +2380,7 @@ function UpdateReviewForm({
       </Card>
 
       <div className="flex justify-end gap-2 border-t pt-4">
+        <TeachOnlyButton importId={importId} doc={doc} />
         <Button onClick={apply} disabled={committing || !proj}>
           {committing ? (
             <>

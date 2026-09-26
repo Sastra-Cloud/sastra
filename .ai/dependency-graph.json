@@ -61,9 +61,11 @@
     "@/lib/auth/guards",
     "@/lib/auth/policy",
     "@/lib/chat/queries",
+    "@/lib/chat/pins",
     "@/lib/mentions/roster",
     "@/components/chat/channel-members-sheet",
     "@/components/chat/chat-thread",
+    "@/components/chat/message-pins",
     "@/components/chat/project-channel-tabs",
     "@/components/page-skeleton",
     "@/lib/users/avatar"
@@ -319,6 +321,7 @@
     "@/lib/projects/queries",
     "@/lib/mentions/roster",
     "@/lib/chat/queries",
+    "@/lib/chat/pins",
     "@/components/chat/project-chat-view"
   ],
   "app/(app)/projects/[slug]/episodes/loading.tsx": [
@@ -635,6 +638,13 @@
     "@/lib/dictionary/actions",
     "@/components/settings/dictionary-manager"
   ],
+  "app/(app)/settings/document-learning/page.tsx": [
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/document-learning/service",
+    "@/components/settings/document-learning-manager",
+    "@/lib/hosted/mode"
+  ],
   "app/(app)/settings/email/page.tsx": [
     "@/lib/hosted/mode",
     "next/link",
@@ -919,6 +929,7 @@
     "next/server",
     "@/lib/auth/guards",
     "@/lib/chat/access",
+    "@/lib/chat/pins",
     "@/lib/chat/queries"
   ],
   "app/api/cron/agreement-index/route.ts": [
@@ -1755,6 +1766,7 @@
     "lucide-react",
     "sonner",
     "@/lib/chat/queries",
+    "@/lib/chat/pin-state",
     "@/hooks/use-user-active",
     "@/lib/users/avatar",
     "@/lib/chat/actions",
@@ -1772,7 +1784,8 @@
     "@/lib/utils",
     "@/components/chat/voice-recorder",
     "@/components/chat/voice-message-player",
-    "@/components/chat/chat-navigation-context"
+    "@/components/chat/chat-navigation-context",
+    "@/components/chat/message-pins"
   ],
   "components/chat/chat-workspace-shell.tsx": [
     "react",
@@ -1798,6 +1811,20 @@
     "@/components/ui/input",
     "@/components/ui/label",
     "@/components/ui/user-avatar"
+  ],
+  "components/chat/message-pins.tsx": [
+    "react",
+    "lucide-react",
+    "sonner",
+    "@/lib/chat/queries",
+    "@/lib/chat/pin-actions",
+    "@/lib/chat/pin-state",
+    "@/hooks/use-optimistic-action",
+    "@/hooks/use-prop-state",
+    "@/components/ui/button",
+    "@/components/ui/sheet",
+    "@/components/ui/user-avatar",
+    "@/lib/utils"
   ],
   "components/chat/new-direct-message-popover.tsx": [
     "react",
@@ -1828,8 +1855,10 @@
     "@/components/assistant/assistant-shortcut",
     "react",
     "@/lib/chat/queries",
+    "@/lib/chat/pin-state",
     "@/lib/mentions/roster",
     "@/components/chat/chat-thread",
+    "@/components/chat/message-pins",
     "@/components/chat/project-channel-tabs"
   ],
   "components/chat/project-pin-toggle.tsx": [
@@ -1945,6 +1974,13 @@
   "components/correspondence/reprocess-feedback.ts": [
     "@/lib/email/actions"
   ],
+  "components/correspondence/review-email-attachment-button.tsx": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "@/components/ui/button",
+    "@/lib/email/document-review-actions"
+  ],
   "components/correspondence/thread-controls.tsx": [
     "react",
     "next/navigation",
@@ -1969,6 +2005,7 @@
     "lucide-react",
     "@/components/ui/badge",
     "@/components/correspondence/message-reprocess-button",
+    "@/components/correspondence/review-email-attachment-button",
     "@/lib/format",
     "@/lib/email/queries",
     "@/lib/email/body-segments"
@@ -2158,7 +2195,8 @@
     "@/components/ui/card",
     "@/components/ui/input",
     "@/components/ui/label",
-    "@/components/ui/textarea"
+    "@/components/ui/textarea",
+    "@/components/ui/checkbox"
   ],
   "components/imports/import-uploader.tsx": [
     "react",
@@ -2886,6 +2924,18 @@
     "@/components/ui/label",
     "@/components/ui/textarea",
     "@/hooks/use-prop-state"
+  ],
+  "components/settings/document-learning-manager.tsx": [
+    "react",
+    "next/link",
+    "sonner",
+    "lucide-react",
+    "@/components/ui/button",
+    "@/components/ui/checkbox",
+    "@/lib/dialog-requests",
+    "@/lib/document-learning/actions",
+    "@/lib/document-learning/actions",
+    "@/lib/document-learning/shared-rules"
   ],
   "components/settings/email-learning-manager.tsx": [
     "react",
@@ -4326,6 +4376,10 @@
     "@/lib/projects/project-blueprint",
     "@/lib/projects/member-actions",
     "@/lib/chat/actions",
+    "@/lib/chat/access",
+    "@/lib/chat/pin-actions",
+    "@/lib/chat/pin-state",
+    "@/lib/chat/pins",
     "@/lib/budget/queries",
     "@/lib/budget/actions",
     "@/lib/rights/queries",
@@ -4707,6 +4761,37 @@
     "@/lib/chat/navigation"
   ],
   "lib/chat/navigation.ts": [],
+  "lib/chat/pin-actions.test.ts": [
+    "vitest",
+    "./pin-actions"
+  ],
+  "lib/chat/pin-actions.ts": [
+    "drizzle-orm",
+    "zod",
+    "@/lib/actions/result",
+    "@/lib/auth/guards",
+    "@/lib/chat/access",
+    "@/lib/chat/pin-state",
+    "@/lib/chat/pins",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/chat/pin-state.test.ts": [
+    "vitest",
+    "./pin-state"
+  ],
+  "lib/chat/pin-state.ts": [],
+  "lib/chat/pins.ts": [
+    "drizzle-orm",
+    "drizzle-orm/pg-core",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/chat/access",
+    "@/lib/chat/channel-members",
+    "@/lib/chat/pin-state",
+    "@/lib/chat/queries",
+    "@/lib/files/queries"
+  ],
   "lib/chat/project-channels.ts": [
     "drizzle-orm",
     "@/lib/db",
@@ -4884,6 +4969,7 @@
     "./agreements"
   ],
   "lib/db/schema/chat.ts": [
+    "drizzle-orm",
     "drizzle-orm/pg-core",
     "./auth",
     "./projects",
@@ -4896,6 +4982,12 @@
     "drizzle-orm/pg-core",
     "drizzle-orm",
     "./auth"
+  ],
+  "lib/db/schema/document-learning.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "@/lib/document-learning/shared-rules",
+    "@/lib/document-learning/shared-rules"
   ],
   "lib/db/schema/donations.ts": [
     "drizzle-orm/pg-core",
@@ -4961,6 +5053,7 @@
     "./chat",
     "./ai",
     "./imports",
+    "./document-learning",
     "./notifications",
     "./standup",
     "./presence",
@@ -5104,6 +5197,49 @@
     "@/lib/db/schema",
     "@/lib/dictionary/correct"
   ],
+  "lib/document-learning/actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./shared-rules",
+    "./cloud"
+  ],
+  "lib/document-learning/cloud.ts": [
+    "node:crypto",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/hosted/management-auth",
+    "@/lib/hosted/mode",
+    "./shared-rules"
+  ],
+  "lib/document-learning/match.test.ts": [
+    "vitest",
+    "./match"
+  ],
+  "lib/document-learning/match.ts": [],
+  "lib/document-learning/service.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/workspace/queries",
+    "./match",
+    "./cloud"
+  ],
+  "lib/document-learning/shared-rules.test.ts": [
+    "vitest",
+    "./shared-rules"
+  ],
+  "lib/document-learning/shared-rules.ts": [
+    "zod"
+  ],
+  "lib/document-learning/source.ts": [
+    "pdfjs-dist/legacy/build/pdf.mjs",
+    "mammoth"
+  ],
   "lib/donations/actions.ts": [
     "node:crypto",
     "drizzle-orm",
@@ -5218,6 +5354,15 @@
   ],
   "lib/email/counterparty-match.ts": [
     "@/lib/email/project-signal-policy"
+  ],
+  "lib/email/document-review-actions.ts": [
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/imports/actions",
+    "@/lib/print/actions",
+    "./rights-review-actions"
   ],
   "lib/email/draft-actions.ts": [
     "zod",
@@ -5422,7 +5567,10 @@
     "@/lib/rights/derive",
     "@/lib/email/rights-review",
     "@/lib/email/rights-review-selection",
-    "@/lib/rights/task-reconciliation"
+    "@/lib/rights/task-reconciliation",
+    "@/lib/document-learning/service",
+    "@/lib/document-learning/source",
+    "@/lib/r2"
   ],
   "lib/email/rights-review-jev.ts": [],
   "lib/email/rights-review-selection.test.ts": [
@@ -5446,6 +5594,8 @@
     "@/lib/db/schema",
     "@/lib/rights/holder-match",
     "@/lib/r2",
+    "@/lib/document-learning/source",
+    "@/lib/document-learning/service",
     "@/lib/auth/guards"
   ],
   "lib/email/security-alert.ts": [
@@ -5844,6 +5994,7 @@
     "@/lib/db",
     "@/lib/db/schema",
     "./extraction",
+    "@/lib/document-learning/service",
     "@/lib/budget/approval-service",
     "@/lib/budget/queries",
     "./schema",
@@ -5876,6 +6027,8 @@
     "@/lib/ai/openrouter",
     "@/lib/ai/error-details",
     "@/lib/workspace/queries",
+    "@/lib/document-learning/source",
+    "@/lib/document-learning/service",
     "./fx",
     "./schema",
     "exceljs",
@@ -6199,7 +6352,10 @@
     "@/lib/workspace/queries",
     "@/lib/email/operational-drafts",
     "@/lib/format",
-    "@/lib/email/draft-store"
+    "@/lib/email/draft-store",
+    "@/lib/document-learning/service",
+    "@/lib/document-learning/source",
+    "@/lib/db/schema"
   ],
   "lib/print/budget-sync.ts": [
     "drizzle-orm",
@@ -6235,6 +6391,7 @@
   "lib/print/email-text-extract.ts": [
     "drizzle-orm",
     "@/lib/ai/openrouter",
+    "@/lib/document-learning/service",
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/print/cross-check",
@@ -6283,6 +6440,8 @@
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/r2",
+    "@/lib/document-learning/source",
+    "@/lib/document-learning/service",
     "@/lib/print/extract-schema",
     "@/lib/print/cross-check",
     "@/lib/print/budget-sync",

@@ -278,6 +278,14 @@ describe("client action interaction policy", () => {
     expect(interactionModeFor("runEmailSignalReflectionNow")).toBe("progress");
   });
 
+  it("classifies chat message pins as optimistic, not destructive", () => {
+    expect(interactionModeFor("pinMessage")).toBe("optimistic");
+    // Unpinning is reversible (pin again), so it never asks for confirmation.
+    expect(interactionModeFor("unpinMessage")).toBe("optimistic");
+    // Deleting a message stays a confirmed delete; it also clears the pin.
+    expect(interactionModeFor("deleteMessage")).toBe("confirmed-destructive");
+  });
+
   it("classifies private agreement Q&A feedback", () => {
     expect(interactionModeFor("getAgreementChatSnapshot")).toBe("read");
     expect(interactionModeFor("sendAgreementQuestion")).toBe("progress");

@@ -8,6 +8,7 @@ import {
   getRecentMessages,
   listProjectChannels,
 } from "@/lib/chat/queries";
+import { listChannelPins } from "@/lib/chat/pins";
 import { ProjectChatView } from "@/components/chat/project-chat-view";
 
 export const metadata = { title: "Chat" };
@@ -37,9 +38,10 @@ export default async function ProjectChatPage({
       </p>
     );
   }
-  const [messages, members] = await Promise.all([
+  const [messages, members, pins] = await Promise.all([
     getRecentMessages(channel.id, user.id),
     listProjectMentionTargets(project.id),
+    listChannelPins(channel.id, user.id),
   ]);
 
   return (
@@ -55,6 +57,7 @@ export default async function ProjectChatPage({
       }}
       messages={messages}
       members={members}
+      pins={pins}
     />
   );
 }

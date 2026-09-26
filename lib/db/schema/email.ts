@@ -367,6 +367,7 @@ export const emailRightsReviews = pgTable(
       .references(() => files.id, { onDelete: "cascade" }),
     kind: text("kind").$type<EmailRightsReviewKind>(),
     proposal: jsonb("proposal").$type<EmailRightsReviewProposal>(),
+    sourceText: text("source_text"),
     status: text("status")
       .$type<EmailRightsReviewStatus>()
       .notNull()

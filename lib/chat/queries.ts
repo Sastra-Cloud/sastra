@@ -59,7 +59,8 @@ export type ChatMessageView = {
   attachments: Attachment[];
 };
 
-const RECENT_LIMIT = 100;
+/** How many of a conversation's newest messages the thread loads and polls. */
+export const RECENT_MESSAGE_LIMIT = 100;
 
 export async function getRecentMessages(
   channelId: string,
@@ -82,7 +83,7 @@ export async function getRecentMessages(
       and(eq(chatMessages.channelId, channelId), isNull(chatMessages.deletedAt))
     )
     .orderBy(desc(chatMessages.id))
-    .limit(RECENT_LIMIT);
+    .limit(RECENT_MESSAGE_LIMIT);
   rows.reverse();
 
   if (rows.length === 0) return [];
@@ -191,7 +192,7 @@ export async function getChannelById(
   if (!participants.some((participant) => participant.id === currentUserId)) {
     return null;
   }
-  if (c.kind === "custom") {
+  if (c.kind === "custom" || c.kind === "standup") {
     return {
       ...c,
       directUserId: null,

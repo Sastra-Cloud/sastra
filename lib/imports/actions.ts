@@ -36,6 +36,7 @@ import {
   units,
 } from "@/lib/db/schema";
 import { runExtraction } from "./extraction";
+import { recordDocumentCase } from "@/lib/document-learning/service";
 import { syncBudgetApprovalState } from "@/lib/budget/approval-service";
 import {
   getBudgetPresentation,
@@ -182,7 +183,7 @@ export async function startParse(
   if (opts?.force || !fresh) {
     await db
       .update(documentImports)
-      .set({ status: "parsing", error: null, updatedAt: new Date() })
+      .set({ status: "parsing", error: null, errorKind: null, updatedAt: new Date() })
       .where(eq(documentImports.id, importId));
     after(() => runExtraction(importId));
   }
@@ -217,22 +218,24 @@ export async function resumeStalledImports(): Promise<{ resumed: number }> {
 /** Lightweight poll target: current parse status (+ extraction once ready). */
 export async function getImportStatus(
   importId: string
-): Promise<{ status: string; error: string | null; extraction: ImportExtraction | null }> {
+): Promise<{ status: string; error: string | null; errorKind: string | null; extraction: ImportExtraction | null }> {
   await requireRole("manager");
   const [imp] = await db
     .select({
       status: documentImports.status,
       error: documentImports.error,
+      errorKind: documentImports.errorKind,
       reviewed: documentImports.reviewed,
       extraction: documentImports.extraction,
     })
     .from(documentImports)
     .where(eq(documentImports.id, importId))
     .limit(1);
-  if (!imp) return { status: "failed", error: "Import not found.", extraction: null };
+  if (!imp) return { status: "failed", error: "Import not found.", errorKind: "file", extraction: null };
   return {
     status: imp.status,
     error: imp.error,
+    errorKind: imp.errorKind,
     extraction:
       imp.status === "extracted" && (imp.reviewed ?? imp.extraction)
         ? normalizeExtraction(imp.reviewed ?? imp.extraction)
@@ -243,7 +246,8 @@ export async function getImportStatus(
 /** Persist the manager's edits to the reviewed copy. */
 export async function updateImportDraft(
   importId: string,
-  reviewed: ImportExtraction
+  reviewed: ImportExtraction,
+  learnFromReview?: boolean
 ): Promise<{ error?: string }> {
   await requireRole("manager");
   const [imp] = await db
@@ -262,9 +266,82 @@ export async function updateImportDraft(
   }
   await db
     .update(documentImports)
-    .set({ reviewed: clean, status: "extracted", updatedAt: new Date() })
+    .set({ reviewed: clean, status: "extracted", error: null, errorKind: null, ...(learnFromReview === undefined ? {} : { learnFromReview }), updatedAt: new Date() })
     .where(eq(documentImports.id, importId));
   return {};
+}
+
+/** Open the ordinary review editor when AI cannot extract a saved upload. */
+export async function enterImportManually(importId: string, kind: "agreement" | "invoice") {
+  await requireRole("manager");
+  const [imp] = await db.select({ status: documentImports.status }).from(documentImports)
+    .where(eq(documentImports.id, importId)).limit(1);
+  if (!imp || imp.status !== "failed") return { error: "This import is no longer awaiting manual review." };
+  const reviewed = normalizeExtraction({
+    documentKind: kind,
+    projects: kind === "agreement" ? [{ title: "Untitled project" }] : [],
+  });
+  await db.update(documentImports).set({ reviewed, status: "extracted", error: null, errorKind: null, updatedAt: new Date() })
+    .where(and(eq(documentImports.id, importId), eq(documentImports.status, "failed")));
+  revalidatePath(`/projects/import/${importId}`);
+  return { reviewed };
+}
+
+/** Route an invoice uploaded outside a payment card into the existing invoice review. */
+export async function setImportTargetProject(importId: string, projectId: string) {
+  await requireRole("manager");
+  const [project] = await db.select({ id: projects.id }).from(projects).where(eq(projects.id, projectId)).limit(1);
+  if (!project) return { error: "Project not found." };
+  const [updated] = await db.update(documentImports).set({ targetProjectId: projectId, updatedAt: new Date() })
+    .where(and(eq(documentImports.id, importId), eq(documentImports.status, "extracted")))
+    .returning({ id: documentImports.id });
+  if (!updated) return { error: "This import is no longer open for review." };
+  revalidatePath(`/projects/import/${importId}`);
+  return {};
+}
+
+/** Teach only: the file and corrected fields become a case, with no project or finance mutation. */
+export async function saveImportAsLesson(importId: string, reviewed: ImportExtraction) {
+  const { user } = await requireRole("manager");
+  const [imp] = await db.select().from(documentImports).where(eq(documentImports.id, importId)).limit(1);
+  if (!imp || imp.status !== "extracted") return { error: "Review the document before saving an example." };
+  const clean = normalizeExtraction(reviewed);
+  if (clean.documentKind === "agreement" && !clean.projects.some((project) => project.title.trim() && project.title !== "Untitled project")) {
+    return { error: "Add the corrected project details before teaching this document." };
+  }
+  if (clean.documentKind === "invoice" && !clean.invoice?.invoiceNumber) {
+    return { error: "Add the corrected invoice number before teaching this document." };
+  }
+  const [file] = imp.fileId ? await db.select({ name: files.originalName }).from(files).where(eq(files.id, imp.fileId)).limit(1) : [];
+  await recordDocumentCase({
+    workflow: clean.documentKind, source: "teach_only", sourceRef: importId,
+    sourceName: file?.name ?? null, sourceText: imp.sourceText,
+    prediction: imp.extraction as unknown as Record<string, unknown> | null,
+    corrected: clean as unknown as Record<string, unknown>, createdBy: user.id,
+  });
+  await db.update(documentImports).set({ reviewed: clean, updatedAt: new Date() }).where(eq(documentImports.id, importId));
+  revalidatePath("/settings/document-learning");
+  return {};
+}
+
+/** Keep learning separate from the domain mutation: intake remains committed if a lesson write fails. */
+async function captureCommittedImport(
+  imp: typeof documentImports.$inferSelect,
+  reviewed: ImportExtraction,
+  actorId: string
+) {
+  if (!imp.learnFromReview) return;
+  const [file] = imp.fileId ? await db.select({ name: files.originalName }).from(files).where(eq(files.id, imp.fileId)).limit(1) : [];
+  await recordDocumentCase({
+    workflow: reviewed.documentKind,
+    source: "import",
+    sourceRef: imp.id,
+    sourceName: file?.name ?? null,
+    sourceText: imp.sourceText,
+    prediction: imp.extraction as unknown as Record<string, unknown> | null,
+    corrected: reviewed as unknown as Record<string, unknown>,
+    createdBy: actorId,
+  }).catch((error) => console.error("Document learning capture failed:", error));
 }
 
 /** Mark an import discarded (soft hide from the list). */
@@ -1429,6 +1506,7 @@ export async function commitImport(
       .where(eq(documentImports.id, importId));
   });
 
+  await captureCommittedImport(imp, data, user.id);
   if (createdSharedMouGroupId) {
     await reevaluateSharedMouPayments({
       groupId: createdSharedMouGroupId,
@@ -1698,6 +1776,7 @@ export async function attachAgreementToProjects(
       .where(eq(documentImports.id, importId));
   });
 
+  await captureCommittedImport(imp, data, user.id);
   if (createdSharedMouGroupId) {
     await reevaluateSharedMouPayments({
       groupId: createdSharedMouGroupId,
@@ -2000,6 +2079,7 @@ export async function applyImportedInvoice(
       .where(eq(documentImports.id, importId));
   });
 
+  await captureCommittedImport(imp, data, user.id);
   await recomputeProjectBlockers(project.id);
   await syncBudgetApprovalState(project.id);
   await logActivity({
@@ -2110,6 +2190,7 @@ export async function applyImportToProject(
       .where(eq(documentImports.id, importId));
   });
 
+  await captureCommittedImport(imp, data, user.id);
   await recomputeProjectBlockers(projectId);
   await syncBudgetApprovalState(projectId);
   await logActivity({

@@ -22,6 +22,7 @@ import {
   approveEmailRightsReview,
   dismissEmailRightsReview,
   retryEmailRightsReview,
+  setEmailRightsReviewKind,
 } from "@/lib/email/rights-review-actions";
 import type { EmailRightsReviewProposal } from "@/lib/db/schema";
 import { collapseSignedAgreementReviews } from "@/lib/email/rights-review-selection";
@@ -75,7 +76,7 @@ export function EmailRightsReviews({
     <div className="space-y-3">
       {visibleReviews.map((review) => (
         <EmailRightsReviewCard
-          key={`${review.id}:${projectKey}`}
+          key={`${review.id}:${review.kind}:${projectKey}`}
           review={review}
           holders={holders}
           payments={payments.filter((payment) => payment.projectId === review.projectId)}
@@ -99,6 +100,7 @@ function EmailRightsReviewCard({
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const [learnFromReview, setLearnFromReview] = useState(true);
   const agreement = review.proposal?.agreement;
   const payment = review.proposal?.payment;
   const [step, setStep] = useState<"mou" | "license">(agreement?.step ?? "license");
@@ -176,6 +178,8 @@ function EmailRightsReviewCard({
           <Button size="sm" variant="ghost" disabled={pending} onClick={() => run(() => dismissEmailRightsReview(review.id))}>
             <X className="size-4" /> Dismiss
           </Button>
+          <Button size="sm" variant="outline" disabled={pending} onClick={() => run(() => setEmailRightsReviewKind(review.id, "signed_agreement"))}>Review as agreement</Button>
+          <Button size="sm" variant="outline" disabled={pending} onClick={() => run(() => setEmailRightsReviewKind(review.id, "license_fee_receipt"))}>Review as receipt</Button>
         </div>
       </div>
     );
@@ -206,6 +210,11 @@ function EmailRightsReviewCard({
         <Button type="button" size="icon" variant="ghost" aria-label="Dismiss suggestion" disabled={pending} onClick={() => run(() => dismissEmailRightsReview(review.id))}>
           <X className="size-4" />
         </Button>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <label className="flex min-h-9 items-center gap-2 text-xs"><Checkbox checked={learnFromReview} onCheckedChange={(value) => setLearnFromReview(value === true)} /> Use this document to improve future intake</label>
+        <Button size="xs" variant="ghost" disabled={pending} onClick={() => run(() => setEmailRightsReviewKind(review.id, review.kind === "signed_agreement" ? "license_fee_receipt" : "signed_agreement"))}>Change document type</Button>
       </div>
 
       {review.kind === "signed_agreement" ? (
@@ -291,7 +300,7 @@ function EmailRightsReviewCard({
                       formatEbook: formats.ebook,
                       formatAudio: formats.audio,
                       formatVideo: formats.video,
-                    }),
+                    }, learnFromReview),
                   selectedProjectIds.size === 1
                     ? "Rights updated and the agreement attached."
                     : `Rights updated on ${selectedProjectIds.size} projects and the agreement attached to each.`
@@ -324,7 +333,7 @@ function EmailRightsReviewCard({
           <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
             <Button disabled={pending || !paidDate || (payments.length > 0 ? paymentId === "none" : !(Number(paymentAmount) > 0 && paymentCurrency.trim().length >= 3))} onClick={() => {
               const selected = payments.find((item) => item.id === paymentId);
-              run(() => approveEmailRightsReview(review.id, { kind: "license_fee_receipt", paymentId: selected?.id ?? null, amount: selected ? Number(selected.amount) : Number(paymentAmount), currency: selected?.currency ?? paymentCurrency, paidDate }), "License fee marked paid and receipt attached.");
+              run(() => approveEmailRightsReview(review.id, { kind: "license_fee_receipt", paymentId: selected?.id ?? null, amount: selected ? Number(selected.amount) : Number(paymentAmount), currency: selected?.currency ?? paymentCurrency, paidDate }, learnFromReview), "License fee marked paid and receipt attached.");
             }}>
               {pending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} Approve payment
             </Button>

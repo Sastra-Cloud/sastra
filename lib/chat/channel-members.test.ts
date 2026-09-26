@@ -20,12 +20,13 @@ const bora: ChannelMember = {
 };
 
 describe("channel memberships", () => {
-  it("restricts direct and custom channels without changing shared channels", () => {
+  it("restricts direct, custom and standup channels without changing shared channels", () => {
     expect(isMemberScopedChannel("direct")).toBe(true);
     expect(isMemberScopedChannel("custom")).toBe(true);
+    // A standup conversation belongs to the person answering it.
+    expect(isMemberScopedChannel("standup")).toBe(true);
     expect(isMemberScopedChannel("general")).toBe(false);
     expect(isMemberScopedChannel("project")).toBe(false);
-    expect(isMemberScopedChannel("standup")).toBe(false);
   });
 
   it("adds members once in alphabetical order", () => {

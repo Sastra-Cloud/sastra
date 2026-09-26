@@ -81,6 +81,9 @@ import {
 } from "@/lib/email/operational-drafts";
 import { formatDate } from "@/lib/format";
 import { removeEmailDraftForUser } from "@/lib/email/draft-store";
+import { recordDocumentCase } from "@/lib/document-learning/service";
+import { documentCueText } from "@/lib/document-learning/source";
+import { documentLearningCases } from "@/lib/db/schema";
 
 async function projectMeta(projectId: string) {
   const [project] = await db
@@ -1304,6 +1307,8 @@ export async function reopenPrintQuote(quoteId: string) {
     .update(printQuotes)
     .set({ reviewStatus, acceptedAt: null, updatedAt: new Date() })
     .where(eq(printQuotes.id, quoteId));
+  await db.update(documentLearningCases).set({ enabled: false, updatedAt: new Date() })
+    .where(and(eq(documentLearningCases.source, "print_quote"), eq(documentLearningCases.sourceRef, quoteId)));
   if (quote.kind === "final_invoice") {
     await restoreAcceptedInvoiceFiles(quote.runId);
   }
@@ -1323,7 +1328,8 @@ export async function reopenPrintQuote(quoteId: string) {
 }
 
 export async function acceptPrintQuote(
-  quoteId: string
+  quoteId: string,
+  learnFromReview = true
 ): Promise<{
   error?: string;
   paymentId?: string;
@@ -1426,6 +1432,34 @@ export async function acceptPrintQuote(
       : "Accepted print quote",
   });
   scheduleHealthRecompute(quote.projectId);
+  if (learnFromReview) {
+    const [attachment] = await db.select({ name: files.originalName, r2Key: files.r2Key, mimeType: files.mimeType })
+      .from(fileAttachments).innerJoin(files, eq(files.id, fileAttachments.fileId))
+      .where(and(eq(fileAttachments.targetType, "print_quote"), eq(fileAttachments.targetId, quoteId))).limit(1);
+    let sourceText = attachment ? await getObjectBuffer(attachment.r2Key)
+      .then((buffer) => documentCueText(buffer, attachment.mimeType)).catch(() => "") : "";
+    if (!sourceText && quote.sourceMessageId) {
+      const [message] = await db.select({ bodyText: emailMessages.bodyText })
+        .from(emailMessages).where(eq(emailMessages.id, quote.sourceMessageId)).limit(1);
+      sourceText = message?.bodyText?.slice(0, 6000) ?? "";
+    }
+    if (attachment || quote.sourceMessageId) {
+      const corrected = {
+        kind: quote.kind, invoiceNumber: quote.invoiceNumber, issueDate: quote.issueDate,
+        quantityCps: quote.quantityCps, unitPrice: quote.unitPrice, totalAmount: quote.totalAmount,
+        depositAmount: quote.depositAmount, balanceAmount: quote.balanceAmount, currency: quote.currency,
+        trimWidthMm: quote.trimWidthMm, trimHeightMm: quote.trimHeightMm,
+        textPages: quote.textPages, coverPages: quote.coverPages, textSpec: quote.textSpec,
+        coverSpec: quote.coverSpec, binding: quote.binding, deliveryLocation: quote.deliveryLocation,
+        paymentTerms: quote.paymentTerms,
+      };
+      await recordDocumentCase({ workflow: "print_quote", source: "print_quote", sourceRef: quoteId,
+        sourceName: attachment?.name ?? quote.title, sourceText,
+        prediction: quote.rawExtract as Record<string, unknown> | null,
+        corrected, createdBy: user.id,
+      }).catch((error) => console.error("Print quote learning capture failed:", error));
+    }
+  }
   await revalidatePrint(quote.projectId, { budget: true });
   return {
     paymentId: payment?.id,
@@ -1452,6 +1486,8 @@ export async function rejectPrintQuote(quoteId: string) {
     .update(printQuotes)
     .set({ reviewStatus: "rejected", acceptedAt: null, updatedAt: new Date() })
     .where(eq(printQuotes.id, quoteId));
+  await db.update(documentLearningCases).set({ enabled: false, updatedAt: new Date() })
+    .where(and(eq(documentLearningCases.source, "print_quote"), eq(documentLearningCases.sourceRef, quoteId)));
   if (wasAccepted && quote.kind === "final_invoice") {
     await restoreAcceptedInvoiceFiles(quote.runId);
   }

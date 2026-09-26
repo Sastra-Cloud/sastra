@@ -144,6 +144,10 @@
 
 - dynamic, metadata
 
+## `app/(app)/settings/document-learning/page.tsx`
+
+- dynamic, metadata
+
 ## `app/(app)/settings/email/page.tsx`
 
 - dynamic, metadata
@@ -644,6 +648,10 @@
 
 - CreateChannelDialog
 
+## `components/chat/message-pins.tsx`
+
+- MessagePinsProvider, PinnedMessagesButton, useMessagePins
+
 ## `components/chat/new-direct-message-popover.tsx`
 
 - NewDirectMessagePopover
@@ -699,6 +707,10 @@
 ## `components/correspondence/reprocess-feedback.ts`
 
 - ReprocessFeedback, describeReprocessResult
+
+## `components/correspondence/review-email-attachment-button.tsx`
+
+- ReviewEmailAttachmentButton
 
 ## `components/correspondence/thread-controls.tsx`
 
@@ -1071,6 +1083,10 @@
 ## `components/settings/dictionary-manager.tsx`
 
 - DictionaryManager
+
+## `components/settings/document-learning-manager.tsx`
+
+- DocumentLearningManager
 
 ## `components/settings/email-learning-manager.tsx`
 
@@ -1762,7 +1778,7 @@
 
 ## `lib/chat/channel-members.ts`
 
-- ChannelMember, ChannelMembershipChange, isMemberScopedChannel, updateChannelMembers
+- ChannelMember, ChannelMembershipChange, MEMBER_SCOPED_CHANNEL_KINDS, isMemberScopedChannel, updateChannelMembers
 
 ## `lib/chat/direct.ts`
 
@@ -1772,13 +1788,25 @@
 
 - channelIdFromPathname
 
+## `lib/chat/pin-actions.ts`
+
+- pinMessage, unpinMessage
+
+## `lib/chat/pin-state.ts`
+
+- ChatPinnedMessage, PINNED_LIST_LIMIT, PIN_EXCERPT_LENGTH, PinChange, PinnedAttachmentSummary, applyPinChange, pinExcerpt, pinnedByLabel, pinnedMessagePreview, sortPins, summarizePinnedAttachments
+
+## `lib/chat/pins.ts`
+
+- AccessiblePin, getMessagePin, listAccessiblePins, listChannelPins
+
 ## `lib/chat/project-channels.ts`
 
 - DEFAULT_PROJECT_CHANNELS, defaultProjectChannelRows, ensureAllProjectChatChannels, ensureProjectChatChannels, ensureProjectChatChannelsForProjects, projectChannelOrderSql
 
 ## `lib/chat/queries.ts`
 
-- ChannelListItem, ChatMessageView, ChatReaction, ChatSidebarData, DirectMessageCandidate, DirectMessageListItem, ProjectChannelListItem, ProjectChatSummary, ProjectSidebarChannel, getChannelById, getChannelSignature, getProjectChannel, getRecentMessages, listChannels, listChatSidebar, listDirectMessageCandidates, listDirectMessages, listProjectChannels, listProjectChatSummaries
+- ChannelListItem, ChatMessageView, ChatReaction, ChatSidebarData, DirectMessageCandidate, DirectMessageListItem, ProjectChannelListItem, ProjectChatSummary, ProjectSidebarChannel, RECENT_MESSAGE_LIMIT, getChannelById, getChannelSignature, getProjectChannel, getRecentMessages, listChannels, listChatSidebar, listDirectMessageCandidates, listDirectMessages, listProjectChannels, listProjectChatSummaries
 
 ## `lib/chat/sidebar-order.ts`
 
@@ -1875,6 +1903,10 @@
 ## `lib/db/schema/dictionary.ts`
 
 - dictionaryTerms
+
+## `lib/db/schema/document-learning.ts`
+
+- documentLearningCases, sharedDocumentLibrary
 
 ## `lib/db/schema/donations.ts`
 
@@ -1988,6 +2020,30 @@
 
 - buildVoiceContext
 
+## `lib/document-learning/actions.ts`
+
+- contributeDocumentCase, removeDocumentCase, setDocumentCaseEnabled, setDocumentLearningEnabled
+
+## `lib/document-learning/cloud.ts`
+
+- cloudDocumentGuidance, submitSharedRule
+
+## `lib/document-learning/match.ts`
+
+- DOCUMENT_WORKFLOWS, DocumentWorkflow, cueTokens, matchScore, selectExamples
+
+## `lib/document-learning/service.ts`
+
+- documentLearningEnabled, listDocumentCases, localDocumentGuidance, recordDocumentCase
+
+## `lib/document-learning/shared-rules.ts`
+
+- PublishedDocumentRule, SHARED_CUES, SHARED_FIELDS, SHARED_INTERPRETATIONS, SharedDocumentRule, publishedRuleSchema, sharedRulePrompt, sharedRuleSchema, suggestedSharedCues
+
+## `lib/document-learning/source.ts`
+
+- documentCueText
+
 ## `lib/donations/actions.ts`
 
 - DonationImportResult, confirmDonationAllocations, confirmDonationMouPaymentMatch, createDonationImportFromFile, resolveDonationDuplicate, setDonationUnallocated
@@ -2031,6 +2087,10 @@
 ## `lib/email/counterparty-match.ts`
 
 - FundingPartnerDirectoryMatch, resolveFundingPartnerDirectoryMatch
+
+## `lib/email/document-review-actions.ts`
+
+- reviewEmailAttachmentAsDocument
 
 ## `lib/email/draft-actions.ts`
 
@@ -2130,7 +2190,7 @@
 
 ## `lib/email/rights-review-actions.ts`
 
-- approveEmailRightsReview, dismissEmailRightsReview, retryEmailRightsReview
+- approveEmailRightsReview, dismissEmailRightsReview, retryEmailRightsReview, setEmailRightsReviewKind, startManualEmailRightsReview
 
 ## `lib/email/rights-review-jev.ts`
 
@@ -2362,7 +2422,7 @@
 
 ## `lib/imports/actions.ts`
 
-- BudgetMode, CommitDecision, applyImportToProject, applyImportedInvoice, attachAgreementToProjects, commitImport, createImportForPaymentInvoice, createImportFromFile, createImportsForProject, discardImport, getImportStatus, resumeStalledImports, startParse, updateImportDraft
+- BudgetMode, CommitDecision, applyImportToProject, applyImportedInvoice, attachAgreementToProjects, commitImport, createImportForPaymentInvoice, createImportFromFile, createImportsForProject, discardImport, enterImportManually, getImportStatus, resumeStalledImports, saveImportAsLesson, setImportTargetProject, startParse, updateImportDraft
 
 ## `lib/imports/extraction.ts`
 

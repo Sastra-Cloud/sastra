@@ -96,6 +96,7 @@ export const userRoleCapacity = pgTable(
  */
 export const workspaceSettings = pgTable("workspace_settings", {
   id: text("id").primaryKey().default("workspace"),
+  documentLearningEnabled: boolean("document_learning_enabled").notNull().default(true),
   logoFileId: text("logo_file_id"),
   accentColor: text("accent_color").notNull().default("#B65C3A"),
   orgName: text("org_name"),

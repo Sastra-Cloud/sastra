@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Bell,
   Bot,
+  BookOpenCheck,
   Building2,
   Check,
   ChevronDown,
@@ -76,6 +77,7 @@ export function SettingsNav({
         { href: "/settings/email", label: "Email", icon: Mail, show: canManage },
         { href: "/settings/costs", label: "AI usage", icon: CircleDollarSign, show: isAdmin },
         { href: "/settings/ai", label: "AI", icon: Bot, show: isAdmin },
+        { href: "/settings/document-learning", label: "Document learning", icon: BookOpenCheck, show: canManage },
       ],
     },
   ]

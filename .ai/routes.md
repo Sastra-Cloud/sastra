@@ -39,6 +39,7 @@
 - `/settings/ai` -> `app/(app)/settings/ai/page.tsx`
 - `/settings/costs` -> `app/(app)/settings/costs/page.tsx`
 - `/settings/dictionary` -> `app/(app)/settings/dictionary/page.tsx`
+- `/settings/document-learning` -> `app/(app)/settings/document-learning/page.tsx`
 - `/settings/email` -> `app/(app)/settings/email/page.tsx`
 - `/settings/notifications` -> `app/(app)/settings/notifications/page.tsx`
 - `/settings` -> `app/(app)/settings/page.tsx`

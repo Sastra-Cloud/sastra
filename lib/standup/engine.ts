@@ -6,6 +6,7 @@ import { uuidv7 } from "uuidv7";
 
 import { db } from "@/lib/db";
 import {
+  chatChannelMembers,
   chatChannels,
   chatMessages,
   standupAnswers,
@@ -29,6 +30,19 @@ async function botPost(channelId: string, content: string) {
   });
 }
 
+/**
+ * A standup conversation is private to the person answering it: they are its
+ * only member, and member-scoped channels are closed to everyone else.
+ */
+async function ensureMember(channelId: string, userId: string) {
+  await db
+    .insert(chatChannelMembers)
+    .values({ channelId, userId })
+    .onConflictDoNothing({
+      target: [chatChannelMembers.channelId, chatChannelMembers.userId],
+    });
+}
+
 /** Find this participant's existing standup channel, or create one. */
 async function ensureChannel(
   standupId: string,
@@ -48,12 +62,16 @@ async function ensureChannel(
     )
     .orderBy(desc(standupRuns.runDate))
     .limit(1);
-  if (prior?.channelId) return prior.channelId;
+  if (prior?.channelId) {
+    await ensureMember(prior.channelId, userId);
+    return prior.channelId;
+  }
 
   const [c] = await db
     .insert(chatChannels)
     .values({ name: `${standupName} · ${userName}`, kind: "standup" })
     .returning({ id: chatChannels.id });
+  await ensureMember(c.id, userId);
   return c.id;
 }
 

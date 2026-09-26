@@ -21,7 +21,10 @@ import {
   requireChannelAccess,
   requireMessageAccess,
 } from "@/lib/chat/access";
-import type { ChannelMember } from "@/lib/chat/channel-members";
+import {
+  isMemberScopedChannel,
+  type ChannelMember,
+} from "@/lib/chat/channel-members";
 import { directConversationKey } from "@/lib/chat/direct";
 import { notifyMentions } from "@/lib/mentions/notify";
 import {
@@ -54,7 +57,7 @@ async function handleMentions(
     .limit(1);
   const members = channel?.projectId
     ? await listProjectMentionTargets(channel.projectId)
-    : channel?.kind === "direct" || channel?.kind === "custom"
+    : channel && isMemberScopedChannel(channel.kind)
       ? await db
           .select({ userId: chatChannelMembers.userId })
           .from(chatChannelMembers)
@@ -489,9 +492,15 @@ export async function toggleReaction(messageId: string, emoji: string) {
 export async function deleteMessage(messageId: string) {
   const { user } = await requireUser();
   await requireMessageAccess(messageId, user.id);
+  // A deleted message leaves the conversation's Pinned list too.
   await db
     .update(chatMessages)
-    .set({ deletedAt: new Date(), updatedAt: new Date() })
+    .set({
+      deletedAt: new Date(),
+      updatedAt: new Date(),
+      pinnedAt: null,
+      pinnedByUserId: null,
+    })
     .where(
       and(eq(chatMessages.id, messageId), eq(chatMessages.userId, user.id))
     );
