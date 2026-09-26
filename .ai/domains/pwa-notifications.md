@@ -9,6 +9,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `app/api/notifications/recent/route.ts`
 - `app/api/presence/heartbeat/route.ts`
 - `app/api/presence/route.ts`
+- `app/api/push/public-key/route.ts`
 - `app/api/push/subscribe/route.ts`
 - `app/api/push/unsubscribe/route.ts`
 - `app/offline/page.tsx`
@@ -44,5 +45,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/presence/status.test.ts`
 - `lib/presence/status.ts`
 - `lib/push/client.ts`
+- `lib/push/keys.test.ts`
+- `lib/push/keys.ts`
 - `lib/push/setup-state.test.ts`
 - `lib/push/setup-state.ts`

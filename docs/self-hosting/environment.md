@@ -34,7 +34,7 @@ repository root carries the same list with comments.
 | `SASTRA_VERSION` / `SASTRA_REVISION` | ➖ | set by the release image build; reported by `/api/version` and `/api/ready` |
 | `SECURITY_STATUS_URL` | ➖ | where the daily published dependency-audit results are read from; defaults to the public repository's feed, forks set their own, `off` disables |
 | `SENTRY_DSN` | ➖ | optional — server error monitoring; unset = no-op |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | ➖ | Web Push public key (`npx web-push generate-vapid-keys`); unset = push off |
+| `VAPID_PUBLIC_KEY` | ➖ | Web Push public key (`npx web-push generate-vapid-keys`); unset = push off. Read at runtime, so the published image needs no rebuild. The older name `NEXT_PUBLIC_VAPID_PUBLIC_KEY` also works |
 | `VAPID_PRIVATE_KEY` | ➖ | Web Push private key (server secret); pair of the public key above |
 | `VAPID_SUBJECT` | ➖ | `mailto:` or `https:` contact URL required by push services |
 

@@ -372,6 +372,10 @@
 
 - GET, dynamic, runtime
 
+## `app/api/push/public-key/route.ts`
+
+- GET, dynamic
+
 ## `app/api/push/subscribe/route.ts`
 
 - POST, runtime
@@ -546,7 +550,7 @@
 
 ## `components/brand.tsx`
 
-- Brand
+- Brand, BrandMark
 
 ## `components/budget/approval-decision-controls.tsx`
 
@@ -1308,6 +1312,10 @@
 
 - UsePushSetup, usePushSetup
 
+## `hooks/use-user-active.ts`
+
+- useUserActive
+
 ## `lib/actions/interaction-policy.ts`
 
 - MutationInteractionMode, interactionModeFor
@@ -1327,6 +1335,10 @@
 ## `lib/activity/queries.ts`
 
 - ActivityItem, listProjectActivity, listRecentActivity
+
+## `lib/activity/tracker.ts`
+
+- ActivityTracker, ActivityTrackerDeps, USER_IDLE_MS, createActivityTracker
 
 ## `lib/after-response.ts`
 
@@ -2296,6 +2308,10 @@
 
 - SeatCheck, SeatUsage, checkSeatAvailable, occupiedSeats, seatLimitMessage
 
+## `lib/hosted/tick-request.ts`
+
+- TickRequestDeps, noteScheduledTickFinished, noteScheduledTickStarted, requestScheduledTick, resetTickRequestStateForTests
+
 ## `lib/imports/actions.ts`
 
 - BudgetMode, CommitDecision, applyImportToProject, applyImportedInvoice, attachAgreementToProjects, commitImport, createImportForPaymentInvoice, createImportFromFile, createImportsForProject, discardImport, getImportStatus, resumeStalledImports, startParse, updateImportDraft
@@ -2698,7 +2714,11 @@
 
 ## `lib/push/client.ts`
 
-- currentEndpoint, disablePush, enablePush, isIOS, isStandalone, permissionState, pushSupported, setAppBadge, syncSubscription
+- currentEndpoint, disablePush, enablePush, isIOS, isStandalone, permissionState, pushPublicKey, pushSupported, setAppBadge, syncSubscription
+
+## `lib/push/keys.ts`
+
+- vapidPublicKeyFromEnv
 
 ## `lib/push/setup-state.ts`
 

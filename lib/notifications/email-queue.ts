@@ -28,6 +28,7 @@ import {
   type EmailWorkerStore,
   type NotificationEmailClaim,
 } from "./email-worker";
+import { requestScheduledTick } from "@/lib/hosted/tick-request";
 
 type NotificationTransaction = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
@@ -99,6 +100,8 @@ export async function enqueueNotificationEmail({
     .insert(notificationEmailQueue)
     .values({ notificationId, recipientId, category, deliverAt })
     .onConflictDoNothing();
+  // Sastra Cloud: make sure a tick comes by the delivery time.
+  requestScheduledTick(deliverAt);
   return true;
 }
 

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { appHostname } from "@/lib/app-hostname";
+import { vapidPublicKeyFromEnv } from "@/lib/push/keys";
 
 import webpush from "web-push";
 import { and, eq } from "drizzle-orm";
@@ -20,7 +21,7 @@ import { shouldDeliverPush, type PushPrefs } from "./push-gate";
 let configured: boolean | null = null;
 function configure(): boolean {
   if (configured !== null) return configured;
-  const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const pub = vapidPublicKeyFromEnv();
   const priv = process.env.VAPID_PRIVATE_KEY;
   const subject = process.env.VAPID_SUBJECT || `mailto:notifications@${appHostname()}`;
   if (!pub || !priv) {

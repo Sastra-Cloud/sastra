@@ -36,6 +36,7 @@ import {
   WIKI_CHUNKER_VERSION,
 } from "@/lib/wiki/search-chunks";
 import { embedWikiRevision } from "@/lib/wiki/search-index";
+import { requestScheduledTick } from "@/lib/hosted/tick-request";
 
 const titleSchema = z.string().trim().min(1).max(160);
 const summarySchema = z.string().trim().max(500).nullable().optional();
@@ -455,6 +456,8 @@ export async function publishWikiPage(pageId: string): Promise<ActionResult<{ re
     } catch (embeddingError) {
       console.error("Immediate Wiki embedding failed; cron will retry:", embeddingError);
     }
+    // A follow-up pass retries anything that failed (Sastra Cloud only).
+    requestScheduledTick(new Date(Date.now() + 5 * 60_000));
   });
   await logActivity({
     actorId: user.id,

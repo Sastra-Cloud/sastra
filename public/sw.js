@@ -53,7 +53,7 @@ self.addEventListener("push", (event) => {
     icon: "/icons/icon-192.png",
     // Monochrome status-bar glyph (Android). This is NOT the home-screen icon
     // count — that is the Badging API, handled by updateAppBadge() below.
-    badge: "/icons/icon-192.png",
+    badge: "/icons/badge-96.png",
     tag: data.tag || data.url || "sastra",
     renotify: Boolean(data.tag),
     data: { url: data.url || "/dashboard" },

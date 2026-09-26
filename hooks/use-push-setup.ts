@@ -65,11 +65,13 @@ export function usePushSetup(): UsePushSetup {
   const refresh = useCallback(() => {
     setSignals((prev) => ({
       ...prev,
-      supported: pushSupported(),
       ios: isIOS(),
       standalone: isStandalone(),
       permission: permissionState(),
     }));
+    pushSupported()
+      .then((supported) => setSignals((prev) => ({ ...prev, supported })))
+      .catch(() => setSignals((prev) => ({ ...prev, supported: false })));
     currentEndpoint()
       .then((endpoint) =>
         setSignals((prev) => ({ ...prev, hasEndpoint: endpoint !== null }))

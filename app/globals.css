@@ -11,6 +11,7 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-heading: var(--font-heading);
+  --color-brand-mark: var(--brand-mark);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -63,6 +64,7 @@
   --brand-orange: oklch(0.61 0.17 40);
   --brand-coral: oklch(0.69 0.14 35);
   --brand-violet: oklch(0.36 0.09 292);
+  --brand-mark: var(--brand-violet);
   --brand-paper: oklch(0.96 0.01 85);
   --background: oklch(0.982 0.008 83);
   --foreground: oklch(0.22 0.035 292);
@@ -106,6 +108,7 @@
 }
 
 .dark {
+  --brand-mark: oklch(0.88 0.05 292);
   --background: oklch(0.18 0.035 292);
   --foreground: oklch(0.965 0.008 83);
   --card: oklch(0.24 0.045 292);

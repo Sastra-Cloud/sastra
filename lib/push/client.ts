@@ -2,7 +2,22 @@
 
 /** Browser-side Web Push helpers (subscribe is idempotent; iOS-safe timeouts). */
 
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
+// Source builds may bake the key in; prebuilt images ask the server for it.
+const BUILT_IN_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
+let publicKeyRequest: Promise<string> | null = null;
+
+/** The server's Web Push public key, or "" when push is not configured. */
+export function pushPublicKey(): Promise<string> {
+  if (BUILT_IN_PUBLIC_KEY) return Promise.resolve(BUILT_IN_PUBLIC_KEY);
+  publicKeyRequest ??= fetch("/api/push/public-key", { cache: "no-store" })
+    .then((res) => (res.ok ? (res.json() as Promise<{ publicKey?: unknown }>) : null))
+    .then((data) => (typeof data?.publicKey === "string" ? data.publicKey : ""))
+    .catch(() => {
+      publicKeyRequest = null; // try again next time
+      return "";
+    });
+  return publicKeyRequest;
+}
 
 function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4);
@@ -14,14 +29,18 @@ function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   return out;
 }
 
-export function pushSupported(): boolean {
+function browserSupportsPush(): boolean {
   return (
     typeof window !== "undefined" &&
     "serviceWorker" in navigator &&
     "PushManager" in window &&
-    "Notification" in window &&
-    VAPID_PUBLIC_KEY.length > 0
+    "Notification" in window
   );
+}
+
+/** This browser can receive push and the server has push keys. */
+export async function pushSupported(): Promise<boolean> {
+  return browserSupportsPush() && (await pushPublicKey()).length > 0;
 }
 
 export function isIOS(): boolean {
@@ -68,7 +87,7 @@ export function setAppBadge(count: number): void {
 
 /** Whether this browser currently has an active push subscription. */
 export async function currentEndpoint(): Promise<string | null> {
-  if (!pushSupported()) return null;
+  if (!(await pushSupported())) return null;
   const reg = await navigator.serviceWorker.ready;
   const sub = await reg.pushManager.getSubscription();
   return sub?.endpoint ?? null;
@@ -76,7 +95,7 @@ export async function currentEndpoint(): Promise<string | null> {
 
 /** Subscribe (idempotent) + register with the server. Returns the endpoint. */
 export async function enablePush(): Promise<string> {
-  if (!pushSupported()) throw new Error("Push not supported on this device.");
+  if (!(await pushSupported())) throw new Error("Push not supported on this device.");
 
   const permission = await Notification.requestPermission();
   if (permission !== "granted") throw new Error("Permission denied.");
@@ -92,7 +111,7 @@ export async function enablePush(): Promise<string> {
   // subscribe() is idempotent — returns the existing sub if still valid.
   const sub = await reg.pushManager.subscribe({
     userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    applicationServerKey: urlBase64ToUint8Array(await pushPublicKey()),
   });
 
   const res = await fetch("/api/push/subscribe", {
@@ -112,7 +131,7 @@ export async function enablePush(): Promise<string> {
  * Does nothing (and never throws) when there is no local subscription.
  */
 export async function syncSubscription(): Promise<void> {
-  if (!pushSupported()) return;
+  if (!(await pushSupported())) return;
   try {
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription();

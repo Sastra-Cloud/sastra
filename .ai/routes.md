@@ -104,6 +104,7 @@
 - `GET` `/api/presence` -> `app/api/presence/route.ts`
 - `GET` `/api/projects/[slug]/budget/export` -> `app/api/projects/[slug]/budget/export/route.ts`
 - `GET` `/api/projects/[slug]/budget/partner-pdf` -> `app/api/projects/[slug]/budget/partner-pdf/route.ts`
+- `GET` `/api/push/public-key` -> `app/api/push/public-key/route.ts`
 - `POST` `/api/push/subscribe` -> `app/api/push/subscribe/route.ts`
 - `POST` `/api/push/unsubscribe` -> `app/api/push/unsubscribe/route.ts`
 - `GET` `/api/ready` -> `app/api/ready/route.ts`

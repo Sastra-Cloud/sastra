@@ -1063,6 +1063,10 @@
     "@/lib/projects/queries",
     "@/lib/workspace/queries"
   ],
+  "app/api/push/public-key/route.ts": [
+    "next/server",
+    "@/lib/push/keys"
+  ],
   "app/api/push/subscribe/route.ts": [
     "next/server",
     "@/lib/auth/guards",
@@ -1695,6 +1699,7 @@
     "lucide-react",
     "sonner",
     "@/lib/chat/queries",
+    "@/hooks/use-user-active",
     "@/lib/users/avatar",
     "@/lib/chat/actions",
     "@/components/ui/attachment",
@@ -2170,7 +2175,8 @@
     "@/components/ui/button",
     "@/components/ui/popover",
     "@/lib/utils",
-    "@/lib/notifications/client-events"
+    "@/lib/notifications/client-events",
+    "@/hooks/use-user-active"
   ],
   "components/notifications/notification-navigation.test.tsx": [
     "vitest",
@@ -2245,6 +2251,7 @@
   ],
   "components/presence/presence-provider.tsx": [
     "react",
+    "@/hooks/use-user-active",
     "@/lib/presence/actions",
     "@/lib/presence/status"
   ],
@@ -2548,7 +2555,8 @@
   ],
   "components/pwa/service-worker-register.tsx": [
     "react",
-    "sonner"
+    "sonner",
+    "@/hooks/use-user-active"
   ],
   "components/rights/agreement-chat-sheet.tsx": [
     "@/lib/dialog-requests",
@@ -3692,6 +3700,10 @@
     "@/lib/push/setup-state",
     "@/components/pwa/pwa-provider"
   ],
+  "hooks/use-user-active.ts": [
+    "react",
+    "@/lib/activity/tracker"
+  ],
   "lib/actions/interaction-policy.test.ts": [
     "node:fs",
     "node:path",
@@ -3716,6 +3728,11 @@
     "@/lib/db",
     "@/lib/db/schema"
   ],
+  "lib/activity/tracker.test.ts": [
+    "vitest",
+    "./tracker"
+  ],
+  "lib/activity/tracker.ts": [],
   "lib/after-response.ts": [
     "next/server",
     "@/lib/logger"
@@ -3780,6 +3797,7 @@
     "@/lib/r2",
     "./chunks",
     "./index-status",
+    "@/lib/hosted/tick-request",
     "pdfjs-dist/legacy/build/pdf.mjs",
     "mammoth"
   ],
@@ -4641,7 +4659,8 @@
     "@/lib/workspace/queries",
     "./jobs",
     "./schedule",
-    "./tick"
+    "./tick",
+    "@/lib/hosted/tick-request"
   ],
   "lib/cron/tick.test.ts": [
     "vitest",
@@ -5644,6 +5663,18 @@
     "./seats"
   ],
   "lib/hosted/seats.ts": [],
+  "lib/hosted/tick-request.test.ts": [
+    "vitest",
+    "./management-auth",
+    "./tick-request"
+  ],
+  "lib/hosted/tick-request.ts": [
+    "node:crypto",
+    "next/server",
+    "@/lib/logger",
+    "./management-auth",
+    "./mode"
+  ],
   "lib/imports/actions.ts": [
     "next/navigation",
     "next/server",
@@ -5799,7 +5830,8 @@
     "@/lib/email/notification-digest",
     "@/lib/tokens",
     "./email-policy",
-    "./email-worker"
+    "./email-worker",
+    "@/lib/hosted/tick-request"
   ],
   "lib/notifications/email-worker.test.ts": [
     "vitest",
@@ -5835,6 +5867,7 @@
   "lib/notifications/push-gate.ts": [],
   "lib/notifications/push.ts": [
     "@/lib/app-hostname",
+    "@/lib/push/keys",
     "web-push",
     "drizzle-orm",
     "@/lib/db",
@@ -6452,6 +6485,11 @@
     "@/lib/db/schema"
   ],
   "lib/push/client.ts": [],
+  "lib/push/keys.test.ts": [
+    "vitest",
+    "./keys"
+  ],
+  "lib/push/keys.ts": [],
   "lib/push/setup-state.test.ts": [
     "vitest",
     "./setup-state"
@@ -6632,7 +6670,8 @@
     "@/lib/db",
     "@/lib/db/schema",
     "./engine",
-    "./insights"
+    "./insights",
+    "@/lib/hosted/tick-request"
   ],
   "lib/standup/engine.ts": [
     "drizzle-orm",
@@ -6885,7 +6924,8 @@
     "@/lib/slug",
     "@/lib/wiki/content",
     "@/lib/wiki/search-chunks",
-    "@/lib/wiki/search-index"
+    "@/lib/wiki/search-index",
+    "@/lib/hosted/tick-request"
   ],
   "lib/wiki/content.test.ts": [
     "vitest",
@@ -6939,7 +6979,8 @@
     "@/lib/r2",
     "@/lib/workspace/queries",
     "@/lib/activity/log",
-    "@/lib/planning/groups"
+    "@/lib/planning/groups",
+    "@/lib/hosted/tick-request"
   ],
   "lib/workspace/invoice-issuer.test.ts": [
     "vitest",

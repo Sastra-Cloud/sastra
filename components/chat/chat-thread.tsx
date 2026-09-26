@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 
 import type { ChatMessageView } from "@/lib/chat/queries";
+import { useUserActive } from "@/hooks/use-user-active";
 import { avatarSrc } from "@/lib/users/avatar";
 import {
   deleteMessage,
@@ -179,9 +180,15 @@ export function ChatThread({
     }
   }, [channelId, messages.length]);
 
-  // Near-real-time: poll the recent window (pauses when the tab is hidden).
+  // Near-real-time: poll the recent window while the user is active (pauses
+  // when the tab is hidden or idle for ten minutes, and catches up on return).
   // Robust across dev/proxies; an SSE endpoint also exists for future use.
+  const active = useUserActive();
+  const wasActiveRef = useRef(active);
   useEffect(() => {
+    const resumed = active && !wasActiveRef.current;
+    wasActiveRef.current = active;
+    if (!active) return;
     const recentUrl = `/api/chat/${channelId}/recent`;
     let stopped = false;
 
@@ -195,6 +202,7 @@ export function ChatThread({
       }
     };
 
+    if (resumed) void refresh();
     const interval = setInterval(refresh, 2500);
     const onVisible = () => {
       if (!document.hidden) void refresh();
@@ -206,7 +214,7 @@ export function ChatThread({
       clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [channelId]);
+  }, [channelId, active]);
 
   const latestMessageId = messages[messages.length - 1]?.id ?? null;
   const initialLatestMessageId =

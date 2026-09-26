@@ -1,10 +1,20 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
+
+import { useUserActive } from "@/hooks/use-user-active";
 
 /** Registers the service worker and surfaces a non-intrusive update toast. */
 export function ServiceWorkerRegister() {
+  const active = useUserActive();
+  const activeRef = useRef(active);
+  const checkRef = useRef<(() => Promise<void>) | null>(null);
+  useEffect(() => {
+    activeRef.current = active;
+    if (active) void checkRef.current?.();
+  }, [active]);
+
   useEffect(() => {
     if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
       return;
@@ -34,7 +44,8 @@ export function ServiceWorkerRegister() {
     let notified = false;
 
     const check = async () => {
-      if (document.hidden || notified) return;
+      // An idle tab stops asking so the server can sleep; it checks again on return.
+      if (document.hidden || notified || !activeRef.current) return;
       try {
         const res = await fetch("/api/version", { cache: "no-store" });
         if (!res.ok) return;
@@ -51,6 +62,7 @@ export function ServiceWorkerRegister() {
       }
     };
 
+    checkRef.current = check;
     void check();
     const interval = setInterval(check, 60_000);
     const onVisible = () => {

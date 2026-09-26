@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { NOTIFICATIONS_CHANGED_EVENT } from "@/lib/notifications/client-events";
+import { useUserActive } from "@/hooks/use-user-active";
 
 type Item = {
   id: string;
@@ -58,18 +59,26 @@ export function NotificationBell() {
   };
 
   useEffect(() => {
-    const initial = window.setTimeout(() => void load(), 0);
     const refresh = () => void load();
     window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
+    return () => window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
+  }, []);
+
+  // Refresh every 20 seconds while the user is active. An idle or hidden tab
+  // stops asking (push notifications still arrive), and catches up at once
+  // when the user comes back.
+  const active = useUserActive();
+  useEffect(() => {
+    if (!active) return;
+    const now = window.setTimeout(() => void load(), 0);
     const i = setInterval(() => {
       if (!document.hidden) void load();
     }, 20000);
     return () => {
-      clearTimeout(initial);
+      clearTimeout(now);
       clearInterval(i);
-      window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
     };
-  }, []);
+  }, [active]);
 
   // Keep the installed-app icon badge in sync with the unread count from the
   // foreground (the service worker sets it on push delivery). Reading an item or

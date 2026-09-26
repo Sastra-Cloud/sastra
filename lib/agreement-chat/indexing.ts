@@ -47,6 +47,7 @@ import {
   deriveAgreementDocumentIndexStatus,
   type AgreementChunkEmbeddingStatus,
 } from "./index-status";
+import { requestScheduledTick } from "@/lib/hosted/tick-request";
 
 const PROCESSING_TIMEOUT_MS = 15 * 60_000;
 const EMBEDDING_BATCH_SIZE = 8;
@@ -267,7 +268,11 @@ export async function enqueueAgreementAttachment(attachmentId: string) {
     })
     .onConflictDoNothing({ target: agreementDocuments.attachmentId })
     .returning({ id: agreementDocuments.id });
-  if (document) return document.id;
+  if (document) {
+    // A follow-up pass retries anything the immediate pass misses (Sastra Cloud only).
+    requestScheduledTick(new Date(Date.now() + 5 * 60_000));
+    return document.id;
+  }
 
   const [existing] = await db
     .select({ id: agreementDocuments.id })

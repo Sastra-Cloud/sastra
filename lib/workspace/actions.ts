@@ -11,6 +11,7 @@ import { deleteObject } from "@/lib/r2";
 import { getWorkspaceSettings } from "@/lib/workspace/queries";
 import { logActivity } from "@/lib/activity/log";
 import { capacityGroupsSchema, normalizeGroups } from "@/lib/planning/groups";
+import { requestScheduledTick } from "@/lib/hosted/tick-request";
 
 const nullableText = (max: number) =>
   z.string().trim().max(max).optional();
@@ -218,6 +219,7 @@ export async function updateWorkspaceSettings(
       : "Updated workspace settings",
     data: { fields: Object.keys(f) },
   });
+  requestScheduledTick(); // timezone, digest, and work-hour changes move job times
   revalidateWorkspaceSurfaces();
   return {};
 }

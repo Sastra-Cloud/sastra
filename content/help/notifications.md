@@ -2,7 +2,7 @@
 title: "Notifications"
 category: "Communication"
 roles: [member, manager, admin]
-keywords: [notification, bell, alert, email, bundled email, daily digest, immediate email, digest time, project-first digest, preheader, push, web push, quiet hours, work hours, unsubscribe, stop workflow emails, stop standup emails, mention, overdue task, due date changed, reschedule, stale notification, enable notifications, install, add to home screen, test notification, devices, blocked, badge, app icon badge, unread count, number on icon, email assistant, task suggestions, proof review, task learning, forwarded email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice]
+keywords: [notification, bell, alert, bell not updating, idle, paused, email, bundled email, daily digest, immediate email, digest time, project-first digest, preheader, push, web push, quiet hours, work hours, unsubscribe, stop workflow emails, stop standup emails, mention, overdue task, due date changed, reschedule, stale notification, enable notifications, install, add to home screen, test notification, devices, blocked, badge, app icon badge, unread count, number on icon, email assistant, task suggestions, proof review, task learning, forwarded email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice]
 order: 105
 summary: "The bell, bundled or daily notification email, email categories, and web-push scheduling."
 ---
@@ -13,6 +13,10 @@ Routine captured email stays in **Correspondence**, so it does not crowd out
 these work alerts or increase the bell number.
 Opening or marking notifications read updates the bell and list immediately. If
 the server cannot save the read state, the unread marker returns with an error.
+The bell checks for new notifications every 20 seconds while you use Sastra. If
+you stop typing, clicking, or scrolling for 10 minutes, it stops checking. It
+catches up as soon as you come back. Chat and the online dots work the same way.
+Push notifications still reach you while it is paused.
 
 When a task due date changes, Sastra removes the old overdue alert from the bell
 and notification history, whether it was read or unread. Future overdue reminders

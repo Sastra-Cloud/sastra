@@ -6,6 +6,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push, refres
 vi.mock("sonner", () => ({ toast: { error: mocks.error } }));
 vi.mock("@/lib/notifications/actions", () => ({ markNotificationRead: mocks.mark, markAllNotificationsRead: vi.fn() }));
 vi.mock("@/lib/push/client", () => ({ setAppBadge: vi.fn() }));
+vi.mock("@/hooks/use-user-active", () => ({ useUserActive: () => true }));
 import { NotificationBell } from "./notification-bell";
 import { NotificationsList } from "./notifications-list";
 const item = { id: "notification", type: "invoice_ready", title: "Review MoU funding", body: null, project: null, link: "/agreements/review/example", readAt: null, createdAt: new Date().toISOString() };

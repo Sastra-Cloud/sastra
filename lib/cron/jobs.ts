@@ -293,10 +293,21 @@ const weeklyDigest: ScheduledJob = {
   },
 };
 
-/** Wiki semantic index: every 5 minutes while chunks wait, hourly as a backstop. */
+/**
+ * Maintenance jobs share one nightly window so an idle workspace wakes its
+ * database once a night instead of once per job (Sastra Cloud bills database
+ * time). Jobs a few minutes apart keep it awake between them.
+ */
+const NIGHTLY = { indexBackstop: "03:10", donationCleanup: "03:10", wikiMediaCleanup: "03:12", securityMonitor: "03:14", assistantReflection: "03:16" } as const;
+
+/**
+ * Wiki semantic index: publishing embeds right away, so this is the retry
+ * pass. Every 5 minutes while chunks wait, at a failed chunk's retry time, and
+ * once a night as a backstop.
+ */
 const wikiSearchIndex: ScheduledJob = {
   name: "wiki-search-index",
-  async nextDue({ now, lastRunAt }) {
+  async nextDue({ now, lastRunAt, workspace }) {
     const staleBefore = addMs(now, -STALE_PROCESSING_MS);
     const [waiting] = await db
       .select({ id: wikiSearchChunks.id })
@@ -312,7 +323,15 @@ const wikiSearchIndex: ScheduledJob = {
         )
       )
       .limit(1);
-    return intervalDue(now, lastRunAt, waiting ? 5 * MINUTE_MS : HOUR_MS);
+    if (waiting) return intervalDue(now, lastRunAt, 5 * MINUTE_MS);
+    const [retry] = await db
+      .select({ at: sql<Date | null>`min(${wikiSearchChunks.nextEmbeddingAttemptAt})` })
+      .from(wikiSearchChunks)
+      .where(eq(wikiSearchChunks.embeddingStatus, "failed"));
+    return earliest(
+      retry?.at ? new Date(retry.at) : null,
+      dailyDue(now, lastRunAt, workspace.timezone, NIGHTLY.indexBackstop)
+    );
   },
   async run() {
     const result = await runWikiSearchIndex();
@@ -324,10 +343,14 @@ const wikiSearchIndex: ScheduledJob = {
   },
 };
 
-/** Agreement (MoU/License) index: every 10 minutes while work waits, hourly otherwise. */
+/**
+ * Agreement (MoU/License) index: uploads are processed right away, so this is
+ * the retry pass. Every 10 minutes while work waits, at the next retry time,
+ * and once a night as a backstop.
+ */
 const agreementIndex: ScheduledJob = {
   name: "agreement-index",
-  async nextDue({ now, lastRunAt }) {
+  async nextDue({ now, lastRunAt, workspace }) {
     const staleBefore = addMs(now, -STALE_PROCESSING_MS);
     const [document] = await db
       .select({ id: agreementDocuments.id })
@@ -361,7 +384,20 @@ const agreementIndex: ScheduledJob = {
             )
           )
           .limit(1);
-    return intervalDue(now, lastRunAt, chunk ? 10 * MINUTE_MS : HOUR_MS);
+    if (chunk) return intervalDue(now, lastRunAt, 10 * MINUTE_MS);
+    const [documentRetry] = await db
+      .select({ at: sql<Date | null>`min(${agreementDocuments.nextAttemptAt})` })
+      .from(agreementDocuments)
+      .where(eq(agreementDocuments.status, "failed"));
+    const [chunkRetry] = await db
+      .select({ at: sql<Date | null>`min(${agreementDocumentChunks.nextEmbeddingAttemptAt})` })
+      .from(agreementDocumentChunks)
+      .where(eq(agreementDocumentChunks.embeddingStatus, "failed"));
+    return earliest(
+      documentRetry?.at ? new Date(documentRetry.at) : null,
+      chunkRetry?.at ? new Date(chunkRetry.at) : null,
+      dailyDue(now, lastRunAt, workspace.timezone, NIGHTLY.indexBackstop)
+    );
   },
   async run() {
     const result = await runAgreementIndex();
@@ -412,7 +448,7 @@ const recomputeBlockers: ScheduledJob = {
 const donationUploadCleanup: ScheduledJob = {
   name: "donation-upload-cleanup",
   async nextDue({ now, lastRunAt, workspace }) {
-    return dailyDue(now, lastRunAt, workspace.timezone, "03:10");
+    return dailyDue(now, lastRunAt, workspace.timezone, NIGHTLY.donationCleanup);
   },
   async run({ now }) {
     const oneDayAgo = addMs(now, -DAY_MS);
@@ -530,7 +566,7 @@ const donationUploadCleanup: ScheduledJob = {
 const wikiMediaCleanup: ScheduledJob = {
   name: "wiki-media-cleanup",
   async nextDue({ now, lastRunAt, workspace }) {
-    return dailyDue(now, lastRunAt, workspace.timezone, "03:20");
+    return dailyDue(now, lastRunAt, workspace.timezone, NIGHTLY.wikiMediaCleanup);
   },
   async run({ now }) {
     const oneDayAgo = addMs(now, -DAY_MS);
@@ -594,7 +630,7 @@ const wikiMediaCleanup: ScheduledJob = {
 const securityMonitor: ScheduledJob = {
   name: "security-monitor",
   async nextDue({ now, lastRunAt, workspace }) {
-    return dailyDue(now, lastRunAt, workspace.timezone, "03:30");
+    return dailyDue(now, lastRunAt, workspace.timezone, NIGHTLY.securityMonitor);
   },
   async run() {
     // Published audit results first, so the freshness check sees them.
@@ -624,7 +660,7 @@ const securityMonitor: ScheduledJob = {
 const assistantReflection: ScheduledJob = {
   name: "assistant-reflection",
   async nextDue({ now, lastRunAt, workspace }) {
-    return dailyDue(now, lastRunAt, workspace.timezone, "04:00");
+    return dailyDue(now, lastRunAt, workspace.timezone, NIGHTLY.assistantReflection);
   },
   async run() {
     const errors: string[] = [];

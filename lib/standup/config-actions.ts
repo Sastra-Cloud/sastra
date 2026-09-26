@@ -14,6 +14,7 @@ import {
 } from "@/lib/db/schema";
 import { startStandupNow } from "./engine";
 import { generateDueReports } from "./insights";
+import { requestScheduledTick } from "@/lib/hosted/tick-request";
 
 const DEFAULT_QUESTIONS = [
   "What did you do yesterday?",
@@ -53,6 +54,7 @@ export async function createStandup(_prev: StandupState, formData: FormData) {
     }))
   );
 
+  requestScheduledTick(); // the schedule changed
   redirect(`/settings/standups/${s.id}`);
 }
 
@@ -91,6 +93,7 @@ export async function updateStandup(id: string, formData: FormData) {
       updatedAt: new Date(),
     })
     .where(eq(standups.id, id));
+  requestScheduledTick(); // the schedule changed
   revalidatePath(`/settings/standups/${id}`);
 }
 
@@ -149,6 +152,7 @@ export async function removeParticipant(id: string, standupId: string) {
 export async function deleteStandup(id: string) {
   await requireRole("manager");
   await db.delete(standups).where(eq(standups.id, id));
+  requestScheduledTick(); // the schedule changed
   redirect("/settings/standups");
 }
 
@@ -156,6 +160,7 @@ export async function deleteStandup(id: string) {
 export async function startNow(standupId: string) {
   await requireRole("manager");
   await startStandupNow(standupId);
+  requestScheduledTick(); // an open run is checked every 15 minutes
   revalidatePath("/standups");
 }
 

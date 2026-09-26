@@ -9,6 +9,7 @@ import { getWorkspaceSettings } from "@/lib/workspace/queries";
 import { SCHEDULED_JOBS, type ScheduledJobContext } from "./jobs";
 import { LEASE_STALE_MS } from "./schedule";
 import { runCronTick, type CronRunState, type TickOptions, type TickReport, type TickStore } from "./tick";
+import { noteScheduledTickFinished, noteScheduledTickStarted } from "@/lib/hosted/tick-request";
 
 /** Drizzle-backed lease store over `cron_runs`. */
 const store: TickStore = {
@@ -51,11 +52,16 @@ const store: TickStore = {
  * minute; Sastra Cloud calls it at `nextDueAt`.
  */
 export async function runScheduledTick(options: TickOptions = {}): Promise<TickReport> {
-  const workspace = await getWorkspaceSettings();
-  return runCronTick<ScheduledJobContext>(
-    SCHEDULED_JOBS,
-    store,
-    (base) => ({ ...base, workspace }),
-    options
-  );
+  noteScheduledTickStarted();
+  try {
+    const workspace = await getWorkspaceSettings();
+    return await runCronTick<ScheduledJobContext>(
+      SCHEDULED_JOBS,
+      store,
+      (base) => ({ ...base, workspace }),
+      options
+    );
+  } finally {
+    noteScheduledTickFinished();
+  }
 }

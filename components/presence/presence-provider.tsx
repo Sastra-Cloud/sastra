@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 
+import { useUserActive } from "@/hooks/use-user-active";
 import { setPresenceStatus } from "@/lib/presence/actions";
 import type { ManualStatus, PresenceStatus } from "@/lib/presence/status";
 
@@ -37,11 +38,13 @@ export function PresenceProvider({
 }) {
   const [statuses, setStatuses] = useState<PresenceMap>({});
 
-  // Heartbeat: report activity while the tab is visible.
+  const active = useUserActive();
+
+  // Heartbeat: report activity every 30 seconds while the user is active. When
+  // they go idle or hide the tab, send one "away" beat and stop, so an
+  // unattended tab does not keep the server and database awake.
   useEffect(() => {
-    let stopped = false;
     const beat = (visible: boolean) => {
-      if (stopped) return;
       fetch("/api/presence/heartbeat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -49,28 +52,27 @@ export function PresenceProvider({
         keepalive: true,
       }).catch(() => {});
     };
-    beat(!document.hidden);
-    const iv = setInterval(() => {
-      if (!document.hidden) beat(true);
-    }, HEARTBEAT_MS);
-    const onVisibility = () => beat(!document.hidden);
+    if (!active) {
+      beat(false);
+      return;
+    }
+    beat(true);
+    const iv = setInterval(() => beat(true), HEARTBEAT_MS);
+    return () => clearInterval(iv);
+  }, [active]);
+
+  useEffect(() => {
     const onHide = () => {
       const blob = new Blob([JSON.stringify({ visible: false })], {
         type: "application/json",
       });
       navigator.sendBeacon?.("/api/presence/heartbeat", blob);
     };
-    document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("pagehide", onHide);
-    return () => {
-      stopped = true;
-      clearInterval(iv);
-      document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("pagehide", onHide);
-    };
+    return () => window.removeEventListener("pagehide", onHide);
   }, []);
 
-  // Poll everyone's presence.
+  // Poll everyone's presence while the user is active.
   const refresh = useCallback(async () => {
     try {
       const r = await fetch("/api/presence");
@@ -83,19 +85,16 @@ export function PresenceProvider({
   }, []);
 
   useEffect(() => {
-    void refresh();
+    if (!active) return;
+    const first = window.setTimeout(() => void refresh(), 0);
     const iv = setInterval(() => {
       if (!document.hidden) void refresh();
     }, POLL_MS);
-    const onVisibility = () => {
-      if (!document.hidden) void refresh();
-    };
-    document.addEventListener("visibilitychange", onVisibility);
     return () => {
+      clearTimeout(first);
       clearInterval(iv);
-      document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [refresh]);
+  }, [active, refresh]);
 
   const setManual = useCallback(
     (status: ManualStatus) => {
