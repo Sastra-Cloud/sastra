@@ -654,6 +654,7 @@
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/gmail",
+    "@/components/settings/shared-mailbox-card",
     "@/lib/email/send",
     "@/components/ui/card",
     "@/components/ui/badge",
@@ -3111,6 +3112,18 @@
     "@/components/ui/sheet",
     "@/lib/utils"
   ],
+  "components/settings/shared-mailbox-card.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/lib/dialog-requests",
+    "@/lib/email/mailbox-actions"
+  ],
   "components/settings/standup-create-form.tsx": [
     "react",
     "@/lib/standup/config-actions",
@@ -5448,6 +5461,23 @@
     "./send",
     "@/lib/workspace/queries"
   ],
+  "lib/email/mailbox-actions.ts": [
+    "next/cache",
+    "@/lib/actions/result",
+    "@/lib/auth/guards",
+    "@/lib/crypto/secret-box",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/gmail/config",
+    "@/lib/gmail/verify",
+    "@/lib/hosted/tick-request",
+    "./mailbox-input"
+  ],
+  "lib/email/mailbox-input.test.ts": [
+    "vitest",
+    "./mailbox-input"
+  ],
+  "lib/email/mailbox-input.ts": [],
   "lib/email/message-preview.test.ts": [
     "vitest",
     "./message-preview"
@@ -5798,7 +5828,15 @@
     "@/lib/format"
   ],
   "lib/format.ts": [],
-  "lib/gmail/config.ts": [],
+  "lib/gmail/config.test.ts": [
+    "vitest",
+    "./config"
+  ],
+  "lib/gmail/config.ts": [
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/crypto/secret-box"
+  ],
   "lib/gmail/forwarded.test.ts": [
     "vitest",
     "./forwarded"
@@ -5888,6 +5926,15 @@
     "@/lib/email/project-update-suggestions"
   ],
   "lib/gmail/types.ts": [],
+  "lib/gmail/verify.test.ts": [
+    "vitest",
+    "./verify"
+  ],
+  "lib/gmail/verify.ts": [
+    "./imap",
+    "./send",
+    "./config"
+  ],
   "lib/guidance/actions.ts": [
     "drizzle-orm",
     "@/lib/actions/result",

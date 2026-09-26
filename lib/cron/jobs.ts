@@ -35,7 +35,7 @@ import {
 import { runEmailSignalReflection } from "@/lib/email/signal-reflection";
 import { reflectEmailTaskFeedback } from "@/lib/email/task-reflection";
 import {
-  gmailEnabled,
+  isGmailCaptureEnabled,
   runCaptureSync,
   syncRecentPrintProofAttachments,
 } from "@/lib/gmail";
@@ -198,11 +198,11 @@ const standup: ScheduledJob = {
 const gmailPoll: ScheduledJob = {
   name: "gmail-poll",
   async nextDue({ now, lastRunAt, workspace }) {
-    if (!gmailEnabled()) return null;
+    if (!(await isGmailCaptureEnabled())) return null;
     return pollingDue(now, lastRunAt, workSchedule(workspace), 5 * MINUTE_MS, HOUR_MS);
   },
   async run() {
-    if (!gmailEnabled()) {
+    if (!(await isGmailCaptureEnabled())) {
       return { ok: true, note: "skipped: capture mailbox not configured", result: { skipped: "disabled" } };
     }
     const events = await runCaptureSync();

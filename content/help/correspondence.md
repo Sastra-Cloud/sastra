@@ -2,7 +2,7 @@
 title: "Correspondence (email intake)"
 category: "Communication"
 roles: [manager, admin]
-keywords: [search, pagination, next page, filters, subject, correspondence, email, inbox, gmail, webhook, resend, receiving email, original email file, thread, email history, newest email first, quoted history, forwarded history, recent correspondence, project email, project filter, expand message, reprocess message, reprocess thread, review as document, missed attachment, manual rights review, uncertain classification, project status suggestion, email project update, post project update, publisher, rights, partner, printer, reply, triage, mailbox, waiting, external follow up, follow-up reminder, snooze, draft follow-up, multiple projects, review projects, link projects, many projects from one email, multi-project mou, shared agreement pdf, attach mou to several projects, video series, original video, translated video, production mode, grant reminder, funder deadline, grant report due date, reminder from email, grant obligation, final report due, recurring report, duplicate project, funder already funds, existing grant, link to existing grant, not a new project, dismiss reason, intake learning, learns from dismissals, negative rules, stop re-suggesting, approve lesson, forwarded email task, proof review task, reply to printer, meeting task, secretary, assistant, signed license, payment receipt, license fee, print proof, proof attachment, restore proof, reprocess proof, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice]
+keywords: [connect gmail, app password, shared mailbox, connect mailbox, disconnect mailbox, 2-step verification, google workspace, search, pagination, next page, filters, subject, correspondence, email, inbox, gmail, webhook, resend, receiving email, original email file, thread, email history, newest email first, quoted history, forwarded history, recent correspondence, project email, project filter, expand message, reprocess message, reprocess thread, review as document, missed attachment, manual rights review, uncertain classification, project status suggestion, email project update, post project update, publisher, rights, partner, printer, reply, triage, mailbox, waiting, external follow up, follow-up reminder, snooze, draft follow-up, multiple projects, review projects, link projects, many projects from one email, multi-project mou, shared agreement pdf, attach mou to several projects, video series, original video, translated video, production mode, grant reminder, funder deadline, grant report due date, reminder from email, grant obligation, final report due, recurring report, duplicate project, funder already funds, existing grant, link to existing grant, not a new project, dismiss reason, intake learning, learns from dismissals, negative rules, stop re-suggesting, approve lesson, forwarded email task, proof review task, reply to printer, meeting task, secretary, assistant, signed license, payment receipt, license fee, print proof, proof attachment, restore proof, reprocess proof, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice]
 order: 100
 summary: "Search project email by subject or linked project and review filtered pages of correspondence."
 ---
@@ -39,6 +39,27 @@ so attachments can be restored later without contacting the mailbox again. Threa
 **Project-related**, **Other**, and **All**,
 and auto-linked to a project and rights holder or printer where possible. Threads
 that couldn't be linked are flagged.
+
+### Connect the shared mailbox
+
+An admin connects the **shared mailbox** in **Settings ▸ Email**. It must be a
+Gmail or Google Workspace mailbox. Use a mailbox just for Sastra, such as
+publishing@yourministry.org, because Sastra reads every new email in its inbox.
+
+1. Sign in to that Google account and turn on **2-Step Verification**.
+2. Create an **app password** named Sastra at myaccount.google.com/apppasswords.
+   It is 16 letters.
+3. In **Settings ▸ Email**, enter the email address and the app password, then
+   choose **Test and connect**.
+
+Sastra signs in to Gmail first and saves the mailbox only if that works. It
+reads email that arrives from then on; older email stays in Gmail. It checks
+the inbox every few minutes during work hours and every hour at other times.
+To stop, choose **Disconnect**. Email already in Correspondence stays. If
+Gmail stops accepting the app password, for example after a password change,
+connect the mailbox again with a new app password. On a self-hosted server the
+administrator can also set the mailbox in the server settings; then the form
+shows it as connected by the server.
 
 Managers can also choose **View all** from a project's **Recent
 correspondence** section. This opens Correspondence filtered to that project;

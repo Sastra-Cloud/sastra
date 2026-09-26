@@ -41,8 +41,8 @@ import {
 } from "@/lib/email/rights-review";
 import { reviewPossibleNewProject } from "@/lib/email/project-signal";
 import {
-  captureMailbox,
-  correspondenceSendEnabled,
+  canSendAsCorrespondenceAddress,
+  getCaptureMailbox,
   sendEmail,
   syncStoredMessageAttachments,
 } from "@/lib/gmail";
@@ -1542,7 +1542,7 @@ export async function sendThreadReply(
   ccEmails?: string[]
 ): Promise<{ error?: string }> {
   const { user } = await requireRole("manager");
-  if (!correspondenceSendEnabled()) return { error: "Email sending isn't configured yet." };
+  if (!(await canSendAsCorrespondenceAddress())) return { error: "Email sending isn't configured yet." };
   const text = (body ?? "").trim();
   if (!text) return { error: "Write a message first." };
 
@@ -1613,7 +1613,7 @@ export async function logManualCorrespondence(
     .insert(emailThreads)
     .values({
       gmailThreadId: synthetic,
-      mailbox: captureMailbox() ?? "manual",
+      mailbox: (await getCaptureMailbox()) ?? "manual",
       subject: data.subject,
       status: "open",
       lastMessageAt: now,

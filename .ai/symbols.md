@@ -1156,6 +1156,10 @@
 
 - SettingsNav
 
+## `components/settings/shared-mailbox-card.tsx`
+
+- SharedMailboxCard, SharedMailboxState
+
 ## `components/settings/standup-create-form.tsx`
 
 - StandupCreateForm
@@ -1918,7 +1922,7 @@
 
 ## `lib/db/schema/email.ts`
 
-- EmailRightsReviewKind, EmailRightsReviewProposal, EmailRightsReviewStatus, emailFollowUps, emailMessages, emailProjectSuggestions, emailProjectUpdateSuggestions, emailRightsReviews, emailSignalLessons, emailTaskFeedback, emailTaskRules, emailTaskSuggestions, emailThreadProjects, emailThreads, gmailAccounts
+- EmailRightsReviewKind, EmailRightsReviewProposal, EmailRightsReviewStatus, correspondenceMailboxSettings, emailFollowUps, emailMessages, emailProjectSuggestions, emailProjectUpdateSuggestions, emailRightsReviews, emailSignalLessons, emailTaskFeedback, emailTaskRules, emailTaskSuggestions, emailThreadProjects, emailThreads, gmailAccounts
 
 ## `lib/db/schema/enums.ts`
 
@@ -2140,6 +2144,14 @@
 
 - renderMagicLinkEmail, sendMagicLinkEmail
 
+## `lib/email/mailbox-actions.ts`
+
+- connectCorrespondenceMailbox, removeCorrespondenceMailbox
+
+## `lib/email/mailbox-input.ts`
+
+- MailboxInputCheck, validateMailboxInput
+
 ## `lib/email/message-preview.ts`
 
 - EMAIL_MESSAGE_PREVIEW_LIMIT, emailMessagePreviewText
@@ -2322,7 +2334,7 @@
 
 ## `lib/gmail/config.ts`
 
-- CaptureSource, captureAppPassword, captureMailbox, correspondenceAddress, correspondenceCaptureEnabled, correspondenceCaptureSource, correspondenceSendEnabled, gmailEnabled, imapHost, imapPort, smtpHost, smtpPort
+- CaptureSource, MailboxConfig, canSendAsCorrespondenceAddress, getCaptureMailbox, getCorrespondenceAddress, getCorrespondenceCaptureSource, getMailboxConfig, isCorrespondenceCaptureEnabled, isGmailCaptureEnabled, mailboxManagedByServer, normalizeAppPassword, serverMailboxConfig
 
 ## `lib/gmail/forwarded.ts`
 
@@ -2330,7 +2342,7 @@
 
 ## `lib/gmail/imap.ts`
 
-- ImapCursor, ImapFetchResult, RawImapMessage, fetchMessageByMessageId, fetchNewMessages
+- ImapCursor, ImapFetchResult, RawImapMessage, fetchMessageByMessageId, fetchNewMessages, imapClientFor
 
 ## `lib/gmail/link.ts`
 
@@ -2350,7 +2362,7 @@
 
 ## `lib/gmail/send.ts`
 
-- SendEmailInput, SendEmailResult, sendEmail
+- SendEmailInput, SendEmailResult, sendEmail, smtpTransportFor
 
 ## `lib/gmail/sync.ts`
 
@@ -2359,6 +2371,10 @@
 ## `lib/gmail/types.ts`
 
 - NormalizedAddress, NormalizedAttachment, NormalizedMessage
+
+## `lib/gmail/verify.ts`
+
+- MailboxCheck, checkMailboxLogin, classifyMailboxError
 
 ## `lib/guidance/actions.ts`
 

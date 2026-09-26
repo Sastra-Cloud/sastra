@@ -21,7 +21,7 @@ import {
   MAX_FILE_BYTES,
   putObject,
 } from "@/lib/r2";
-import { captureMailbox, correspondenceAddress, gmailEnabled } from "./config";
+import { getCaptureMailbox, getCorrespondenceAddress, isGmailCaptureEnabled } from "./config";
 import { extractForwardedHeaderHints } from "./forwarded";
 import {
   fetchMessageByMessageId,
@@ -99,7 +99,7 @@ function parseCursor(raw: string | null): ImapCursor {
 }
 
 async function ensureCaptureAccount(): Promise<CaptureAccount | null> {
-  const mailbox = captureMailbox();
+  const mailbox = (await getCaptureMailbox());
   if (!mailbox) return null;
   await db
     .insert(gmailAccounts)
@@ -337,7 +337,7 @@ export async function loadRawMessage(
       console.error("stored raw email read failed:", row.rawObjectKey, err);
     }
   }
-  if (!gmailEnabled()) return null;
+  if (!(await isGmailCaptureEnabled())) return null;
   const fetched = await fetchMessageByMessageId(normalizedId);
   return fetched
     ? parseRawMessage(fetched.source, { providerThreadId: fetched.providerThreadId })
@@ -736,7 +736,7 @@ export async function recordOutbound(input: {
   bodyText: string;
   actingUserId: string | null;
 }): Promise<void> {
-  const mailbox = captureMailbox();
+  const mailbox = (await getCaptureMailbox());
   if (!mailbox) return;
   const msg: NormalizedMessage = {
     messageId: input.messageId,
@@ -906,7 +906,7 @@ export async function ingestRawMessage(
   // IMAP account does.
   const mailbox =
     opts.mailbox?.trim().toLowerCase() ||
-    correspondenceAddress() ||
+    (await getCorrespondenceAddress()) ||
     msg.to[0]?.email ||
     "inbound";
   const rawObjectKey = await storeRawMessage(messageId, buffer);

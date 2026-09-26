@@ -1,18 +1,18 @@
-import { isHostedInstance, hostedAccountUrl } from "@/lib/hosted/mode";
+import { isHostedInstance } from "@/lib/hosted/mode";
 import Link from "next/link";
 import { Mail } from "lucide-react";
 import { count, eq } from "drizzle-orm";
 
 import { requireRole } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
-import { emailThreads, gmailAccounts } from "@/lib/db/schema";
+import { correspondenceMailboxSettings, emailThreads, gmailAccounts } from "@/lib/db/schema";
 import {
-  captureMailbox,
-  correspondenceAddress,
-  correspondenceCaptureSource,
-  correspondenceSendEnabled,
-  gmailEnabled,
+  canSendAsCorrespondenceAddress,
+  getCorrespondenceAddress,
+  getCorrespondenceCaptureSource,
+  getMailboxConfig,
 } from "@/lib/gmail";
+import { SharedMailboxCard, type SharedMailboxState } from "@/components/settings/shared-mailbox-card";
 import { emailProviderConfigured, resolveEmailProvider } from "@/lib/email/send";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,8 +35,17 @@ function Row({ label, value }: { label: string; value: string }) {
 
 export default async function SettingsEmailPage() {
   const { user } = await requireRole("manager");
-  const enabled = gmailEnabled();
-  const captureSource = correspondenceCaptureSource();
+  const [config, captureSource, address, canSend, [savedMailbox]] = await Promise.all([
+    getMailboxConfig(),
+    getCorrespondenceCaptureSource(),
+    getCorrespondenceAddress(),
+    canSendAsCorrespondenceAddress(),
+    db
+      .select({ mailbox: correspondenceMailboxSettings.mailbox, verifiedAt: correspondenceMailboxSettings.verifiedAt })
+      .from(correspondenceMailboxSettings)
+      .limit(1),
+  ]);
+  const enabled = config !== null;
   const captureEnabled = captureSource !== null;
   const captureLabel =
     captureSource === "gmail"
@@ -46,9 +55,7 @@ export default async function SettingsEmailPage() {
         : captureSource === "webhook"
           ? "Webhook"
           : "Off";
-  const mailbox = captureMailbox();
-  const address = correspondenceAddress();
-  const canSend = correspondenceSendEnabled();
+  const mailbox = config?.mailbox ?? null;
   const provider = resolveEmailProvider(process.env);
   const providerReady = emailProviderConfigured(process.env);
   const providerLabel = provider === "resend" ? "Resend" : "SMTP";
@@ -66,6 +73,12 @@ export default async function SettingsEmailPage() {
   ]);
   const [account] = accountRows;
   const [threads] = threadRows;
+  const mailboxState: SharedMailboxState =
+    config?.source === "server"
+      ? { mode: "server", mailbox: config.mailbox }
+      : config?.source === "settings" && savedMailbox
+        ? { mode: "connected", mailbox: config.mailbox, checkedLabel: account?.lastSyncedAt ? timeAgo(account.lastSyncedAt) : timeAgo(savedMailbox.verifiedAt) }
+        : { mode: "none", needsReconnect: savedMailbox?.mailbox };
 
   return (
     <div className="space-y-5">
@@ -108,6 +121,8 @@ export default async function SettingsEmailPage() {
         </CardContent>
       </Card>
 
+      <SharedMailboxCard state={mailboxState} canEdit={isAdminRole(user)} />
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Outbound email defaults</CardTitle>
@@ -140,38 +155,22 @@ export default async function SettingsEmailPage() {
         </CardContent>
       </Card>
 
-      {!captureEnabled && isHostedInstance() ? <Card><CardHeader><CardTitle>Email setup</CardTitle></CardHeader><CardContent className="space-y-2 text-sm"><p>Contact Sastra Cloud support to connect your team email. You can keep managing projects and recording publishing details manually.</p>{hostedAccountUrl() ? <a href={hostedAccountUrl()!} className="text-primary underline">Manage account</a> : null}</CardContent></Card> : null}
       {!captureEnabled && !isHostedInstance() && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Connect it</CardTitle>
+            <CardTitle className="text-base">Other ways to receive email</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>
-              The email hub captures rights/MoU email from a shared mailbox and
-              lets the assistant draft replies. To turn it on:
+              Server administrators can connect the shared mailbox in the server
+              settings instead, with{" "}
+              <code className="rounded bg-muted px-1">GMAIL_CAPTURE_MAILBOX</code>{" "}
+              and{" "}
+              <code className="rounded bg-muted px-1">GMAIL_CAPTURE_APP_PASSWORD</code>.
+              Either way, the scheduled{" "}
+              <code className="rounded bg-muted px-1">/api/cron/tick</code> task
+              checks the mailbox.
             </p>
-            <ol className="list-decimal space-y-1.5 pl-5">
-              <li>
-                On the shared mailbox account, turn on 2-Step Verification and
-                create an{" "}
-                <span className="font-medium text-foreground">app password</span>.
-              </li>
-              <li>
-                Set <code className="rounded bg-muted px-1">GMAIL_CAPTURE_MAILBOX</code>{" "}
-                and{" "}
-                <code className="rounded bg-muted px-1">
-                  GMAIL_CAPTURE_APP_PASSWORD
-                </code>{" "}
-                in the server environment.
-              </li>
-              <li>Enable IMAP in that mailbox’s Gmail settings.</li>
-              <li>
-                Make sure the scheduled{" "}
-                <code className="rounded bg-muted px-1">/api/cron/tick</code>{" "}
-                task is running; it polls the mailbox for you.
-              </li>
-            </ol>
             <p>
               Without a Gmail mailbox, set{" "}
               <code className="rounded bg-muted px-1">CORRESPONDENCE_ADDRESS</code>{" "}

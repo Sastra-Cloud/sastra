@@ -66,7 +66,7 @@ import {
 import { getThread, listThreads, replyContext } from "@/lib/email/queries";
 import { logManualCorrespondence } from "@/lib/email/actions";
 import { findHolderMatch } from "@/lib/rights/holder-match";
-import { captureMailbox, correspondenceSendEnabled, sendEmail } from "@/lib/gmail";
+import { canSendAsCorrespondenceAddress, getCaptureMailbox, sendEmail } from "@/lib/gmail";
 import { createObligation } from "@/lib/obligations/actions";
 import { listObligations } from "@/lib/obligations/queries";
 import { appendMemory } from "./memory";
@@ -2389,7 +2389,7 @@ const TOOLS: ToolDef[] = [
         },
       },
       buildMessages: async (ctx, args) => {
-        const from = captureMailbox() ?? "the shared team mailbox";
+        const from = (await getCaptureMailbox()) ?? "the shared team mailbox";
         const [[actor], workspace] = await Promise.all([
           db.select({ name: user.name }).from(user).where(eq(user.id, ctx.userId)).limit(1),
           getWorkspaceSettings(),
@@ -2440,7 +2440,7 @@ const TOOLS: ToolDef[] = [
       },
     },
     preview: async (_ctx, args) => {
-      const from = captureMailbox() ?? "the shared mailbox";
+      const from = (await getCaptureMailbox()) ?? "the shared mailbox";
       const subject = args.subject ? String(args.subject) : "(no subject)";
       const body = args.body ? String(args.body) : "(empty — the draft could not be generated)";
       return [
@@ -2456,7 +2456,7 @@ const TOOLS: ToolDef[] = [
         .join("\n");
     },
     run: async (ctx, args) => {
-      if (!correspondenceSendEnabled()) {
+      if (!(await canSendAsCorrespondenceAddress())) {
         throw new Error("Email sending isn't set up yet (no correspondence address).");
       }
       if (!args.subject || !args.body) {

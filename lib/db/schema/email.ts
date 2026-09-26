@@ -577,3 +577,17 @@ export const gmailAccounts = pgTable(
   },
   (t) => [index("gmail_accounts_user_idx").on(t.userId)]
 );
+
+/**
+ * The correspondence mailbox an admin connected in Settings ▸ Email (one row).
+ * The Gmail app password is sealed with the secret box. Server settings
+ * (`GMAIL_CAPTURE_*`) take precedence when present.
+ */
+export const correspondenceMailboxSettings = pgTable("correspondence_mailbox_settings", {
+  id: text("id").primaryKey().default("workspace"),
+  mailbox: text("mailbox").notNull(),
+  appPasswordSealed: text("app_password_sealed").notNull(),
+  verifiedAt: timestamp("verified_at").notNull(),
+  updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});

@@ -9,13 +9,10 @@ import { emailMessages, emailThreads } from "@/lib/db/schema";
 import { sendMail } from "@/lib/email/send";
 
 import {
-  captureAppPassword,
-  captureMailbox,
-  correspondenceAddress,
-  correspondenceSendEnabled,
-  gmailEnabled,
-  smtpHost,
-  smtpPort,
+  canSendAsCorrespondenceAddress,
+  getCorrespondenceAddress,
+  getMailboxConfig,
+  type MailboxConfig,
 } from "./config";
 import { recordOutbound } from "./sync";
 import { buildReferencesHeader } from "./message-id";
@@ -44,26 +41,26 @@ export type SendEmailInput = {
 
 export type SendEmailResult = { messageId: string; threadKey: string };
 
-let cachedGmailTransport: nodemailer.Transporter | null = null;
+let cachedGmailTransport: { key: string; transport: nodemailer.Transporter } | null = null;
 
-/** The Gmail mailbox's own SMTP, used when capture runs through Gmail. */
-function gmailTransport(): nodemailer.Transporter {
-  if (cachedGmailTransport) return cachedGmailTransport;
-  const user = captureMailbox();
-  const pass = captureAppPassword();
-  if (!user || !pass) {
-    throw new Error("Gmail capture mailbox / app password isn't configured.");
-  }
-  cachedGmailTransport = nodemailer.createTransport({
-    host: smtpHost(),
-    port: smtpPort(),
-    secure: smtpPort() === 465,
-    auth: { user, pass },
+export function smtpTransportFor(config: Pick<MailboxConfig, "mailbox" | "appPassword" | "smtpHost" | "smtpPort">): nodemailer.Transporter {
+  return nodemailer.createTransport({
+    host: config.smtpHost,
+    port: config.smtpPort,
+    secure: config.smtpPort === 465,
+    auth: { user: config.mailbox, pass: config.appPassword },
     connectionTimeout: 15_000,
     greetingTimeout: 15_000,
     socketTimeout: 30_000,
   });
-  return cachedGmailTransport;
+}
+
+/** The Gmail mailbox's own SMTP, used when capture runs through Gmail. Rebuilt when the mailbox changes. */
+function gmailTransport(config: MailboxConfig): nodemailer.Transporter {
+  const key = `${config.mailbox}:${createHash("sha256").update(config.appPassword).digest("hex")}`;
+  if (cachedGmailTransport?.key === key) return cachedGmailTransport.transport;
+  cachedGmailTransport = { key, transport: smtpTransportFor(config) };
+  return cachedGmailTransport.transport;
 }
 
 /**
@@ -75,8 +72,8 @@ function gmailTransport(): nodemailer.Transporter {
  * attributed to the acting user.
  */
 export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
-  const mailbox = correspondenceAddress();
-  if (!mailbox || !correspondenceSendEnabled()) {
+  const [mailbox, canSend, gmail] = await Promise.all([getCorrespondenceAddress(), canSendAsCorrespondenceAddress(), getMailboxConfig()]);
+  if (!mailbox || !canSend) {
     throw new Error("The correspondence address isn't configured for sending.");
   }
 
@@ -114,7 +111,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
       references,
       messageId: deterministicMessageId,
     },
-    gmailEnabled() ? { provider: "smtp", transport: gmailTransport() } : {}
+    gmail ? { provider: "smtp", transport: gmailTransport(gmail) } : {}
   );
 
   const messageId = sent.messageId;

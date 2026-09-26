@@ -16,7 +16,7 @@ import {
 } from "@/lib/db/schema";
 import { buildExternalEmailDraftMessages } from "@/lib/email/operational-drafts";
 import { emailAnalysisText } from "@/lib/email/body-segments";
-import { captureMailbox } from "@/lib/gmail";
+import { getCaptureMailbox } from "@/lib/gmail";
 import { getWorkspaceSettings } from "@/lib/workspace/queries";
 import {
   resolveFollowUpRecord,
@@ -110,7 +110,7 @@ export async function draftExternalFollowUp(id: string) {
   const prompt = buildExternalEmailDraftMessages({
     senderName: user.name,
     organizationName: settings.orgName ?? settings.legalName ?? "the organization",
-    from: captureMailbox() ?? settings.contactEmail ?? "the shared mailbox",
+    from: (await getCaptureMailbox()) ?? settings.contactEmail ?? "the shared mailbox",
     to: recipient,
     intent: `Politely follow up on this outstanding response: ${followUp.summary}. Ask for a brief update. Do not invent a deadline or imply urgency.`,
     threadSubject: followUp.subject,

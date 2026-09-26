@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { listThreadsPage, type ThreadStatus } from "@/lib/email/queries";
 import { getProjectHeader } from "@/lib/projects/queries";
-import { correspondenceCaptureEnabled } from "@/lib/gmail";
+import { isCorrespondenceCaptureEnabled } from "@/lib/gmail";
 import { EmptyState, PageHero, PageShell } from "@/components/cockpit";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -67,6 +67,7 @@ export default async function CorrespondencePage({
     page,
   });
 
+  const captureEnabled = await isCorrespondenceCaptureEnabled();
   return (
     <PageShell>
       <PageHero
@@ -76,7 +77,7 @@ export default async function CorrespondencePage({
         description="Email captured from the shared mailbox, linked to the projects, publishers, printers, and finance requests it concerns."
       />
 
-      {!correspondenceCaptureEnabled() && (
+      {!captureEnabled && (
         <div className="rounded-lg border border-dashed bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
           The email hub isn’t connected yet. See{" "}
           <Link href="/settings/email" className="font-medium underline">

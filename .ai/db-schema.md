@@ -122,6 +122,7 @@ Table and enum exports parsed from `lib/db/schema/`.
 
 ## `lib/db/schema/email.ts`
 
+- `correspondenceMailboxSettings` (pgTable)
 - `emailFollowUps` (pgTable)
 - `emailMessages` (pgTable)
 - `emailProjectSuggestions` (pgTable)

@@ -69,6 +69,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/settings/security-manager.tsx`
 - `components/settings/security-monitor-status.tsx`
 - `components/settings/settings-nav.tsx`
+- `components/settings/shared-mailbox-card.tsx`
 - `components/settings/standup-create-form.tsx`
 - `components/settings/standup-editor.tsx`
 - `components/settings/team-manager.tsx`
@@ -95,5 +96,4 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/team/actions.ts`
 - `lib/team/queries.ts`
 - `lib/team/roles-actions.ts`
-- `lib/users/avatar-data.test.ts`
-... 3 more
+... 4 more

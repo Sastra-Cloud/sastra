@@ -11,7 +11,7 @@ import {
   listPendingProjectSuggestions,
   listThreadProjects,
 } from "@/lib/email/queries";
-import { correspondenceSendEnabled } from "@/lib/gmail";
+import { canSendAsCorrespondenceAddress } from "@/lib/gmail";
 import { listAssignableUsers, listProjects } from "@/lib/projects/queries";
 import { ContentColumn, PageHero, PageShell } from "@/components/cockpit";
 import { buttonVariants } from "@/components/ui/button";
@@ -97,6 +97,7 @@ export default async function ThreadPage({
   }));
   const users = us.map((u) => ({ id: u.id, label: u.name }));
 
+  const canSend = await canSendAsCorrespondenceAddress();
   return (
     <PageShell>
       <div>
@@ -235,7 +236,7 @@ export default async function ThreadPage({
 
         <ThreadMessageList messages={messages} threadId={thread.id} />
 
-        {correspondenceSendEnabled() && recipient && (
+        {canSend && recipient && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Reply</CardTitle>

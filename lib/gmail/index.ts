@@ -2,13 +2,16 @@ import "server-only";
 
 // Public entry points for the correspondence hub (IMAP poll, inbound webhooks, send).
 export {
-  gmailEnabled,
-  captureMailbox,
-  correspondenceAddress,
-  correspondenceCaptureEnabled,
-  correspondenceCaptureSource,
-  correspondenceSendEnabled,
+  canSendAsCorrespondenceAddress,
+  getCaptureMailbox,
+  getCorrespondenceAddress,
+  getCorrespondenceCaptureSource,
+  getMailboxConfig,
+  isCorrespondenceCaptureEnabled,
+  isGmailCaptureEnabled,
+  mailboxManagedByServer,
   type CaptureSource,
+  type MailboxConfig,
 } from "./config";
 export {
   ingestRawMessage,

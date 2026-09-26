@@ -35,6 +35,7 @@ a component.
 | A price a printer sends us | **printer quote** | bid, RFQ response | qualify with "printer" so it never reads as the budget quotation |
 | Included AI usage on Sastra Cloud | **credits** (AI credits) | tokens, allowance, AI budget, dollars | hosted workspaces never see a dollar figure for AI; self-hosted installations see real provider dollars |
 | How much file storage a Sastra Cloud plan allows | **file space** | storage, disk, quota, capacity | shown in GB; self-hosted installations have no limit |
+| The Gmail inbox Sastra reads for Correspondence | **shared mailbox** | capture mailbox, team mailbox, inbox | admins connect it in Settings ▸ Email with an app password |
 | The document sent to a partner for funding | **proposal** | pitch, offer | |
 | Checking real amounts against the plan | **reconciliation** | true-up, settle | domain term; explain once in a `HelpTip` |
 | Money received from a partner | **funding received** | receipt, inflow | |

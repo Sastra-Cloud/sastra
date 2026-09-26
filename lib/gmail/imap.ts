@@ -2,12 +2,7 @@ import "server-only";
 
 import { ImapFlow } from "imapflow";
 
-import {
-  captureAppPassword,
-  captureMailbox,
-  imapHost,
-  imapPort,
-} from "./config";
+import { getMailboxConfig, type MailboxConfig } from "./config";
 
 /** IMAP fetch cursor: UIDs are only valid within a given UIDVALIDITY. */
 export type ImapCursor = { uidValidity: string | null; lastUid: number };
@@ -28,19 +23,22 @@ export type ImapFetchResult = {
 
 const MAX_PER_POLL = 50;
 
-function makeClient(): ImapFlow {
-  const user = captureMailbox();
-  const pass = captureAppPassword();
-  if (!user || !pass) {
-    throw new Error("Gmail capture mailbox / app password not configured.");
-  }
+export function imapClientFor(config: Pick<MailboxConfig, "mailbox" | "appPassword" | "imapHost" | "imapPort">): ImapFlow {
   return new ImapFlow({
-    host: imapHost(),
-    port: imapPort(),
+    host: config.imapHost,
+    port: config.imapPort,
     secure: true,
-    auth: { user, pass },
+    auth: { user: config.mailbox, pass: config.appPassword },
     logger: false,
   });
+}
+
+async function makeClient(): Promise<ImapFlow> {
+  const config = await getMailboxConfig();
+  if (!config) {
+    throw new Error("Gmail capture mailbox / app password not configured.");
+  }
+  return imapClientFor(config);
 }
 
 /**
@@ -51,7 +49,7 @@ function makeClient(): ImapFlow {
 export async function fetchNewMessages(
   cursor: ImapCursor
 ): Promise<ImapFetchResult> {
-  const client = makeClient();
+  const client = await makeClient();
   await client.connect();
   const lock = await client.getMailboxLock("INBOX");
   try {
@@ -97,7 +95,7 @@ export async function fetchMessageByMessageId(
   const normalizedId = messageId.trim();
   if (!normalizedId) return null;
 
-  const client = makeClient();
+  const client = await makeClient();
   await client.connect();
   const lock = await client.getMailboxLock("INBOX");
   try {
