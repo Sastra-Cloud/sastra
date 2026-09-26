@@ -11,6 +11,7 @@ import { can } from "@/lib/auth/policy";
 import { ensurePrintPaymentTask } from "@/lib/print/payment-tasks";
 import { enqueueAndProcessAgreementAttachment } from "@/lib/agreement-chat/indexing";
 import { canAccessMessage } from "@/lib/chat/access";
+import { assertStorageAvailable } from "@/lib/hosted/storage-usage";
 
 const schema = z.object({
   fileId: z.string().uuid(),
@@ -90,6 +91,16 @@ export async function POST(request: Request) {
       { error: "The uploaded file could not be verified." },
       { status: 400 }
     );
+  }
+
+  const space = await assertStorageAvailable(size, { excludeFileId: fileId });
+  if (!space.ok) {
+    await db
+      .update(files)
+      .set({ status: "failed" })
+      .where(eq(files.id, fileId));
+    await deleteObject(file.r2Key).catch(() => undefined);
+    return NextResponse.json({ error: space.error }, { status: 413 });
   }
 
   await db

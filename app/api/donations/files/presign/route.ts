@@ -13,6 +13,7 @@ import {
   presignPut,
 } from "@/lib/r2";
 import { hasTrustedRequestOrigin } from "@/lib/security/request-origin";
+import { assertStorageAvailable } from "@/lib/hosted/storage-usage";
 
 const requestSchema = z.object({
   fileName: z.string().min(1).max(300),
@@ -44,6 +45,8 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
+  const space = await assertStorageAvailable(parsed.data.sizeBytes);
+  if (!space.ok) return NextResponse.json({ error: space.error }, { status: 413 });
 
   const fileId = randomUUID();
   const r2Key = buildDonationImportKey(fileId);

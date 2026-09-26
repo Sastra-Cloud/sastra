@@ -1,4 +1,4 @@
-import { integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { bigint, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 /**
  * Sastra Cloud entitlement for this instance: a singleton the control plane
@@ -10,6 +10,8 @@ export const hostedEntitlements = pgTable("hosted_entitlements", {
   instanceId: text("instance_id"),
   /** Active people plus pending invitations allowed; null = unlimited. */
   seatLimit: integer("seat_limit"),
+  /** File space the plan allows, in bytes; null = unlimited. */
+  storageLimitBytes: bigint("storage_limit_bytes", { mode: "number" }),
   /** Credits granted each month by the plan (1 credit = a fixed internal AI cost). */
   aiMonthlyCredits: integer("ai_monthly_credits").notNull().default(0),
   /** Purchased credits still available, used after the monthly ones. */

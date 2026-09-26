@@ -80,6 +80,8 @@ export type EntitlementEvent = {
   occurredAt: string;
   instanceId: string;
   seatLimit: number | null;
+  /** File space in bytes; null or absent = unlimited. */
+  storageLimitBytes?: number | null;
   aiMonthlyCredits: number;
   aiPackCredits: number;
   billingState: Entitlement["billingState"];
@@ -108,6 +110,7 @@ export async function applyEntitlementEvent(event: EntitlementEvent): Promise<Ap
   const values = {
     instanceId: event.instanceId,
     seatLimit: event.seatLimit,
+    storageLimitBytes: event.storageLimitBytes ?? null,
     aiMonthlyCredits: event.aiMonthlyCredits,
     aiPackCredits: event.aiPackCredits,
     billingState: event.billingState,

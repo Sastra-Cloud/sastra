@@ -11,6 +11,7 @@ const eventSchema = z.object({
   occurredAt: z.string().datetime({ offset: true }),
   instanceId: z.string().min(1),
   seatLimit: z.number().int().positive().nullable(),
+  storageLimitBytes: z.number().int().positive().nullable().optional(),
   aiMonthlyCredits: z.number().int().min(0),
   aiPackCredits: z.number().int().min(0),
   billingState: z.enum(["trialing", "active", "past_due", "suspended", "cancelled"]),

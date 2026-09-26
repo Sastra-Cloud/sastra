@@ -726,7 +726,11 @@
     "@/components/settings/workspace-branding-card",
     "@/components/settings/workspace-settings-form",
     "@/components/settings/invoice-sequence-card",
+    "@/components/settings/hosted-plan-card",
     "@/lib/auth/guards",
+    "@/lib/hosted/entitlements",
+    "@/lib/hosted/mode",
+    "@/lib/hosted/storage-usage",
     "@/lib/workspace/queries"
   ],
   "app/(app)/standups/loading.tsx": [
@@ -950,7 +954,8 @@
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/r2",
-    "@/lib/security/request-origin"
+    "@/lib/security/request-origin",
+    "@/lib/hosted/storage-usage"
   ],
   "app/api/email/inbound/resend/route.ts": [
     "next/server",
@@ -986,7 +991,8 @@
     "@/lib/auth/policy",
     "@/lib/print/payment-tasks",
     "@/lib/agreement-chat/indexing",
-    "@/lib/chat/access"
+    "@/lib/chat/access",
+    "@/lib/hosted/storage-usage"
   ],
   "app/api/files/presign/route.ts": [
     "crypto",
@@ -995,7 +1001,8 @@
     "@/lib/auth/guards",
     "@/lib/db",
     "@/lib/db/schema",
-    "@/lib/r2"
+    "@/lib/r2",
+    "@/lib/hosted/storage-usage"
   ],
   "app/api/health/route.ts": [],
   "app/api/internal/management/bootstrap/route.ts": [
@@ -1023,6 +1030,7 @@
     "@/lib/ai/usage",
     "@/lib/hosted/credits",
     "@/lib/hosted/entitlements",
+    "@/lib/hosted/storage-usage",
     "@/lib/hosted/management-guard",
     "@/lib/hosted/mode",
     "@/lib/workspace/queries"
@@ -1176,7 +1184,8 @@
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/r2",
-    "@/lib/security/request-origin"
+    "@/lib/security/request-origin",
+    "@/lib/hosted/storage-usage"
   ],
   "app/api/wiki/media/video/complete/route.ts": [
     "drizzle-orm",
@@ -1202,7 +1211,8 @@
     "@/lib/db/schema",
     "@/lib/r2",
     "@/lib/security/request-origin",
-    "@/lib/wiki/video"
+    "@/lib/wiki/video",
+    "@/lib/hosted/storage-usage"
   ],
   "app/layout.tsx": [
     "@/components/ui/app-dialogs",
@@ -2818,6 +2828,13 @@
     "next/navigation",
     "sonner",
     "@/lib/settings/guidance-actions"
+  ],
+  "components/settings/hosted-plan-card.tsx": [
+    "lucide-react",
+    "lucide-react",
+    "@/components/ui/card",
+    "@/lib/hosted/storage",
+    "@/lib/utils"
   ],
   "components/settings/invoice-sequence-card.tsx": [
     "react",
@@ -5663,6 +5680,19 @@
     "./seats"
   ],
   "lib/hosted/seats.ts": [],
+  "lib/hosted/storage-usage.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./entitlements",
+    "./mode",
+    "./storage"
+  ],
+  "lib/hosted/storage.test.ts": [
+    "vitest",
+    "./storage"
+  ],
+  "lib/hosted/storage.ts": [],
   "lib/hosted/tick-request.test.ts": [
     "vitest",
     "./management-auth",

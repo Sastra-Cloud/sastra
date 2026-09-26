@@ -1,0 +1,1 @@
+ALTER TABLE "hosted_entitlements" ADD COLUMN "storage_limit_bytes" bigint;

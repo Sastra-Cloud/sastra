@@ -2,7 +2,7 @@
 title: "Settings"
 category: "Settings"
 roles: [member, manager, admin]
-keywords: [billing address, partner address, invoice description, settings, setup, profile, timezone, languages, currency, invoice issuer, payment instructions, invoice numbering, organization donation fee, organization fee, admin fee, donation deduction, net available, templates, avatar, team, invite, roles, super admin, publishers, printers, email, default cc, cc recipients, outbound email defaults, dictionary, voice, ai, model, budget, costs, usage, cloudflare, r2, openrouter, ai key, api key, openrouter key, credits, ai credits, credits used up, buy credits, branding, logo, workspace, organization identity, aliases, internal domains, mobile settings, planning capacity, projects at once, project duration, completion date planner, work path, work paths, creative path, project type capacity, books at once, articles podcasts and video, guidance, show helpful guidance, guided setup, tips, hide tips, expert mode, security, passkey, fingerprint, trusted browser, two factor, dependency audit, security updates, check again, run security check, GitHub Actions, fast AI pre-checks, pre-check, typesafe, jev, skip AI calls]
+keywords: [file space, storage, storage full, out of space, upload limit, your plan, manage plan, people limit, billing address, partner address, invoice description, settings, setup, profile, timezone, languages, currency, invoice issuer, payment instructions, invoice numbering, organization donation fee, organization fee, admin fee, donation deduction, net available, templates, avatar, team, invite, roles, super admin, publishers, printers, email, default cc, cc recipients, outbound email defaults, dictionary, voice, ai, model, budget, costs, usage, cloudflare, r2, openrouter, ai key, api key, openrouter key, credits, ai credits, credits used up, buy credits, branding, logo, workspace, organization identity, aliases, internal domains, mobile settings, planning capacity, projects at once, project duration, completion date planner, work path, work paths, creative path, project type capacity, books at once, articles podcasts and video, guidance, show helpful guidance, guided setup, tips, hide tips, expert mode, security, passkey, fingerprint, trusted browser, two factor, dependency audit, security updates, check again, run security check, GitHub Actions, fast AI pre-checks, pre-check, typesafe, jev, skip AI calls]
 order: 140
 summary: "Personal settings plus admin-controlled organization identity, publishing defaults, invoices, templates, integrations, and AI."
 ---
@@ -93,6 +93,13 @@ confirmed.
   existing project overrides are not rewritten. Correspondence and document AI
   also use active teammates and these settings to distinguish your organization
   from external partners, rights holders, and printers.
+  On Sastra Cloud, admins also see a **Your plan** card here. It shows how many
+  people your plan includes and how much **file space** you use. Pending
+  invitations count as people; people you remove do not. File space counts
+  attachments, imports, and wiki images and videos. When the space is full, new
+  uploads stop with a message, and everything else keeps working. Delete files
+  you no longer need, or use **Manage your plan** to get more space. Email that
+  Sastra captures for you is always saved, even when the space is full.
 - **Templates** — choose the workspace default and edit each reusable workflow's
   name, description, phases, durations, colors, tasks, default project roles,
   offsets, and per-unit fan-out. Templates can also be activated or retired;

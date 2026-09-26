@@ -9,6 +9,7 @@ import { db } from "@/lib/db";
 import { wikiMedia, wikiPages } from "@/lib/db/schema";
 import { buildWikiImageStagingKey, presignPut } from "@/lib/r2";
 import { hasTrustedRequestOrigin } from "@/lib/security/request-origin";
+import { assertStorageAvailable } from "@/lib/hosted/storage-usage";
 
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 const IMAGE_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -43,6 +44,8 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
+  const space = await assertStorageAvailable(parsed.data.sizeBytes);
+  if (!space.ok) return NextResponse.json({ error: space.error }, { status: 413 });
   const [page] = await db
     .select({ id: wikiPages.id })
     .from(wikiPages)

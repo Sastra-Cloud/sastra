@@ -53,6 +53,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/settings/email-learning-manager.tsx`
 - `components/settings/email-task-preferences.tsx`
 - `components/settings/guidance-toggle.tsx`
+- `components/settings/hosted-plan-card.tsx`
 - `components/settings/invoice-sequence-card.tsx`
 - `components/settings/notification-prefs.tsx`
 - `components/settings/partners-manager.tsx`

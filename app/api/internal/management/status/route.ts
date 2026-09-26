@@ -7,6 +7,7 @@ import { cronRuns } from "@/lib/db/schema";
 import { getWorkspaceAiBudgetStatus } from "@/lib/ai/usage";
 import { usdToCredits } from "@/lib/hosted/credits";
 import { getEntitlement, seatUsage } from "@/lib/hosted/entitlements";
+import { storageUsedBytes } from "@/lib/hosted/storage-usage";
 import { authorizeManagementRequest } from "@/lib/hosted/management-guard";
 import { hostedInstanceId } from "@/lib/hosted/mode";
 import { getWorkspaceSettings } from "@/lib/workspace/queries";
@@ -22,12 +23,13 @@ export async function GET(request: Request) {
   const auth = await authorizeManagementRequest(request);
   if (!auth.ok) return auth.response;
 
-  const [workspace, usage, entitlement, [lastCron], aiBudget] = await Promise.all([
+  const [workspace, usage, entitlement, [lastCron], aiBudget, storageBytes] = await Promise.all([
     getWorkspaceSettings(),
     seatUsage(),
     getEntitlement(),
     db.select().from(cronRuns).orderBy(desc(cronRuns.lastRunAt)).limit(1),
     getWorkspaceAiBudgetStatus(),
+    storageUsedBytes(),
   ]);
 
   return NextResponse.json(
@@ -39,6 +41,8 @@ export async function GET(request: Request) {
       activeHumans: usage.activeHumans,
       pendingInvites: usage.pendingInvites,
       seatLimit: usage.limit,
+      storageUsedBytes: storageBytes,
+      storageLimitBytes: entitlement?.storageLimitBytes ?? null,
       billingState: entitlement?.billingState ?? null,
       /** Credits consumed this month, for the control plane's ledger. */
       aiCreditsUsedThisMonth: usdToCredits(aiBudget.spentUsd),

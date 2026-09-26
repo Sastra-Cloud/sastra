@@ -1064,6 +1064,10 @@
 
 - GuidanceToggle
 
+## `components/settings/hosted-plan-card.tsx`
+
+- HostedPlanCard
+
 ## `components/settings/invoice-sequence-card.tsx`
 
 - InvoiceSequenceCard
@@ -2307,6 +2311,14 @@
 ## `lib/hosted/seats.ts`
 
 - SeatCheck, SeatUsage, checkSeatAvailable, occupiedSeats, seatLimitMessage
+
+## `lib/hosted/storage-usage.ts`
+
+- assertStorageAvailable, storageUsage, storageUsedBytes
+
+## `lib/hosted/storage.ts`
+
+- StorageCheck, StorageUsage, checkStorageAvailable, formatBytes, storageFullMessage
 
 ## `lib/hosted/tick-request.ts`
 

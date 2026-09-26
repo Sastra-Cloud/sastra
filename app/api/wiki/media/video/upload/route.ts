@@ -19,6 +19,7 @@ import {
   MAX_WIKI_VIDEO_POSTER_BYTES,
   validateWikiVideoInspection,
 } from "@/lib/wiki/video";
+import { assertStorageAvailable } from "@/lib/hosted/storage-usage";
 
 function validLanguage(value: string) {
   try {
@@ -63,6 +64,8 @@ export async function POST(request: Request) {
   if (validationError) {
     return NextResponse.json({ error: validationError }, { status: 400 });
   }
+  const space = await assertStorageAvailable(parsed.data.sizeBytes);
+  if (!space.ok) return NextResponse.json({ error: space.error }, { status: 413 });
 
   const [page] = await db
     .select({ id: wikiPages.id })

@@ -6,6 +6,7 @@ import { getSession } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { files } from "@/lib/db/schema";
 import { buildKey, presignPut, validateUpload } from "@/lib/r2";
+import { assertStorageAvailable } from "@/lib/hosted/storage-usage";
 
 const schema = z.object({
   fileName: z.string().min(1).max(300),
@@ -26,6 +27,8 @@ export async function POST(request: Request) {
 
   const invalid = validateUpload(contentType, sizeBytes);
   if (invalid) return NextResponse.json({ error: invalid }, { status: 400 });
+  const space = await assertStorageAvailable(sizeBytes);
+  if (!space.ok) return NextResponse.json({ error: space.error }, { status: 413 });
 
   const fileId = randomUUID();
   const key = buildKey(fileId, fileName);

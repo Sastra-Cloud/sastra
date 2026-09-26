@@ -44,7 +44,10 @@ export async function uploadFile(file: File): Promise<string | null> {
     body: JSON.stringify({ fileId }),
   });
   if (!complete.ok) {
-    toast.error(`${file.name}: could not finalize`);
+    const { error } = await complete
+      .json()
+      .catch(() => ({ error: "could not finalize" }));
+    toast.error(`${file.name}: ${error ?? "could not finalize"}`);
     return null;
   }
   return fileId as string;
