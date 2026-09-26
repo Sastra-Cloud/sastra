@@ -5,6 +5,7 @@ import { escapeHtml } from "./renderTemplate";
 import { appUrl, from } from "./transport";
 import { sendMail } from "./send";
 import { getWorkspaceSettings } from "@/lib/workspace/queries";
+import { DATABASE_TLS_ADVICE } from "@/lib/security/database-transport-rules";
 
 export type SecurityAlertKind = "failed" | "stale" | "database_tls";
 
@@ -29,7 +30,7 @@ export function renderSecurityAlertEmail({
       ? "The daily production dependency audit found at least one high-severity security advisory."
       : "Sastra has not received a successful daily dependency security report within the expected window.";
   const nextStep = databaseTls
-    ? "Enable PostgreSQL SSL in Coolify, use the new verify-full connection URL, and redeploy Sastra."
+    ? DATABASE_TLS_ADVICE
     : failed
       ? "Open the GitHub Actions run, review the advisory, and apply the smallest safe dependency update."
       : "Check the scheduled GitHub Action and its Sastra webhook configuration.";

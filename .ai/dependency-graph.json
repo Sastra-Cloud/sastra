@@ -2959,7 +2959,8 @@
     "@/lib/security/dependency-monitor",
     "@/lib/format",
     "@/lib/utils",
-    "@/components/settings/dependency-security-check-button"
+    "@/components/settings/dependency-security-check-button",
+    "@/lib/security/database-transport-rules"
   ],
   "components/settings/settings-nav.tsx": [
     "react",
@@ -5326,7 +5327,8 @@
     "./renderTemplate",
     "./transport",
     "./send",
-    "@/lib/workspace/queries"
+    "@/lib/workspace/queries",
+    "@/lib/security/database-transport-rules"
   ],
   "lib/email/security-code.ts": [
     "./baseLayout",
@@ -6642,11 +6644,19 @@
     "@/lib/security/github-workflow",
     "@/lib/security/status-feed"
   ],
+  "lib/security/database-transport-rules.test.ts": [
+    "vitest",
+    "./database-transport-rules"
+  ],
+  "lib/security/database-transport-rules.ts": [
+    "@/lib/db/config"
+  ],
   "lib/security/database-transport.ts": [
     "drizzle-orm",
     "@/lib/db",
     "@/lib/db/schema",
-    "@/lib/security/dependency-monitor"
+    "@/lib/security/dependency-monitor",
+    "@/lib/security/database-transport-rules"
   ],
   "lib/security/dependency-monitor.ts": [
     "drizzle-orm",
@@ -6656,7 +6666,8 @@
     "@/lib/logger",
     "@/lib/notifications",
     "@/lib/ops/version",
-    "./status-feed"
+    "./status-feed",
+    "@/lib/security/database-transport-rules"
   ],
   "lib/security/github-workflow.test.ts": [
     "vitest",

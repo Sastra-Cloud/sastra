@@ -15,6 +15,7 @@ import type { DependencySecurityStatus } from "@/lib/security/dependency-monitor
 import { timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { DependencySecurityCheckButton } from "@/components/settings/dependency-security-check-button";
+import { DATABASE_TLS_ADVICE } from "@/lib/security/database-transport-rules";
 
 const COPY = {
   healthy: {
@@ -241,7 +242,7 @@ export function SecurityMonitorStatus({
                   ? "The development database is excluded from this production transport check."
                   : databaseSecure
                     ? "TLS is active on the live Sastra-to-PostgreSQL connection."
-                    : "Enable PostgreSQL SSL in Coolify, use a verify-full connection, and redeploy Sastra."}
+                    : DATABASE_TLS_ADVICE}
               </p>
               <p className="mt-1.5 text-xs font-medium text-foreground/65">
                 {databaseDevelopment

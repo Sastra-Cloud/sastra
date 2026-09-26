@@ -5,6 +5,7 @@ import { desc, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { securityEvents } from "@/lib/db/schema";
 import { alertSuperAdmins } from "@/lib/security/dependency-monitor";
+import { databaseTransportIsSecure } from "@/lib/security/database-transport-rules";
 
 const INSECURE_EVENT = "database_transport_insecure";
 const SECURE_EVENT = "database_transport_secure";
@@ -26,8 +27,12 @@ export async function getDatabaseTransportSecurityStatus(): Promise<DatabaseTran
       ) as tls
     `
   );
+  const secure = databaseTransportIsSecure({
+    serverReportsTls: rows[0]?.tls === true,
+    connectionString: process.env.DATABASE_URL,
+  });
   return {
-    state: rows[0]?.tls === true ? "secure" : "insecure",
+    state: secure ? "secure" : "insecure",
     checkedAt: new Date(),
   };
 }

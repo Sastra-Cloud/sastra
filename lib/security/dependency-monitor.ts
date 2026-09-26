@@ -17,6 +17,7 @@ import {
   securityStatusFeedUrl,
   selectSecurityStatus,
 } from "./status-feed";
+import { DATABASE_TLS_ADVICE } from "@/lib/security/database-transport-rules";
 
 const AUDIT_EVENTS = [
   "dependency_audit_passed",
@@ -119,7 +120,7 @@ export async function alertSuperAdmins(kind: SecurityAlertKind) {
           : "Dependency security check overdue",
       body:
         databaseTls
-          ? "Enable PostgreSQL SSL in Coolify and use a verify-full connection."
+          ? DATABASE_TLS_ADVICE
           : kind === "failed"
           ? "Review the GitHub dependency audit and apply the security update."
           : "Check the scheduled GitHub Action and Sastra webhook.",

@@ -2800,6 +2800,10 @@
 
 - runDependencySecurityCheck
 
+## `lib/security/database-transport-rules.ts`
+
+- DATABASE_TLS_ADVICE, databaseTransportIsSecure, sslModeOf
+
 ## `lib/security/database-transport.ts`
 
 - DatabaseTransportSecurityStatus, checkDatabaseTransportSecurity, getDatabaseTransportSecurityStatus
