@@ -11,7 +11,7 @@ import {
 import { parseRange } from "@/lib/assistant/usage-math";
 import { AiUsageReport } from "@/components/settings/ai-usage-report";
 
-export const metadata = { title: "Costs & usage" };
+export const metadata = { title: "AI usage" };
 export const dynamic = "force-dynamic";
 
 export default async function CostsSettingsPage({

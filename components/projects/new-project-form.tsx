@@ -1,8 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
 
-import { createProject, type ProjectFormState } from "@/lib/projects/actions";
+import { useDraftField, useProjectDraft } from "./project-draft";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,12 +30,9 @@ type Template = {
 const selectClass =
   "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50";
 
-const initial: ProjectFormState = {};
 
 export function NewProjectForm({
   templates,
-  defaultSourceLanguage,
-  defaultTargetLanguage,
   defaultPlanTemplateKey,
 }: {
   templates: Template[];
@@ -44,14 +40,9 @@ export function NewProjectForm({
   defaultTargetLanguage: string | null;
   defaultPlanTemplateKey: string | null;
 }) {
-  const [state, action, pending] = useActionState(createProject, initial);
-  const [kind, setKind] = useState<ProjectKind>("book");
-  const preferredTemplate =
-    templates.find((template) => template.key === defaultPlanTemplateKey) ??
-    templates.find((template) => template.key === "book-translation");
-  const [planTemplateId, setPlanTemplateId] = useState(
-    preferredTemplate?.id ?? "none"
-  );
+  const { draft, setDraft, state, action, pending } = useProjectDraft();
+  const [kind, setKind] = useDraftField("kind");
+  const [planTemplateId, setPlanTemplateId] = useDraftField("planTemplateId");
   const units = projectUnitTerms(kind);
   const compatibleTemplates = templates.filter(
     (template) => !template.key || template.key.startsWith(`${kind}-`)
@@ -83,7 +74,7 @@ export function NewProjectForm({
     <form action={action} className="grid max-w-2xl gap-5">
       <div className="grid gap-2">
         <Label htmlFor="title">Title</Label>
-        <Input id="title" name="title" required autoFocus />
+        <Input id="title" name="title" required autoFocus value={draft.title} onChange={event => setDraft(current => ({ ...current, title: event.target.value }))} />
       </div>
 
       {kind === "video_series" ? (
@@ -93,8 +84,7 @@ export function NewProjectForm({
             id="videoProductionMode"
             name="videoProductionMode"
             className={selectClass}
-            defaultValue="original"
-          >
+           value={draft.videoProductionMode} onChange={event => setDraft(current => ({ ...current, videoProductionMode: event.target.value }))}>
             {VIDEO_PRODUCTION_MODES.map((mode) => (
               <option key={mode} value={mode}>
                 {VIDEO_PRODUCTION_MODE_LABELS[mode]}
@@ -111,7 +101,7 @@ export function NewProjectForm({
 
       {!isEpisodicKind(kind) ? <div className="grid gap-2">
         <Label htmlFor="description">Goal / description</Label>
-        <Textarea id="description" name="description" rows={3} />
+        <Textarea id="description" name="description" rows={3} value={draft.description} onChange={event => setDraft(current => ({ ...current, description: event.target.value }))} />
         <p className="text-xs text-muted-foreground">
           State the clear done condition for this work, then add context.
         </p>
@@ -141,7 +131,7 @@ export function NewProjectForm({
         </div>
         <div className="grid gap-2">
           <Label htmlFor="status">Status</Label>
-          <select id="status" name="status" className={selectClass} defaultValue="planning">
+          <select id="status" name="status" className={selectClass} value={draft.status} onChange={event => setDraft(current => ({ ...current, status: event.target.value }))}>
             <option value="proposal">Proposal</option>
             <option value="planning">Planning</option>
             <option value="active">Active</option>
@@ -150,7 +140,7 @@ export function NewProjectForm({
         </div>
         <div className="grid gap-2">
           <Label htmlFor="priority">Priority</Label>
-          <select id="priority" name="priority" className={selectClass} defaultValue="medium">
+          <select id="priority" name="priority" className={selectClass} value={draft.priority} onChange={event => setDraft(current => ({ ...current, priority: event.target.value }))}>
             <option value="low">Low</option>
             <option value="medium">Medium</option>
             <option value="high">High</option>
@@ -166,8 +156,7 @@ export function NewProjectForm({
             id="printFundingStatus"
             name="printFundingStatus"
             className={selectClass}
-            defaultValue="not_assessed"
-          >
+           value={draft.printFundingStatus} onChange={event => setDraft(current => ({ ...current, printFundingStatus: event.target.value }))}>
             {PRINT_FUNDING_STATUSES.map((status) => (
               <option key={status} value={status}>
                 {PRINT_FUNDING_LABELS[status]}
@@ -184,22 +173,22 @@ export function NewProjectForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
           <Label htmlFor="sourceLanguage">Source language</Label>
-          <Input id="sourceLanguage" name="sourceLanguage" defaultValue={defaultSourceLanguage ?? ""} />
+          <Input id="sourceLanguage" name="sourceLanguage" value={draft.sourceLanguage} onChange={event => setDraft(current => ({ ...current, sourceLanguage: event.target.value }))} />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="targetLanguage">Target language</Label>
-          <Input id="targetLanguage" name="targetLanguage" defaultValue={defaultTargetLanguage ?? ""} />
+          <Input id="targetLanguage" name="targetLanguage" value={draft.targetLanguage} onChange={event => setDraft(current => ({ ...current, targetLanguage: event.target.value }))} />
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
           <Label htmlFor="startDate">Start date</Label>
-          <Input id="startDate" name="startDate" type="date" />
+          <Input id="startDate" name="startDate" type="date" value={draft.startDate} onChange={event => setDraft(current => ({ ...current, startDate: event.target.value }))} />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="dueDate">Due date</Label>
-          <Input id="dueDate" name="dueDate" type="date" />
+          <Input id="dueDate" name="dueDate" type="date" value={draft.dueDate} onChange={event => setDraft(current => ({ ...current, dueDate: event.target.value }))} />
         </div>
       </div>
 
@@ -237,7 +226,7 @@ export function NewProjectForm({
           rows={3}
           placeholder={`One per line, e.g.\n${
             kind === "article"
-              ? "Why Scripture Matters\nHow to Read the Psalms"
+              ? "Article 1\nArticle 2"
               : kind === "podcast"
                 ? "Episode 1\nEpisode 2"
                 : kind === "video_series"
@@ -246,7 +235,7 @@ export function NewProjectForm({
                   ? "Chapter 1\nChapter 2"
                   : "Unit 1\nUnit 2"
           }`}
-        />
+        value={draft.chapters} onChange={event => setDraft(current => ({ ...current, chapters: event.target.value }))} />
         <p className="text-xs text-muted-foreground">
           {isEpisodicKind(kind)
             ? `The standard ${units.singular} workflow is created for every item listed here.`

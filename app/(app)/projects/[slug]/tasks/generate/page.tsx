@@ -1,3 +1,6 @@
+import { AiSetupGuidance } from "@/components/ai/ai-setup-guidance";
+import { getOpenRouterApiKeyStatus } from "@/lib/ai/keys";
+import { ContentColumn, PageShell } from "@/components/cockpit";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
@@ -23,7 +26,8 @@ export default async function GeneratePlanPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  await requireRole("manager");
+  const { user } = await requireRole("manager");
+  const aiReady = (await getOpenRouterApiKeyStatus()).source !== "none";
   const { slug } = await params;
 
   const [project] = await db
@@ -56,7 +60,7 @@ export default async function GeneratePlanPage({
   const defaultKind = project.kind ?? (unitRows.length > 0 ? "book" : "article");
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-5">
+    <PageShell><ContentColumn>
       <Link
         href={`/projects/${slug}/tasks`}
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -64,7 +68,7 @@ export default async function GeneratePlanPage({
         <ChevronLeft className="size-4" />
         Tasks
       </Link>
-      <PlanWizard
+      {aiReady ? <PlanWizard
         projectId={project.id}
         slug={slug}
         projectTitle={project.title}
@@ -73,7 +77,7 @@ export default async function GeneratePlanPage({
         hasTasks={taskRow.length > 0}
         users={users.map((u) => ({ id: u.id, name: u.name }))}
         roles={roles.map((r) => ({ key: r.key, label: r.label }))}
-      />
-    </div>
+      /> : <AiSetupGuidance role={user.role} manualHref={`/projects/${slug}/tasks`} manualLabel="Add tasks manually" />}
+    </ContentColumn></PageShell>
   );
 }

@@ -38,12 +38,13 @@ export default async function SharedMouGroupsPage() {
           <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
             <FileSignature className="size-9 text-muted-foreground" />
             <div>
-              <p className="font-medium">No shared completion groups</p>
+              <p className="font-medium">No shared MoUs yet</p>
               <p className="text-sm text-muted-foreground">
                 A group is created when a reviewed import has a payment that
                 depends on multiple projects completing.
               </p>
             </div>
+            <Link href="/projects/import" className="font-medium text-primary underline underline-offset-4">Import a document</Link>
           </CardContent>
         </Card>
       ) : (
@@ -62,7 +63,7 @@ export default async function SharedMouGroupsPage() {
                       </p>
                     </div>
                     {group.reviewRequired ? (
-                      <span className="rounded-full bg-warning/10 px-2 py-1 text-xs font-medium text-warning-foreground">
+                      <span className="rounded-full bg-warning/10 px-2 py-1 text-xs font-medium text-warning-text">
                         Review
                       </span>
                     ) : null}

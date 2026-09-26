@@ -13,6 +13,7 @@ const DESTRUCTIVE = /^(delete|remove|revoke|clear|discard|trash)/;
 const PROGRESS = /^(send|draft|generate|publish|refresh|reprocess|repair|retry|upload|extract|startParse|startNow|startReprint|resume|applyImport|commitImport|attachAgreement|createImport|createProjectsFrom|enablePush|disablePush|runAssistant|request|invite|learn|seed)/;
 const PROGRESS_ACTIONS = new Set([
   "updateWorkspaceSettings",
+  "updateStandup",
   "approveFundingReview",
   "consolidatePrintInvoicePayment",
   "confirmSharedMouDelivery",
@@ -50,6 +51,7 @@ const CONFIRMED_DESTRUCTIVE_ACTIONS = new Set([
   "voidMouInvoice",
 ]);
 const OPTIMISTIC_ACTIONS = new Set([
+  "resetGuidanceTips",
   "applySuggestedPartnerRates",
   "applySuggestedPerCopyPrice",
   "saveBudgetPresentation",

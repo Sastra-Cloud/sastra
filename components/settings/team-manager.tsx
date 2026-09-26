@@ -2,7 +2,7 @@
 
 import { confirmDialog } from "@/lib/dialog-requests";
 
-import { useActionState, useEffect, useTransition } from "react";
+import { startTransition, useActionState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { X } from "lucide-react";
@@ -20,9 +20,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { HelpTip } from "@/components/ui/help-tip";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { formatDate } from "@/lib/format";
+import { useOptimisticAction } from "@/hooks/use-optimistic-action";
 import { usePropState } from "@/hooks/use-prop-state";
 import { cn } from "@/lib/utils";
 import {
@@ -53,6 +55,9 @@ type Invitation = {
 const selectClass =
   "h-8 rounded-md border border-input bg-transparent px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50";
 
+import { creditsToUsd, usdToCredits } from "@/lib/hosted/credits";
+import { formatAiAmount, type AiAmountUnit } from "@/lib/ai/amount-format";
+
 type AssistantBudget = { budgetUsd: number; enabled: boolean; spentUsd: number };
 
 export function TeamManager({
@@ -61,12 +66,14 @@ export function TeamManager({
   currentUserId,
   currentUserRole,
   assistantBudgets = {},
+  aiUnit = "usd",
 }: {
   members: Member[];
   invitations: Invitation[];
   currentUserId: string;
   currentUserRole: string | null | undefined;
   assistantBudgets?: Record<string, AssistantBudget>;
+  aiUnit?: AiAmountUnit;
 }) {
   const actorRole = asTeamRole(currentUserRole) ?? "member";
   const isAdmin = isAdminRole(actorRole);
@@ -81,7 +88,10 @@ export function TeamManager({
   const [visibleMembers, setVisibleMembers] = usePropState(members);
   const [visibleInvitations, setVisibleInvitations] = usePropState(invitations);
   const [state, action, inviting] = useActionState(
-    inviteMember,
+    async (previous: TeamState, data: FormData): Promise<TeamState> => {
+      try { return await inviteMember(previous, data); }
+      catch { return { error: "Could not invite this teammate. Check your connection and try again." }; }
+    },
     {} as TeamState
   );
 
@@ -122,15 +132,18 @@ export function TeamManager({
       <Card>
         <CardContent className="space-y-3 py-4">
           <p className="text-sm font-medium">Invite a teammate</p>
-          <form action={action} className="flex flex-col gap-2 sm:flex-row">
-            <Input
+          <form onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); startTransition(() => action(data)); }} className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="grid flex-1 gap-1"><Label htmlFor="invite-email">Email address</Label>
+            <Input id="invite-email"
               name="email"
               type="email"
               placeholder="name@example.com"
               required
               className="flex-1"
             />
-            <select name="role" className={selectClass} defaultValue="member">
+            </div>
+            <div className="grid gap-1"><Label htmlFor="invite-role">Workspace role</Label>
+            <select id="invite-role" name="role" className={selectClass} defaultValue="member">
               {inviteRoles.map((role) => (
                 <option key={role} value={role}>
                   {role === "super_admin"
@@ -138,7 +151,7 @@ export function TeamManager({
                     : role[0].toUpperCase() + role.slice(1)}
                 </option>
               ))}
-            </select>
+            </select></div>
             <Button type="submit" disabled={inviting}>
               {inviting ? "Sending…" : "Send invite"}
             </Button>
@@ -148,7 +161,7 @@ export function TeamManager({
           ) : null}
           {state.emailFailed && state.inviteUrl ? (
             <div className="space-y-1.5 rounded-md border border-warning/40 bg-warning/10 p-3">
-              <p className="text-sm font-medium text-warning-foreground">
+              <p className="text-sm font-medium text-warning-text">
                 Couldn&apos;t email this invite — share the link manually:
               </p>
               <div className="flex items-center gap-2">
@@ -244,29 +257,14 @@ export function TeamManager({
                   </label>
                   {isAdmin ? (
                     <label className="grid min-w-0 gap-1 text-xs text-muted-foreground sm:flex sm:items-center">
-                      <span>AI $/mo</span>
+                      <span>{aiUnit === "credits" ? "AI credits/month" : "AI $/month"}</span>
                       <span className="flex min-w-0 items-center gap-1">
-                      <Input
-                        type="number"
-                        min="0"
-                        max="1000"
-                        step="1"
-                        defaultValue={assistantBudgets[m.id]?.budgetUsd ?? 5}
-                        aria-label={`Monthly AI budget for ${m.name}`}
-                        className="h-9 min-w-0 flex-1 tabular-nums sm:h-8 sm:w-16 sm:flex-none"
-                        onBlur={(e) => {
-                          const v = Number(e.target.value);
-                          if (v !== (assistantBudgets[m.id]?.budgetUsd ?? 5))
-                            run(() => setAssistantBudget(m.id, v));
-                        }}
-                      />
+                      <AssistantBudgetInput userId={m.id} name={m.name} budgetUsd={assistantBudgets[m.id]?.budgetUsd ?? 5} unit={aiUnit} />
                       <span className="tabular-nums">
-                        (${(assistantBudgets[m.id]?.spentUsd ?? 0).toFixed(2)})
+                        ({formatAiAmount(assistantBudgets[m.id]?.spentUsd ?? 0, aiUnit)})
                       </span>
                       <HelpTip iconClassName="size-3" label="About the AI budget">
-                        Monthly cap on this person&apos;s AI assistant spend via
-                        OpenRouter, with current month-to-date spend shown. The
-                        assistant stops at the cap; resets each month. Default $5.
+                        Monthly assistant limit for this person, with current usage shown. The assistant stops at the limit, which resets each month.
                       </HelpTip>
                       </span>
                     </label>
@@ -366,4 +364,18 @@ export function TeamManager({
       ) : null}
     </div>
   );
+}
+
+function AssistantBudgetInput({ userId, name, budgetUsd, unit }: { userId: string; name: string; budgetUsd: number; unit: AiAmountUnit }) {
+  const router = useRouter();
+  const budget = useOptimisticAction<number, number>({ state: budgetUsd, update: (_current, next) => next });
+  const value = unit === "credits" ? usdToCredits(budget.state) : budget.state;
+  return <Input key={value} type="number" min="0" max={unit === "credits" ? usdToCredits(1000) : 1000} step="1"
+    defaultValue={value} disabled={budget.pending} aria-label={`Monthly AI budget for ${name}`}
+    className="h-9 min-w-0 flex-1 tabular-nums sm:h-8 sm:w-16 sm:flex-none"
+    onBlur={event => {
+      if (!event.currentTarget.checkValidity() || event.currentTarget.value === "") { event.currentTarget.value = String(value); return; }
+      const next = unit === "credits" ? creditsToUsd(Number(event.currentTarget.value)) : Number(event.currentTarget.value);
+      if (next !== budget.state) budget.run(next, () => setAssistantBudget(userId, next), { onSuccess: () => { toast.success("AI budget saved"); router.refresh(); } });
+    }} />;
 }

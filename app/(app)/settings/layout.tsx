@@ -20,7 +20,7 @@ export default async function SettingsLayout({
         icon={<Settings2 className="size-6" />}
         eyebrow="Workspace controls"
         title="Settings"
-        description="Tune account details, team access, publishing defaults, rituals, notifications, and AI support from one operational cockpit."
+        description="Manage your profile and notifications, or shared workspace, publishing, AI, and email settings."
       />
       <div className="grid gap-4 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-8">
         <SettingsNav canManage={hasManagementAccess} isAdmin={isAdmin} />

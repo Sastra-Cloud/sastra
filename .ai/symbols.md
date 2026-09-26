@@ -480,6 +480,10 @@
 
 - PaymentDelivery
 
+## `components/ai/ai-setup-guidance.tsx`
+
+- AiSetupGuidance
+
 ## `components/ai/planner-workspace.tsx`
 
 - PlannerWorkspace
@@ -495,6 +499,10 @@
 ## `components/assistant/assistant-message-content.tsx`
 
 - AssistantMessageContent, tokenizeAssistantWikiLinks
+
+## `components/assistant/assistant-shortcut.tsx`
+
+- AssistantShortcut
 
 ## `components/assistant/assistant-workspace.tsx`
 
@@ -916,9 +924,17 @@
 
 - PrintFundingBadge
 
+## `components/projects/project-actions.tsx`
+
+- ProjectActions
+
 ## `components/projects/project-card.tsx`
 
 - ProjectCard
+
+## `components/projects/project-draft.tsx`
+
+- ProjectDraft, ProjectDraftContext, projectDraftFormData, useDraftField, useProjectDraft
 
 ## `components/projects/project-drive-folder.tsx`
 
@@ -939,6 +955,10 @@
 ## `components/projects/project-title-context.tsx`
 
 - ProjectTitleHeading, ProjectTitleProvider, useProjectTitle
+
+## `components/projects/project-workspace-frame.tsx`
+
+- ProjectWorkspaceFrame
 
 ## `components/projects/projects-browser.tsx`
 
@@ -1060,6 +1080,10 @@
 
 - EmailTaskPreferences
 
+## `components/settings/field-errors.tsx`
+
+- FieldError, FieldErrorsContext
+
 ## `components/settings/guidance-toggle.tsx`
 
 - GuidanceToggle
@@ -1135,6 +1159,10 @@
 ## `components/settings/test-push-button.tsx`
 
 - TestPushButton
+
+## `components/settings/timezone-control.tsx`
+
+- TimezoneControl
 
 ## `components/settings/typesafe-toggle.tsx`
 
@@ -1215,6 +1243,10 @@
 ## `components/tasks/tasks-hub.tsx`
 
 - TasksHub
+
+## `components/team-planning-nav.tsx`
+
+- TeamPlanningNav
 
 ## `components/theme-provider.tsx`
 
@@ -2028,6 +2060,10 @@
 
 - INBOUND_SIGNATURE_HEADER, INBOUND_SIGNATURE_TOLERANCE_SECONDS, INBOUND_TIMESTAMP_HEADER, InboundSignatureFailure, InboundSignatureResult, bodyDigest, inboundSigningString, signInboundMessage, verifyInboundSignature
 
+## `lib/email/inbox-filters.ts`
+
+- InboxFilters, inboxHref, inboxPage
+
 ## `lib/email/invite.ts`
 
 - renderInviteEmail, sendInviteEmail
@@ -2082,7 +2118,7 @@
 
 ## `lib/email/queries.ts`
 
-- EmailDirection, ListThreadsOptions, PendingProjectSuggestion, ProjectKind, ProjectThreadPreview, ThreadMessage, ThreadProject, ThreadStatus, ThreadSummary, getThread, lastInboundMessageId, listPendingProjectSuggestions, listProjectThreadPreviews, listThreadProjects, listThreads, replyContext
+- CORRESPONDENCE_PAGE_SIZE, EmailDirection, ListThreadsOptions, PendingProjectSuggestion, ProjectKind, ProjectThreadPreview, ThreadMessage, ThreadProject, ThreadStatus, ThreadSummary, getThread, lastInboundMessageId, listPendingProjectSuggestions, listProjectThreadPreviews, listThreadProjects, listThreads, listThreadsPage, replyContext
 
 ## `lib/email/renderTemplate.ts`
 
@@ -2266,7 +2302,7 @@
 
 ## `lib/guidance/actions.ts`
 
-- dismissGuidanceKey, restoreGuidanceKey
+- dismissGuidanceKey, resetGuidanceTips, restoreGuidanceKey
 
 ## `lib/guidance/queries.ts`
 
@@ -2446,7 +2482,11 @@
 
 ## `lib/onboarding/queries.ts`
 
-- OnboardingSignals, getOnboardingSignals
+- getOnboardingSignals
+
+## `lib/onboarding/steps.ts`
+
+- OnboardingSignals, OnboardingStep, onboardingStepComplete, onboardingSteps
 
 ## `lib/ops/readiness.ts`
 
@@ -2862,7 +2902,7 @@
 
 ## `lib/tasks/attention.ts`
 
-- TASK_ATTENTION_WINDOW_DAYS, splitTasksByAttention
+- TASK_ATTENTION_WINDOW_DAYS, selectPersonalWork, splitTasksByAttention
 
 ## `lib/tasks/board-order.ts`
 
@@ -2939,6 +2979,10 @@
 ## `lib/timeline/scale.ts`
 
 - GanttScale, MonthTick, addDaysYmd, buildScale, ganttRange, msToYmd, pxToDayDelta, ymdToMs
+
+## `lib/timezone.ts`
+
+- isValidTimeZone, timezoneOptions
 
 ## `lib/tokens.ts`
 

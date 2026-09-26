@@ -79,7 +79,7 @@ If an episode is missing one or more standard stage tasks, the tab shows
 use **Repair tracking** to create only the missing tasks without changing
 existing task work or sending historical assignment alerts.
 
-Because stages are normal tasks, they also appear in Tasks, Dashboard, Workload,
+Because stages are normal tasks, they also appear in Tasks, Home, Workload,
 assignee queues, overdue reminders, and project blockers.
 
 ## Owners and stage assignees

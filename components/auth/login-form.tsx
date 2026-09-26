@@ -18,49 +18,42 @@ export function LoginForm() {
 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [pending, setPending] = React.useState(false);
+  const [passwordPending, setPasswordPending] = React.useState(false);
+  const [linkPending, setLinkPending] = React.useState(false);
+  const [passkeyPending, setPasskeyPending] = React.useState(false);
+  const [linkSent, setLinkSent] = React.useState(false);
 
   async function onPasswordSignIn(e: React.FormEvent) {
     e.preventDefault();
-    setPending(true);
-    const { error } = await authClient.signIn.email({ email, password });
-    setPending(false);
-    if (error) {
-      toast.error(error.message || "Invalid email or password.");
-      return;
-    }
-    router.push(redirectTo);
-    router.refresh();
+    if (passwordPending) return;
+    setPasswordPending(true);
+    try {
+      const { error } = await authClient.signIn.email({ email, password });
+      if (error) { toast.error(error.message || "Check your email and password."); return; }
+      router.push(redirectTo); router.refresh();
+    } catch { toast.error("Could not sign in. Check your connection and try again."); }
+    finally { setPasswordPending(false); }
   }
-
   async function onMagicLink() {
-    if (!email) {
-      toast.error("Enter your email first.");
-      return;
-    }
-    setPending(true);
-    const { error } = await authClient.signIn.magicLink({
-      email,
-      callbackURL: redirectTo,
-    });
-    setPending(false);
-    if (error) {
-      toast.error(error.message || "Could not send the link.");
-      return;
-    }
-    toast.success("Check your email for a sign-in link.");
+    if (linkPending) return;
+    if (!email) { toast.error("Enter your email first."); return; }
+    setLinkPending(true);
+    try {
+      const { error } = await authClient.signIn.magicLink({ email, callbackURL: redirectTo });
+      if (error) { toast.error(error.message || "Could not send the link."); return; }
+      setLinkSent(true);
+    } catch { toast.error("Could not send the link. Check your connection and try again."); }
+    finally { setLinkPending(false); }
   }
-
   async function onPasskeySignIn() {
-    setPending(true);
-    const { error } = await authClient.signIn.passkey();
-    setPending(false);
-    if (error) {
-      toast.error(error.message || "Could not sign in with a passkey.");
-      return;
-    }
-    router.push(redirectTo);
-    router.refresh();
+    if (passkeyPending) return;
+    setPasskeyPending(true);
+    try {
+      const { error } = await authClient.signIn.passkey();
+      if (error) { toast.error(error.message || "Could not sign in with a passkey."); return; }
+      router.push(redirectTo); router.refresh();
+    } catch { toast.error("Could not sign in with a passkey. Try again."); }
+    finally { setPasskeyPending(false); }
   }
 
   return (
@@ -95,28 +88,29 @@ export function LoginForm() {
           onChange={(e) => setPassword(e.target.value)}
         />
       </div>
-      <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "Signing in…" : "Sign in"}
+      <Button type="submit" disabled={passwordPending} className="w-full">
+        {passwordPending ? "Signing in…" : "Sign in"}
       </Button>
       <Button
         type="button"
         variant="outline"
-        disabled={pending}
+        disabled={linkPending}
         onClick={onMagicLink}
         className="w-full"
       >
-        Email me a magic link
+        {linkPending ? "Sending link…" : "Email me a sign-in link"}
       </Button>
       <Button
         type="button"
         variant="outline"
-        disabled={pending}
+        disabled={passkeyPending}
         onClick={onPasskeySignIn}
         className="w-full"
       >
         <Fingerprint className="size-4" />
-        Sign in with a passkey
+        {passkeyPending ? "Checking passkey…" : "Sign in with a passkey"}
       </Button>
+      {linkSent ? <p role="status" className="rounded-lg border border-success/30 bg-success/10 p-3 text-sm">Check your email for a sign-in link. You can keep this page open.</p> : null}
     </form>
   );
 }

@@ -378,7 +378,7 @@ export default async function ProjectOverviewPage({
                 "grid size-9 shrink-0 place-items-center rounded-lg border bg-background/80",
                 criticalCount > 0
                   ? "border-destructive/30 text-destructive"
-                  : "border-warning/30 text-warning-foreground"
+                  : "border-warning/30 text-warning-text"
               )}
             >
               <AlertTriangle className="size-4" />
@@ -394,7 +394,7 @@ export default async function ProjectOverviewPage({
                 {warningCount > 0 ? (
                   <Badge
                     variant="outline"
-                    className="border-warning/40 bg-warning/10 text-warning-foreground"
+                    className="border-warning/40 bg-warning/10 text-warning-text"
                   >
                     {warningCount} warning{warningCount === 1 ? "" : "s"}
                   </Badge>

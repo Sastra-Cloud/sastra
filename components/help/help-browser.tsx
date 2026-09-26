@@ -31,6 +31,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import type { HelpDoc, HelpRole } from "@/lib/help/search";
+import { can } from "@/lib/auth/policy";
 import { cn } from "@/lib/utils";
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
@@ -94,7 +95,7 @@ const PROSE_CLASS =
   "prose-code:rounded prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:text-xs prose-code:text-foreground prose-code:before:content-none prose-code:after:content-none " +
   "prose-table:text-sm prose-th:text-foreground prose-td:text-muted-foreground";
 
-export function HelpBrowser({ docs }: { docs: HelpDoc[] }) {
+export function HelpBrowser({ docs, role }: { docs: HelpDoc[]; role: string }) {
   const searchId = useId();
   const [query, setQuery] = useState("");
   const [activeSlug, setActiveSlug] = useState(docs[0]?.slug ?? "");
@@ -321,7 +322,8 @@ export function HelpBrowser({ docs }: { docs: HelpDoc[] }) {
             {filtered.map((doc) => {
               const Icon = CATEGORY_ICONS[doc.category] ?? BookOpen;
               const badge = roleLabel(doc.roles);
-              const route = TOPIC_ROUTES[doc.slug];
+              const restricted = ["overview", "workload", "correspondence"].includes(doc.slug);
+              const route = restricted && !can(role, "workspace.manage") ? undefined : TOPIC_ROUTES[doc.slug];
               return (
                 <Card
                   key={doc.slug}

@@ -68,9 +68,10 @@ export function PlanWizard({
     .filter(Boolean);
 
   async function extract() {
+    if (extracting) return;
     setExtracting(true);
+    try {
     const res = await extractChaptersFromDocument(projectId);
-    setExtracting(false);
     if (res.error || !res.chapters) {
       toast.error(res.error ?? "Could not read chapters.");
       return;
@@ -80,17 +81,20 @@ export function PlanWizard({
       return;
     }
     setChaptersText(res.chapters.join(", "));
+    } catch { toast.error("Could not read chapters. Try again or enter them manually."); } finally { setExtracting(false); }
   }
 
   async function generate() {
+    if (generating) return;
     setGenerating(true);
+    try {
     const res = await generateProjectPlan(projectId, { kind, detail, instructions });
-    setGenerating(false);
     if (res.error || !res.plan) {
       toast.error(res.error ?? "Could not generate the plan.");
       return;
     }
     setPlan(res.plan);
+    } catch { toast.error("Could not generate the plan. Your inputs are still here; try again."); } finally { setGenerating(false); }
   }
 
   // ── Plan editing helpers ──
@@ -120,7 +124,7 @@ export function PlanWizard({
   );
 
   async function commit() {
-    if (!plan) return;
+    if (!plan || committing) return;
     setCommitting(true);
     try {
       const res = await commitProjectPlan(projectId, plan, {
@@ -303,7 +307,7 @@ export function PlanWizard({
           {plan.risks?.length ? (
             <Card>
               <CardContent className="space-y-2 py-4">
-                <p className="text-sm font-medium text-warning-foreground">
+                <p className="text-sm font-medium text-warning-text">
                   Risks before commit
                 </p>
                 <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">

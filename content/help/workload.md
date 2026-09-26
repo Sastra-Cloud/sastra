@@ -23,7 +23,7 @@ position.
 
 - **Drag a task** (or use the up/down arrows) within a person's list to set the
   order they work through them. The **top item is what they see next** on their
-  Dashboard.
+  Home.
 - **Drop a task onto another person** to reassign it.
 
 ## Time report

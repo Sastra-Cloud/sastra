@@ -37,7 +37,7 @@ automatically if the AI provider is temporarily unavailable.
 
 ## Creating a tutorial
 
-Managers select **New subject** at the top of the Wiki, or the **plus** beside
+Managers select **Create subject** at the top of the Wiki, or the **plus** beside
 Wiki in the browser, to create a subject. Then use the visible **page-plus**
 control beside a subject—in the Wiki browser or on the Wiki home page—to add a
 page. The tutorial template starts with sections for an overview, prerequisites,
@@ -73,7 +73,7 @@ or otherwise incompatible videos must be converted or compressed first. Accepted
 videos upload directly to private R2 storage, and Sastra captures a first-frame
 preview so the player does not appear as a black rectangle before playback.
 
-R2 videos do not receive automatic captions. Captions are optional: for a video
+Uploaded videos do not receive automatic captions. Captions are optional: for a video
 with speech you can upload a WebVTT caption file, or mark the video as having no
 spoken audio, but neither is required. A video only needs to finish processing
 before it can be published.
@@ -106,5 +106,7 @@ change their navigation order. Moving a page to trash removes it from the wiki
 immediately after confirmation. Open **Wiki ▸ Trash** to restore it.
 
 Private media usage appears at the bottom of the Wiki home page for managers.
-This helps the team monitor compressed image storage, private R2 video storage,
+This helps the team monitor compressed image storage, private private video space,
 and video duration before costs become surprising.
+
+The empty Wiki offers managers Create subject directly. Private video space shows the space used by uploaded videos.

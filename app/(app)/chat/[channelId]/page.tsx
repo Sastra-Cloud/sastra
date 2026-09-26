@@ -1,3 +1,4 @@
+import { AssistantShortcut } from "@/components/assistant/assistant-shortcut";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -137,6 +138,7 @@ export default async function ChatChannelPage({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          <AssistantShortcut />
           {isCustom ? (
             <ChannelMembersSheet
               channelId={channel.id}

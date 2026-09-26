@@ -479,7 +479,7 @@ export function BudgetManager({
       return;
     }
     if (!Number.isInteger(nextSourcePageCount) || nextSourcePageCount < 0) {
-      toast.error("Enter a whole English page count of 0 or more.");
+      toast.error("Enter a whole source page count of 0 or more.");
       return;
     }
     if (!Number.isInteger(nextWordsPerPage) || nextWordsPerPage < 1) {
@@ -618,7 +618,7 @@ export function BudgetManager({
                 disabled={pending}
                 onClick={() => run(() => seedDefaultBudget(projectId), "Quotation seeded")}
               >
-                Seed standard lines
+                Add standard budget items
               </Button>
             ) : null}
           </CardContent>
@@ -768,7 +768,7 @@ export function BudgetManager({
                   run(() => seedDefaultBudget(projectId), "Quotation seeded")
                 }
               >
-                Seed standard lines
+                Add standard budget items
               </Button>
             ) : null}
           </CardContent>
@@ -2125,7 +2125,7 @@ function SettingsCard({
                 />
               </Field>
               <Field
-                label="English page count"
+                label="Source page count"
                 help="If known, this drives the target-language typesetting estimate: source pages × the expansion factor from Print settings."
               >
                 <Input

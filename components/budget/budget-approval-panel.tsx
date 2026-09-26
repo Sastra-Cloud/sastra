@@ -227,7 +227,7 @@ export function BudgetApprovalPanel({
                         </p>
                       </div>
                       {assignment.changeNote ? (
-                        <p className="mt-1 whitespace-pre-wrap text-sm text-warning-foreground">
+                        <p className="mt-1 whitespace-pre-wrap text-sm text-warning-text">
                           {assignment.changeNote}
                         </p>
                       ) : null}

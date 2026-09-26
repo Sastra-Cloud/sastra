@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
+import { isValidTimeZone } from "@/lib/timezone";
 
 import { requireRole } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
@@ -28,7 +29,8 @@ export async function createStandup(_prev: StandupState, formData: FormData) {
   const { user } = await requireRole("manager");
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "Name is required." };
-  const timezone = String(formData.get("timezone") ?? "UTC");
+  const timezone = String(formData.get("timezone") ?? "UTC").trim();
+  if (!isValidTimeZone(timezone)) return { error: "Choose a valid timezone." };
   const scheduleTime = String(formData.get("scheduleTime") ?? "09:00");
   const days = formData
     .getAll("days")
@@ -60,7 +62,7 @@ export async function createStandup(_prev: StandupState, formData: FormData) {
 
 const updateSchema = z.object({
   scheduleTime: z.string(),
-  timezone: z.string(),
+  timezone: z.string().trim().refine(isValidTimeZone, "Choose a valid timezone."),
   reminderAfterMinutes: z.coerce.number().int().min(0).optional(),
   reportToUserId: z.string().optional(),
   isActive: z.boolean(),
@@ -79,7 +81,7 @@ export async function updateStandup(id: string, formData: FormData) {
     reportToUserId: formData.get("reportToUserId") || undefined,
     isActive: formData.get("isActive") === "on",
   });
-  if (!parsed.success) return;
+  if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Check the schedule settings.");
   const d = parsed.data;
   await db
     .update(standups)

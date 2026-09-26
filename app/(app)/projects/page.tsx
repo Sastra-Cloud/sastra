@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileUp, FolderKanban, Layers3, Plus, Sparkles } from "lucide-react";
+import { FolderKanban, Layers3, Plus } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -42,24 +42,7 @@ export default async function ProjectsPage() {
               Shared MoUs
             </Link>
           ) : null}
-          <Link
-            href="/projects/import"
-            className={buttonVariants({ variant: "outline" })}
-          >
-            <FileUp className="size-4" />
-            Import from document
-          </Link>
-          <Link
-            href="/projects/plan"
-            className={buttonVariants({ variant: "outline" })}
-          >
-            <Sparkles className="size-4" />
-            Plan with AI
-          </Link>
-          <Link href="/projects/new" className={buttonVariants()}>
-            <Plus className="size-4" />
-            New project
-          </Link>
+          {isManager ? <Link href="/projects/new" className={buttonVariants()}><Plus className="size-4" />Create project</Link> : null}
         </div>
       </Reveal>
 
@@ -70,13 +53,9 @@ export default async function ProjectsPage() {
             <div>
               <p className="font-medium">No projects yet</p>
               <p className="text-sm text-muted-foreground">
-                Create your first project to start planning.
+                {isManager ? "Create your first project to start planning." : "Ask a manager to create a project and assign your work."}
               </p>
             </div>
-            <Link href="/projects/new" className={buttonVariants()}>
-              <Plus className="size-4" />
-              Create project
-            </Link>
           </CardContent>
         </Card>
       ) : (

@@ -34,3 +34,11 @@ export function splitTasksByAttention<
 
   return { attention, later };
 }
+
+export function selectPersonalWork<T extends Pick<MyTaskRow, "dueDate" | "status">>(tasks: T[], todayIso: string) {
+  const open = tasks.filter(task => task.status !== "done");
+  const working = open.filter(task => task.status === "in_progress" || task.status === "review");
+  const unstarted = open.filter(task => task.status !== "in_progress" && task.status !== "review");
+  const { attention, later } = splitTasksByAttention(unstarted, todayIso);
+  return { working, attention, later, ordered: [...working, ...attention] };
+}

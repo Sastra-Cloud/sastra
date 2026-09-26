@@ -1964,7 +1964,7 @@ export async function sendPrintRfq(
     entityType: "print",
     entityId: runId,
     action: "email",
-    summary: `Sent print RFQ to ${contact.email}`,
+    summary: `Requested printer quotes from ${contact.email}`,
   });
   await removeEmailDraftForUser(user.id, "print_rfq", runId);
   await revalidatePrint(ctx.run.projectId);

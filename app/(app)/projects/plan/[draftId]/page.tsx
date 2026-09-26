@@ -1,3 +1,5 @@
+import { AiSetupGuidance } from "@/components/ai/ai-setup-guidance";
+import { getOpenRouterApiKeyStatus } from "@/lib/ai/keys";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 
@@ -14,7 +16,8 @@ export default async function PlanDraftPage({
 }: {
   params: Promise<{ draftId: string }>;
 }) {
-  await requireRole("manager");
+  const { user } = await requireRole("manager");
+  const aiReady = (await getOpenRouterApiKeyStatus()).source !== "none";
   const { draftId } = await params;
   const [draft] = await db
     .select()
@@ -24,11 +27,14 @@ export default async function PlanDraftPage({
   if (!draft) notFound();
 
   return (
-    <PlannerWorkspace
+    <>
+    {!aiReady ? <AiSetupGuidance role={user.role} /> : null}
+    <PlannerWorkspace aiReady={aiReady}
       draftId={draftId}
       initialConversation={draft.conversation}
       initialPlan={draft.proposedPlan ?? null}
       initialStatus={draft.status}
     />
+    </>
   );
 }

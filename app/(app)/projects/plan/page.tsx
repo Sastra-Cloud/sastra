@@ -1,5 +1,7 @@
 import { Sparkles } from "lucide-react";
 
+import { AiSetupGuidance } from "@/components/ai/ai-setup-guidance";
+import { getOpenRouterApiKeyStatus } from "@/lib/ai/keys";
 import { requireRole } from "@/lib/auth/guards";
 import { createDraft } from "@/lib/ai/planner-actions";
 import { Button } from "@/components/ui/button";
@@ -9,7 +11,8 @@ import { ContentColumn, PageShell } from "@/components/cockpit";
 export const metadata = { title: "Plan with AI" };
 
 export default async function PlanEntryPage() {
-  await requireRole("manager");
+  const { user } = await requireRole("manager");
+  const aiReady = (await getOpenRouterApiKeyStatus()).source !== "none";
   return (
     <PageShell>
       <div>
@@ -30,9 +33,9 @@ export default async function PlanEntryPage() {
                 The interview takes a minute. Nothing is created until you commit.
               </p>
             </div>
-            <form action={createDraft}>
+            {aiReady ? <form action={createDraft}>
               <Button type="submit">Start planning</Button>
-            </form>
+            </form> : <AiSetupGuidance role={user.role} />}
           </CardContent>
         </Card>
       </ContentColumn>

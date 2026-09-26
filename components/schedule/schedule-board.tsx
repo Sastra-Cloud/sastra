@@ -350,7 +350,9 @@ export function ScheduleBoard({
         const load = monthlyLoad(scheduled, minYmd, maxYmd);
         const maxLoad = Math.max(...load.map((l) => l.count), concurrency, 1);
         const peakLoad = Math.max(...load.map((l) => l.count), 0);
-        const lateCount = gp.filter((p) => overdueOf(p)).length;
+        const assessed = gp.filter(p => !!deadlineOf(p) && !!startOf(p) && !!endOf(p));
+        const missingDates = gp.length - assessed.length;
+        const lateCount = assessed.filter((p) => overdueOf(p)).length;
 
         return (
           <div key={group.key} className="overflow-hidden rounded-xl border bg-card">
@@ -415,7 +417,8 @@ export function ScheduleBoard({
               <>
                 {/* per-path banner */}
                 <div className="px-3 pt-2">
-                  {lateCount > 0 ? (
+                  <p className="mb-2 text-sm text-muted-foreground">{assessed.length} of {gp.length} projects assessed.{missingDates > 0 ? ` ${missingDates} need dates before deadline health can be assessed.` : ""}</p>
+                  {assessed.length === 0 ? <p className="rounded-lg border bg-muted/30 px-3 py-2 text-sm">Add project dates to assess whether deadlines are achievable.</p> : lateCount > 0 ? (
                     <div className="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-1.5 text-sm">
                       <CalendarClock className="size-4 shrink-0 text-destructive" />
                       <span>
@@ -430,12 +433,12 @@ export function ScheduleBoard({
                     <div className="flex items-center gap-2 rounded-lg border border-warning/50 bg-warning/10 px-3 py-1.5 text-sm">
                       <Sparkles className="size-4 shrink-0 text-warning" />
                       <span>
-                        All projects can still hit their dates, but up to <b className="tabular-nums">{peakLoad}</b> would run at once vs. <b className="tabular-nums">{concurrency}</b> capacity — it&apos;ll be tight.
+                        Assessed projects can still hit their dates, but up to <b className="tabular-nums">{peakLoad}</b> would run at once vs. <b className="tabular-nums">{concurrency}</b> capacity — it&apos;ll be tight.
                       </span>
                     </div>
                   ) : (
                     <div className="rounded-lg border border-success/40 bg-success/5 px-3 py-1.5 text-sm text-success">
-                      Every project can meet its due date within {concurrency} at a time.
+                      The {assessed.length} assessed projects can meet their due dates within {concurrency} at a time.
                     </div>
                   )}
                 </div>

@@ -11,7 +11,7 @@ Sastra runs in your browser but can also be **installed** like an app, so it
 opens from your Home Screen and can send **push notifications** — task
 assignments, @mentions, and blocker alerts — even when it's closed.
 
-You'll see a **Turn on notifications** card on the **Dashboard** when this device
+You'll see a **Turn on notifications** card on the **Home** when this device
 can still be set up. You can dismiss it (it stays hidden for 30 days) and set
 things up any time from **Settings ▸ Notifications**.
 
@@ -33,7 +33,7 @@ one extra step. You need **iOS 16.4 or later**.
 3. Open **Sastra** from your Home Screen, go to **Settings ▸ Notifications**, and
    tap **Turn on notifications** → **Allow**.
 
-The settings page walks you through these steps and the Dashboard card has a
+The settings page walks you through these steps and the Home card has a
 **Show me how** guide.
 
 ## Confirming it works

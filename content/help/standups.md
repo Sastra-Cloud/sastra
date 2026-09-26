@@ -29,3 +29,5 @@ Overview.
 Managers set standups up in **Settings ▸ Standups**: the **name**, **days**,
 **time**, and **reminder**; the **reviewer** who receives the digest; the
 **questions** (drag to reorder how they're asked); and the **participants**.
+
+Standups are scheduled team check-ins. Before any exist, managers see a setup action and members see a waiting explanation. Statistics appear once check-in runs exist.

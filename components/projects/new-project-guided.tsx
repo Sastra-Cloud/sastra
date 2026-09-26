@@ -1,9 +1,9 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 
-import { createProject, type ProjectFormState } from "@/lib/projects/actions";
+import { useDraftField, useProjectDraft } from "./project-draft";
 import { GuidedSteps, type GuidedStep } from "@/components/guidance/guided-steps";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,7 +32,6 @@ type Template = {
 const selectClass =
   "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50";
 
-const initial: ProjectFormState = {};
 
 function preferredTemplateIdForKind(
   templates: Template[],
@@ -60,8 +59,6 @@ function preferredTemplateIdForKind(
  */
 export function NewProjectGuided({
   templates,
-  defaultSourceLanguage,
-  defaultTargetLanguage,
   defaultPlanTemplateKey,
   onUseForm,
 }: {
@@ -71,24 +68,22 @@ export function NewProjectGuided({
   defaultPlanTemplateKey: string | null;
   onUseForm: () => void;
 }) {
-  const [state, action, pending] = useActionState(createProject, initial);
+  const { state, action, pending } = useProjectDraft();
   const formRef = useRef<HTMLFormElement>(null);
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [kind, setKind] = useState<ProjectKind>("book");
-  const [videoProductionMode, setVideoProductionMode] = useState("original");
-  const [status, setStatus] = useState("planning");
-  const [priority, setPriority] = useState("medium");
-  const [printFundingStatus, setPrintFundingStatus] = useState("not_assessed");
-  const [sourceLanguage, setSourceLanguage] = useState(defaultSourceLanguage ?? "");
-  const [targetLanguage, setTargetLanguage] = useState(defaultTargetLanguage ?? "");
-  const [startDate, setStartDate] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [planTemplateId, setPlanTemplateId] = useState(() =>
-    preferredTemplateIdForKind(templates, "book", defaultPlanTemplateKey)
-  );
-  const [chapters, setChapters] = useState("");
+  const [title, setTitle] = useDraftField("title");
+  const [description, setDescription] = useDraftField("description");
+  const [kind, setKind] = useDraftField("kind");
+  const [videoProductionMode, setVideoProductionMode] = useDraftField("videoProductionMode");
+  const [status, setStatus] = useDraftField("status");
+  const [priority, setPriority] = useDraftField("priority");
+  const [printFundingStatus, setPrintFundingStatus] = useDraftField("printFundingStatus");
+  const [sourceLanguage, setSourceLanguage] = useDraftField("sourceLanguage");
+  const [targetLanguage, setTargetLanguage] = useDraftField("targetLanguage");
+  const [startDate, setStartDate] = useDraftField("startDate");
+  const [dueDate, setDueDate] = useDraftField("dueDate");
+  const [planTemplateId, setPlanTemplateId] = useDraftField("planTemplateId");
+  const [chapters, setChapters] = useDraftField("chapters");
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const units = projectUnitTerms(kind);
@@ -127,7 +122,7 @@ export function NewProjectGuided({
               autoFocus
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={`e.g. The Gospel of John${targetLanguage ? ` — ${targetLanguage}` : ""}`}
+              placeholder={`e.g. A Journey Together${targetLanguage ? ` — ${targetLanguage}` : ""}`}
             />
           </div>
           <div className="grid gap-2">
@@ -225,7 +220,7 @@ export function NewProjectGuided({
               onChange={(e) => setChapters(e.target.value)}
               placeholder={`One per line, for example:\n${
                 kind === "article"
-                  ? "Why Scripture Matters\nHow to Read the Psalms"
+                  ? "Article 1\nArticle 2"
                   : kind === "podcast"
                     ? "Episode 1\nEpisode 2"
                     : kind === "video_series"

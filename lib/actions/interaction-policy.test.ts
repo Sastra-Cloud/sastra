@@ -287,3 +287,5 @@ describe("client action interaction policy", () => {
     expect(interactionModeFor("retryAgreementIndex")).toBe("progress");
   });
 });
+
+it("restores personal guidance optimistically", () => { expect(interactionModeFor("resetGuidanceTips")).toBe("optimistic"); });

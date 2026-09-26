@@ -52,6 +52,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/settings/dictionary-manager.tsx`
 - `components/settings/email-learning-manager.tsx`
 - `components/settings/email-task-preferences.tsx`
+- `components/settings/field-errors.tsx`
 - `components/settings/guidance-toggle.tsx`
 - `components/settings/hosted-plan-card.tsx`
 - `components/settings/invoice-sequence-card.tsx`
@@ -71,6 +72,8 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/settings/team-manager.tsx`
 - `components/settings/templates-manager.tsx`
 - `components/settings/test-push-button.tsx`
+- `components/settings/timezone-control.test.tsx`
+- `components/settings/timezone-control.tsx`
 - `components/settings/typesafe-toggle.tsx`
 - `components/settings/workspace-branding-card.tsx`
 - `components/settings/workspace-settings-form.tsx`
@@ -93,4 +96,4 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/users/avatar-data.test.ts`
 - `lib/users/avatar-data.ts`
 - `lib/users/avatar.test.ts`
-- `lib/users/avatar.ts`
+... 1 more

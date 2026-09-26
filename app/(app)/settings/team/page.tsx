@@ -1,3 +1,6 @@
+import { isHostedInstance, hostedAccountUrl } from "@/lib/hosted/mode";
+import { seatUsage } from "@/lib/hosted/entitlements";
+import { occupiedSeats } from "@/lib/hosted/seats";
 import { requireRole } from "@/lib/auth/guards";
 import {
   listAllProjectRoles,
@@ -16,6 +19,9 @@ export const dynamic = "force-dynamic";
 
 export default async function TeamSettingsPage() {
   const { user } = await requireRole("manager");
+  const hosted = isHostedInstance();
+  const seats = hosted ? await seatUsage() : null;
+  const accountUrl = hostedAccountUrl();
   const isAdmin = isAdminRole(user);
   const [members, invitations, assistantBudgets, roleRows, capacities, planning] =
     await Promise.all([
@@ -29,7 +35,9 @@ export default async function TeamSettingsPage() {
 
   return (
     <div className="space-y-6">
+      {seats ? <section className="rounded-lg border bg-card p-4 text-sm"><p className="font-medium">{occupiedSeats(seats)}{seats.limit === null ? "" : ` of ${seats.limit}`} seats used</p><p className="text-muted-foreground">{seats.activeHumans} active people and {seats.pendingInvites} pending invitations. Invitations reserve a seat until accepted or expired.</p>{accountUrl ? <a href={accountUrl} className="mt-2 inline-block font-medium text-primary underline">Manage account</a> : <p className="mt-2">Contact Sastra Cloud support to change your plan.</p>}</section> : null}
       <TeamManager
+        aiUnit={hosted ? "credits" : "usd"}
         members={members}
         invitations={invitations}
         currentUserId={user.id}

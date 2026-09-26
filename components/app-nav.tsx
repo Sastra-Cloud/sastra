@@ -12,11 +12,9 @@ import {
   Mail,
   Sparkles,
   Sunrise,
-  Users,
   Settings,
   CircleHelp,
   Gauge,
-  CalendarRange,
   BookOpenText,
   HandCoins,
 } from "lucide-react";
@@ -30,7 +28,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const TODAY_NAV = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
   { href: "/tasks", label: "My Work", icon: BriefcaseBusiness },
   { href: "/standups", label: "Standups", icon: Sunrise },
 ];
@@ -43,9 +41,7 @@ const WORK_NAV = [
 ];
 
 const MANAGER_NAV = [
-  { href: "/overview", label: "Overview", icon: Gauge },
-  { href: "/schedule", label: "Schedule", icon: CalendarRange },
-  { href: "/workload", label: "Workload", icon: Users },
+  { href: "/overview", label: "Team planning", icon: Gauge },
   { href: "/donations", label: "Donations", icon: HandCoins, adminOnly: true },
 ];
 
@@ -189,7 +185,8 @@ function NavItem({
 }) {
   const pathname = usePathname();
   const active =
-    pathname === item.href || pathname.startsWith(`${item.href}/`);
+    pathname === item.href || pathname.startsWith(`${item.href}/`) ||
+    (item.href === "/overview" && ["/schedule", "/workload"].some(path => pathname === path || pathname.startsWith(`${path}/`)));
   const Icon = item.icon;
 
   const navLink = (

@@ -268,7 +268,7 @@ function PublisherCard({
                 <p className="text-xs text-muted-foreground">{visibleHolder.notes}</p>
               ) : null}
               {possibleDuplicate ? (
-                <p className="text-xs text-warning-foreground">
+                <p className="text-xs text-warning-text">
                   Possible duplicate of “{possibleDuplicate.name}”. Merge the
                   shorthand record into the name you want to keep.
                 </p>

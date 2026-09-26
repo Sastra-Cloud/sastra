@@ -126,7 +126,7 @@ export function PushSettings({
               Correspondence review suggestions
               <span className="block text-xs text-muted-foreground">
                 Possible projects, counterparties, and grant reminders stay on
-                the Dashboard and in the app when this is off.
+                Home and in the app when this is off.
               </span>
             </span>
           </label>

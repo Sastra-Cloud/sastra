@@ -1,3 +1,4 @@
+import { isHostedInstance, hostedAccountUrl } from "@/lib/hosted/mode";
 import Link from "next/link";
 import { Mail } from "lucide-react";
 import { count, eq } from "drizzle-orm";
@@ -139,7 +140,8 @@ export default async function SettingsEmailPage() {
         </CardContent>
       </Card>
 
-      {!captureEnabled && (
+      {!captureEnabled && isHostedInstance() ? <Card><CardHeader><CardTitle>Email setup</CardTitle></CardHeader><CardContent className="space-y-2 text-sm"><p>Contact Sastra Cloud support to connect your team email. You can keep managing projects and recording publishing details manually.</p>{hostedAccountUrl() ? <a href={hostedAccountUrl()!} className="text-primary underline">Manage account</a> : null}</CardContent></Card> : null}
+      {!captureEnabled && !isHostedInstance() && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Connect it</CardTitle>

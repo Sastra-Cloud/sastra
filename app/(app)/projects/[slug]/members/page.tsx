@@ -1,3 +1,5 @@
+import { requireUser } from "@/lib/auth/guards";
+import { can } from "@/lib/auth/policy";
 import { notFound } from "next/navigation";
 
 import {
@@ -17,6 +19,7 @@ export default async function ProjectMembersPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const { user } = await requireUser();
   const { slug } = await params;
   const data = await getProjectBySlug(slug);
   if (!data) notFound();
@@ -48,6 +51,7 @@ export default async function ProjectMembersPage({
 
   return (
     <MembersManager
+      canEdit={can(user, "project.edit")}
       projectId={data.project.id}
       members={data.members.map((m) => ({
         id: m.id,

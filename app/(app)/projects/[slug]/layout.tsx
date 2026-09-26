@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ViewTransition } from "react";
 import { Archive, ArrowRight, ChevronLeft, Layers3, Settings2 } from "lucide-react";
 
-import { PageHero, PageShell } from "@/components/cockpit";
+import { ProjectActions } from "@/components/projects/project-actions";
+import { ProjectWorkspaceFrame } from "@/components/projects/project-workspace-frame";
+import { PageHero } from "@/components/cockpit";
 import { getProjectHeader } from "@/lib/projects/queries";
 import { getActiveReprintRun } from "@/lib/print/queries";
 import { getSession } from "@/lib/auth/guards";
@@ -62,8 +63,9 @@ export default async function ProjectWorkspaceLayout({
 
   return (
     <ProjectTitleProvider initialTitle={project.title}>
-      <PageShell className="space-y-5">
+      <ProjectWorkspaceFrame>
       <PageHero
+        className="project-header !p-3 [&_h1]:text-xl md:[&_h1]:text-2xl"
         eyebrow={
           <Link
             href="/projects"
@@ -74,25 +76,11 @@ export default async function ProjectWorkspaceLayout({
             Projects
           </Link>
         }
-        icon={
-          <ViewTransition
-            name={`project-mark-${slug}`}
-            share={{
-              "project-detail": "project-mark-morph",
-              "project-list": "project-mark-morph",
-              default: "none",
-            }}
-            default="none"
-          >
-            <span className="font-heading text-lg font-semibold">
-              {project.title.slice(0, 1).toUpperCase()}
-            </span>
-          </ViewTransition>
-        }
         title={<ProjectTitleHeading projectSlug={slug} canEdit={isManager} />}
         actions={
           isManager ? (
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center [&>*]:w-full sm:[&>*]:w-auto">
+            <div className="flex flex-wrap items-center gap-2">
+              <ProjectActions>
               {project.status !== "proposal" &&
               project.status !== "completed" &&
               project.status !== "cancelled" ? (
@@ -105,14 +93,15 @@ export default async function ProjectWorkspaceLayout({
                 projectId={project.id}
                 className="w-full sm:w-auto"
               />
+              </ProjectActions>
               <Button
                 nativeButton={false}
                 render={<Link href={`/projects/${slug}?settings=1`} />}
                 variant="outline"
-                className="w-full sm:w-auto"
+                size="sm"
               >
                 <Settings2 className="size-4" />
-                Settings
+                Project settings
               </Button>
             </div>
           ) : null
@@ -120,6 +109,24 @@ export default async function ProjectWorkspaceLayout({
       >
         <div className="flex flex-wrap items-center gap-2">
           <ProjectStatusBadge status={project.status} />
+          {!isClosed || activeReprint ? (
+            <span
+              className={cn(
+                "rounded-full border px-2.5 py-1 text-xs font-medium",
+                due.tone === "overdue" &&
+                  "border-destructive/30 bg-destructive/10 text-destructive",
+                due.tone === "soon" &&
+                  "border-warning/30 bg-warning/10 text-warning-text",
+                due.tone === "none" &&
+                  "border-border bg-background text-muted-foreground"
+              )}
+            >
+              {activeReprint ? `Reprint · ${due.text}` : due.text}
+            </span>
+          ) : null}
+          <details className="project-secondary group w-full sm:w-auto">
+            <summary className="cursor-pointer text-xs text-muted-foreground sm:hidden">Project details</summary>
+            <div className="mt-2 hidden flex-wrap items-center gap-2 group-open:flex sm:mt-0 sm:flex">
           {project.kind ? (
             <span className="rounded-full border bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground">
               {PROJECT_KIND_LABELS[project.kind as ProjectKind]}
@@ -152,21 +159,8 @@ export default async function ProjectWorkspaceLayout({
             </span>
           ) : null}
           <PriorityBadge priority={project.priority} />
-          {!isClosed || activeReprint ? (
-            <span
-              className={cn(
-                "rounded-full border px-2.5 py-1 text-xs font-medium",
-                due.tone === "overdue" &&
-                  "border-destructive/30 bg-destructive/10 text-destructive",
-                due.tone === "soon" &&
-                  "border-warning/30 bg-warning/10 text-warning-foreground",
-                due.tone === "none" &&
-                  "border-border bg-background text-muted-foreground"
-              )}
-            >
-              {activeReprint ? `Reprint · ${due.text}` : due.text}
-            </span>
-          ) : null}
+            </div>
+          </details>
         </div>
       </PageHero>
 
@@ -227,7 +221,7 @@ export default async function ProjectWorkspaceLayout({
         <Link
           key={group.id}
           href={`/agreements/${group.id}`}
-          className="flex items-start gap-3 rounded-lg border border-info/30 bg-info/5 px-4 py-3 text-sm transition-colors hover:border-info/50"
+          className="project-extra flex items-start gap-3 rounded-lg border border-info/30 bg-info/5 px-4 py-3 text-sm transition-colors hover:border-info/50"
         >
           <Layers3 className="mt-0.5 size-4 shrink-0 text-info" />
           <span>
@@ -237,8 +231,8 @@ export default async function ProjectWorkspaceLayout({
         </Link>
       ))}
 
-      <div className="min-w-0">{children}</div>
-      </PageShell>
+      <div className="project-content min-w-0">{children}</div>
+      </ProjectWorkspaceFrame>
     </ProjectTitleProvider>
   );
 }

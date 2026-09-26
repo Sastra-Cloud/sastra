@@ -1,7 +1,8 @@
 "use client";
 
 import { uploadFile } from "@/lib/files/upload-client";
-import { useState, useTransition } from "react";
+import { FieldError, FieldErrorsContext } from "./field-errors";
+import { useContext, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bot,
@@ -17,6 +18,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { TimezoneControl } from "./timezone-control";
 import { Label } from "@/components/ui/label";
 import { updateWorkspaceSettings } from "@/lib/workspace/actions";
 import type { WorkspaceSettings } from "@/lib/workspace/queries";
@@ -37,21 +39,25 @@ function timeToMinutes(value: FormDataEntryValue | null) {
 }
 
 function Field({ label, name, defaultValue, placeholder, type = "text" }: { label: string; name: string; defaultValue?: string | number | null; placeholder?: string; type?: string }) {
+  const errors = useContext(FieldErrorsContext);
   return (
     <div className="grid gap-1.5">
       <Label htmlFor={name}>{label}</Label>
-      <Input id={name} name={name} type={type} step={type === "number" ? "any" : undefined} defaultValue={defaultValue ?? ""} placeholder={placeholder} />
+      <Input aria-invalid={!!errors[name]} aria-describedby={errors[name] ? `${name}-error` : undefined} id={name} name={name} type={type} step={type === "number" ? "any" : undefined} defaultValue={defaultValue ?? ""} placeholder={placeholder} />
+      <FieldError name={name} />
     </div>
   );
 }
 
 export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSettings }) {
   const router = useRouter();
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [invoiceLogo, setInvoiceLogo] = useState(settings.invoicePaymentDetails?.logoFileId ?? null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [pending, startTransition] = useTransition();
 
   return (
+    <FieldErrorsContext.Provider value={fieldErrors}>
     <form
       className="space-y-5"
       onSubmit={(event) => {
@@ -66,6 +72,7 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
           capacityGroups = undefined;
         }
         startTransition(async () => {
+          try {
           const res = await updateWorkspaceSettings({
             legalName: String(form.get("legalName") ?? ""),
             timezone: String(form.get("timezone") ?? "UTC"),
@@ -127,13 +134,15 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
             durationMonthsPodcast: number("durationMonthsPodcast"),
             durationMonthsVideoSeries: number("durationMonthsVideoSeries"),
             durationMonthsOther: number("durationMonthsOther"),
-          });
+          }, { completeSetup: true });
+          setFieldErrors(res.fieldErrors ?? {});
           if (res.error) {
             toast.error(res.error);
             return;
           }
           toast.success("Workspace defaults saved");
           router.refresh();
+          } catch { toast.error("Could not save workspace settings. Your changes are still here; try again."); }
         });
       }}
     >
@@ -144,7 +153,7 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <Field label="Legal organization name" name="legalName" defaultValue={settings.legalName} />
-          <Field label="Workspace timezone" name="timezone" defaultValue={settings.timezone} placeholder="Area/City" />
+          <div className="grid gap-1.5"><Label htmlFor="timezone">Workspace timezone</Label><TimezoneControl id="timezone" defaultValue={settings.timezone} /><FieldError name="timezone" /></div>
           <Field label="Primary source language" name="sourceLanguage" defaultValue={settings.sourceLanguage} />
           <Field label="Primary target language" name="targetLanguage" defaultValue={settings.targetLanguage} />
           <Field label="Default territory" name="defaultTerritory" defaultValue={settings.defaultTerritory} />
@@ -202,13 +211,13 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
               Default CC recipients for outbound email
             </Label>
             <Input
-              id="defaultCcEmails"
+              aria-describedby="defaultCcEmails-error" id="defaultCcEmails"
               name="defaultCcEmails"
               defaultValue={settings.defaultCcEmails.join(", ")}
               placeholder="Separate email addresses with commas"
-            />
+            /><FieldError name="defaultCcEmails" />
             <p className="text-xs text-muted-foreground">
-              Added to every new proposal, invoice, printer RFQ, finance
+              Added to every new proposal, invoice, printer quote request, finance
               request, correspondence reply, and assistant email draft. The
               sender can edit or remove recipients before sending.
             </p>
@@ -304,7 +313,7 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
             }} />
             <p className="text-xs text-muted-foreground">{uploadingLogo ? "Uploading invoice logo…" : "Save workspace settings to apply this logo to new invoices. Workspace branding is unchanged."}</p>
             <Label htmlFor="invoicePaymentTitle">Payment request heading</Label>
-            <Input id="invoicePaymentTitle" name="invoicePaymentTitle" defaultValue={settings.invoicePaymentDetails?.title ?? ""} placeholder="For example, ACH Payment Request" />
+            <Input aria-describedby="invoicePaymentTitle-error" id="invoicePaymentTitle" name="invoicePaymentTitle" defaultValue={settings.invoicePaymentDetails?.title ?? ""} placeholder="For example, ACH Payment Request" /><FieldError name="invoicePaymentTitle" />
             <Label htmlFor="invoicePaymentFields">Payee and bank details</Label>
             <textarea id="invoicePaymentFields" name="invoicePaymentFields" rows={10} className={textareaClass}
               defaultValue={settings.invoicePaymentDetails?.fields.map((field) => `${field.label}: ${field.value}`).join("\n") ?? ""}
@@ -326,7 +335,7 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
         <CardContent>
           <div className="grid gap-1.5">
             <Label htmlFor="missionContext">Mission and publishing context</Label>
-            <textarea id="missionContext" name="missionContext" className={textareaClass} defaultValue={settings.missionContext ?? ""} placeholder="Describe your ministry, publishing focus, audiences, and the kinds of work you produce." />
+            <textarea id="missionContext" name="missionContext" className={textareaClass} defaultValue={settings.missionContext ?? ""} placeholder="Describe your organization, publishing focus, audiences, and the kinds of work you produce." />
           </div>
         </CardContent>
       </Card>
@@ -338,5 +347,6 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
         </Button>
       </div>
     </form>
+    </FieldErrorsContext.Provider>
   );
 }

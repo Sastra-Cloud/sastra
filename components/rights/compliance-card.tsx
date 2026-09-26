@@ -284,7 +284,7 @@ export function ComplianceCard({
                           "rounded-full border px-2 py-0.5 text-[11px]",
                           o.taskStatus === "done"
                             ? "border-success/30 bg-success/10 text-success"
-                            : "border-warning/30 bg-warning/10 text-warning-foreground"
+                            : "border-warning/30 bg-warning/10 text-warning-text"
                         )}
                       >
                         {o.taskStatus === "done" ? "Approved" : "Gate task open"}

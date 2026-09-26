@@ -2,16 +2,16 @@
 title: "Getting started & roles"
 category: "Getting started"
 roles: [member, manager, admin]
-keywords: [invite, invitation, seven days, sign in, login, magic link, 5 minutes, one-time link, password, password reset, one hour, roles, member, manager, admin, super admin, timezone, profile, account, save, saving, sync, retry, page error, page not found, spinner, mobile menu, navigation, today, work, management, workspace, pull to refresh, refresh, guidance, guided setup, tips, dismiss tip, coaching, checklist, across browsers, show helpful guidance, learn the app, passkey, fingerprint, two factor, security code]
+keywords: [home, onboarding outcomes, next step, hidden tips, invite, invitation, seven days, sign in, login, magic link, 5 minutes, one-time link, password, password reset, one hour, roles, member, manager, admin, super admin, timezone, profile, account, save, saving, sync, retry, page error, page not found, spinner, mobile menu, navigation, today, work, management, workspace, pull to refresh, refresh, guidance, guided setup, tips, dismiss tip, coaching, checklist, across browsers, show helpful guidance, learn the app, passkey, fingerprint, two factor, security code]
 order: 10
-summary: "How to sign in, what each role can do, and how changes save."
+summary: "Start with Home, complete role-appropriate setup, find assigned work, and restore your personal guidance."
 ---
 
 Sastra is an **invite-only** workspace for planning publishing and translation
 projects. You can't sign yourself up — a manager or admin invites you, and then you set up
 your account from the invite email.
 
-The first-administrator setup path is disabled during normal operation. It can
+For self-hosted installations, the first-administrator setup path is disabled during normal operation. It can
 only be enabled temporarily by the deployment operator for a completely empty
 workspace and is protected by a configured email and one-time setup token.
 
@@ -32,7 +32,7 @@ Enter your email, then open the reset link in the email. The link can be used
 once and expires after one hour. Choose a new password with at least eight
 characters. After the reset, sign in again on each device.
 
-You can also select **Email me a magic link** to sign in without your password.
+You can also select **Email me a sign-in link** to sign in without your password.
 Unexpected invitations, magic links, and password resets can be ignored. They
 do not change your account unless you open and complete them.
 
@@ -44,19 +44,21 @@ prompt.
 
 ## Your first steps
 
-While you are new, the **Dashboard** shows a short **Get started with Sastra**
-checklist with your first steps. It ticks items off as you go:
+Home shows the next relevant step, with **Show all steps** to reveal the checklist.
+Administrators confirm workspace defaults, create a project, invite a teammate,
+and assign work. Saving workspace defaults confirms that step; existing project
+overrides stay unchanged.
 
-1. Open your work list.
-2. Finish your first task.
-3. Answer a standup.
-4. Read this **Getting started** guide.
+Members start with My Work and this guide. A task-completion step appears when
+work is assigned, and a check-in step appears when they belong to an active
+standup. Managers also get a direct link to an existing project's budget and
+the schedule. If you have no assigned work, ask a manager for your first task.
 
-Managers also get steps to open a project's budget and review the schedule.
-The checklist disappears once every step is done, and you can hide it any time
-with its close button. To turn off all guidance, use **Settings ▸ Profile ▸
-Show helpful guidance**. Checklist progress and dismissed coaching tips are saved
-to your account, so they stay hidden when you sign in from another browser.
+Page visits only complete visit steps. Task completion, check-in participation,
+and administrator setup steps are checked against saved outcomes. The checklist
+disappears when complete; its close button intentionally hides it. Restore hidden
+tips under **Settings → Profile → Show hidden tips again**, or turn off guidance
+with **Show helpful guidance**. These preferences affect only your account.
 
 ## The four roles
 
@@ -65,7 +67,7 @@ everything a member can, an admin can do everything a manager can, and a super
 admin can do everything an admin can.
 
 - **Member** — work on your own tasks, chat, answer standups, upload files, and
-  use the Assistant, Agenda, and Dashboard.
+  use the Assistant, Agenda, and Home.
 - **Manager** — everything a member can, plus the **Overview** and **Workload**
   pages, editing **Rights**, **Budget**, and **Print**, running the **AI
   planner** and **document import**, reading **Correspondence**, and configuring
@@ -99,7 +101,7 @@ confirmation before disappearing.
 
 The left sidebar is grouped by the kind of work you are doing:
 
-- **Today** — Dashboard, My Work, and Standups.
+- **Today** — Home, My Work, and Standups.
 - **Work** — Projects, Chat, Assistant, and Correspondence for managers.
 - **Management** — Overview, Schedule, and Workload for managers, plus
   Donations for admins.
@@ -120,7 +122,7 @@ has a close button, so they never get in your way. When you know the app well,
 turn all of it off in one place: **Settings ▸ Profile ▸ Show helpful guidance**.
 
 If a page cannot load, **Try again** retries it without making you hunt for the
-route. The recovery screen also links to Dashboard and Help. A missing or stale
+route. The recovery screen also links to Home and Help. A missing or stale
 link offers the same safe destinations.
 
 On a phone, tap the menu button to open the same grouped navigation with full
@@ -138,3 +140,13 @@ interrupt work in progress.
 Sastra is open-source software. The **Source** link at the bottom of the sidebar
 (and on the sign-in screen) opens the exact code this installation runs, with
 its version. Self-hosters can point it at their own copy.
+
+## Your next step on Home
+
+Home shows your next onboarding step. Choose **Show all steps** to see the checklist. Opening a page only completes a visit step. Finishing a task, answering a check-in, creating a project, inviting a teammate, and assigning work are checked against saved data.
+
+Administrators start with workspace defaults, a project, a teammate, and assigned work. Members see check-in participation only when they belong to an active check-in. When no tasks are assigned, ask a manager to assign your first task.
+
+In **Settings → Profile**, choose **Show hidden tips again** to restore your dismissed guidance and checklist. This affects only your account; saved work and visited steps are preserved.
+
+Password sign-in and email-link requests show separate progress. After requesting a link, **Check your email** stays visible on the sign-in page.

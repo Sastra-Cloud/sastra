@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/lib/dialog-requests";
 import { useState } from "react";
 import { ChevronLeft, Loader2, Plus, Send, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
@@ -22,11 +23,13 @@ export function PlannerWorkspace({
   initialConversation,
   initialPlan,
   initialStatus,
+  aiReady = true,
 }: {
   draftId: string;
   initialConversation: ConversationMessage[];
   initialPlan: ProposedPlan | null;
   initialStatus: string;
+  aiReady?: boolean;
 }) {
   const [convo, setConvo] = useState(initialConversation);
   const [plan, setPlan] = useState<ProposedPlan | null>(initialPlan);
@@ -35,46 +38,47 @@ export function PlannerWorkspace({
   );
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+  const [revision, setRevision] = useState(0);
 
   async function send() {
     const text = input.trim();
-    if (!text || busy) return;
+    if (!text || busy || !aiReady) return;
     setConvo((c) => [...c, { role: "user", content: text }]);
     setInput("");
     setBusy(true);
-    const res = await sendInterview(draftId, text);
-    setBusy(false);
-    if (res.error) {
-      toast.error(res.error);
-      return;
-    }
-    setConvo((c) => [...c, { role: "assistant", content: res.reply ?? "" }]);
+    setFailure(null);
+    try {
+      const res = await sendInterview(draftId, text);
+      if (res.error) throw new Error(res.error);
+      setConvo(c => [...c, { role: "assistant", content: res.reply ?? "" }]);
+    } catch {
+      setConvo(c => c.slice(0, -1));
+      setInput(text);
+      setFailure("Your message failed. Your answer is restored below; try sending it again.");
+    } finally { setBusy(false); }
   }
 
   async function gen() {
+    if (busy || !aiReady) return;
+    if (plan && !(await confirmDialog("Generate a new plan? This will replace your current review edits."))) return;
     setBusy(true);
-    const res = await generatePlan(draftId);
-    setBusy(false);
-    if (res.error) {
-      toast.error(res.error);
-      return;
-    }
-    setPlan(res.plan ?? null);
-    setMode("review");
-  }
-
-  if (mode === "review" && plan) {
-    return (
-      <PlanReview
-        draftId={draftId}
-        plan={plan}
-        onBack={() => setMode("interview")}
-      />
-    );
+    setFailure(null);
+    try {
+      const res = await generatePlan(draftId);
+      if (res.error || !res.plan) throw new Error(res.error ?? "No plan returned");
+      setPlan(res.plan);
+      setRevision(value => value + 1);
+      setMode("review");
+    } catch {
+      setFailure("Plan generation failed. Your conversation and current review are saved here. Try generating again.");
+    } finally { setBusy(false); }
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-4">
+    <>
+    {plan ? <div hidden={mode !== "review"}><PlanReview key={revision} draftId={draftId} plan={plan} onBack={() => setMode("interview")} /></div> : null}
+    <div hidden={mode !== "interview"} className="w-full max-w-2xl space-y-4">
       <h1 className="font-heading text-2xl font-semibold tracking-tight">
         Plan with AI
       </h1>
@@ -82,6 +86,7 @@ export function PlannerWorkspace({
         Draft status: {initialStatus.replace("_", " ")}
       </p>
 
+      {failure ? <p role="alert" className="text-sm text-destructive">{failure}</p> : null}
       <Card>
         <CardContent className="space-y-4 py-4">
           <div className="max-h-[55vh] space-y-3 overflow-y-auto">
@@ -116,6 +121,8 @@ export function PlannerWorkspace({
 
           <div className="flex items-end gap-2 border-t pt-3">
             <Textarea
+              disabled={busy || !aiReady}
+              aria-label="Your answer"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
@@ -128,20 +135,22 @@ export function PlannerWorkspace({
               placeholder="Type your answer…"
               className="max-h-32 min-h-9 flex-1 resize-none"
             />
-            <Button size="icon" aria-label="Send" disabled={busy} onClick={send}>
+            <Button size="icon" aria-label="Send" disabled={busy || !aiReady} onClick={send}>
               <Send className="size-4" />
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
-        <Button onClick={gen} disabled={busy}>
+      <div className="flex justify-end gap-2">
+        {plan ? <Button variant="outline" disabled={busy} onClick={() => setMode("review")}>Return to review</Button> : null}
+        <Button onClick={gen} disabled={busy || !aiReady}>
           <Sparkles className="size-4" />
           Generate plan
         </Button>
       </div>
     </div>
+    </>
   );
 }
 
@@ -214,20 +223,18 @@ function PlanReview({
       toast.error("Project title is required.");
       return;
     }
+    if (committing) return;
     setCommitting(true);
     try {
       await commitPlan(draftId, finalPlan, startDate || undefined);
     } catch (e) {
-      // NEXT_REDIRECT is expected on success; only real errors surface.
-      if (!(e as Error)?.message?.includes("NEXT_REDIRECT")) {
-        toast.error("Could not create the project.");
-        setCommitting(false);
-      }
-    }
+      if (e && typeof e === "object" && "digest" in e && String(e.digest).startsWith("NEXT_REDIRECT")) throw e;
+      toast.error("Could not create the project. Your review edits are still here; try again.");
+    } finally { setCommitting(false); }
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-5">
+    <div className="w-full max-w-3xl space-y-5">
       <button
         type="button"
         onClick={onBack}
@@ -242,7 +249,7 @@ function PlanReview({
           Review the plan
         </h1>
         <p className="text-muted-foreground">
-          Edit anything below. Nothing is created until you commit.
+          Edit anything below. Nothing is created until you choose Create project.
         </p>
       </div>
 
@@ -263,7 +270,7 @@ function PlanReview({
           {plan.risks?.length ? (
             <Card>
               <CardContent className="space-y-2 py-4">
-                <p className="text-sm font-medium text-warning-foreground">
+                <p className="text-sm font-medium text-warning-text">
                   Risks before commit
                 </p>
                 <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
@@ -280,8 +287,8 @@ function PlanReview({
       <Card>
         <CardContent className="grid gap-4 py-4 sm:grid-cols-2">
           <div className="grid gap-1 sm:col-span-2">
-            <Label>Project title</Label>
-            <Input
+            <Label htmlFor="plan-title">Project title</Label>
+            <Input id="plan-title"
               value={plan.projectTitle}
               onChange={(e) =>
                 setPlan((p) => ({ ...p, projectTitle: e.target.value }))
@@ -289,16 +296,16 @@ function PlanReview({
             />
           </div>
           <div className="grid gap-1">
-            <Label>Start date</Label>
-            <Input
+            <Label htmlFor="plan-start-date">Start date</Label>
+            <Input id="plan-start-date"
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
             />
           </div>
           <div className="grid gap-1 sm:col-span-2">
-            <Label>Chapters / units (one per line)</Label>
-            <Textarea
+            <Label htmlFor="plan-units">Chapters / units (one per line)</Label>
+            <Textarea id="plan-units"
               rows={3}
               value={unitsText}
               onChange={(e) => setUnitsText(e.target.value)}
@@ -413,7 +420,7 @@ function PlanReview({
               Creating…
             </>
           ) : (
-            "Commit & create project"
+            "Create project"
           )}
         </Button>
       </div>

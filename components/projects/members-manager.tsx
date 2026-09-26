@@ -38,12 +38,14 @@ type PersonCapacity = {
 
 export function MembersManager({
   projectId,
+  canEdit,
   members,
   users,
   roles,
   capacityByUser = {},
 }: {
   projectId: string;
+  canEdit: boolean;
   members: Member[];
   users: Option[];
   roles: RoleOption[];
@@ -117,7 +119,7 @@ export function MembersManager({
 
   return (
     <div className="grid w-full min-w-0 gap-5 lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)] lg:items-start">
-      <Card>
+      {canEdit ? <Card>
         <CardContent className="space-y-3 py-4">
           <p className="text-sm font-medium">Add a member</p>
           <div className="flex flex-col gap-2">
@@ -180,7 +182,7 @@ export function MembersManager({
             ) : null}
           </div>
         </CardContent>
-      </Card>
+      </Card> : <p className="text-sm text-muted-foreground">Ask a manager to add or change project members.</p>}
 
       <div className="grid min-w-0 gap-2 2xl:grid-cols-2">
         {visibleMembers.length === 0 ? (
@@ -212,7 +214,7 @@ export function MembersManager({
                 >
                   {m.roleLabel}
                 </Badge>
-                <Button
+                {canEdit ? <Button
                   variant="ghost"
                   size="icon-xs"
                   aria-label="Remove member"
@@ -220,7 +222,7 @@ export function MembersManager({
                   disabled={pending}
                 >
                   <X className="size-4" />
-                </Button>
+                </Button> : null}
               </div>
             </div>
           ))

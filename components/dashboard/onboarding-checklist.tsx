@@ -7,55 +7,10 @@ import { useGuidance } from "@/components/guidance/guidance-provider";
 import { Button } from "@/components/ui/button";
 import type { OnboardingSignals } from "@/lib/onboarding/queries";
 import { cn } from "@/lib/utils";
-import { canManage, isAdminRole } from "@/lib/auth/policy";
+import { onboardingSteps, onboardingStepComplete } from "@/lib/onboarding/steps";
 
 const DISMISS_KEY = "onboarding:dismissed";
 const itemKey = (key: string) => `onboarding:item:${key}`;
-
-type ChecklistItem = {
-  key: string;
-  label: string;
-  href: string;
-  /** True when a data signal proves it's done (persists across devices). */
-  derivedDone?: boolean;
-};
-
-/** Role-ranked so a higher role also shows the lower roles' items. */
-function itemsForRole(
-  role: string,
-  signals: OnboardingSignals
-): ChecklistItem[] {
-  const items: ChecklistItem[] = [
-    { key: "work", label: "Open your work list", href: "/tasks" },
-    {
-      key: "task",
-      label: "Finish your first task",
-      href: "/tasks",
-      derivedDone: signals.completedTaskCount > 0,
-    },
-    {
-      key: "standup",
-      label: "Answer a standup",
-      href: "/standups",
-      derivedDone: signals.standupCount > 0,
-    },
-    { key: "guide", label: "Read “Getting started”", href: "/help#getting-started" },
-  ];
-  if (canManage(role)) {
-    items.push(
-      { key: "budget", label: "Open a project's budget", href: "/projects" },
-      { key: "schedule", label: "Review the schedule", href: "/schedule" }
-    );
-  }
-  if (isAdminRole(role)) {
-    items.push({
-      key: "workspace",
-      label: "Check workspace settings",
-      href: "/settings/workspace",
-    });
-  }
-  return items;
-}
 
 /**
  * A short, role-based list of first steps for new teammates. Completion is
@@ -73,13 +28,14 @@ export function OnboardingChecklist({
   const { enabled, hydrated, isDismissed, dismiss } = useGuidance();
   if (!enabled || !hydrated || isDismissed(DISMISS_KEY)) return null;
 
-  const items = itemsForRole(role, signals).map((item) => ({
+  const items = onboardingSteps(role, signals).map((item) => ({
     ...item,
-    done: item.derivedDone || isDismissed(itemKey(item.key)),
+    done: onboardingStepComplete(item, isDismissed),
   }));
   const doneCount = items.filter((item) => item.done).length;
   // Once every step is done, onboarding is over — stop showing it.
   if (doneCount === items.length) return null;
+  const next = items.find(item => !item.done)!;
   const pct = Math.round((doneCount / items.length) * 100);
 
   return (
@@ -113,13 +69,19 @@ export function OnboardingChecklist({
             />
           </div>
 
+          <Link href={next.href} onClick={() => { if (next.type === "visit") dismiss(itemKey(next.key)); }} className="mt-3 inline-flex min-h-11 items-center gap-2 font-medium text-primary">
+            {next.label}<ArrowRight className="size-4" />
+          </Link>
+          {role === "member" && signals.assignedTaskCount === 0 && signals.completedTaskCount === 0 ? <p className="text-sm text-muted-foreground">Your assigned tasks will appear in My Work. Ask a manager to assign your first task.</p> : null}
+          <details className="mt-2">
+          <summary className="cursor-pointer text-sm font-medium">Show all steps</summary>
           <ul className="mt-3 space-y-1">
             {items.map((item) => (
               <li key={item.key}>
                 <Link
                   href={item.href}
                   onClick={() => {
-                    if (!item.derivedDone) dismiss(itemKey(item.key));
+                    if (item.type === "visit") dismiss(itemKey(item.key));
                   }}
                   className={cn(
                     "group flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-primary/10",
@@ -146,6 +108,7 @@ export function OnboardingChecklist({
               </li>
             ))}
           </ul>
+          </details>
         </div>
       </div>
     </section>

@@ -165,9 +165,15 @@ export function ImportReview({
   useEffect(() => {
     if (status !== "uploaded" && status !== "parsing") return;
     let active = true;
-    if (status === "uploaded") void startParse(importId);
+    if (status === "uploaded") void startParse(importId).then(result => {
+      if (active && result.error) { setError(result.error); setStatus("failed"); }
+    }).catch(() => {
+      if (active) { setError("The request to start reading failed. Your upload is saved; try again."); setStatus("failed"); }
+    });
     const iv = setInterval(async () => {
-      const res = await getImportStatus(importId);
+      if (document.hidden) return;
+      const res = await getImportStatus(importId).catch(() => null);
+      if (!res) return;
       if (!active) return;
       if (res.status === "extracted") {
         setData(res.extraction);
@@ -187,7 +193,7 @@ export function ImportReview({
 
   // Re-run the AI extraction from the review screen (overwrites the draft).
   async function reextract() {
-    const res = await startParse(importId, { force: true });
+    const res = await startParse(importId, { force: true }).catch(() => ({ error: "Could not restart extraction. Your review is preserved; try again." }));
     if (res.error) {
       toast.error(res.error);
       return;
@@ -257,16 +263,17 @@ export function ImportReview({
 
   // uploaded / parsing / failed → server-side parse in progress.
   async function retry() {
+    if (retrying) return;
     setRetrying(true);
-    const res = await startParse(importId);
-    setRetrying(false);
-    if (res.error) {
-      toast.error(res.error);
-      return;
-    }
-    setError(null);
-    setStatus("parsing");
+    try {
+      const res = await startParse(importId);
+      if (res.error) throw new Error(res.error);
+      setError(null);
+      setStatus("parsing");
+    } catch { toast.error("Couldn't retry. Your upload is saved; try again."); }
+    finally { setRetrying(false); }
   }
+
   const failed = status === "failed";
   return (
     <Card>
@@ -324,22 +331,7 @@ export function ImportReview({
               minute. You can leave this page; we’ll save the result and it’ll be
               waiting when you’re back.
             </p>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={retry}
-              disabled={retrying}
-              className="text-muted-foreground"
-            >
-              {retrying ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" />
-                  Re-running…
-                </>
-              ) : (
-                "Taking longer than expected? Re-run"
-              )}
-            </Button>
+
           </>
         )}
       </CardContent>
@@ -623,7 +615,7 @@ function AgreementPaymentsEditor({
           </p>
         ) : null}
         {hasDuplicates ? (
-          <p className="flex items-center gap-1.5 rounded-md border border-warning/50 bg-warning/10 px-2.5 py-1.5 text-xs font-medium text-warning-foreground">
+          <p className="flex items-center gap-1.5 rounded-md border border-warning/50 bg-warning/10 px-2.5 py-1.5 text-xs font-medium text-warning-text">
             <AlertTriangle className="size-3.5 shrink-0" />
             Two or more payments look identical. Agreements sometimes describe the
             same payment in more than one clause — remove any real duplicate
@@ -642,7 +634,7 @@ function AgreementPaymentsEditor({
                 }`}
               >
                 {isDuplicate(payment) ? (
-                  <p className="flex w-full items-center gap-1.5 text-xs font-medium text-warning-foreground">
+                  <p className="flex w-full items-center gap-1.5 text-xs font-medium text-warning-text">
                     <AlertTriangle className="size-3.5 shrink-0" />
                     Possible duplicate — same amount, trigger, and date as another
                     row. Remove one if it is the same payment.
@@ -1247,7 +1239,7 @@ function ProjectEditor({
               quantity 1 / unit price 0 and put the figure in amount.
             </p>
             {hasDupLines ? (
-              <p className="flex items-center gap-1.5 rounded-md border border-warning/50 bg-warning/10 px-2.5 py-1.5 text-xs font-medium text-warning-foreground">
+              <p className="flex items-center gap-1.5 rounded-md border border-warning/50 bg-warning/10 px-2.5 py-1.5 text-xs font-medium text-warning-text">
                 <AlertTriangle className="size-3.5 shrink-0" />
                 Two or more lines have the same item and amount — remove any real
                 duplicate before saving.
@@ -1261,7 +1253,7 @@ function ProjectEditor({
                 }`}
               >
                 {isDupLine(l) ? (
-                  <p className="flex items-center gap-1.5 text-xs font-medium text-warning-foreground">
+                  <p className="flex items-center gap-1.5 text-xs font-medium text-warning-text">
                     <AlertTriangle className="size-3.5 shrink-0" />
                     Possible duplicate line.
                   </p>
@@ -2025,7 +2017,7 @@ function InvoiceReviewForm({
 
       {current.direction !== "outgoing" ? (
         <div className="flex gap-2 rounded-lg border border-warning/30 bg-warning/5 p-3 text-sm">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning-foreground" />
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning-text" />
           <p>
             Only an invoice issued by your organization can settle an incoming MoU
             payment. Confirm the direction above before saving.
@@ -2061,7 +2053,7 @@ function InvoiceReviewForm({
             />
           </div>
           {mismatch ? (
-            <p className="text-sm text-warning-foreground">
+            <p className="text-sm text-warning-text">
               The invoice total differs from the schedule. Saving will update the
               selected payment to {current.currency} {Number(current.amount).toFixed(2)}.
             </p>

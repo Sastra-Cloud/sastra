@@ -804,7 +804,7 @@ export function MouPayments({
                         <ReceiptText className="size-3.5" /> waits for completion
                       </span>
                     ) : (
-                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning-foreground">
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning-text">
                         <ReceiptText className="size-3.5" /> invoice needed
                       </span>
                     )}

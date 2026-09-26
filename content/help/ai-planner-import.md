@@ -17,14 +17,14 @@ background result.
 
 ## Plan with AI
 
-From **Projects ▸ Plan with AI**, the planner **interviews** you about a project
+From **Projects ▸ Create project ▸ Plan with AI**, the planner **interviews** you about a project
 and drafts **phases**, **tasks**, and **chapters**. Review the draft — including
 the assumptions and risks it lists — and edit it before committing. Only when you
 commit does real project work get created.
 
 ## Import from document
 
-From **Projects ▸ Import from document**, upload an **MOU, license, grant
+From **Projects ▸ Create project ▸ Import from document**, upload an **MOU, license, grant
 agreement, grant application/proposal, or invoice** (PDF or Word `.docx`). AI
 extracts suggested **projects**, **budgets**, **rights**, and an agreement-level
 payment schedule for you to review before anything is created. A single document
@@ -184,3 +184,9 @@ project the same way as on a fresh import.
 If the workspace has no AI model configured, only the planner and standup
 insights are affected — rights, budget, tasks, chat, exports, and the rest of the
 app still work. Admins choose the model behind each AI task in **Settings ▸ AI**.
+
+## Recovering your work
+
+In AI planning, returning to the conversation keeps your review edits. Choose **Return to review** to continue editing. Generating a replacement plan asks for confirmation. If a message fails, its text returns to the answer box. Failed generation clears the pending state and lets you try again.
+
+Document extraction updates automatically while you wait. Retry is available after failure; your original upload stays saved. Nothing is applied until you review and confirm.

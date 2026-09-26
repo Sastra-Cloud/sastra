@@ -68,3 +68,11 @@ a component.
 | The per-user coaching switch | **guidance** ("Show helpful guidance") | Profile setting |
 | A step-by-step helper for a big task | **guided setup** / **guided steps** | wizards; always skippable |
 | A dismissible on-screen tip block | **tip** (coach card) | |
+
+## Destinations
+
+- **Home** (`/dashboard`): next onboarding action, personal queue, manager reviews, recent projects.
+- **My Work** (`/tasks`): complete personal task workspace.
+- **Team planning**: Overview, Schedule, and Workload, preserving their existing URLs.
+- **Project roles**, **Voice dictionary**, **AI usage**: use these full Settings labels.
+- **Source page count**, **Add standard budget items**, and **Request printer quotes**: publishing labels.

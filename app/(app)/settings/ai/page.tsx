@@ -52,7 +52,7 @@ export default async function AiSettingsPage() {
           size="sm"
         >
           <CircleDollarSign className="size-4" />
-          Costs & usage
+          AI usage
         </Button>
       </section>
       {/* Sastra Cloud runs AI on the plan's credits only; the key card is a self-hosted feature. */}
@@ -90,6 +90,7 @@ export default async function AiSettingsPage() {
           </summary>
           <div className="border-t px-4 py-5 sm:px-5">
             <AiModelsManager
+              hosted={isHostedInstance()}
               rows={rows.map((r) => ({
                 taskKey: r.taskKey,
                 model: r.model,

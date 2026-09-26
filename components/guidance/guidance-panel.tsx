@@ -55,11 +55,15 @@ export function GuidancePanel({
       action={action}
       className={className}
     >
+      <p>{doc.summary}</p>
+      {heading ? <details>
+      <summary className="cursor-pointer font-medium text-foreground">Show steps</summary>
       <div className={COACH_PROSE}>
         <ReactMarkdown remarkPlugins={[remarkGfm]} components={COACH_MARKDOWN}>
           {body}
         </ReactMarkdown>
       </div>
+      </details> : null}
     </CoachCard>
   );
 }

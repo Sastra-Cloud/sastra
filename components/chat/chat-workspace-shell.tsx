@@ -77,6 +77,7 @@ export function ChatWorkspaceShell({
               "hidden h-full min-h-0 overflow-y-auto overscroll-contain pr-1 lg:block"
           )}
         >
+          {!activeChannelId ? <div className="mb-4 lg:hidden"><h1 className="font-heading text-2xl font-semibold">Chat</h1><p className="text-sm text-muted-foreground">Choose a teammate, team channel, or project conversation.</p></div> : null}
           <ChannelList
             channels={sidebar.channels}
             directMessages={sidebar.directMessages}
@@ -115,7 +116,7 @@ export function ChatIndexPanel() {
         <p className="mt-2 text-sm text-muted-foreground">
           {hasConversations
             ? "Direct messages, team channels, and project conversations stay organized here."
-            : "Start a direct message, or create a project or team channel."}
+            : "Start a direct message. Ask a manager if you need a team channel."}
         </p>
       </div>
     </section>

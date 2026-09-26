@@ -25,7 +25,7 @@ import type { AgendaItem } from "@/lib/agenda/bucket";
 import { bucketAgenda } from "@/lib/agenda/bucket";
 import type { MyWorkTaskRow } from "@/lib/tasks/queries";
 import type { ActiveTimer } from "@/lib/tasks/time-queries";
-import { splitTasksByAttention } from "@/lib/tasks/attention";
+import { selectPersonalWork } from "@/lib/tasks/attention";
 import {
   isCompletedOn,
   matchesAgendaFilter,
@@ -422,13 +422,7 @@ function FocusView({
   const [showCompleted, setShowCompleted] = useState(true);
   const runningSeconds = useLiveElapsed(activeTimer?.startedAt ?? null);
   const open = tasks.filter((task) => task.status !== "done");
-  const working = open.filter(
-    (task) => task.status === "in_progress" || task.status === "review"
-  );
-  const notStarted = open.filter(
-    (task) => task.status !== "in_progress" && task.status !== "review"
-  );
-  const { attention, later } = splitTasksByAttention(notStarted, todayIso);
+  const { working, attention, later } = selectPersonalWork(open, todayIso);
 
   return (
     <div className="space-y-5">
@@ -480,7 +474,7 @@ function FocusView({
 
       <FocusSection
         title="Needs attention"
-        description="Overdue, due soon, high priority, and undated work"
+        description="Overdue, due within 30 days, and undated work"
         tasks={attention}
         pending={pending}
         activeTimerTaskId={activeTimer?.taskId ?? null}
@@ -679,7 +673,7 @@ function FocusTaskList({
                   className={cn(
                     "text-xs",
                     due.tone === "overdue" && "font-medium text-destructive",
-                    due.tone === "soon" && "text-warning-foreground",
+                    due.tone === "soon" && "text-warning-text",
                     (due.tone === "normal" || due.tone === "none") && "text-muted-foreground"
                   )}
                 >

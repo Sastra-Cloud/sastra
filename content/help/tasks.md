@@ -129,7 +129,7 @@ task description, while upload, folder, and removal controls stay under
 **Manage Google Drive**.
 Removing an attachment from Sastra does not delete the file from Google Drive.
 
-Select an assigned task's title on **Dashboard** or in **My Work** to open its
+Select an assigned task's title on **Home** or in **My Work** to open its
 details. The assigned owner can update the work there; managers and admins can
 also edit tasks from project and workload views.
 
@@ -168,9 +168,8 @@ to compare every article across those stages.
 
 ## Your personal queue
 
-Your **Dashboard** shows your assigned tasks in a **Do in this order** queue,
-ordered by priority with overdue items first, plus a focus strip with the next
-one to three tasks. Select a task title to edit it without leaving Dashboard.
+Your **Home** shows your assigned tasks in a **Do in this order** queue,
+with started work first, followed by the existing attention queue. It shows up to three tasks. Select a task title to edit it without leaving Home.
 The row reflects a changed due date immediately while it saves. Managers set
 the queue order for you from **Workload**.
 
@@ -218,3 +217,5 @@ you can change the internal task due date in the task. Delivery evidence may be
 required before invoicing. Generating a PDF or checking a task complete cannot
 stand in for sending. Successful invoice sending completes the task and clears
 overdue reminders. Paused invoice tasks do not generate overdue prompts.
+
+Home and My Work use the same personal queue: started work first, then overdue, undated, and work due within 30 days. Manual ordering is retained within each group. The queue does not independently sort by priority.

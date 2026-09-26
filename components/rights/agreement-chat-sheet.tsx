@@ -149,7 +149,7 @@ function Message({
         ) : (
           <div className="space-y-2 px-1">
             {message.stale ? (
-              <p className="flex items-center gap-1.5 text-xs text-warning-foreground">
+              <p className="flex items-center gap-1.5 text-xs text-warning-text">
                 <AlertTriangle className="size-3.5" />
                 A cited source was removed. This answer is historical and its citation can no longer be opened.
               </p>
@@ -157,7 +157,7 @@ function Message({
             {message.answerStatus === "not_stated" ? (
               <p className="text-xs font-medium text-muted-foreground">Not stated in the selected sources</p>
             ) : message.answerStatus === "ambiguous" ? (
-              <p className="text-xs font-medium text-warning-foreground">The selected sources are ambiguous or conflicting</p>
+              <p className="text-xs font-medium text-warning-text">The selected sources are ambiguous or conflicting</p>
             ) : null}
             {message.citations.length > 0 ? (
               <div className="flex flex-wrap gap-1.5" aria-label="Answer citations">

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { AlertTriangle, FileText, Loader2 } from "lucide-react";
 
+import { AiSetupGuidance } from "@/components/ai/ai-setup-guidance";
+import { getOpenRouterApiKeyStatus } from "@/lib/ai/keys";
 import { requireRole } from "@/lib/auth/guards";
 import { listImports } from "@/lib/imports/queries";
 import { norm } from "@/lib/imports/match";
@@ -37,7 +39,8 @@ function ago(d: Date): string {
 }
 
 export default async function ImportPage() {
-  await requireRole("manager");
+  const { user } = await requireRole("manager");
+  const aiReady = (await getOpenRouterApiKeyStatus()).source !== "none";
   // Show only actionable drafts — committed/discarded imports drop off the list
   // (the projects they created live on the Projects page).
   const imports = (await listImports()).filter(
@@ -83,7 +86,7 @@ export default async function ImportPage() {
       <ContentColumn width="focused" className="space-y-6">
         <Card>
           <CardContent className="py-6">
-            <ImportUploader />
+            {aiReady ? <ImportUploader /> : <AiSetupGuidance role={user.role} />}
           </CardContent>
         </Card>
 

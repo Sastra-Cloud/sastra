@@ -10,6 +10,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `app/api/assistant/transcribe/route.ts`
 - `components/assistant/assistant-message-content.test.tsx`
 - `components/assistant/assistant-message-content.tsx`
+- `components/assistant/assistant-shortcut.tsx`
 - `components/assistant/assistant-workspace.tsx`
 - `components/assistant/floating-assistant.tsx`
 - `components/assistant/memory-manager.tsx`

@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 const TONE = {
   neutral: "border-border bg-background text-muted-foreground",
   info: "border-info/25 bg-info/8 text-info",
-  warning: "border-warning/30 bg-warning/8 text-warning-foreground",
+  warning: "border-warning/30 bg-warning/8 text-warning-text",
 };
 
 export function BookFormatBadge({

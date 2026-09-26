@@ -75,7 +75,7 @@ The category switches are independent of frequency:
 - **Standup digest emails** cover completed standup summaries. Standup reminders
   remain in-app and push-only.
 
-AI correspondence review suggestions are in-app and appear on the Dashboard.
+AI correspondence review suggestions are in-app and appear on the Home.
 They do not send push by default; turn on **Correspondence review suggestions**
 under **What to send** if you want immediate alerts for possible projects,
 counterparties, grant reminders, and email task suggestions. Standup reminders
@@ -95,7 +95,7 @@ Tap **Turn on notifications** on this device and allow the browser prompt. The
 page is device-aware: on iPhone or iPad it first walks you through adding Sastra
 to your Home Screen (a requirement on iOS), and if notifications were previously
 blocked it shows how to unblock them. A **Turn on notifications** card also
-appears on the Dashboard until you're set up or dismiss it. See *Install the app
+appears on the Home until you're set up or dismiss it. See *Install the app
 & turn on notifications* for the full walkthrough.
 
 Once a device is registered it appears under **Devices receiving push**, with a

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
+import { isValidTimeZone } from "@/lib/timezone";
 
 import { auth } from "@/lib/auth/auth";
 import { requireRole, requireUser } from "@/lib/auth/guards";
@@ -42,6 +43,7 @@ export type TeamState = {
   emailFailed?: boolean;
   /** The invite link — returned so an admin can share it manually if email fails. */
   inviteUrl?: string;
+  fieldErrors?: Record<string, string>;
 };
 
 const INVITE_TTL_DAYS = 7;
@@ -228,7 +230,7 @@ export async function acceptInvite(
 
 const profileSchema = z.object({
   name: z.string().trim().min(1).max(120),
-  timezone: z.string().trim().min(1).max(64),
+  timezone: z.string().trim().refine(isValidTimeZone, "Choose a valid timezone."),
 });
 
 export async function updateProfile(
@@ -240,7 +242,7 @@ export async function updateProfile(
     name: formData.get("name"),
     timezone: formData.get("timezone"),
   });
-  if (!parsed.success) return { error: "Invalid input." };
+  if (!parsed.success) return { error: "Check your profile details.", fieldErrors: Object.fromEntries(parsed.error.issues.map(issue => [String(issue.path[0]), issue.message])) };
   const now = new Date();
   await db.transaction(async (tx) => {
     await tx

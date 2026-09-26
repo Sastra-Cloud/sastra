@@ -71,7 +71,7 @@ can propose updating the real **Proposed completion date** in the funding
 proposal; the change is not saved until you approve it. A signed agreement's
 completion deadline remains authoritative and cannot be replaced this way.
 
-1. Click **Seed standard lines** to create the standard publishing lines. You
+1. Click **Add standard budget items** to create the standard publishing lines. You
    don't have to seed first — **Add custom line** works on an empty budget too,
    if you'd rather build the quotation by hand.
 2. Edit the **Qty** on any standard word-based line, such as Translation. That

@@ -109,7 +109,7 @@ export function ExternalFollowUpCard({
   return (
     <div className="rounded-xl border bg-card px-4 py-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-warning/15 text-warning-foreground">
+        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-warning/15 text-warning-text">
           <Mail className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
@@ -123,7 +123,7 @@ export function ExternalFollowUpCard({
               variant="outline"
               className={cn(
                 due && !snoozeLabel
-                  ? "border-warning/30 bg-warning/15 text-warning-foreground"
+                  ? "border-warning/30 bg-warning/15 text-warning-text"
                   : "text-muted-foreground"
               )}
             >

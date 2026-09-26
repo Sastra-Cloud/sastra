@@ -95,8 +95,8 @@ const productionTone: Record<string, string> = {
   Published: "border-success/30 bg-success/10 text-success",
   Scheduled: "border-info/30 bg-info/10 text-info",
   "Ready to schedule": "border-success/30 bg-success/10 text-success",
-  Translating: "border-warning/30 bg-warning/10 text-warning-foreground",
-  "Reviewing translation": "border-warning/30 bg-warning/10 text-warning-foreground",
+  Translating: "border-warning/30 bg-warning/10 text-warning-text",
+  "Reviewing translation": "border-warning/30 bg-warning/10 text-warning-text",
 };
 
 function ProgressCell({
@@ -169,7 +169,7 @@ function Readiness({ episode }: { episode: EpisodeProductionRow }) {
   }
   if (episode.unassignedCount > 0) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs text-warning-foreground">
+      <span className="inline-flex items-center gap-1 text-xs text-warning-text">
         <UserRound className="size-3.5" /> {episode.unassignedCount} unassigned
       </span>
     );
@@ -617,8 +617,11 @@ export function EpisodesManager({
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-14 text-center">
             <Sparkles className="size-6 text-muted-foreground" />
-            <p className="font-medium">No {unitPlural} match these filters</p>
-            <Button variant="ghost" size="sm" onClick={clearFilters}>Clear filters</Button>
+            <p className="font-medium">{data.total === 0 ? `No ${unitPlural} yet` : `No ${unitPlural} match these filters`}</p>
+            {data.total === 0 ? <>
+              <p className="text-sm text-muted-foreground">{canEdit ? `Add your first ${unitSingular} to start production tracking.` : `Ask a manager to add ${unitPlural} and assign the production work.`}</p>
+              {canEdit ? <Button size="sm" onClick={addEpisodes} disabled={pending}>Add {bulkCount} {unitPlural}</Button> : null}
+            </> : <Button variant="ghost" size="sm" onClick={clearFilters}>Clear filters</Button>}
           </CardContent>
         </Card>
       ) : (

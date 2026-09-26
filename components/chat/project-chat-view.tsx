@@ -1,5 +1,6 @@
 "use client";
 
+import { AssistantShortcut } from "@/components/assistant/assistant-shortcut";
 import { useState } from "react";
 
 import type {
@@ -34,7 +35,8 @@ export function ProjectChatView({
     pendingChannelId !== null && pendingChannelId !== activeChannel.id;
 
   return (
-    <div className="space-y-3">
+    <div className="flex w-full min-h-0 flex-1 flex-col gap-2">
+      <div className="flex shrink-0 items-center justify-between gap-2"><h2 className="text-sm font-semibold">Chat · {activeChannel.name}</h2><AssistantShortcut /></div>
       <ProjectChannelTabs
         slug={slug}
         channels={channels}
@@ -49,6 +51,7 @@ export function ProjectChatView({
         initialMessages={messages}
         members={members}
         variant="project"
+        fillAvailable
         contextLabel={`${activeChannel.name} discourse`}
         emptyDescription={`Keep ${activeChannel.name.toLowerCase()} decisions, files, and updates together for this project.`}
         placeholder={`Message #${activeChannel.name.toLowerCase()}...`}

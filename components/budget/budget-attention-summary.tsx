@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 
 const severityStyles: Record<BudgetAttentionItem["severity"], string> = {
   critical: "bg-destructive/10 text-destructive",
-  warning: "bg-warning/15 text-warning-foreground",
+  warning: "bg-warning/15 text-warning-text",
   info: "bg-info/10 text-info",
 };
 

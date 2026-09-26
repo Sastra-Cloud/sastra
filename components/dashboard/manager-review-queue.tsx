@@ -91,7 +91,7 @@ export function ManagerReviewQueue({ items }: { items: ManagerReviewItem[] }) {
                           "rounded-full px-1.5 py-0.5 font-medium",
                           item.priority === "high"
                             ? "bg-destructive/10 text-destructive"
-                            : "bg-warning/15 text-warning-foreground"
+                            : "bg-warning/15 text-warning-text"
                         )}
                       >
                         {item.priority} priority

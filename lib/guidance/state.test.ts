@@ -82,3 +82,14 @@ describe("user guidance dismissal state", () => {
     expect([...initial]).toEqual(["first", "second"]);
   });
 });
+
+it("restores hidden tips immediately and rolls back the whole reset on failure", () => {
+  const initial = new Set(["tip", "onboarding:dismissed", "onboarding:item:work"]);
+  const pending = machineFor({ guidanceKey: "reset", dismissed: false, reset: true });
+  pending.source = initial; pending.confirmed = initial;
+  expect([...optimisticVisibleState(pending, updateGuidanceDismissals)]).toEqual(["onboarding:item:work"]);
+  const failed = settleOptimisticEntry(pending, 1, "failed", undefined, updateGuidanceDismissals);
+  expect(optimisticVisibleState(failed, updateGuidanceDismissals)).toEqual(initial);
+  const success = settleOptimisticEntry(pending, 1, "succeeded", { ok: true }, updateGuidanceDismissals);
+  expect([...optimisticVisibleState(success, updateGuidanceDismissals)]).toEqual(["onboarding:item:work"]);
+});

@@ -40,6 +40,7 @@ export default async function ProjectPipelinePage({
       </Link>
       <PipelineView
         data={data}
+        projectSlug={slug}
         unitLabel={projectUnitTerms(project.kind).singular}
       />
     </div>

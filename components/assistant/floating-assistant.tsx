@@ -46,7 +46,7 @@ export function FloatingAssistant({ userName }: { userName: string }) {
   );
 
   const projectSlug = projectSlugFromPath(pathname);
-  const isChatConversation = /^\/chat\/[^/]+$/.test(pathname);
+  const isChatConversation = /^\/chat\/[^/]+$/.test(pathname) || /^\/projects\/[^/]+\/chat$/.test(pathname);
 
   const refresh = useCallback(async () => {
     const requestId = ++refreshId.current;
@@ -95,7 +95,7 @@ export function FloatingAssistant({ userName }: { userName: string }) {
 
   return (
     <>
-      {!open ? (
+      {!open && !isChatConversation ? (
         <Button
           type="button"
           size="icon"

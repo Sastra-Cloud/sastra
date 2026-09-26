@@ -308,7 +308,7 @@ function WikiNavigation({
                       >
                         <span className="min-w-0 flex-1 truncate">{page.title}</span>
                         {!page.published ? (
-                          <span className="ml-auto rounded-full bg-warning/15 px-1.5 py-0.5 text-[0.62rem] font-semibold uppercase tracking-wide text-warning-foreground">Draft</span>
+                          <span className="ml-auto rounded-full bg-warning/15 px-1.5 py-0.5 text-[0.62rem] font-semibold uppercase tracking-wide text-warning-text">Draft</span>
                         ) : page.hasUnpublishedChanges && canEdit ? (
                           <span className="ml-auto size-1.5 rounded-full bg-warning" title="Unpublished changes" />
                         ) : null}
@@ -394,7 +394,7 @@ export function CreateSubjectDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       {trigger === "button" ? (
         <DialogTrigger render={<Button className="w-full sm:w-auto" />}>
-          <Plus /> New subject
+          <Plus /> Create subject
         </DialogTrigger>
       ) : (
         <DialogTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Create wiki subject" />}>

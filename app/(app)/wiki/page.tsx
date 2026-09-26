@@ -72,7 +72,7 @@ export default async function WikiPage({
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2 font-medium group-hover:text-primary">
                       {result.title}
-                      {"draft" in result && result.draft ? <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[0.65rem] font-semibold uppercase text-warning-foreground">Draft</span> : null}
+                      {"draft" in result && result.draft ? <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[0.65rem] font-semibold uppercase text-warning-text">Draft</span> : null}
                     </span>
                     <span className="mt-0.5 block text-xs font-medium uppercase tracking-wide text-muted-foreground">{result.subjectTitle}</span>
                     {result.summary ? <span className="mt-1 line-clamp-2 block text-sm text-muted-foreground">{result.summary}</span> : null}
@@ -98,7 +98,7 @@ export default async function WikiPage({
                   <Link key={page.id} href={`/wiki/${subject.slug}/${page.slug}${page.published ? "" : "/edit"}`} className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm hover:bg-muted">
                     <FileText className="size-4 text-muted-foreground" />
                     <span className="min-w-0 flex-1 truncate font-medium">{page.title}</span>
-                    {!page.published ? <span className="text-xs text-warning-foreground">Draft</span> : null}
+                    {!page.published ? <span className="text-xs text-warning-text">Draft</span> : null}
                   </Link>
                 ))}
               </div>
@@ -108,7 +108,8 @@ export default async function WikiPage({
             <div className="col-span-full rounded-xl border border-dashed bg-card px-6 py-16 text-center">
               <BookOpenText className="mx-auto mb-3 size-8 text-muted-foreground" />
               <h2 className="font-heading text-xl font-semibold">Your team wiki is ready</h2>
-              <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">{canEdit ? "Use the plus button in the wiki browser to create a subject, then add the first tutorial page." : "A manager can create and publish the first tutorial page."}</p>
+              <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">{canEdit ? "Create a subject, then add your first tutorial page." : "A manager can create and publish the first tutorial page."}</p>
+              {canEdit ? <div className="mt-4"><CreateSubjectDialog trigger="button" /></div> : null}
             </div>
           ) : null}
         </div>
@@ -119,7 +120,7 @@ export default async function WikiPage({
           <span className="flex items-center gap-2 font-medium text-foreground"><HardDrive className="size-4" /> Private media usage</span>
           <span>{(Number(usage.imageBytes) / 1024 / 1024).toFixed(1)} MB images</span>
           <span>{usage.videoCount} videos</span>
-          <span>{formatStorage(Number(usage.videoBytes))} R2 video storage</span>
+          <span>{formatStorage(Number(usage.videoBytes))} private video space</span>
           <span>{Math.round(Number(usage.videoSeconds) / 60)} minutes of video</span>
           <Button nativeButton={false} render={<Link href="/wiki/trash" />} variant="ghost" size="sm" className="ml-auto">Manage trash</Button>
         </footer>

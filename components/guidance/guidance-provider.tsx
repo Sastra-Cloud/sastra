@@ -1,11 +1,13 @@
 "use client";
 
+import { toast } from "sonner";
 import * as React from "react";
 
 import { useOptimisticAction } from "@/hooks/use-optimistic-action";
 import {
   dismissGuidanceKey,
   restoreGuidanceKey,
+  resetGuidanceTips,
 } from "@/lib/guidance/actions";
 import {
   guidanceMutationKey,
@@ -24,6 +26,8 @@ type GuidanceContextValue = {
   dismiss: (key: string) => void;
   /** Bring back a dismissed element (used by a future "reset guidance"). */
   restore: (key: string) => void;
+  reset: () => void;
+  pending: boolean;
 };
 
 const GuidanceContext = React.createContext<GuidanceContextValue | null>(null);
@@ -41,7 +45,7 @@ export function GuidanceProvider({
     () => new Set(initialDismissedKeys),
     [initialDismissedKeys]
   );
-  const { state: dismissedKeys, run } = useOptimisticAction<
+  const { state: dismissedKeys, run, pending } = useOptimisticAction<
     ReadonlySet<string>,
     GuidanceMutation
   >({
@@ -72,6 +76,13 @@ export function GuidanceProvider({
     },
     [dismissedKeys, run]
   );
+  const reset = React.useCallback(() => {
+    if (pending) return;
+    run({ guidanceKey: "reset", dismissed: false, reset: true }, resetGuidanceTips, {
+      errorMessage: "Couldn't restore your tips. Try again.",
+      onSuccess: () => toast.success("Hidden tips are visible again."),
+    });
+  }, [pending, run]);
   const value = React.useMemo<GuidanceContextValue>(
     () => ({
       enabled,
@@ -79,8 +90,10 @@ export function GuidanceProvider({
       isDismissed: (guidanceKey) => dismissedKeys.has(guidanceKey),
       dismiss,
       restore,
+      reset,
+      pending,
     }),
-    [dismiss, dismissedKeys, enabled, restore]
+    [dismiss, dismissedKeys, enabled, restore, reset, pending]
   );
   return (
     <GuidanceContext.Provider value={value}>{children}</GuidanceContext.Provider>
@@ -99,6 +112,8 @@ export function useGuidance(): GuidanceContextValue {
     isDismissed: () => false,
     dismiss: () => undefined,
     restore: () => undefined,
+    reset: () => undefined,
+    pending: false,
   };
 }
 

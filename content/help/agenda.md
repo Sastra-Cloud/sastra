@@ -1,18 +1,18 @@
 ---
-title: "Dashboard & My Work"
+title: "Home & My Work"
 category: "Work"
 roles: [member, manager, admin]
 keywords: [dashboard, my work, agenda, board, home, today, focus, overdue, due this week, deadlines, calendar, what to do next, active projects, recent email, inbound email, project activity, needs your review, AI suggestions, project follow-up, funding status]
 order: 34
-summary: "Your task-first Dashboard and the Focus, Board, and Agenda work views."
+summary: "Your task-first Home and the Focus, Board, and Agenda work views."
 ---
 
-Two surfaces answer *what should I do next?* — the **Dashboard** is your home
+Two surfaces answer *what should I do next?* — the **Home** is your home
 base, while **My Work** is where you execute, track, and review your workday.
 
-## Dashboard
+## Home
 
-Your Dashboard is the first thing you see. It shows:
+Your Home is the first thing you see. It shows:
 
 - **Do in this order** immediately after the greeting, with your three most
   important next tasks. Complete them in place or open **My Work** for the full
@@ -23,7 +23,7 @@ Your Dashboard is the first thing you see. It shows:
 - For managers and admins, **Needs your review** combines actionable suggestions
   from project updates and correspondence. Each item opens the project or email
   where its evidence and review-first actions are available; no project data is
-  changed from the Dashboard itself.
+  changed from the Home itself.
 - **Active projects** with health dots, progress, and a one-line preview of each
   project's latest status update, including who posted it and when. Book rows
   also show a funding summary based on recorded budgets, promised funding,
@@ -40,7 +40,7 @@ Your Dashboard is the first thing you see. It shows:
   it.
 
 If you're active on more projects than is healthy for your team size, the
-Dashboard warns you so work doesn't get spread too thin.
+Home warns you so work doesn't get spread too thin.
 
 ## My Work
 

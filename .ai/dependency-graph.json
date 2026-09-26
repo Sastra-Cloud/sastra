@@ -53,6 +53,7 @@
     "@/components/assistant/assistant-workspace"
   ],
   "app/(app)/chat/[channelId]/page.tsx": [
+    "@/components/assistant/assistant-shortcut",
     "react",
     "next/link",
     "next/navigation",
@@ -123,6 +124,10 @@
     "next/link",
     "lucide-react",
     "@/lib/auth/guards",
+    "@/lib/email/inbox-filters",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/button",
     "@/lib/email/queries",
     "@/lib/projects/queries",
     "@/lib/gmail",
@@ -137,6 +142,7 @@
   ],
   "app/(app)/dashboard/page.tsx": [
     "next/link",
+    "date-fns-tz",
     "lucide-react",
     "@/lib/auth/guards",
     "@/lib/tasks/queries",
@@ -175,6 +181,7 @@
     "@/components/cockpit"
   ],
   "app/(app)/help/page.tsx": [
+    "@/lib/auth/guards",
     "lucide-react",
     "@/components/cockpit",
     "@/components/help/help-browser",
@@ -215,6 +222,10 @@
     "@/components/motion/reveal",
     "@/components/portfolio/missing-due-dates",
     "@/components/cockpit"
+  ],
+  "app/(app)/overview/layout.tsx": [
+    "@/components/team-planning-nav",
+    "@/lib/auth/guards"
   ],
   "app/(app)/overview/loading.tsx": [
     "@/components/page-skeleton"
@@ -325,8 +336,9 @@
   "app/(app)/projects/[slug]/layout.tsx": [
     "next/link",
     "next/navigation",
-    "react",
     "lucide-react",
+    "@/components/projects/project-actions",
+    "@/components/projects/project-workspace-frame",
     "@/components/cockpit",
     "@/lib/projects/queries",
     "@/lib/print/queries",
@@ -354,6 +366,8 @@
     "@/components/page-skeleton"
   ],
   "app/(app)/projects/[slug]/members/page.tsx": [
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
     "next/navigation",
     "@/lib/projects/queries",
     "@/lib/capacity/queries",
@@ -444,6 +458,9 @@
     "@/components/page-skeleton"
   ],
   "app/(app)/projects/[slug]/tasks/generate/page.tsx": [
+    "@/components/ai/ai-setup-guidance",
+    "@/lib/ai/keys",
+    "@/components/cockpit",
     "next/link",
     "next/navigation",
     "drizzle-orm",
@@ -508,6 +525,8 @@
   "app/(app)/projects/import/page.tsx": [
     "next/link",
     "lucide-react",
+    "@/components/ai/ai-setup-guidance",
+    "@/lib/ai/keys",
     "@/lib/auth/guards",
     "@/lib/imports/queries",
     "@/lib/imports/match",
@@ -543,6 +562,8 @@
     "@/lib/auth/policy"
   ],
   "app/(app)/projects/plan/[draftId]/page.tsx": [
+    "@/components/ai/ai-setup-guidance",
+    "@/lib/ai/keys",
     "next/navigation",
     "drizzle-orm",
     "@/lib/auth/guards",
@@ -552,11 +573,17 @@
   ],
   "app/(app)/projects/plan/page.tsx": [
     "lucide-react",
+    "@/components/ai/ai-setup-guidance",
+    "@/lib/ai/keys",
     "@/lib/auth/guards",
     "@/lib/ai/planner-actions",
     "@/components/ui/button",
     "@/components/ui/card",
     "@/components/cockpit"
+  ],
+  "app/(app)/schedule/layout.tsx": [
+    "@/components/team-planning-nav",
+    "@/lib/auth/guards"
   ],
   "app/(app)/schedule/page.tsx": [
     "@/lib/auth/guards",
@@ -609,6 +636,7 @@
     "@/components/settings/dictionary-manager"
   ],
   "app/(app)/settings/email/page.tsx": [
+    "@/lib/hosted/mode",
     "next/link",
     "lucide-react",
     "drizzle-orm",
@@ -705,6 +733,9 @@
     "@/lib/workspace/queries"
   ],
   "app/(app)/settings/team/page.tsx": [
+    "@/lib/hosted/mode",
+    "@/lib/hosted/entitlements",
+    "@/lib/hosted/seats",
     "@/lib/auth/guards",
     "@/lib/team/queries",
     "@/lib/capacity/queries",
@@ -812,6 +843,10 @@
     "@/components/wiki/wiki-trash",
     "@/lib/auth/guards",
     "@/lib/wiki/queries"
+  ],
+  "app/(app)/workload/layout.tsx": [
+    "@/components/team-planning-nav",
+    "@/lib/auth/guards"
   ],
   "app/(app)/workload/loading.tsx": [
     "@/components/page-skeleton"
@@ -1297,7 +1332,13 @@
     "@/components/ui/button",
     "@/components/ui/input"
   ],
+  "components/ai/ai-setup-guidance.tsx": [
+    "next/link",
+    "@/lib/hosted/mode",
+    "@/lib/auth/policy"
+  ],
   "components/ai/planner-workspace.tsx": [
+    "@/lib/dialog-requests",
     "react",
     "lucide-react",
     "sonner",
@@ -1345,6 +1386,11 @@
   ],
   "components/assistant/assistant-message-content.tsx": [
     "next/link"
+  ],
+  "components/assistant/assistant-shortcut.tsx": [
+    "lucide-react",
+    "@/components/ui/button",
+    "@/lib/assistant/launcher"
   ],
   "components/assistant/assistant-workspace.tsx": [
     "react",
@@ -1779,6 +1825,7 @@
     "@/lib/utils"
   ],
   "components/chat/project-chat-view.tsx": [
+    "@/components/assistant/assistant-shortcut",
     "react",
     "@/lib/chat/queries",
     "@/lib/mentions/roster",
@@ -1955,7 +2002,7 @@
     "@/components/ui/button",
     "@/lib/onboarding/queries",
     "@/lib/utils",
-    "@/lib/auth/policy"
+    "@/lib/onboarding/steps"
   ],
   "components/donations/donation-import-button.tsx": [
     "react",
@@ -2049,6 +2096,7 @@
     "@/lib/help/content"
   ],
   "components/guidance/guidance-provider.tsx": [
+    "sonner",
     "react",
     "@/hooks/use-optimistic-action",
     "@/lib/guidance/actions",
@@ -2078,6 +2126,7 @@
     "@/components/ui/card",
     "@/components/ui/sheet",
     "@/lib/help/search",
+    "@/lib/auth/policy",
     "@/lib/utils"
   ],
   "components/imports/discard-import-button.tsx": [
@@ -2358,6 +2407,11 @@
     "@/hooks/use-prop-state"
   ],
   "components/projects/new-project-entry.tsx": [
+    "@/lib/projects/actions",
+    "next/link",
+    "next/navigation",
+    "@/lib/dialog-requests",
+    "./project-draft",
     "react",
     "lucide-react",
     "@/components/guidance/guidance-provider",
@@ -2366,8 +2420,7 @@
     "@/components/ui/button"
   ],
   "components/projects/new-project-form.tsx": [
-    "react",
-    "@/lib/projects/actions",
+    "./project-draft",
     "@/components/ui/button",
     "@/components/ui/input",
     "@/components/ui/label",
@@ -2378,7 +2431,7 @@
   "components/projects/new-project-guided.tsx": [
     "react",
     "lucide-react",
-    "@/lib/projects/actions",
+    "./project-draft",
     "@/components/guidance/guided-steps",
     "@/components/ui/input",
     "@/components/ui/label",
@@ -2386,13 +2439,28 @@
     "@/lib/projects/kinds",
     "@/lib/projects/print-funding"
   ],
+  "components/projects/new-team-journeys.test.tsx": [
+    "react-dom/server",
+    "vitest",
+    "@/app/(app)/projects/page",
+    "./members-manager",
+    "@/components/ai/ai-setup-guidance",
+    "./project-draft"
+  ],
   "components/projects/overdue-reason.tsx": [
     "lucide-react",
     "@/lib/format",
     "@/lib/projects/overdue",
     "@/components/ui/help-tip"
   ],
+  "components/projects/pipeline-view.test.tsx": [
+    "react-dom/server",
+    "vitest",
+    "./pipeline-view",
+    "@/lib/tasks/queries"
+  ],
   "components/projects/pipeline-view.tsx": [
+    "next/link",
     "@/lib/tasks/queries",
     "@/lib/utils"
   ],
@@ -2415,6 +2483,11 @@
     "@/lib/projects/print-funding",
     "@/lib/utils"
   ],
+  "components/projects/project-actions.tsx": [
+    "lucide-react",
+    "@/components/ui/button",
+    "@/components/ui/popover"
+  ],
   "components/projects/project-card.tsx": [
     "next/link",
     "react",
@@ -2429,6 +2502,11 @@
     "@/components/projects/print-funding-badge",
     "@/components/projects/book-format-badge",
     "@/lib/projects/print-funding"
+  ],
+  "components/projects/project-draft.tsx": [
+    "react",
+    "@/lib/projects/actions",
+    "@/lib/projects/kinds"
   ],
   "components/projects/project-drive-folder.tsx": [
     "react",
@@ -2487,6 +2565,11 @@
     "lucide-react",
     "react",
     "@/components/ui/button"
+  ],
+  "components/projects/project-workspace-frame.tsx": [
+    "react",
+    "next/navigation",
+    "@/lib/utils"
   ],
   "components/projects/projects-browser.tsx": [
     "react",
@@ -2823,10 +2906,15 @@
     "@/lib/email/task-suggestion-actions",
     "@/components/ui/card"
   ],
+  "components/settings/field-errors.tsx": [
+    "react"
+  ],
   "components/settings/guidance-toggle.tsx": [
     "react",
     "next/navigation",
     "sonner",
+    "@/components/ui/button",
+    "@/components/guidance/guidance-provider",
     "@/lib/settings/guidance-actions"
   ],
   "components/settings/hosted-plan-card.tsx": [
@@ -2877,6 +2965,8 @@
     "@/lib/team/actions",
     "@/components/ui/button",
     "@/components/ui/input",
+    "./field-errors",
+    "./timezone-control",
     "@/components/ui/label"
   ],
   "components/settings/publishers-manager.tsx": [
@@ -2977,6 +3067,7 @@
     "@/components/ui/button",
     "@/components/ui/card",
     "@/components/ui/input",
+    "./timezone-control",
     "@/components/ui/label"
   ],
   "components/settings/standup-editor.tsx": [
@@ -2994,6 +3085,7 @@
     "@/components/ui/card",
     "@/components/ui/help-tip",
     "@/components/ui/input",
+    "./timezone-control",
     "@/components/ui/label",
     "@/lib/utils",
     "@/hooks/use-prop-state"
@@ -3010,12 +3102,16 @@
     "@/components/ui/button",
     "@/components/ui/card",
     "@/components/ui/help-tip",
+    "@/components/ui/label",
     "@/components/ui/input",
     "@/components/ui/user-avatar",
     "@/lib/format",
+    "@/hooks/use-optimistic-action",
     "@/hooks/use-prop-state",
     "@/lib/utils",
-    "@/lib/auth/policy"
+    "@/lib/auth/policy",
+    "@/lib/hosted/credits",
+    "@/lib/ai/amount-format"
   ],
   "components/settings/templates-manager.tsx": [
     "react",
@@ -3033,6 +3129,17 @@
     "lucide-react",
     "@/lib/notifications/actions",
     "@/components/ui/button"
+  ],
+  "components/settings/timezone-control.test.tsx": [
+    "react-dom/server",
+    "vitest",
+    "./timezone-control"
+  ],
+  "components/settings/timezone-control.tsx": [
+    "react",
+    "./field-errors",
+    "@/components/ui/input",
+    "@/lib/timezone"
   ],
   "components/settings/typesafe-toggle.tsx": [
     "react",
@@ -3058,6 +3165,7 @@
   ],
   "components/settings/workspace-settings-form.tsx": [
     "@/lib/files/upload-client",
+    "./field-errors",
     "react",
     "next/navigation",
     "lucide-react",
@@ -3065,6 +3173,7 @@
     "@/components/ui/button",
     "@/components/ui/card",
     "@/components/ui/input",
+    "./timezone-control",
     "@/components/ui/label",
     "@/lib/workspace/actions",
     "@/lib/workspace/queries",
@@ -3072,12 +3181,14 @@
     "@/lib/planning/groups"
   ],
   "components/settings/workspace-setup-form.tsx": [
+    "./field-errors",
     "react",
     "next/navigation",
     "lucide-react",
     "sonner",
     "@/components/ui/button",
     "@/components/ui/input",
+    "./timezone-control",
     "@/components/ui/label",
     "@/lib/workspace/actions"
   ],
@@ -3329,6 +3440,11 @@
     "@/lib/format",
     "@/lib/tasks/attention",
     "@/lib/utils"
+  ],
+  "components/team-planning-nav.tsx": [
+    "next/link",
+    "next/navigation",
+    "@/components/ui/button"
   ],
   "components/theme-provider.tsx": [
     "react",
@@ -5156,6 +5272,11 @@
   "lib/email/inbound-signature.ts": [
     "node:crypto"
   ],
+  "lib/email/inbox-filters.test.ts": [
+    "vitest",
+    "./inbox-filters"
+  ],
+  "lib/email/inbox-filters.ts": [],
   "lib/email/invite.ts": [
     "./baseLayout",
     "./renderTemplate",
@@ -5263,6 +5384,11 @@
     "@/lib/notifications",
     "@/lib/email/project-update-suggestion-policy",
     "@/lib/email/follow-up-policy"
+  ],
+  "lib/email/queries-pagination.test.ts": [
+    "vitest",
+    "drizzle-orm/pg-core",
+    "./queries"
   ],
   "lib/email/queries.ts": [
     "drizzle-orm",
@@ -5953,7 +6079,16 @@
   "lib/onboarding/queries.ts": [
     "drizzle-orm",
     "@/lib/db",
-    "@/lib/db/schema"
+    "@/lib/db/schema",
+    "./steps",
+    "./steps"
+  ],
+  "lib/onboarding/steps.test.ts": [
+    "vitest",
+    "./steps"
+  ],
+  "lib/onboarding/steps.ts": [
+    "@/lib/auth/policy"
   ],
   "lib/ops/readiness.test.ts": [
     "vitest",
@@ -6707,6 +6842,7 @@
     "next/cache",
     "drizzle-orm",
     "zod",
+    "@/lib/timezone",
     "@/lib/auth/guards",
     "@/lib/db",
     "@/lib/db/schema",
@@ -6894,6 +7030,7 @@
     "next/cache",
     "drizzle-orm",
     "zod",
+    "@/lib/timezone",
     "@/lib/auth/auth",
     "@/lib/auth/guards",
     "@/lib/db",
@@ -6935,6 +7072,11 @@
     "./scale"
   ],
   "lib/timeline/scale.ts": [],
+  "lib/timezone.test.ts": [
+    "vitest",
+    "./timezone"
+  ],
+  "lib/timezone.ts": [],
   "lib/tokens.ts": [
     "crypto"
   ],
@@ -7014,6 +7156,7 @@
     "next/cache",
     "drizzle-orm",
     "zod",
+    "@/lib/timezone",
     "@/lib/auth/guards",
     "@/lib/db",
     "@/lib/db/schema",

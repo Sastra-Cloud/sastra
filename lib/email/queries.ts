@@ -103,6 +103,8 @@ export type ListThreadsOptions = {
   /** `true` = project-linked threads, `false` = other/unlinked mailbox email. */
   projectRelated?: boolean;
   limit?: number;
+  offset?: number;
+  search?: string;
 };
 
 export async function listThreads(
@@ -117,6 +119,15 @@ export async function listThreads(
   if (opts.needsLinking) conds.push(isNull(emailThreads.projectId));
   if (opts.projectRelated === true) conds.push(isNotNull(emailThreads.projectId));
   if (opts.projectRelated === false) conds.push(isNull(emailThreads.projectId));
+
+  if (opts.search?.trim()) {
+    const term = `%${opts.search.trim().replace(/[\\%_]/g, "\\$&")}%`;
+    conds.push(sql`(${emailThreads.subject} ilike ${term} or exists (
+      select 1 from ${emailThreadProjects} link
+      join ${projects} linked_project on linked_project.id = link.project_id
+      where link.thread_id = ${emailThreads.id} and linked_project.title ilike ${term}
+    ) or ${projects.title} ilike ${term})`);
+  }
 
   let q = db
     .select(summaryColumns)
@@ -142,8 +153,18 @@ export async function listThreads(
 
   return q
     .where(conds.length ? and(...conds) : undefined)
-    .orderBy(desc(emailThreads.lastMessageAt))
-    .limit(opts.limit ?? 50);
+    .orderBy(sql`${emailThreads.lastMessageAt} desc nulls last`, desc(emailThreads.id))
+    .limit(opts.limit ?? 50)
+    .offset(opts.offset ?? 0);
+}
+
+export const CORRESPONDENCE_PAGE_SIZE = 50;
+
+/** One extra row indicates another page; the existing listThreads API stays available. */
+export async function listThreadsPage(opts: Omit<ListThreadsOptions, "limit" | "offset"> & { page?: number } = {}): Promise<{ items: ThreadSummary[]; hasMore: boolean }> {
+  const page = Number.isSafeInteger(opts.page) && opts.page! > 0 ? Math.min(opts.page!, 100000) : 1;
+  const rows = await listThreads({ ...opts, limit: CORRESPONDENCE_PAGE_SIZE + 1, offset: (page - 1) * CORRESPONDENCE_PAGE_SIZE });
+  return { items: rows.slice(0, CORRESPONDENCE_PAGE_SIZE), hasMore: rows.length > CORRESPONDENCE_PAGE_SIZE };
 }
 
 /** The newest linked threads plus a quote-free excerpt from each latest message. */

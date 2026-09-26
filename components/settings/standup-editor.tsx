@@ -40,6 +40,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { HelpTip } from "@/components/ui/help-tip";
 import { Input } from "@/components/ui/input";
+import { TimezoneControl } from "./timezone-control";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { usePropState } from "@/hooks/use-prop-state";
@@ -158,24 +159,20 @@ export function StandupEditor({
       {/* Schedule */}
       <Card>
         <CardContent className="py-4">
-          <form action={updateStandup.bind(null, standup.id)} className="space-y-3">
+          <form onSubmit={event => { event.preventDefault(); const form = new FormData(event.currentTarget); run(() => updateStandup(standup.id, form), "Check-in schedule saved"); }} className="space-y-3">
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="grid gap-1">
-                <Label>Time</Label>
-                <Input name="scheduleTime" type="time" defaultValue={standup.scheduleTime} />
+                <Label htmlFor="scheduleTime">Time</Label>
+                <Input id="scheduleTime" name="scheduleTime" type="time" defaultValue={standup.scheduleTime} />
               </div>
               <div className="grid gap-1">
-                <Label>Timezone</Label>
-                <select name="timezone" className={selectClass} defaultValue={standup.timezone}>
-                  <option>Asia/Phnom_Penh</option>
-                  <option>Asia/Bangkok</option>
-                  <option>Asia/Ho_Chi_Minh</option>
-                  <option>UTC</option>
-                </select>
+                <Label htmlFor="timezone">Timezone</Label>
+                <TimezoneControl id="timezone" defaultValue={standup.timezone} />
               </div>
               <div className="grid gap-1">
-                <Label>Reminder after (min)</Label>
+                <Label htmlFor="reminderAfterMinutes">Reminder after (min)</Label>
                 <Input
+                  id="reminderAfterMinutes"
                   name="reminderAfterMinutes"
                   type="number"
                   min="0"
@@ -201,8 +198,9 @@ export function StandupEditor({
               </div>
             </div>
             <div className="grid gap-1 sm:max-w-xs">
-              <Label>Report to (reviewer)</Label>
+              <Label htmlFor="reportToUserId">Report to (reviewer)</Label>
               <select
+                id="reportToUserId"
                 name="reportToUserId"
                 className={selectClass}
                 defaultValue={standup.reportToUserId ?? "none"}
@@ -223,7 +221,7 @@ export function StandupEditor({
               />
               Active
             </label>
-            <Button type="submit" size="sm">
+            <Button type="submit" disabled={pending} size="sm">
               Save schedule
             </Button>
           </form>

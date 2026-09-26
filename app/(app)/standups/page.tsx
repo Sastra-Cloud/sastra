@@ -57,7 +57,7 @@ export default async function StandupsPage() {
         icon={<Sunrise className="size-6" />}
         eyebrow="Daily ritual"
         title="Standups"
-        description="Track who has checked in, surface stuck work, and route the next conversation before momentum stalls."
+        description="Standups are scheduled team check-ins. Share progress, next steps, and anything blocking your work."
         actions={
           canManage ? (
             <Link
@@ -93,10 +93,10 @@ export default async function StandupsPage() {
         </Card>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      {view.length > 0 && runsToday > 0 ? <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           icon={Sunrise}
-          label="Configured rituals"
+          label="Team check-ins"
           value={view.length}
           hint="active schedules"
         />
@@ -114,13 +114,13 @@ export default async function StandupsPage() {
           hint="people flagged in digest"
           tone={highRisk > 0 ? "destructive" : undefined}
         />
-      </div>
+      </div> : null}
 
       {view.length === 0 ? (
         <EmptyState
           icon={<Clock3 className="size-5" />}
           title="No standups configured yet"
-          description="Create a daily or weekly ritual so the team can report progress and blockers without a meeting."
+          description={canManage ? "Create a scheduled check-in so the team can share progress and blockers." : "A manager can set up your team check-in. You can keep working in My Work."}
           action={
             <div className="flex flex-wrap items-center justify-center gap-3">
               {canManage ? (
@@ -156,7 +156,7 @@ export default async function StandupsPage() {
               <div className="flex flex-wrap gap-2">
                 {s.runs.length === 0 ? (
                   <span className="text-sm text-muted-foreground">
-                    Not started today.
+                    Waiting for the next scheduled check-in.
                   </span>
                 ) : (
                   s.runs.map((r, i) => (

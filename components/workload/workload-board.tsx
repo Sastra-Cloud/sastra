@@ -440,7 +440,7 @@ function SortableRow({
           {t.blockedBy ? (
             <span
               title={`Waiting on: ${t.blockedBy}`}
-              className="flex shrink-0 items-center gap-0.5 rounded bg-warning/20 px-1.5 py-0.5 text-[11px] font-medium text-warning-foreground"
+              className="flex shrink-0 items-center gap-0.5 rounded bg-warning/20 px-1.5 py-0.5 text-[11px] font-medium text-warning-text"
             >
               <Lock className="size-3" /> Blocked
             </span>

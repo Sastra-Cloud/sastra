@@ -1,10 +1,11 @@
+import Link from "next/link";
 import type { PipelineData, TaskRow } from "@/lib/tasks/queries";
 import { cn } from "@/lib/utils";
 
 const STATUS_CELL: Record<string, string> = {
   done: "bg-success/15 text-success",
   in_progress: "bg-info/15 text-info",
-  review: "bg-warning/15 text-warning",
+  review: "bg-warning/15 text-warning-text",
   todo: "bg-muted text-muted-foreground",
 };
 const STATUS_LABEL: Record<string, string> = {
@@ -21,9 +22,11 @@ function firstName(name: string | null): string {
 /** Unit × stage matrix: rows are chapters/articles/episodes, columns are stages. */
 export function PipelineView({
   data,
+  projectSlug,
   unitLabel = "unit",
 }: {
   data: PipelineData;
+  projectSlug: string;
   unitLabel?: string;
 }) {
   // Only stages that actually have per-unit cells.
@@ -33,8 +36,8 @@ export function PipelineView({
   if (data.units.length === 0 || stages.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        No per-{unitLabel} pipeline yet — generate a plan with per-{unitLabel}{" "}
-        stages to see the matrix here.
+        No per-{unitLabel} pipeline yet. A manager can add a task plan with per-{unitLabel}{" "}
+        stages to show progress here.
       </p>
     );
   }
@@ -92,20 +95,23 @@ export function PipelineView({
                       return <td key={s.id} className="px-2 py-1.5 text-center text-muted-foreground/40">·</td>;
                     return (
                       <td key={s.id} className="px-1.5 py-1.5">
-                        <div
+                        <Link
+                          href={`/projects/${projectSlug}/tasks?task=${cell.id}`}
+                          aria-label={`${u.name}: ${s.name}, ${STATUS_LABEL[cell.status] ?? cell.status}. Open task`}
                           className={cn(
-                            "rounded px-1.5 py-1 text-xs leading-tight",
+                            "block min-h-11 rounded px-1.5 py-1 text-xs leading-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                             STATUS_CELL[cell.status] ?? STATUS_CELL.todo
                           )}
                           title={`${STATUS_LABEL[cell.status] ?? cell.status}${cell.dueDate ? ` · due ${cell.dueDate}` : ""}`}
                         >
+                          <span className="block font-medium">{STATUS_LABEL[cell.status] ?? cell.status}</span>
                           <div className="truncate font-medium">
                             {firstName(cell.assigneeName)}
                           </div>
                           {cell.dueDate ? (
                             <div className="tabular-nums opacity-70">{cell.dueDate}</div>
                           ) : null}
-                        </div>
+                        </Link>
                       </td>
                     );
                   })}

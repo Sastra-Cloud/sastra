@@ -1035,7 +1035,7 @@ export function PrintManager({
     if (!compose) return;
     const outgoing = compose;
     const label =
-      outgoing.type === "rfq" ? "Printer RFQ" : "Finance wire request";
+      outgoing.type === "rfq" ? "Printer quote request" : "Finance wire request";
     const recipient = outgoing.to.join(", ");
     setEmailDelivery({
       status: "sending",
@@ -1229,13 +1229,13 @@ export function PrintManager({
               Print settings
             </CardTitle>
             <CardDescription>
-              Defaults for page estimates, RFQs, and finance requests.
+              Defaults for page estimates, printer quote requests, and finance requests.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
             <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
               <Field
-                label="English page count"
+                label="Source page count"
                 hint="Shared with Budget; used to estimate target-language text pages."
               >
                 <Input
@@ -1320,7 +1320,7 @@ export function PrintManager({
               </Field>
               <Field
                 label="Measurement unit"
-                help="Controls trim-size inputs and displays across this project, including print runs, quotes, and RFQ drafts."
+                help="Controls trim-size inputs and displays across this project, including print runs, quotes, and printer quote request drafts."
               >
                 <select
                   className={selectClass}
@@ -1348,7 +1348,7 @@ export function PrintManager({
               <div className="md:col-span-2 2xl:col-span-3">
                 <Field
                   label="Default CC recipients"
-                  hint="Separate multiple emails with commas or new lines. These are added to printer RFQs and finance wire requests."
+                  hint="Separate multiple emails with commas or new lines. These are added to printer quote requests and finance wire requests."
                 >
                   <Textarea
                     rows={2}
@@ -1442,8 +1442,8 @@ export function PrintManager({
               </select>
             </Field>
             <Field
-              label="RFQ quantity tiers"
-              hint="Copy counts to ask the printer to price when you draft the RFQ."
+              label="Quote request quantities"
+              hint="Copy counts to ask the printer to price when you draft the printer quote request."
             >
               <Input
                 value={runDraft.quantities}
@@ -1624,7 +1624,7 @@ export function PrintManager({
             >
               <Mail className="size-4" />
               {compose.type === "rfq"
-                ? "Review printer RFQ email"
+                ? "Request printer quotes"
                 : "Review finance wire email"}
             </CardTitle>
             <CardDescription>
@@ -1733,7 +1733,7 @@ export function PrintManager({
                 }
               >
                 <Send className="size-4" />
-                {compose.type === "rfq" ? "Send printer RFQ" : "Send wire request"}
+                {compose.type === "rfq" ? "Send printer quote request" : "Send wire request"}
               </Button>
             </div>
           </CardContent>
@@ -2570,7 +2570,7 @@ function RunPanel({
             </div>
           ) : null}
           {run.kind === "reprint" && shortfall > 0 ? (
-            <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-warning-foreground">
+            <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-warning-text">
               Reprint shortfall: {money(shortfall, financeCurrency)} still needs
               sponsor commitment, MoU receivable, or donation.
             </div>
@@ -2907,7 +2907,7 @@ function RunPanel({
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={onDraftRfq} disabled={pending}>
                   <Mail className="size-4" />
-                  {hasRfqDraft ? "Resume RFQ email" : "Review RFQ email"}
+                  {hasRfqDraft ? "Resume printer quote request email" : "Request printer quotes"}
                 </Button>
             <Button
               variant="outline"

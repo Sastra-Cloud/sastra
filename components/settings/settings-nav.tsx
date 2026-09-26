@@ -48,27 +48,33 @@ export function SettingsNav({
 
   const groups: Group[] = [
     {
-      label: "Account",
+      label: "Personal",
       tabs: [
         { href: "/settings/profile", label: "Profile", icon: IdCard, show: true },
         { href: "/settings/security", label: "Security", icon: ShieldCheck, show: isAdmin },
         { href: "/settings/notifications", label: "Notifications", icon: Bell, show: true },
-        { href: "/settings/dictionary", label: "Voice", icon: Mic, show: true },
       ],
     },
     {
       label: "Workspace",
       tabs: [
+        { href: "/settings/dictionary", label: "Voice dictionary", icon: Mic, show: true },
         { href: "/settings/team", label: "Team", icon: Users, show: canManage },
         { href: "/settings/workspace", label: "Workspace", icon: Building2, show: isAdmin },
-        { href: "/settings/roles", label: "Roles", icon: Settings2, show: canManage },
+        { href: "/settings/standups", label: "Standups", icon: Sunrise, show: canManage },
+      ],
+    },
+    { label: "Publishing", tabs: [
+        { href: "/settings/roles", label: "Project roles", icon: Settings2, show: canManage },
         { href: "/settings/templates", label: "Templates", icon: LayoutTemplate, show: isAdmin },
         { href: "/settings/publishers", label: "Publishers", icon: Building2, show: canManage },
         { href: "/settings/partners", label: "Partners", icon: Handshake, show: canManage },
         { href: "/settings/printers", label: "Printers", icon: Printer, show: canManage },
+      ],
+    },
+    { label: "AI & email", tabs: [
         { href: "/settings/email", label: "Email", icon: Mail, show: canManage },
-        { href: "/settings/standups", label: "Standups", icon: Sunrise, show: canManage },
-        { href: "/settings/costs", label: "Costs", icon: CircleDollarSign, show: isAdmin },
+        { href: "/settings/costs", label: "AI usage", icon: CircleDollarSign, show: isAdmin },
         { href: "/settings/ai", label: "AI", icon: Bot, show: isAdmin },
       ],
     },
@@ -97,7 +103,7 @@ export function SettingsNav({
         {groups.map((group) => (
           <div key={group.label} className="flex flex-col gap-1">
             <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
-              {group.label}
+              {group.label}{group.label !== "Personal" ? " · shared" : ""}
             </p>
             <div className="flex flex-col gap-0.5">
               {group.tabs.map((tab) => {
@@ -163,7 +169,7 @@ function MobileNav({ groups, active }: { groups: Group[]; active?: Tab }) {
           {groups.map((group) => (
             <section key={group.label} className="space-y-1">
               <h2 className="px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
-                {group.label}
+                {group.label}{group.label !== "Personal" ? " · shared" : ""}
               </h2>
               <div className="grid gap-1">
                 {group.tabs.map((tab) => {

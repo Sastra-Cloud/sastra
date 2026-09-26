@@ -84,3 +84,5 @@ the storage object directly.
 Standup answers are posted into a standup channel automatically, so check-ins
 live alongside normal conversation. Creating channels and changing their
 membership are manager actions.
+
+In a conversation, use the assistant shortcut in the header. The assistant launcher does not float over Send. Project chat keeps the conversation and composer inside the available screen height.

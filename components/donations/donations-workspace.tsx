@@ -5,14 +5,12 @@ import { confirmDialog } from "@/lib/dialog-requests";
 import {
   AlertTriangle,
   ArrowRight,
-  CheckCircle2,
   CircleHelp,
   FileClock,
   Link2,
   Plus,
   Search,
   Trash2,
-  WalletCards,
 } from "lucide-react";
 import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -77,7 +75,7 @@ function StatusBadge({ status }: { status: DonationRowDTO["reviewStatus"] }) {
       }
       className={cn(
         status === "needs_review" &&
-          "border-warning/30 bg-warning/10 text-warning-foreground dark:text-warning",
+          "border-warning/30 bg-warning/10 text-warning-text dark:text-warning",
         status === "allocated" &&
           "bg-success/12 text-success-foreground",
         (status === "unallocated" || status === "partially_allocated") &&
@@ -103,7 +101,7 @@ function ConfidenceBadge({
       className={cn(
         confidence === "strong"
           ? "border-success/30 bg-success/10 text-success-foreground"
-          : "border-warning/30 bg-warning/10 text-warning-foreground"
+          : "border-warning/30 bg-warning/10 text-warning-text"
       )}
     >
       {confidence === "strong" ? "Strong" : "Possible"}
@@ -188,51 +186,19 @@ export function DonationsWorkspace({ data }: { data: DonationWorkspaceDTO }) {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-3">
-        <SummaryButton
-          active={tab === "review"}
-          title="Needs review"
-          count={data.summary.needsReviewCount}
-          amount={money(
-            data.summary.needsReviewAmount,
-            data.summary.currency
-          )}
-          icon={<AlertTriangle className="size-4" />}
-          onClick={() => changeTab("review")}
-        />
-        <SummaryButton
-          active={tab === "unallocated"}
-          title="Unallocated"
-          count={data.summary.unallocatedCount}
-          amount={money(
-            data.summary.unallocatedAmount,
-            data.summary.currency
-          )}
-          icon={<WalletCards className="size-4" />}
-          onClick={() => changeTab("unallocated")}
-        />
-        <SummaryButton
-          active={tab === "posted"}
-          title="Posted"
-          count={data.summary.postedCount}
-          amount={money(data.summary.postedAmount, data.summary.currency)}
-          icon={<CheckCircle2 className="size-4" />}
-          onClick={() => changeTab("posted")}
-        />
-      </div>
-
       <div className="flex max-w-full gap-1 overflow-x-auto border-b">
         {(
           [
-            ["review", "Needs review", data.summary.needsReviewCount],
-            ["unallocated", "Unallocated", data.summary.unallocatedCount],
-            ["posted", "Posted", data.summary.postedCount],
-            ["history", "Import history", data.imports.length],
+            ["review", "Needs review", data.summary.needsReviewCount, money(data.summary.needsReviewAmount, data.summary.currency)],
+            ["unallocated", "Unallocated", data.summary.unallocatedCount, money(data.summary.unallocatedAmount, data.summary.currency)],
+            ["posted", "Posted", data.summary.postedCount, money(data.summary.postedAmount, data.summary.currency)],
+            ["history", "Import history", data.imports.length, null],
           ] as const
-        ).map(([value, label, count]) => (
+        ).map(([value, label, count, amount]) => (
           <button
             key={value}
             type="button"
+            aria-pressed={tab === value}
             onClick={() => changeTab(value)}
             className={cn(
               "flex min-h-11 shrink-0 items-center gap-2 border-b-2 px-3 text-sm font-medium transition-colors",
@@ -241,7 +207,7 @@ export function DonationsWorkspace({ data }: { data: DonationWorkspaceDTO }) {
                 : "border-transparent text-muted-foreground hover:text-foreground"
             )}
           >
-            {label}
+            <span>{label}{amount ? <span className="block text-xs font-normal tabular-nums text-muted-foreground">{amount}</span> : null}</span>
             <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs tabular-nums">
               {count}
             </span>
@@ -465,49 +431,6 @@ export function DonationsWorkspace({ data }: { data: DonationWorkspaceDTO }) {
   );
 }
 
-function SummaryButton({
-  active,
-  title,
-  count,
-  amount,
-  icon,
-  onClick,
-}: {
-  active: boolean;
-  title: string;
-  count: number;
-  amount: string;
-  icon: React.ReactNode;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "flex min-h-24 items-start justify-between rounded-xl border bg-card p-4 text-left transition-[border-color,background-color,scale] active:scale-[0.99]",
-        active ? "border-primary/45 bg-primary/4" : "hover:border-primary/25"
-      )}
-    >
-      <span>
-        <span className="block text-sm text-muted-foreground">{title}</span>
-        <span className="mt-1 block text-2xl font-semibold tabular-nums">
-          {count}
-        </span>
-        <span className="mt-1 block text-xs text-muted-foreground">{amount}</span>
-      </span>
-      <span
-        className={cn(
-          "rounded-lg bg-muted p-2 text-muted-foreground",
-          active && "bg-primary/10 text-primary"
-        )}
-      >
-        {icon}
-      </span>
-    </button>
-  );
-}
-
 function ImportHistory({ data }: { data: DonationWorkspaceDTO }) {
   return (
     <Card>
@@ -565,7 +488,7 @@ function ImportHistory({ data }: { data: DonationWorkspaceDTO }) {
                     <td className="px-4 py-3 text-right tabular-nums">
                       {item.exactDuplicateRows}
                       {item.possibleDuplicateRows > 0 ? (
-                        <span className="block text-xs text-warning-foreground">
+                        <span className="block text-xs text-warning-text">
                           {item.possibleDuplicateRows} possible
                         </span>
                       ) : null}

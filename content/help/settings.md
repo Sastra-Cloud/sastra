@@ -2,9 +2,9 @@
 title: "Settings"
 category: "Settings"
 roles: [member, manager, admin]
-keywords: [file space, storage, storage full, out of space, upload limit, your plan, manage plan, people limit, billing address, partner address, invoice description, settings, setup, profile, timezone, languages, currency, invoice issuer, payment instructions, invoice numbering, organization donation fee, organization fee, admin fee, donation deduction, net available, templates, avatar, team, invite, roles, super admin, publishers, printers, email, default cc, cc recipients, outbound email defaults, dictionary, voice, ai, model, budget, costs, usage, cloudflare, r2, openrouter, ai key, api key, openrouter key, credits, ai credits, credits used up, buy credits, branding, logo, workspace, organization identity, aliases, internal domains, mobile settings, planning capacity, projects at once, project duration, completion date planner, work path, work paths, creative path, project type capacity, books at once, articles podcasts and video, guidance, show helpful guidance, guided setup, tips, hide tips, expert mode, security, passkey, fingerprint, trusted browser, two factor, dependency audit, security updates, check again, run security check, GitHub Actions, fast AI pre-checks, pre-check, typesafe, jev, skip AI calls]
+keywords: [personal, publishing, AI usage, voice dictionary, project roles, IANA, pending invitations, file space, storage, storage full, out of space, upload limit, your plan, manage plan, people limit, billing address, partner address, invoice description, settings, setup, profile, timezone, languages, currency, invoice issuer, payment instructions, invoice numbering, organization donation fee, organization fee, admin fee, donation deduction, net available, templates, avatar, team, invite, roles, super admin, publishers, printers, email, default cc, cc recipients, outbound email defaults, dictionary, voice, ai, model, budget, costs, usage, cloudflare, r2, openrouter, ai key, api key, openrouter key, credits, ai credits, credits used up, buy credits, branding, logo, workspace, organization identity, aliases, internal domains, mobile settings, planning capacity, projects at once, project duration, completion date planner, work path, work paths, creative path, project type capacity, books at once, articles podcasts and video, guidance, show helpful guidance, guided setup, tips, hide tips, expert mode, security, passkey, fingerprint, trusted browser, two factor, dependency audit, security updates, check again, run security check, GitHub Actions, fast AI pre-checks, pre-check, typesafe, jev, skip AI calls]
 order: 140
-summary: "Personal settings plus admin-controlled organization identity, publishing defaults, invoices, templates, integrations, and AI."
+summary: "Manage personal and shared settings, timezones, hosted seats, and AI credits or provider usage."
 ---
 
 **Settings** holds your personal preferences and the workspace's shared
@@ -81,7 +81,7 @@ confirmed.
   languages, timezone, currency, ministry context, work schedule, publishing
   rates, print defaults, the business-day interval for external email follow-ups,
   the **default CC recipients for outbound email** prefilled on proposals,
-  invoices, printer RFQs, finance requests, correspondence replies, and
+  invoices, printer quote requests, finance requests, correspondence replies, and
   assistant email drafts,
   the **default organization donation fee** copied into new project and reprint
   budget scopes,
@@ -156,15 +156,10 @@ super admins the first time it detects an unencrypted connection.
 ## First-run setup
 
 After the first admin account is created, Sastra requires a short workspace
-setup before opening the dashboard. Enter the organization name, internal names
-and domains, primary source and target languages, timezone, territory, currency,
-and a short ministry description. Advanced print, finance, invoice, and rate
+setup before opening Home. Enter the organization name, primary source and target languages, timezone, territory, and currency. Optional organization details and publishing context can be expanded. Advanced print, finance, invoice, and rate
 defaults can then be completed in **Settings → Workspace**.
 
-Provider passwords and API keys are never stored here. Configure email (SMTP or
-Resend), storage, AI, correspondence, Google, push, and cron secrets in the
-deployment environment; the related Settings pages only report connection
-status and behavior.
+Self-hosted administrators configure email, file storage, correspondence, Google, push, and scheduling credentials in the deployment environment. The OpenRouter AI key can be stored encrypted in Settings → AI, or provided by the server environment. Hosted teams contact Sastra Cloud support for connection setup.
 
 ## Two kinds of "role"
 
@@ -192,3 +187,15 @@ changing settings does not alter earlier invoices.
 Funding partners have a reusable **Billing address** in their edit form. New
 invoices can use that address, with per-invoice overrides. Changing a partner
 address does not rewrite issued invoices.
+
+## Settings groups and shared defaults
+
+Settings has four groups: **Personal**, **Workspace**, **Publishing**, and **AI & email**. Profile and Notifications affect only you. Project roles, Voice dictionary, templates, publishing directories, workspace defaults, AI behavior, and email setup are shared settings.
+
+Setup starts with organization and publishing defaults. Legal details, aliases, internal domains, and AI context are optional and expandable. Existing projects retain their overrides when workspace defaults change.
+
+Timezone fields in setup, Profile, Workspace, and Standups share a searchable list. Any valid IANA timezone is accepted; existing aliases remain unchanged. Invalid zones are rejected before saving.
+
+On Sastra Cloud, **AI usage** and team assistant limits use credits. Team settings shows active people plus pending invitations before you invite someone. Use **Manage account** when available to change your plan. AI and email setup issues on hosted workspaces go to Sastra Cloud support.
+
+Self-hosted administrators see provider-dollar reporting and can configure an AI provider key in **Settings → AI**. Email server setup instructions remain in **Settings → Email** for self-hosted teams.

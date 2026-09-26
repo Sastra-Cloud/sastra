@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, notLike } from "drizzle-orm";
 
 import type { ActionResult } from "@/lib/actions/result";
 import { requireUser } from "@/lib/auth/guards";
@@ -48,5 +48,12 @@ export async function restoreGuidanceKey(
         eq(userGuidanceDismissals.guidanceKey, guidanceKey)
       )
     );
+  return { ok: true };
+}
+
+/** Restore hidden tips only for the current account; retain visited steps. */
+export async function resetGuidanceTips(): Promise<ActionResult> {
+  const { user } = await requireUser();
+  await db.delete(userGuidanceDismissals).where(and(eq(userGuidanceDismissals.userId, user.id), notLike(userGuidanceDismissals.guidanceKey, "onboarding:item:%")));
   return { ok: true };
 }

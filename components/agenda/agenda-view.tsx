@@ -68,7 +68,7 @@ export function AgendaRow({ item }: { item: AgendaItem }) {
         className={cn(
           "shrink-0 text-xs font-medium tabular-nums",
           due.tone === "overdue" && "text-destructive",
-          due.tone === "soon" && "text-warning-foreground",
+          due.tone === "soon" && "text-warning-text",
           due.tone === "normal" && "text-muted-foreground"
         )}
       >

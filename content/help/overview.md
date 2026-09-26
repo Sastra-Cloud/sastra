@@ -58,7 +58,7 @@ original files remain available to open or download.
 
 Live projects (planning, active, or on hold) with no target completion date are
 invisible to the timeline, forecast, and "coming due" lists. When any exist,
-managers and admins see a prompt on the **Dashboard** and the **Overview** that
+managers and admins see a prompt on the **Home** and the **Overview** that
 opens a focused **Projects without a due date** screen. There you can set each
 project's date inline — it saves immediately and drops off the list — or open the
 project for its full settings. Completed and cancelled projects are ignored,
@@ -79,3 +79,7 @@ action unapplied. Text-entry dialogs preserve the distinction between submitting
 an optional blank field and cancelling. If you navigate away, pending dialogs
 are cancelled. Browser-managed permission and installation prompts remain under
 your browser’s control.
+
+Team planning groups **Overview**, **Schedule**, and **Workload**. Use its navigation to switch views. Team capacity remains inside Schedule. Existing bookmarks still work.
+
+Schedule reports how many projects have enough dates for assessment. Projects missing dates are listed as needing dates and are not counted as having achievable deadlines.

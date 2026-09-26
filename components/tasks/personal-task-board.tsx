@@ -235,7 +235,7 @@ function BoardColumn({
         <h2 id={`personal-column-${status}`} className="flex items-center gap-1.5 text-sm font-semibold">
           {TASK_STATUS[status].label}
           {overLimit ? (
-            <Badge className="bg-warning/20 text-warning-foreground">
+            <Badge className="bg-warning/20 text-warning-text">
               <AlertTriangle className="size-3" /> WIP
             </Badge>
           ) : null}
@@ -381,7 +381,7 @@ function TaskCardContent({
           className={cn(
             "text-xs",
             due.tone === "overdue" && "font-medium text-destructive",
-            due.tone === "soon" && "text-warning-foreground",
+            due.tone === "soon" && "text-warning-text",
             (due.tone === "normal" || due.tone === "none") && "text-muted-foreground"
           )}
         >
@@ -396,7 +396,7 @@ function TaskCardContent({
         </p>
       ) : null}
       {blockedBy ? (
-        <p className="mt-2 flex items-start gap-1 text-xs text-warning-foreground">
+        <p className="mt-2 flex items-start gap-1 text-xs text-warning-text">
           <CircleDot className="mt-0.5 size-3 shrink-0" />
           <span className="line-clamp-2">Blocked by {blockedBy}</span>
         </p>

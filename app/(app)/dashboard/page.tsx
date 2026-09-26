@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatInTimeZone } from "date-fns-tz";
 import {
   AlertTriangle,
   ArrowRight,
@@ -29,7 +30,7 @@ import {
   type OnboardingSignals,
 } from "@/lib/onboarding/queries";
 import { activeProjectCoordinationLimit } from "@/lib/flow";
-import { splitTasksByAttention } from "@/lib/tasks/attention";
+import { selectPersonalWork } from "@/lib/tasks/attention";
 import {
   listUnreadNotificationsByType,
   notificationProject,
@@ -43,7 +44,7 @@ import {
 } from "@/lib/projects/print-funding";
 import { listManagerUpdateRecommendations } from "@/lib/projects/status-queries";
 
-export const metadata = { title: "Dashboard" };
+export const metadata = { title: "Home" };
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
@@ -129,11 +130,7 @@ export default async function DashboardPage() {
       return d !== null && d < 0;
     })
     .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""));
-  const nonOverdue = myTasks.filter((t) => !overdue.includes(t));
-  const { attention: upNext, later } = splitTasksByAttention(
-    nonOverdue,
-    new Date().toISOString().slice(0, 10)
-  );
+  const { ordered, later } = selectPersonalWork(myTasks, formatInTimeZone(new Date(), user.timezone ?? "UTC", "yyyy-MM-dd"));
   const dueThisWeek = myTasks.filter((t) => {
     const d = daysUntil(t.dueDate);
     return d !== null && d >= 0 && d <= 7;
@@ -169,10 +166,10 @@ export default async function DashboardPage() {
     0,
     6
   );
-  const focusTasks = [...overdue, ...upNext].slice(0, 3);
+  const focusTasks = ordered.slice(0, 3);
   const remainingAttention = Math.max(
     0,
-    overdue.length + upNext.length - focusTasks.length
+    ordered.length - focusTasks.length
   );
   const visibleStats = [
     { key: "assigned", value: myTasks.length },
@@ -193,10 +190,10 @@ export default async function DashboardPage() {
           </span>
           <div className="min-w-0">
             <h1 className="font-heading text-3xl font-semibold tracking-tight text-pretty">
-              Welcome, {user.name.split(" ")[0]}
+              Home
             </h1>
             <p className="text-muted-foreground">
-              Here&apos;s what to do next, in order.
+              Welcome, {user.name.split(" ")[0]}. Here is your next work.
             </p>
           </div>
         </div>
@@ -221,7 +218,7 @@ export default async function DashboardPage() {
             Do in this order
           </h2>
           <span className="text-xs text-muted-foreground">
-            Your three most important next steps
+            Started work first, then your attention queue
           </span>
         </div>
         {focusTasks.length > 0 ? (

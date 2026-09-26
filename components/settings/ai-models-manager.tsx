@@ -38,32 +38,29 @@ type Row = {
 
 const CUSTOM = "__custom__";
 
-function priceLabel(slug: string): string {
+function priceLabel(slug: string, hosted = false): string {
   const m = findModel(slug);
   if (!m) return slug;
+  if (hosted) return m.label;
   const fmt = (n: number) => (Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`);
   return `${m.label} · ${fmt(m.inPrice)}/${fmt(m.outPrice)}`;
 }
 
-export function AiModelsManager({ rows }: { rows: Row[] }) {
+export function AiModelsManager({ rows, hosted = false }: { rows: Row[]; hosted?: boolean }) {
   const ordered = [...rows].sort(
     (a, b) => (TASK_META[a.taskKey]?.order ?? 99) - (TASK_META[b.taskKey]?.order ?? 99)
   );
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Choose the OpenRouter model for each AI task. Prices are indicative $/1M tokens
-        (input/output); actual spend is billed by OpenRouter. Set{" "}
-        <code className="text-xs">OPENROUTER_API_KEY</code> in the environment to enable AI.
-      </p>
+      <p className="text-sm text-muted-foreground">{hosted ? "Choose the model for each AI task. Usage is counted in AI credits." : "Choose the model for each AI task. Prices show provider dollars per million input/output tokens. Configure your provider key in the AI key settings above."}</p>
       {ordered.map((r) => (
-        <ModelRow key={r.taskKey} row={r} />
+        <ModelRow key={r.taskKey} row={r} hosted={hosted} />
       ))}
     </div>
   );
 }
 
-function ModelRow({ row }: { row: Row }) {
+function ModelRow({ row, hosted }: { row: Row; hosted: boolean }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [model, setModel] = useState(row.model);
@@ -97,7 +94,7 @@ function ModelRow({ row }: { row: Row }) {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="grid gap-1">
-            <Label className="text-xs">Model</Label>
+            <Label htmlFor={`model-${row.taskKey}`} className="text-xs">Model</Label>
             <Select
               value={selectValue}
               onValueChange={(v: string | null) => {
@@ -110,10 +107,10 @@ function ModelRow({ row }: { row: Row }) {
                 }
               }}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger id={`model-${row.taskKey}`} className="w-full">
                 <SelectValue>
                   {(v: string | null) =>
-                    !v ? "Select a model" : v === CUSTOM ? "Custom model…" : priceLabel(v)
+                    !v ? "Select a model" : v === CUSTOM ? "Custom model…" : priceLabel(v, hosted)
                   }
                 </SelectValue>
               </SelectTrigger>
@@ -123,7 +120,7 @@ function ModelRow({ row }: { row: Row }) {
                     <SelectLabel>{TIER_LABELS[tier]}</SelectLabel>
                     {MODEL_CATALOG.filter((m) => m.tier === tier).map((m) => (
                       <SelectItem key={m.slug} value={m.slug}>
-                        {priceLabel(m.slug)}
+                        {priceLabel(m.slug, hosted)}
                       </SelectItem>
                     ))}
                   </SelectGroup>
@@ -141,18 +138,19 @@ function ModelRow({ row }: { row: Row }) {
                 onChange={(e) => setModel(e.target.value)}
                 placeholder="provider/model slug"
               />
-            ) : priceHint(model) ? (
+            ) : !hosted && priceHint(model) ? (
               <p className="text-[11px] text-muted-foreground">{priceHint(model)}</p>
             ) : null}
           </div>
 
           <div className="grid gap-1">
-            <Label className="text-xs">Temperature (optional)</Label>
+            <Label htmlFor={`temperature-${row.taskKey}`} className="text-xs">Temperature (optional)</Label>
             <Input
               type="number"
               step="0.1"
               min="0"
               max="2"
+              id={`temperature-${row.taskKey}`}
               value={temp}
               onChange={(e) => setTemp(e.target.value)}
               placeholder="default"
@@ -161,7 +159,7 @@ function ModelRow({ row }: { row: Row }) {
         </div>
 
         {visionWarning ? (
-          <p className="text-xs text-warning-foreground">{visionWarning}</p>
+          <p className="text-xs text-warning-text">{visionWarning}</p>
         ) : null}
 
         {recommended && model !== recommended ? (
@@ -181,8 +179,9 @@ function ModelRow({ row }: { row: Row }) {
         ) : null}
 
         <div className="grid gap-1">
-          <Label className="text-xs">Fallback models (comma-separated)</Label>
+          <Label htmlFor={`fallback-${row.taskKey}`} className="text-xs">Fallback models (comma-separated)</Label>
           <Input
+            id={`fallback-${row.taskKey}`}
             value={fallback}
             onChange={(e) => setFallback(e.target.value)}
             placeholder="optional, e.g. anthropic/claude-haiku-4.5"

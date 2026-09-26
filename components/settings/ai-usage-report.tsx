@@ -424,7 +424,7 @@ export function AiUsageReport({
     <section className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="font-heading text-lg font-medium">Costs &amp; usage</h2>
+          <h2 className="font-heading text-lg font-medium">AI usage</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {credits
               ? "See how this month's AI credits are being used and by what."

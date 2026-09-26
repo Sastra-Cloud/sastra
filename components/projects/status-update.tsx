@@ -378,7 +378,7 @@ export function ProjectStatusUpdate({
                       status.update.aiAnalysis.priority === "high"
                         ? "border-destructive/30 bg-destructive/10 text-destructive"
                         : status.update.aiAnalysis.priority === "medium"
-                          ? "border-warning/30 bg-warning/15 text-warning-foreground"
+                          ? "border-warning/30 bg-warning/15 text-warning-text"
                           : "text-muted-foreground"
                     }
                   >

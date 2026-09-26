@@ -2,7 +2,11 @@ import Link from "next/link";
 import { Inbox, Mail } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/guards";
-import { listThreads, type ThreadStatus } from "@/lib/email/queries";
+import { inboxHref, inboxPage } from "@/lib/email/inbox-filters";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { listThreadsPage, type ThreadStatus } from "@/lib/email/queries";
 import { getProjectHeader } from "@/lib/projects/queries";
 import { correspondenceCaptureEnabled } from "@/lib/gmail";
 import { EmptyState, PageHero, PageShell } from "@/components/cockpit";
@@ -34,6 +38,8 @@ export default async function CorrespondencePage({
     needsLinking?: string;
     bucket?: string;
     project?: string;
+    q?: string;
+    page?: string;
   }>;
 }) {
   await requireRole("manager");
@@ -50,12 +56,15 @@ export default async function CorrespondencePage({
   const projectFilter = sp.project
     ? await getProjectHeader(sp.project)
     : null;
-  const threads = await listThreads({
+  const page = inboxPage(sp.page);
+  const filters = { bucket, status, project: sp.project, q: sp.q };
+  const { items: threads, hasMore } = await listThreadsPage({
     status,
     projectId: projectFilter?.id,
     projectRelated:
       bucket === "project" ? true : bucket === "other" ? false : undefined,
-    limit: 100,
+    search: sp.q,
+    page,
   });
 
   return (
@@ -77,11 +86,20 @@ export default async function CorrespondencePage({
         </div>
       )}
 
+      <form action="/correspondence" className="grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+        <input type="hidden" name="bucket" value={bucket} />
+        {sp.project ? <input type="hidden" name="project" value={sp.project} /> : null}
+        <div className="min-w-0 flex-1 space-y-1"><Label htmlFor="email-search">Search subject or linked project</Label><Input id="email-search" name="q" defaultValue={sp.q ?? ""} /></div>
+        <div className="space-y-1"><Label htmlFor="email-status">Status</Label><select id="email-status" name="status" defaultValue={status ?? ""} className="h-9 rounded-md border bg-background px-3 text-sm"><option value="">All statuses</option><option value="open">Open</option><option value="waiting">Waiting</option><option value="done">Done</option></select></div>
+        <Button type="submit">Search email</Button>
+        {sp.q || sp.status || sp.project ? <Link href={inboxHref({ bucket })} className={buttonVariants({ variant: "ghost" })}>Clear filters</Link> : null}
+      </form>
+
       <div className="flex flex-wrap gap-2">
         {FILTERS.map((f) => (
           <Link
             key={f.key}
-            href={f.href}
+            href={inboxHref(filters, { bucket: f.key, page: undefined })}
             className={cn(
               buttonVariants({
                 variant: bucket === f.key ? "default" : "outline",
@@ -106,7 +124,7 @@ export default async function CorrespondencePage({
             </Link>
           </span>
           <Link
-            href="/correspondence"
+            href={inboxHref(filters, { project: undefined, page: undefined })}
             className={cn(
               buttonVariants({ variant: "ghost", size: "sm" }),
               "min-h-11 w-fit sm:min-h-8"
@@ -120,9 +138,9 @@ export default async function CorrespondencePage({
       {threads.length === 0 ? (
         <EmptyState
           icon={<Inbox className="size-5" />}
-          title="No correspondence here"
+          title={sp.q || sp.status || sp.project ? "No email matches these filters" : "No correspondence here"}
           description={
-            bucket === "project"
+            sp.q || sp.status || sp.project ? "Change your search or clear filters to see more email." : bucket === "project"
               ? "No project-related email yet. Unlinked mailbox messages stay under Other email."
               : bucket === "other"
                 ? "No other mailbox email here. Security alerts and unlinked forwards will appear in this view."
@@ -163,6 +181,11 @@ export default async function CorrespondencePage({
           ))}
         </ul>
       )}
+      {page > 1 || hasMore ? <nav aria-label="Email pages" className="flex items-center justify-between gap-3">
+        {page > 1 ? <Link href={inboxHref(filters, { page: String(page - 1) })} className={buttonVariants({ variant: "outline" })}>Previous page</Link> : <span />}
+        <span className="text-sm text-muted-foreground">Page {page} · up to 50 emails</span>
+        {hasMore ? <Link href={inboxHref(filters, { page: String(page + 1) })} className={buttonVariants({ variant: "outline" })}>Next page</Link> : <span />}
+      </nav> : null}
     </PageShell>
   );
 }

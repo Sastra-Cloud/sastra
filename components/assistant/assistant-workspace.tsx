@@ -639,7 +639,7 @@ export function AssistantWorkspace({
                 ) : (
                   <div className="flex flex-col gap-2">
                     {p.riskLevel === "high" ? (
-                      <span className="w-fit rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-medium text-warning-foreground">
+                      <span className="w-fit rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-medium text-warning-text">
                         Individual approval required
                       </span>
                     ) : null}
@@ -710,7 +710,7 @@ export function AssistantWorkspace({
 
       {/* Composer */}
       {blocked ? (
-        <p className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning-foreground">
+        <p className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning-text">
           {budget.enabled
             ? "You've reached your monthly AI limit. Ask an admin to raise it."
             : "Your AI assistant is disabled. Ask an admin to enable it."}

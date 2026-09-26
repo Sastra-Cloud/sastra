@@ -35,6 +35,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `app/(app)/projects/plan/[draftId]/page.tsx`
 - `app/(app)/projects/plan/page.tsx`
 - `app/(app)/tasks/page.tsx`
+- `app/(app)/workload/layout.tsx`
 - `app/(app)/workload/loading.tsx`
 - `app/(app)/workload/page.tsx`
 - `components/projects/book-format-badge.tsx`
@@ -44,16 +45,21 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/projects/new-project-entry.tsx`
 - `components/projects/new-project-form.tsx`
 - `components/projects/new-project-guided.tsx`
+- `components/projects/new-team-journeys.test.tsx`
 - `components/projects/overdue-reason.tsx`
+- `components/projects/pipeline-view.test.tsx`
 - `components/projects/pipeline-view.tsx`
 - `components/projects/plan-wizard.tsx`
 - `components/projects/print-funding-badge.tsx`
+- `components/projects/project-actions.tsx`
 - `components/projects/project-card.tsx`
+- `components/projects/project-draft.tsx`
 - `components/projects/project-drive-folder.tsx`
 - `components/projects/project-settings-dialog.tsx`
 - `components/projects/project-surface-notes.tsx`
 - `components/projects/project-tabs.tsx`
 - `components/projects/project-title-context.tsx`
+- `components/projects/project-workspace-frame.tsx`
 - `components/projects/projects-browser.tsx`
 - `components/projects/projects-route-loading.tsx`
 - `components/projects/status-update.tsx`
@@ -90,10 +96,4 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/projects/deadline.test.ts`
 - `lib/projects/deadline.ts`
 - `lib/projects/default-templates.test.ts`
-- `lib/projects/default-templates.ts`
-- `lib/projects/drive-actions.ts`
-- `lib/projects/funding-queries.ts`
-- `lib/projects/kinds.test.ts`
-- `lib/projects/kinds.ts`
-- `lib/projects/materialize.ts`
-... 45 more
+... 51 more

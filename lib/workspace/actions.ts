@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { isValidTimeZone } from "@/lib/timezone";
 
 import { requireRole } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
@@ -30,7 +31,7 @@ const workspaceSchema = z.object({
     .max(30)
     .optional(),
   preparedByNote: z.string().max(300).optional(),
-  timezone: nullableText(100),
+  timezone: z.string().trim().refine(isValidTimeZone, "Choose a valid timezone.").optional(),
   sourceLanguage: nullableText(100),
   targetLanguage: nullableText(100),
   defaultTerritory: nullableText(120),
@@ -107,11 +108,11 @@ function revalidateWorkspaceSurfaces() {
 export async function updateWorkspaceSettings(
   fields: WorkspaceSettingsInput,
   options: { completeSetup?: boolean } = {}
-): Promise<{ error?: string }> {
+): Promise<{ error?: string; fieldErrors?: Record<string, string> }> {
   const { user: actor } = await requireRole("admin");
   const parsed = workspaceSchema.safeParse(fields);
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Check the workspace settings." };
+    return { error: "Check the highlighted settings.", fieldErrors: Object.fromEntries(parsed.error.issues.map(issue => [String(issue.path[0]), issue.message])) };
   }
   const f = parsed.data;
   if (f.invoicePaymentDetails?.logoFileId) {
@@ -226,13 +227,13 @@ export async function updateWorkspaceSettings(
 
 export async function updateWorkspaceBranding(
   fields: WorkspaceSettingsInput
-): Promise<{ error?: string }> {
+): Promise<{ error?: string; fieldErrors?: Record<string, string> }> {
   return updateWorkspaceSettings(fields);
 }
 
 export async function completeWorkspaceSetup(
   fields: WorkspaceSettingsInput
-): Promise<{ error?: string }> {
+): Promise<{ error?: string; fieldErrors?: Record<string, string> }> {
   return updateWorkspaceSettings(fields, { completeSetup: true });
 }
 
@@ -240,7 +241,7 @@ export async function updateInvoiceSequence(input: {
   prefix: string;
   nextNumber: number;
   padding: number;
-}): Promise<{ error?: string }> {
+}): Promise<{ error?: string; fieldErrors?: Record<string, string> }> {
   const { user } = await requireRole("admin");
   const parsed = z.object({
     prefix: z.string().max(30),
@@ -294,7 +295,7 @@ async function cleanupLogoFile(fileId: string) {
 
 export async function setWorkspaceLogo(
   fileId: string
-): Promise<{ error?: string }> {
+): Promise<{ error?: string; fieldErrors?: Record<string, string> }> {
   const { user: actor } = await requireRole("admin");
   const [file] = await db
     .select()
@@ -315,7 +316,7 @@ export async function setWorkspaceLogo(
   return {};
 }
 
-export async function removeWorkspaceLogo(): Promise<{ error?: string }> {
+export async function removeWorkspaceLogo(): Promise<{ error?: string; fieldErrors?: Record<string, string> }> {
   const { user: actor } = await requireRole("admin");
   const settings = await getWorkspaceSettings();
   const previous = settings.logoFileId;

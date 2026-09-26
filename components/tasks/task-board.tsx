@@ -490,7 +490,7 @@ function Column({
         <span className="flex items-center gap-1.5 text-sm font-semibold">
           {label}
           {overLimit ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-warning/20 px-1.5 py-0.5 text-[10px] font-medium text-warning-foreground">
+            <span className="inline-flex items-center gap-1 rounded-full bg-warning/20 px-1.5 py-0.5 text-[10px] font-medium text-warning-text">
               <AlertTriangle className="size-3" />
               WIP
             </span>

@@ -4,9 +4,12 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
+import { useGuidance } from "@/components/guidance/guidance-provider";
 import { setGuidanceLevel } from "@/lib/settings/guidance-actions";
 
 export function GuidanceToggle({ defaultEnabled }: { defaultEnabled: boolean }) {
+  const guidance = useGuidance();
   const router = useRouter();
   const [enabled, setEnabled] = useState(defaultEnabled);
   const [pending, start] = useTransition();
@@ -41,6 +44,7 @@ export function GuidanceToggle({ defaultEnabled }: { defaultEnabled: boolean }) 
         Guided steps and tips help you learn the app. Turn this off when you know
         the app well. You can also hide any single tip with its close button.
       </p>
+      <Button type="button" variant="outline" size="sm" disabled={guidance.pending} onClick={guidance.reset}>Show hidden tips again</Button>
     </div>
   );
 }

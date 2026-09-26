@@ -1,10 +1,10 @@
 ---
-title: "Print runs, RFQs & quotes"
+title: "Print runs, printer quote requests & quotes"
 category: "Publishing"
 roles: [manager, admin]
-keywords: [full payment, consolidate payments, wrong wire amount, print, print run, reprint, previous print, historical print, old print, collapse print run, show print details, old quote, legacy quote, copy specs, apply specs, measurement unit, millimetres, millimeters, mm, inches, trim size, rfq, quote request, printer, printing coordinator, payment task, quantity, tier, total price, price per copy, printing in five steps, print steps, first print run, walk me through printing, how to print, recommended balance, economic elbow, sell-through, lowest cost per copy, total cost, cost per copy, incremental cost, comparison, wire, finance, funding received, printer paid, deposit, balance, proof, proof attachment, proof download, proof files, printer waiting for approval, proofing status, suggested project update, invoice, deposit invoice, final invoice, invoice attachment, attachment preview, preview invoice, estimate vs actual, accept quote, accepted, collapse quotes, hide other quotes, show other quotes, reopen quote, un-accept, unaccept, reject quote, reverse acceptance, ai email draft, generated sign-off, learns from edits, email style, draft tone, awaiting payment, wire requested, run status, print correspondence, printer email, email thread, open thread, view thread, missing price, per copy price, cover pdf, book pdf, artwork not a quote, file note, attachment note]
+keywords: [request printer quotes, source page count, full payment, consolidate payments, wrong wire amount, print, print run, reprint, previous print, historical print, old print, collapse print run, show print details, old quote, legacy quote, copy specs, apply specs, measurement unit, millimetres, millimeters, mm, inches, trim size, rfq, quote request, printer, printing coordinator, payment task, quantity, tier, total price, price per copy, printing in five steps, print steps, first print run, walk me through printing, how to print, recommended balance, economic elbow, sell-through, lowest cost per copy, total cost, cost per copy, incremental cost, comparison, wire, finance, funding received, printer paid, deposit, balance, proof, proof attachment, proof download, proof files, printer waiting for approval, proofing status, suggested project update, invoice, deposit invoice, final invoice, invoice attachment, attachment preview, preview invoice, estimate vs actual, accept quote, accepted, collapse quotes, hide other quotes, show other quotes, reopen quote, un-accept, unaccept, reject quote, reverse acceptance, ai email draft, generated sign-off, learns from edits, email style, draft tone, awaiting payment, wire requested, run status, print correspondence, printer email, email thread, open thread, view thread, missing price, per copy price, cover pdf, book pdf, artwork not a quote, file note, attachment note]
 order: 70
-summary: "Set up print runs, send RFQs, parse printer quotes, and track print cost."
+summary: "Set up print runs, request printer quotes, review extracted prices, and track print costs."
 ---
 
 The **Print** tab is the book production and procurement hub for books and
@@ -12,7 +12,7 @@ articles. Managers manage it. Nothing here emails anyone until you review and
 confirm.
 
 Run specs, quote review state, and payment status update immediately while
-saving and roll back on failure. Quote extraction, AI drafting, uploads, RFQs,
+saving and roll back on failure. Quote extraction, AI drafting, uploads, printer quote requests,
 wire requests, and email show progress and only report completion after the
 external work succeeds.
 
@@ -22,7 +22,7 @@ New to printing? The Print tab works in this order:
 
 1. **Set up a print run.** Give it a title, pick a printer, and list the copy
    amounts you want prices for. Saving this does not email anyone.
-2. **Ask printers for prices.** Send an RFQ email (a request for prices). You
+2. **Ask printers for prices.** Send a printer quote request email (a request for prices). You
    review it before it sends.
 3. **Save the prices they send.** Paste the printer's reply or upload their PDF,
    and Sastra reads the prices for you to check.
@@ -36,13 +36,13 @@ You can stop and come back at any step. Nothing is sent until you confirm.
 ## Print settings
 
 Configure the **trim size**, a **language-expansion factor**, **page estimates**,
-**RFQ defaults**, and the **finance email / CC** used for wire requests.
+**printer quote request defaults**, and the **finance email / CC** used for wire requests.
 
 Choose **Inches** or **Millimetres** as the project's **Measurement unit**.
 New and existing projects default to inches. Sastra stores one canonical trim
 size and converts it for display, so changing the unit does not change the
 physical book size. The selected unit is used in project Print settings, print
-run summaries and editors, reviewed quote specs, and new RFQ drafts.
+run summaries and editors, reviewed quote specs, and new printer quote request drafts.
 
 The **Estimate** tile predicts the printed page count from the word count and
 expansion factor. Once a printer quote states an actual page count, the tile
@@ -53,7 +53,7 @@ actually pricing rather than a word-count guess.
 ## Setting up a print run
 
 **Set up a print run** creates an internal record — a title, a printer contact,
-and RFQ **quantity tiers**. Saving it does **not** send any email. Use
+and printer quote request **quantity tiers**. Saving it does **not** send any email. Use
 **Reprints** to copy specs from a prior run and track reprint-only budget,
 funding, tasks, quotes, and payments.
 
@@ -78,17 +78,17 @@ recorded payment for that run is marked paid. Inside an expanded run,
 fee, and **Printer paid** is money paid out to the printer. These labels describe
 different cash flows and may legitimately show different amounts.
 
-## RFQs and finance emails
+## Printer quote requests and finance emails
 
-- An **RFQ email** asks a printer to price your quantity tiers.
+- An **printer quote request email** asks a printer to price your quantity tiers.
 - A **finance / wire-request email** asks for payment.
 
 Both open a **review-before-send composer**. Nothing is sent until you review the
 recipients and CC list and confirm — showing a draft is not the same as sending
 it.
 
-Choose **Save draft** to keep unfinished RFQ or wire-request wording. When you
-return, the action says **Resume RFQ email** or **Resume wire email** and restores
+Choose **Save draft** to keep unfinished printer quote request or wire-request wording. When you
+return, the action says **Resume printer quote request email** or **Resume wire email** and restores
 your personal saved wording. Current recipients and invoice attachments are
 resolved again from the live print record before review. Sending successfully
 clears the draft; a failed send keeps it.
@@ -101,13 +101,13 @@ The subject and body are **drafted by AI** in the team's usual voice. When you
 edit a draft before sending, the app quietly **learns from your changes**: it
 compares its draft with what you actually sent and folds the durable
 differences (greeting, sign-off, structure, wording, what to include or leave
-out) into a shared style guide for that email type — separately for RFQs and
+out) into a shared style guide for that email type — separately for printer quote requests and
 wire requests. Future drafts start closer to how the team really writes, so the
 edits you make tend to shrink over time. It only learns patterns, never one-off
 details like amounts or names, and a failed learning step never affects the
 email you just sent.
 
-New RFQ drafts put the request first, then show title, page count, trim, cover,
+New printer quote request drafts put the request first, then show title, page count, trim, cover,
 quantities, materials, binding, and delivery as a compact list. They explicitly
 ask for both the total price and price per copy at every quantity. New wire
 requests lead with the payee, payment stage, amount, project, and purpose; they
@@ -119,7 +119,7 @@ subject and body you approve are what Sastra sends.
 Wire-request review also lists every PDF invoice that will be sent. Choose
 **Preview** to inspect the exact file inside Sastra before confirming. A wire
 request cannot be drafted or sent without a PDF invoice attached to that
-payment. RFQs do not include attachments.
+payment. Printer quote requests do not include attachments.
 
 Printer email threads linked to a run appear under **Print correspondence**.
 Open one to read the full exchange in a panel on the print page — without
@@ -204,9 +204,9 @@ the send.
 This is useful when entering an older title for a reprint: create a source run,
 paste the old quote, review and accept its specs, then choose that run under
 **Copy specs from** when setting up the reprint. The new reprint inherits those
-specs and can use them in its next RFQ.
+specs and can use them in its next printer quote request.
 
-An RFQ uses the printer selected on the run. If that run has no printer, it
+A printer quote request uses the printer selected on the run. If that run has no printer, it
 falls back to the project's **Default printer**. The draft names the missing
 contact when the selected/default printer does not have an email address, so
 you can add the email before sending.

@@ -126,7 +126,7 @@ export function DictionaryManager({ terms }: { terms: DictionaryTerm[] }) {
             <Mic className="size-4" /> Voice dictionary
           </p>
           <p className="text-sm text-muted-foreground">
-            Custom names and terms (like proper nouns or your product name) that
+            Shared names and terms for everyone in this workspace (like proper nouns or your product name) that
             voice dictation should spell correctly. Your project and teammate
             names are already included automatically. Add a heard-as alias when
             transcription repeatedly guesses a different spelling.

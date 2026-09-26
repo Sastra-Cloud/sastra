@@ -1,3 +1,4 @@
+import { requireUser } from "@/lib/auth/guards";
 import { CircleHelp } from "lucide-react";
 
 import { ContentColumn, PageHero, PageShell } from "@/components/cockpit";
@@ -6,7 +7,8 @@ import { getHelpDocs } from "@/lib/help/content";
 
 export const metadata = { title: "Help" };
 
-export default function HelpPage() {
+export default async function HelpPage() {
+  const { user } = await requireUser();
   const docs = getHelpDocs();
 
   return (
@@ -29,7 +31,7 @@ export default function HelpPage() {
       </div>
 
       <ContentColumn width="reading">
-        <HelpBrowser docs={docs} />
+        <HelpBrowser docs={docs} role={user.role ?? "member"} />
       </ContentColumn>
     </PageShell>
   );

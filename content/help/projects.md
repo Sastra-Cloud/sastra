@@ -2,9 +2,9 @@
 title: "Projects & phases"
 category: "Work"
 roles: [member, manager, admin]
-keywords: [project, project name, rename project, edit project name, phase, proposal stage, proposed project, project status, planning, active, on hold, book, ebook, ebook only, ebook for now, print, print plan, book format, format plan not set, article, podcast, video series, videos, create project, new project, guided setup, guided project, step by step, one page form, overview, portfolio, filter, sort, print funding, print covered, print funding not assigned, funding assigned, no funding, seeking funding, partially funded, funded, no printing planned yet, due date, start date, schedule, estimated duration, planned finish, timeline, gantt, drive, file note, attachment note, delete project, completed project, project archive, archived project, reprint, status update, recent correspondence, project email, linked email, AI recommendation, daily review, mention, note, shared mou, shared agreement, project type, change project type, set project type, work path, wrong path]
+keywords: [create project, shared draft, guided setup, project actions, project, project name, rename project, edit project name, phase, proposal stage, proposed project, project status, planning, active, on hold, book, ebook, ebook only, ebook for now, print, print plan, book format, format plan not set, article, podcast, video series, videos, create project, new project, guided setup, guided project, step by step, one page form, overview, portfolio, filter, sort, print funding, print covered, print funding not assigned, funding assigned, no funding, seeking funding, partially funded, funded, no printing planned yet, due date, start date, schedule, estimated duration, planned finish, timeline, gantt, drive, file note, attachment note, delete project, completed project, project archive, archived project, reprint, status update, recent correspondence, project email, linked email, AI recommendation, daily review, mention, note, shared mou, shared agreement, project type, change project type, set project type, work path, wrong path]
 order: 20
-summary: "How projects move from proposal through planning, delivery, completion, archive, and reprints."
+summary: "Create and manage publishing projects, preserve creation drafts, and find project settings and actions."
 ---
 
 A **project** is one publishing initiative — a book, a collection of articles,
@@ -187,7 +187,7 @@ resolving a blocker, updating the plan, or monitoring a concrete event. It does
 not create work, change project status, publish content, or contact anyone.
 
 Managers can **Mark reviewed** after considering an actionable recommendation.
-That removes it from the Dashboard and portfolio Overview review queues while
+That removes it from the Home and portfolio Overview review queues while
 preserving the update and its AI notes on the project. A **Create task**
 recommendation includes a prefilled review-first task form; choose the owner and
 due date before saving. Editing the original update clears the previous analysis
@@ -212,3 +212,13 @@ model — see *Schedule*), or language override. Deleting stays collapsed in the
 **danger zone** until opened and requires typing the exact project title to
 confirm. It removes the project and its tasks, phases, budget, rights, blockers,
 chat, and activity.
+
+## Choose how to create a project
+
+Managers and administrators use **Create project** on Projects. The creation page offers guided setup and a single-page form. Switching between these keeps all entered details. **Import from document** and **Plan with AI** are secondary methods on this page. Leaving an edited form for another method asks you to confirm.
+
+Members can read projects and their team lists. Ask a manager to create projects or change project membership.
+
+Project headers keep status and deadline visible. On small screens, open **Project details** for secondary information. **Project settings** stays explicit; **Project actions** contains completion and document updates.
+
+Pipeline task cells show readable status labels. Use Tab to focus a task and Enter to open the shared task editor. Empty episode and video projects offer managers an add action; searches with no matches offer Clear filters.

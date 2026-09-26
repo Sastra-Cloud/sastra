@@ -123,7 +123,7 @@ export function ProjectCard({ p }: { p: ProjectListItem }) {
                 due.tone === "overdue" &&
                   "border-destructive/30 bg-destructive/10 text-destructive",
                 due.tone === "soon" &&
-                  "border-warning/30 bg-warning/10 text-warning-foreground",
+                  "border-warning/30 bg-warning/10 text-warning-text",
                 due.tone === "normal" &&
                   "border-border bg-background text-muted-foreground",
                 due.tone === "none" &&

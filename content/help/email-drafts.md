@@ -12,7 +12,7 @@ Drafts are available in the review-before-send composers for:
 
 - funding proposals;
 - partner invoice emails;
-- printer RFQs;
+- printer quote requests;
 - finance / wire requests; and
 - correspondence replies.
 
