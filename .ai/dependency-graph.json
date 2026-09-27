@@ -654,6 +654,7 @@
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/gmail",
+    "@/components/settings/copy-address-button",
     "@/components/settings/shared-mailbox-card",
     "@/lib/email/send",
     "@/components/ui/card",
@@ -2902,6 +2903,11 @@
   "components/settings/charts/usage-model-donut.tsx": [
     "recharts",
     "@/lib/ai/amount-format"
+  ],
+  "components/settings/copy-address-button.tsx": [
+    "lucide-react",
+    "sonner",
+    "@/components/ui/button"
   ],
   "components/settings/dependency-security-check-button.tsx": [
     "react",

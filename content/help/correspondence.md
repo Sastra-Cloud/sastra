@@ -2,9 +2,9 @@
 title: "Correspondence (email intake)"
 category: "Communication"
 roles: [manager, admin]
-keywords: [connect gmail, app password, shared mailbox, connect mailbox, disconnect mailbox, 2-step verification, google workspace, search, pagination, next page, filters, subject, correspondence, email, inbox, gmail, webhook, resend, receiving email, original email file, thread, email history, newest email first, quoted history, forwarded history, recent correspondence, project email, project filter, expand message, reprocess message, reprocess thread, review as document, missed attachment, manual rights review, uncertain classification, project status suggestion, email project update, post project update, publisher, rights, partner, printer, reply, triage, mailbox, waiting, external follow up, follow-up reminder, snooze, draft follow-up, multiple projects, review projects, link projects, many projects from one email, multi-project mou, shared agreement pdf, attach mou to several projects, video series, original video, translated video, production mode, grant reminder, funder deadline, grant report due date, reminder from email, grant obligation, final report due, recurring report, duplicate project, funder already funds, existing grant, link to existing grant, not a new project, dismiss reason, intake learning, learns from dismissals, negative rules, stop re-suggesting, approve lesson, forwarded email task, proof review task, reply to printer, meeting task, secretary, assistant, signed license, payment receipt, license fee, print proof, proof attachment, restore proof, reprocess proof, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice]
+keywords: [correspondence address, in.sastra.cloud, sastra cloud address, copy address, forward address, cc address, connect gmail, app password, shared mailbox, connect mailbox, disconnect mailbox, 2-step verification, google workspace, search, pagination, next page, filters, subject, correspondence, email, inbox, gmail, webhook, resend, receiving email, original email file, thread, email history, newest email first, quoted history, forwarded history, recent correspondence, project email, project filter, expand message, reprocess message, reprocess thread, review as document, missed attachment, manual rights review, uncertain classification, project status suggestion, email project update, post project update, publisher, rights, partner, printer, reply, triage, mailbox, waiting, external follow up, follow-up reminder, snooze, draft follow-up, multiple projects, review projects, link projects, many projects from one email, multi-project mou, shared agreement pdf, attach mou to several projects, video series, original video, translated video, production mode, grant reminder, funder deadline, grant report due date, reminder from email, grant obligation, final report due, recurring report, duplicate project, funder already funds, existing grant, link to existing grant, not a new project, dismiss reason, intake learning, learns from dismissals, negative rules, stop re-suggesting, approve lesson, forwarded email task, proof review task, reply to printer, meeting task, secretary, assistant, signed license, payment receipt, license fee, print proof, proof attachment, restore proof, reprocess proof, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice]
 order: 100
-summary: "Search project email by subject or linked project and review filtered pages of correspondence."
+summary: "The correspondence address (name@in.sastra.cloud on Sastra Cloud, or a connected Gmail mailbox), how email arrives, and how to search, triage, and reply to project email."
 ---
 
 **Correspondence** captures email from a shared mailbox so publisher, printer, and
@@ -27,12 +27,22 @@ approve rights, record a payment, or accept a quote on their own.
 
 ## How email arrives
 
-Every workspace has one **correspondence address**, shown in **Settings ▸ Email**.
-CC or forward partner and printer email to it. With a shared **Gmail** mailbox
-the address is polled automatically. Without Gmail, the deployment owner can
-connect an email provider that delivers each message to Sastra as it arrives
-(a **webhook**); **Settings ▸ Email** shows which one is in use under
-**Receiving email through**. Either way, Gmail's conversation ID is used when
+Every workspace has one **correspondence address**, shown in **Settings ▸ Email**
+with a **Copy** button. CC or forward partner and printer email to it. Sastra
+also sends quote requests, invoices, and replies from it.
+
+On **Sastra Cloud**, the address is ready when the workspace starts. It is your
+workspace's name at in.sastra.cloud, for example hope@in.sastra.cloud. There is
+nothing to set up. New email usually shows in Correspondence within a minute or
+two. If the workspace is paused, email to the address is kept and arrives when
+the workspace starts again. If your team prefers, an admin can connect your own
+Gmail mailbox instead (see below). Then that mailbox becomes the correspondence
+address, and email to the in.sastra.cloud address still arrives.
+
+On a self-hosted server, connect a shared **Gmail** mailbox, which Sastra checks
+automatically. Or the server administrator connects an email provider that
+delivers each message to Sastra as it arrives (a **webhook**). **Settings ▸
+Email** shows which one is in use under **Receiving email through**. Either way, Gmail's conversation ID is used when
 available, with standard email reply headers as a fallback, so replies from the
 same conversation stay in one **thread**. Sastra keeps the original email file
 so attachments can be restored later without contacting the mailbox again. Threads are filtered into
@@ -42,8 +52,9 @@ that couldn't be linked are flagged.
 
 ### Connect the shared mailbox
 
-An admin connects the **shared mailbox** in **Settings ▸ Email**. It must be a
-Gmail or Google Workspace mailbox. Use a mailbox just for Sastra, such as
+An admin connects the **shared mailbox** in **Settings ▸ Email**. On Sastra
+Cloud this is optional: choose **Connect a shared mailbox** under **Use a shared
+mailbox instead**. It must be a Gmail or Google Workspace mailbox. Use a mailbox just for Sastra, such as
 publishing@yourministry.org, because Sastra reads every new email in its inbox.
 
 1. Sign in to that Google account and turn on **2-Step Verification**.
@@ -55,7 +66,8 @@ publishing@yourministry.org, because Sastra reads every new email in its inbox.
 Sastra signs in to Gmail first and saves the mailbox only if that works. It
 reads email that arrives from then on; older email stays in Gmail. It checks
 the inbox every few minutes during work hours and every hour at other times.
-To stop, choose **Disconnect**. Email already in Correspondence stays. If
+To stop, choose **Disconnect**. Email already in Correspondence stays. On Sastra
+Cloud, Sastra then sends from the in.sastra.cloud address again. If
 Gmail stops accepting the app password, for example after a password change,
 connect the mailbox again with a new app password. On a self-hosted server the
 administrator can also set the mailbox in the server settings; then the form
@@ -73,8 +85,8 @@ Repeated text copied from an earlier reply
 is kept under **Show quoted history**, while a newly submitted forwarded chain is
 kept under **Show forwarded history**. Attachments stay with the actual message
 that carried them. Managers can set the thread's **status** (open / waiting /
-done), link it to one or more **projects** and an **assignee**, and — when Gmail
-is connected — **reply inline**.
+done), link it to one or more **projects** and an **assignee**, and — when
+sending is set up — **reply inline** from the correspondence address.
 
 When an active teammate forwards a message into the mailbox, Sastra separately
 checks for a concrete human next step. The teammate's text above the forwarded

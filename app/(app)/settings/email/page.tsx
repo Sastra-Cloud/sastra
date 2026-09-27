@@ -11,7 +11,9 @@ import {
   getCorrespondenceAddress,
   getCorrespondenceCaptureSource,
   getMailboxConfig,
+  providedCorrespondenceAddress,
 } from "@/lib/gmail";
+import { CopyAddressButton } from "@/components/settings/copy-address-button";
 import { SharedMailboxCard, type SharedMailboxState } from "@/components/settings/shared-mailbox-card";
 import { emailProviderConfigured, resolveEmailProvider } from "@/lib/email/send";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,6 +48,8 @@ export default async function SettingsEmailPage() {
       .limit(1),
   ]);
   const enabled = config !== null;
+  const hosted = isHostedInstance();
+  const provided = providedCorrespondenceAddress();
   const captureEnabled = captureSource !== null;
   const captureLabel =
     captureSource === "gmail"
@@ -53,7 +57,7 @@ export default async function SettingsEmailPage() {
       : captureSource === "resend"
         ? "Resend"
         : captureSource === "webhook"
-          ? "Webhook"
+          ? hosted ? "Sastra Cloud" : "Webhook"
           : "Off";
   const mailbox = config?.mailbox ?? null;
   const provider = resolveEmailProvider(process.env);
@@ -95,17 +99,24 @@ export default async function SettingsEmailPage() {
               {captureEnabled ? "Connected" : "Not configured"}
             </Badge>
           </div>
-          <Row label="Correspondence address" value={address ?? "—"} />
+          <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <span className="text-muted-foreground">Correspondence address</span>
+            <span className="flex min-w-0 items-center gap-2">
+              <span className="font-medium break-all">{address ?? "—"}</span>
+              {address ? <CopyAddressButton address={address} /> : null}
+            </span>
+          </div>
           {address && (
             <p className="text-xs text-muted-foreground">
               CC or forward partner and printer email to this address so it
-              shows up in Correspondence.
+              shows up in Correspondence. Replies you send from Sastra come
+              from it.
             </p>
           )}
           <Row label="Receiving email through" value={captureLabel} />
           <Row
             label="Sending as this address"
-            value={canSend ? (enabled ? "Gmail" : providerLabel) : "Off"}
+            value={canSend ? (enabled ? "Gmail" : hosted ? "Sastra Cloud" : providerLabel) : "Off"}
           />
           <Row
             label="Notification email"
@@ -121,7 +132,11 @@ export default async function SettingsEmailPage() {
         </CardContent>
       </Card>
 
-      <SharedMailboxCard state={mailboxState} canEdit={isAdminRole(user)} />
+      <SharedMailboxCard
+        state={mailboxState}
+        canEdit={isAdminRole(user)}
+        providedAddress={config?.source === "server" ? null : provided}
+      />
 
       <Card>
         <CardHeader>

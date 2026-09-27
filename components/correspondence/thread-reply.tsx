@@ -216,7 +216,7 @@ export function ThreadReply({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-xs text-muted-foreground">
-            Sends from the shared mailbox to {recipient}.
+            Sends from your correspondence address to {recipient}.
           </p>
           {followUpId ? (
             <Button

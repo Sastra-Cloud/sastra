@@ -46,7 +46,7 @@ the top of **My Work** until they choose **Add task**, **Already done**, or
 **Not a task**. Managers also see it in the correspondence thread's review
 area.
 
-When you deliberately forward an email to the shared capture mailbox, Sastra
+When you deliberately forward an email to the correspondence address, Sastra
 can notice a concrete next step such as scheduling a meeting, replying,
 following up, reviewing something, or sending a document. This runs alongside
 specialized correspondence processing; an email can still produce a print

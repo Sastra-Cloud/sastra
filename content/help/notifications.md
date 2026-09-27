@@ -34,7 +34,7 @@ you can set up **web-push** (browser/PWA) notifications.
 
 The **Email assistant** section controls tasks found in captured messages,
 including direct proof-approval requests and mail you deliberately forward to
-the capture mailbox. Turn off **Suggest tasks from email** to stop both automatic
+the correspondence address. Turn off **Suggest tasks from email** to stop both automatic
 and review-first task detection. Turn off **Learn from my
 task decisions** to keep your accepts, edits, dismissals, and undos out of the
 personal and shared preference-learning pass. Turning learning off does not

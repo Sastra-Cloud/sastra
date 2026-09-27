@@ -5,6 +5,7 @@ export {
   canSendAsCorrespondenceAddress,
   getCaptureMailbox,
   getCorrespondenceAddress,
+  providedCorrespondenceAddress,
   getCorrespondenceCaptureSource,
   getMailboxConfig,
   isCorrespondenceCaptureEnabled,

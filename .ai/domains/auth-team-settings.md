@@ -49,6 +49,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/settings/capacity-groups-editor.tsx`
 - `components/settings/charts/usage-area-chart.tsx`
 - `components/settings/charts/usage-model-donut.tsx`
+- `components/settings/copy-address-button.tsx`
 - `components/settings/dependency-security-check-button.tsx`
 - `components/settings/dictionary-manager.tsx`
 - `components/settings/document-learning-manager.tsx`
@@ -95,5 +96,4 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/db/schema/auth.ts`
 - `lib/team/actions.ts`
 - `lib/team/queries.ts`
-- `lib/team/roles-actions.ts`
-... 4 more
+... 5 more

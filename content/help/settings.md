@@ -68,10 +68,11 @@ confirmed.
   page-estimate accuracy, and quote and payment turnaround.
 - **Email** — see the workspace's correspondence address (the one to CC or
   forward email to), how incoming email reaches Sastra (**Receiving email
-  through**: Gmail, Resend, a webhook, or Off), whether Sastra can send as it,
+  through**: Sastra Cloud, Gmail, Resend, a webhook, or Off), whether Sastra can send as it,
   which email provider sends notifications, and the current outbound-email CC
   default. Admins get a
-  shortcut from here to edit the default.
+  shortcut from here to edit the default. On Sastra Cloud the address is
+  ready from the start, and admins can connect a shared Gmail mailbox instead.
 - **Standups** — create and edit standups. See *Standups*.
 
 ## Admins

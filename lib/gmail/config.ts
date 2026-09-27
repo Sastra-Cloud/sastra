@@ -16,6 +16,11 @@ import { openSecret } from "@/lib/crypto/secret-box";
  * - the mailbox an admin connected in Settings ▸ Email, stored with its app
  *   password sealed (`correspondence_mailbox_settings`). This is how Sastra
  *   Cloud workspaces set it up themselves.
+ *
+ * Sastra Cloud also gives every workspace its own correspondence address,
+ * `<name>@in.sastra.cloud` (`CORRESPONDENCE_ADDRESS`), which receives mail
+ * through the signed inbound webhook. It is the default; a mailbox connected
+ * in Settings replaces it.
  */
 
 export type MailboxConfig = {
@@ -99,13 +104,27 @@ export async function isCorrespondenceCaptureEnabled(): Promise<boolean> {
   return (await getCorrespondenceCaptureSource()) !== null;
 }
 
+/** The address the server provides (`CORRESPONDENCE_ADDRESS`), such as Sastra Cloud's `<name>@in.sastra.cloud`. */
+export function providedCorrespondenceAddress(env: Record<string, string | undefined> = process.env): string | null {
+  return env.CORRESPONDENCE_ADDRESS?.trim().toLowerCase() || null;
+}
+
+/**
+ * Which address is the correspondence address. A mailbox an admin connected in
+ * Settings wins, because Sastra then sends through that mailbox; otherwise the
+ * provided address, then a mailbox from the server settings.
+ */
+export function resolveCorrespondenceAddress(mailbox: Pick<MailboxConfig, "mailbox" | "source"> | null, provided: string | null): string | null {
+  if (mailbox?.source === "settings") return mailbox.mailbox;
+  return provided || mailbox?.mailbox || null;
+}
+
 /**
  * The workspace's correspondence address: the one teammates CC or forward to
- * and that quote requests, invoices, and replies are sent from. Either
- * `CORRESPONDENCE_ADDRESS` or the Gmail capture mailbox.
+ * and that quote requests, invoices, and replies are sent from.
  */
 export async function getCorrespondenceAddress(): Promise<string | null> {
-  return process.env.CORRESPONDENCE_ADDRESS?.trim().toLowerCase() || (await getCaptureMailbox());
+  return resolveCorrespondenceAddress(await getMailboxConfig(), providedCorrespondenceAddress());
 }
 
 /**

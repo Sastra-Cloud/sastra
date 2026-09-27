@@ -23,11 +23,16 @@ const APP_PASSWORDS_URL = "https://myaccount.google.com/apppasswords";
  * Settings ▸ Email: connect the shared Gmail mailbox that Correspondence reads.
  * Connecting is progress-based (Sastra signs in to Gmail first); disconnecting
  * is confirmed, then removed from view at once and restored if it fails.
+ *
+ * When the workspace already has a provided correspondence address (Sastra
+ * Cloud's `<name>@in.sastra.cloud`), the mailbox is optional: the form stays
+ * closed until an admin chooses to connect one instead.
  */
-export function SharedMailboxCard({ state: initial, canEdit }: { state: SharedMailboxState; canEdit: boolean }) {
+export function SharedMailboxCard({ state: initial, canEdit, providedAddress = null }: { state: SharedMailboxState; canEdit: boolean; providedAddress?: string | null }) {
   const router = useRouter();
   const [state, setState] = useState(initial);
-  const [editing, setEditing] = useState(initial.mode === "none");
+  const optional = Boolean(providedAddress);
+  const [editing, setEditing] = useState(initial.mode === "none" && (!optional || Boolean(initial.needsReconnect)));
   const [mailbox, setMailbox] = useState(initial.mode === "connected" ? initial.mailbox : initial.mode === "none" ? initial.needsReconnect ?? "" : "");
   const [appPassword, setAppPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -61,9 +66,10 @@ export function SharedMailboxCard({ state: initial, canEdit }: { state: SharedMa
   const disconnect = async () => {
     if (state.mode !== "connected") return;
     const previous = state;
-    if (!(await confirmDialog(`Disconnect ${previous.mailbox}? Sastra stops reading this mailbox. Email already in Correspondence stays.`))) return;
+    const next = providedAddress ? ` Sastra sends from ${providedAddress} again.` : "";
+    if (!(await confirmDialog(`Disconnect ${previous.mailbox}? Sastra stops reading this mailbox.${next} Email already in Correspondence stays.`))) return;
     setState({ mode: "none" });
-    setEditing(true);
+    setEditing(!optional);
     startTransition(async () => {
       try {
         const result = await removeCorrespondenceMailbox();
@@ -81,11 +87,12 @@ export function SharedMailboxCard({ state: initial, canEdit }: { state: SharedMa
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <Mail className="size-4" /> Shared mailbox
+          <Mail className="size-4" /> {optional ? "Use a shared mailbox instead" : "Shared mailbox"}
         </CardTitle>
         <CardDescription>
-          Connect one Gmail or Google Workspace mailbox. Sastra reads new email in its inbox and shows it in
-          Correspondence. Replies you send from Sastra come from this address.
+          {optional
+            ? "Optional. Your workspace already has its own correspondence address. If your team prefers, connect a Gmail or Google Workspace mailbox instead. Sastra then reads that mailbox and sends from it."
+            : "Connect one Gmail or Google Workspace mailbox. Sastra reads new email in its inbox and shows it in Correspondence. Replies you send from Sastra come from this address."}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
@@ -105,6 +112,12 @@ export function SharedMailboxCard({ state: initial, canEdit }: { state: SharedMa
             <p className="text-muted-foreground">
               Sastra checks this inbox every few minutes during work hours, and every hour at other times.
             </p>
+            {providedAddress ? (
+              <p className="text-muted-foreground">
+                Email sent to {providedAddress} still arrives in Correspondence. If you disconnect, Sastra sends from{" "}
+                {providedAddress} again.
+              </p>
+            ) : null}
             {canEdit ? (
               <div className="flex flex-wrap gap-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)} disabled={pending}>
@@ -116,6 +129,16 @@ export function SharedMailboxCard({ state: initial, canEdit }: { state: SharedMa
               </div>
             ) : null}
           </div>
+        ) : null}
+
+        {state.mode === "none" && !editing && optional ? (
+          canEdit ? (
+            <Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>
+              Connect a shared mailbox
+            </Button>
+          ) : (
+            <p className="text-muted-foreground">An admin can connect a shared mailbox here.</p>
+          )
         ) : null}
 
         {state.mode !== "server" && editing && !canEdit ? (
@@ -185,7 +208,7 @@ export function SharedMailboxCard({ state: initial, canEdit }: { state: SharedMa
                 {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
                 {pending ? "Checking with Gmail…" : "Test and connect"}
               </Button>
-              {state.mode === "connected" ? (
+              {state.mode === "connected" || optional ? (
                 <Button type="button" variant="ghost" size="sm" onClick={() => { setEditing(false); setError(null); setFieldErrors({}); setAppPassword(""); }} disabled={pending}>
                   Cancel
                 </Button>

@@ -1076,6 +1076,10 @@
 
 - UsageModelDonut
 
+## `components/settings/copy-address-button.tsx`
+
+- CopyAddressButton
+
 ## `components/settings/dependency-security-check-button.tsx`
 
 - DependencySecurityCheckButton
@@ -2334,7 +2338,7 @@
 
 ## `lib/gmail/config.ts`
 
-- CaptureSource, MailboxConfig, canSendAsCorrespondenceAddress, getCaptureMailbox, getCorrespondenceAddress, getCorrespondenceCaptureSource, getMailboxConfig, isCorrespondenceCaptureEnabled, isGmailCaptureEnabled, mailboxManagedByServer, normalizeAppPassword, serverMailboxConfig
+- CaptureSource, MailboxConfig, canSendAsCorrespondenceAddress, getCaptureMailbox, getCorrespondenceAddress, getCorrespondenceCaptureSource, getMailboxConfig, isCorrespondenceCaptureEnabled, isGmailCaptureEnabled, mailboxManagedByServer, normalizeAppPassword, providedCorrespondenceAddress, resolveCorrespondenceAddress, serverMailboxConfig
 
 ## `lib/gmail/forwarded.ts`
 
