@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 
 import type { TaskRow } from "@/lib/tasks/queries";
+import { isSourceControlledTask } from "@/lib/tasks/task-source";
 import {
   assignTask,
   deleteTask,
@@ -227,9 +228,10 @@ export function TaskBoard({
       .filter((t) => t.status === status)
       .sort(compareTaskBoardDueDate),
     staleReviewCount: tasks.filter((t) => {
-      const age = reviewAgeDays(t.status, t.updatedAt);
+      const age = t.printPaymentStatus === "requested" ? null : reviewAgeDays(t.status, t.updatedAt);
       return status === "review" && age !== null && age >= REVIEW_SLA_DAYS;
     }).length,
+    activeCount: tasks.filter((t) => t.status === status && t.printPaymentStatus !== "requested").length,
   }));
 
   const activeTask = activeId ? tasks.find((t) => t.id === activeId) : null;
@@ -298,6 +300,7 @@ export function TaskBoard({
               status={col.status}
               label={col.label}
               count={col.items.length}
+              activeCount={col.activeCount}
               staleReviewCount={col.staleReviewCount}
             >
               {col.items.map((t) => (
@@ -306,7 +309,7 @@ export function TaskBoard({
                   id={t.id}
                   dragging={t.id === activeId}
                   disabled={
-                    Boolean(t.approvalAssignmentId) ||
+                    isSourceControlledTask(t) ||
                     taskCreation.isPending(t.id)
                   }
                   saving={taskCreation.isPending(t.id)}
@@ -472,18 +475,20 @@ function Column({
   status,
   label,
   count,
+  activeCount,
   staleReviewCount,
   children,
 }: {
   status: string;
   label: string;
   count: number;
+  activeCount: number;
   staleReviewCount: number;
   children: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const limit = TASK_WIP_LIMITS[status];
-  const overLimit = limit !== undefined && count > limit;
+  const overLimit = limit !== undefined && activeCount > limit;
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between px-1">
@@ -510,7 +515,7 @@ function Column({
           title={limit ? `Recommended limit: ${limit}` : undefined}
         >
           {count}
-          {limit ? `/${limit}` : ""}
+          {limit ? status === "review" ? ` · ${activeCount}/${limit} active` : `/${limit}` : ""}
         </span>
       </div>
       <div
@@ -587,7 +592,7 @@ function CardBody({
   onTitle?: (title: string) => void;
 }) {
   const due = dueLabel(t.dueDate);
-  const age = reviewAgeDays(t.status, t.updatedAt);
+  const age = t.printPaymentStatus === "requested" ? null : reviewAgeDays(t.status, t.updatedAt);
   const staleReview = age !== null && age >= REVIEW_SLA_DAYS;
   const [editing, setEditing] = useState(false);
   const [titleValue, setTitleValue] = useState(t.title);
@@ -648,7 +653,7 @@ function CardBody({
           </p>
         )}
         <div className="flex shrink-0 items-center">
-          {onOpen && !editing && !t.approvalAssignmentId ? (
+          {onOpen && !editing && !isSourceControlledTask(t) ? (
             <button
               type="button"
               aria-label="Edit title"
@@ -676,7 +681,7 @@ function CardBody({
         ) : null}
         {t.printPaymentId ? (
           <Badge className="bg-warning text-warning-foreground">
-            Printer payment
+            {t.printPaymentStatus === "requested" ? "Awaiting payment confirmation" : "Printer payment"}
           </Badge>
         ) : null}
         {t.approvalAssignmentId ? (
@@ -788,7 +793,7 @@ function TaskMenu({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-44">
           <DropdownMenuItem onClick={onOpen}>View details</DropdownMenuItem>
-          {!task.approvalAssignmentId ? (
+          {!isSourceControlledTask(task) ? (
             <>
               <DropdownMenuItem onClick={onStartTimer}>
                 <Play className="size-4" /> Start timer

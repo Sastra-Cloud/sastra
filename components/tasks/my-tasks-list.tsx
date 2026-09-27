@@ -6,7 +6,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { Flag, Repeat2, ShieldCheck, Trash2 } from "lucide-react";
+import { CircleDollarSign, Flag, Repeat2, ShieldCheck, Trash2 } from "lucide-react";
 
 import type { MyTaskRow } from "@/lib/tasks/queries";
 import { deleteTask, updateTaskStatus } from "@/lib/tasks/actions";
@@ -19,6 +19,8 @@ import { toast } from "sonner";
 import { usePropState } from "@/hooks/use-prop-state";
 import { TaskDetailDialog } from "@/components/tasks/task-detail-dialog";
 import { TaskAttachmentShortcut } from "@/components/tasks/task-attachment-shortcut";
+import { printPaymentFollowUp } from "@/lib/tasks/attention";
+import { isSourceControlledTask, taskSourceLink } from "@/lib/tasks/task-source";
 
 type Option = { id: string; name: string };
 type TaskEditorOptions = {
@@ -36,6 +38,8 @@ export function MyTasksList({
   tasks,
   onOpen,
   editor,
+  todayIso = new Date().toISOString().slice(0, 10),
+  timeZone = "UTC",
   emptyTitle = "You're all caught up 🎉",
   emptyDescription = "New tasks assigned to you will show up here.",
 }: {
@@ -44,6 +48,8 @@ export function MyTasksList({
   onOpen?: (task: MyTaskRow) => void;
   /** Self-contained editor used by server-rendered lists such as Dashboard. */
   editor?: TaskEditorOptions;
+  todayIso?: string;
+  timeZone?: string;
   emptyTitle?: string;
   emptyDescription?: string;
 }) {
@@ -98,7 +104,12 @@ export function MyTasksList({
       <ul className="divide-y rounded-lg border bg-card" aria-busy={pending}>
         <AnimatePresence initial={false}>
           {visibleTasks.map((t) => {
-            const due = dueLabel(t.dueDate);
+            const followUp = printPaymentFollowUp(t, todayIso, timeZone);
+            const due = followUp
+              ? { text: `Follow up ${followUp.date}`, tone: followUp.state === "due" ? "soon" : "normal" }
+              : dueLabel(t.dueDate);
+            const controlled = isSourceControlledTask(t);
+            const sourceLink = taskSourceLink(t, t.projectSlug);
             return (
           <motion.li
             key={t.id}
@@ -109,9 +120,9 @@ export function MyTasksList({
             transition={{ duration: 0.28, ease: EASE, layout: ROW_SPRING }}
             className="grid grid-cols-[2.5rem_minmax(0,1fr)] items-start gap-x-3 gap-y-2 px-3 py-2.5 sm:flex sm:items-center sm:gap-3"
           >
-            {t.approvalAssignmentId ? (
+            {controlled ? (
               <span className="row-span-2 flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary sm:row-auto">
-                <ShieldCheck className="size-5" />
+                {t.approvalAssignmentId ? <ShieldCheck className="size-5" /> : <CircleDollarSign className="size-5" />}
               </span>
             ) : (
               <TaskCompleteButton
@@ -186,6 +197,7 @@ export function MyTasksList({
                 ) : null}
               </div>
               <TaskAttachmentShortcut task={t} />
+              {sourceLink ? <Link href={sourceLink.href} className="mt-1 block text-xs text-primary hover:underline">{sourceLink.label}</Link> : null}
             </div>
             <div className="col-start-2 flex min-w-0 flex-wrap items-center gap-2 sm:ml-auto sm:shrink-0 sm:flex-nowrap">
               <span
@@ -201,7 +213,8 @@ export function MyTasksList({
               </span>
               <PriorityBadge priority={t.priority} />
               <TaskStatusBadge status={t.status} />
-              {!t.approvalAssignmentId ? (
+              {followUp?.state === "due" ? <Badge variant="secondary">Follow up due</Badge> : null}
+              {!controlled ? (
                 <button
                   type="button"
                   aria-label={`Delete "${t.title}"`}

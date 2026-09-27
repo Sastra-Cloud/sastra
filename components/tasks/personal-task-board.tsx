@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   DndContext,
   DragOverlay,
@@ -26,6 +27,7 @@ import {
 } from "lucide-react";
 
 import type { MyWorkTaskRow } from "@/lib/tasks/queries";
+import { isSourceControlledTask, taskSourceLink } from "@/lib/tasks/task-source";
 import { TASK_STATUS, TASK_STATUS_ORDER, PriorityBadge } from "@/components/badges";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -90,7 +92,7 @@ export function PersonalTaskBoard({
     if (!event.over) return;
     const task = filtered.find((item) => item.id === String(event.active.id));
     const status = String(event.over.id) as Status;
-    if (!task || task.status === status || !TASK_STATUS_ORDER.includes(status)) {
+    if (!task || isSourceControlledTask(task) || task.status === status || !TASK_STATUS_ORDER.includes(status)) {
       return;
     }
     onStatus(task, status);
@@ -220,11 +222,12 @@ function BoardColumn({
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const limit = TASK_WIP_LIMITS[status];
-  const overLimit = limit !== undefined && tasks.length > limit;
+  const activeCount = tasks.filter((task) => task.printPaymentStatus !== "requested").length;
+  const overLimit = limit !== undefined && activeCount > limit;
   const stale =
     status === "review"
       ? tasks.filter((task) => {
-          const age = reviewAgeDays(task.status, task.updatedAt);
+          const age = task.printPaymentStatus === "requested" ? null : reviewAgeDays(task.status, task.updatedAt);
           return age !== null && age >= REVIEW_SLA_DAYS;
         }).length
       : 0;
@@ -246,7 +249,7 @@ function BoardColumn({
           ) : null}
         </h2>
         <span className="text-xs tabular-nums text-muted-foreground">
-          {tasks.length}{limit ? `/${limit}` : ""}
+          {tasks.length}{limit ? status === "review" ? ` · ${activeCount}/${limit} active` : `/${limit}` : ""}
         </span>
       </div>
       <div
@@ -282,7 +285,7 @@ function BoardTask({
   onStatus: (status: Status) => void;
   onTimer: () => void;
 }) {
-  const protectedTask = Boolean(task.approvalAssignmentId);
+  const protectedTask = isSourceControlledTask(task);
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task.id,
     disabled: protectedTask,
@@ -304,8 +307,8 @@ function BoardTask({
             "mt-0.5 flex size-7 shrink-0 touch-none items-center justify-center rounded-md text-muted-foreground",
             protectedTask ? "cursor-not-allowed" : "cursor-grab hover:bg-muted active:cursor-grabbing"
           )}
-          aria-label={protectedTask ? "Protected approval task" : `Drag ${task.title}`}
-          title={protectedTask ? "Protected approval task" : "Drag task"}
+          aria-label={protectedTask ? "Status follows source workflow" : `Drag ${task.title}`}
+          title={protectedTask ? "Status follows source workflow" : "Drag task"}
           {...attributes}
           {...listeners}
         >
@@ -360,6 +363,7 @@ function TaskCardContent({
   onOpen?: () => void;
 }) {
   const due = dueLabel(task.dueDate);
+  const source = taskSourceLink(task, task.projectSlug);
   const estimateSeconds = Number(task.estimateHours ?? 0) * 3600;
   return (
     <div className="min-w-0">
@@ -374,6 +378,8 @@ function TaskCardContent({
       <p className="mt-0.5 truncate text-xs text-muted-foreground">
         {task.projectTitle ?? "No project"}
       </p>
+      {source ? <Link href={source.href} className="mt-1 inline-block text-xs text-primary hover:underline">{source.label}</Link> : null}
+      {task.printPaymentStatus === "requested" ? <p className="mt-1 text-xs text-muted-foreground">Waiting for printer payment confirmation</p> : null}
       <TaskAttachmentShortcut task={task} />
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
         <PriorityBadge priority={task.priority} />

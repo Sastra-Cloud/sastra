@@ -30,6 +30,10 @@ import {
   budgetApprovalAssignments,
   budgetApprovalRequests,
   emailTaskSuggestions,
+  printPayments,
+  royaltyPayments,
+  licenseFeePayments,
+  mouPayments,
 } from "@/lib/db/schema";
 import { nextDueDate, type Frequency } from "@/lib/recurring/schedule";
 import { daysUntil } from "@/lib/format";
@@ -105,6 +109,14 @@ export type TaskRow = {
   assigneeName: string | null;
   printRunId: string | null;
   printPaymentId: string | null;
+  printPaymentStatus: string | null;
+  printWireRequestedAt: Date | null;
+  printPaymentDueDate: string | null;
+  printPaymentNeededByDate: string | null;
+  royaltyPaymentId: string | null;
+  licenseFeePaymentId: string | null;
+  mouInvoicePaymentId: string | null;
+  mouInvoiceSharedGroupId: string | null;
   printRunTitle: string | null;
   printRunKind: string | null;
   printNumber: number | null;
@@ -154,6 +166,14 @@ const baseSelect = {
   assigneeName: user.name,
   printRunId: tasks.printRunId,
   printPaymentId: tasks.printPaymentId,
+  printPaymentStatus: sql<string | null>`(select ${printPayments.status} from ${printPayments} where ${printPayments.id} = ${tasks.printPaymentId})`,
+  printWireRequestedAt: sql<Date | null>`(select ${printPayments.wireRequestedAt} from ${printPayments} where ${printPayments.id} = ${tasks.printPaymentId})`,
+  printPaymentDueDate: sql<string | null>`(select ${printPayments.dueDate} from ${printPayments} where ${printPayments.id} = ${tasks.printPaymentId})`,
+  printPaymentNeededByDate: sql<string | null>`(select ${printPayments.neededByDate} from ${printPayments} where ${printPayments.id} = ${tasks.printPaymentId})`,
+  royaltyPaymentId: sql<string | null>`(select ${royaltyPayments.id} from ${royaltyPayments} where ${royaltyPayments.taskId} = ${tasks.id} limit 1)`,
+  licenseFeePaymentId: sql<string | null>`(select ${licenseFeePayments.id} from ${licenseFeePayments} where ${licenseFeePayments.taskId} = ${tasks.id} limit 1)`,
+  mouInvoicePaymentId: sql<string | null>`(select ${mouPayments.id} from ${mouPayments} where ${mouPayments.invoiceTaskId} = ${tasks.id} limit 1)`,
+  mouInvoiceSharedGroupId: sql<string | null>`(select ${mouPayments.sharedMouGroupId} from ${mouPayments} where ${mouPayments.invoiceTaskId} = ${tasks.id} limit 1)`,
   printRunTitle: printRuns.title,
   printRunKind: printRuns.kind,
   printNumber: printRuns.printNumber,

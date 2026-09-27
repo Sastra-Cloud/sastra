@@ -9,6 +9,8 @@ import { db } from "@/lib/db";
 import {
   budgetApprovalAssignments,
   mouPayments,
+  royaltyPayments,
+  licenseFeePayments,
   taskDependencies,
   taskDriveFiles,
   tasks,
@@ -59,6 +61,36 @@ async function assertOrdinaryTask(taskId: string, allowInvoiceDate = false) {
       "Budget approval tasks can only be resolved with Approve or Request changes."
     );
   }
+}
+
+async function assertSourceControlledStatusAction(taskId: string) {
+  const [task] = await db.select({ printPaymentId: tasks.printPaymentId })
+    .from(tasks).where(eq(tasks.id, taskId)).limit(1);
+  if (task?.printPaymentId) {
+    throw new Error("Printer payment tasks follow the payment on the Print tab.");
+  }
+  const [royalty, license] = await Promise.all([
+    db.select({ id: royaltyPayments.id }).from(royaltyPayments)
+      .where(eq(royaltyPayments.taskId, taskId)).limit(1),
+    db.select({ id: licenseFeePayments.id }).from(licenseFeePayments)
+      .where(eq(licenseFeePayments.taskId, taskId)).limit(1),
+  ]);
+  if (royalty[0] || license[0]) {
+    throw new Error("Payment tasks are completed by marking the linked payment paid.");
+  }
+  const [invoice] = await db.select({ id: mouPayments.id }).from(mouPayments)
+    .where(eq(mouPayments.invoiceTaskId, taskId)).limit(1);
+  if (invoice) throw new Error("Invoice tasks are completed by sending the linked invoice.");
+}
+
+async function linkedOutgoingPayment(taskId: string) {
+  const [royalty, license] = await Promise.all([
+    db.select({ id: royaltyPayments.id }).from(royaltyPayments)
+      .where(eq(royaltyPayments.taskId, taskId)).limit(1),
+    db.select({ id: licenseFeePayments.id }).from(licenseFeePayments)
+      .where(eq(licenseFeePayments.taskId, taskId)).limit(1),
+  ]);
+  return { royaltyId: royalty[0]?.id, licenseId: license[0]?.id };
 }
 
 const createSchema = z.object({
@@ -220,6 +252,7 @@ export async function setTaskDependencies(
 export async function updateTaskStatus(taskId: string, status: string) {
   const { user } = await requireUser();
   await assertOrdinaryTask(taskId);
+  await assertSourceControlledStatusAction(taskId);
   const s = z
     .enum(["todo", "in_progress", "review", "done"])
     .parse(status);
@@ -282,16 +315,24 @@ export async function updateTaskStatus(taskId: string, status: string) {
 export async function assignTask(taskId: string, userId: string | null) {
   const { user } = await requireUser();
   await assertOrdinaryTask(taskId);
+  const payment = await linkedOutgoingPayment(taskId);
+  if (payment.royaltyId || payment.licenseId) await requireRole("manager");
   const [before] = await db
     .select({ assignedTo: tasks.assignedTo })
     .from(tasks)
     .where(eq(tasks.id, taskId))
     .limit(1);
-  const [row] = await db
-    .update(tasks)
-    .set({ assignedTo: userId, updatedAt: new Date() })
-    .where(eq(tasks.id, taskId))
-    .returning({ projectId: tasks.projectId });
+  const row = await db.transaction(async (tx) => {
+    const [updated] = await tx.update(tasks)
+      .set({ assignedTo: userId, updatedAt: new Date() })
+      .where(eq(tasks.id, taskId))
+      .returning({ projectId: tasks.projectId });
+    if (payment.royaltyId) await tx.update(royaltyPayments)
+      .set({ assigneeId: userId }).where(eq(royaltyPayments.id, payment.royaltyId));
+    if (payment.licenseId) await tx.update(licenseFeePayments)
+      .set({ assigneeId: userId }).where(eq(licenseFeePayments.id, payment.licenseId));
+    return updated;
+  });
   if (before && before.assignedTo !== userId) {
     await clearTaskDueDateNotifications([taskId]);
   }
@@ -315,14 +356,16 @@ export async function updateTaskFields(
   const { user } = await requireUser();
   const f = updateFieldsSchema.parse(fields);
   await assertOrdinaryTask(taskId, Object.keys(f).every((key) => key === "dueDate"));
+  const payment = f.assignedTo !== undefined ? await linkedOutgoingPayment(taskId) : null;
+  if (payment?.royaltyId || payment?.licenseId) await requireRole("manager");
   const [before] = await db
     .select({ dueDate: tasks.dueDate, assignedTo: tasks.assignedTo })
     .from(tasks)
     .where(eq(tasks.id, taskId))
     .limit(1);
   if (!before) throw new Error("Task not found.");
-  const [row] = await db
-    .update(tasks)
+  const row = await db.transaction(async (tx) => {
+    const [updated] = await tx.update(tasks)
     .set({
       ...(f.title !== undefined ? { title: f.title } : {}),
       ...(f.description !== undefined ? { description: f.description } : {}),
@@ -340,6 +383,12 @@ export async function updateTaskFields(
       dueDate: tasks.dueDate,
       assignedTo: tasks.assignedTo,
     });
+    if (payment?.royaltyId) await tx.update(royaltyPayments)
+      .set({ assigneeId: f.assignedTo }).where(eq(royaltyPayments.id, payment.royaltyId));
+    if (payment?.licenseId) await tx.update(licenseFeePayments)
+      .set({ assigneeId: f.assignedTo }).where(eq(licenseFeePayments.id, payment.licenseId));
+    return updated;
+  });
 
   const assignmentChanged =
     f.assignedTo !== undefined && f.assignedTo !== before.assignedTo;
@@ -392,6 +441,7 @@ export async function moveTaskToProject(
 ) {
   const { user } = await requireUser();
   await assertOrdinaryTask(taskId);
+  await assertSourceControlledStatusAction(taskId);
   const data = moveProjectSchema.parse(input);
   const [before] = await db
     .select({
@@ -448,6 +498,7 @@ export async function moveTaskToProject(
 export async function deleteTask(taskId: string) {
   await requireUser();
   await assertOrdinaryTask(taskId);
+  await assertSourceControlledStatusAction(taskId);
   const [row] = await db
     .delete(tasks)
     .where(eq(tasks.id, taskId))

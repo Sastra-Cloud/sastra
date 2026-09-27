@@ -1638,14 +1638,15 @@ export async function markPrintPaymentUnpaid(paymentId: string) {
   await requireRole("manager");
   const [row] = await db
     .update(printPayments)
-    .set({ status: "planned", paidAt: null, paidBy: null, updatedAt: new Date() })
+    .set({ status: sql`CASE WHEN ${printPayments.wireRequestedAt} IS NOT NULL THEN 'requested' ELSE 'planned' END`, paidAt: null, paidBy: null, updatedAt: new Date() })
     .where(eq(printPayments.id, paymentId))
     .returning({
       projectId: printPayments.projectId,
       runId: printPayments.runId,
+      status: printPayments.status,
     });
   if (row) {
-    await syncPrintPaymentTaskStatus(paymentId, "planned");
+    await syncPrintPaymentTaskStatus(paymentId, row.status === "requested" ? "requested" : "planned");
     await syncPrintSpentToBudget(row.projectId, row.runId);
     await revalidatePrint(row.projectId, { budget: true });
   }

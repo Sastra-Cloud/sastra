@@ -2,7 +2,7 @@
 title: "Rights & licensing"
 category: "Publishing"
 roles: [member, manager, admin]
-keywords: [rights, license, licence, mou, commercial, publisher, holder, formats, copyright, obligation, compliance, agreement, multiple projects, multi-project mou, shared agreement pdf, agreement chat, ask about agreements, citations, source selection, indexing, retry index, compare agreements, initiate request, signed email, payment receipt, license fee, file note, attachment note]
+keywords: [rights, license, licence, mou, commercial, publisher, holder, formats, copyright, obligation, compliance, agreement, multiple projects, multi-project mou, shared agreement pdf, agreement chat, ask about agreements, citations, source selection, indexing, retry index, compare agreements, initiate request, signed email, payment receipt, license fee, file note, attachment note, license fee task, mark license fee paid]
 order: 50
 summary: "The single rights record per project, agreement types, and obligations."
 ---
@@ -92,6 +92,10 @@ The **compliance** card tracks standing **license obligations** — recurring
 duties like royalty reporting or renewals. You can also record threaded **rights
 notes** and **license-fee payments**. Managers see a linked **correspondence**
 panel of related email threads.
+
+Marking a license-fee payment paid completes its linked task. Undoing the paid
+mark reopens the task. Managers can reassign the linked task, which also updates
+the payment owner. Open the payment from the task to change its paid state.
 
 Project-linked correspondence can suggest updates from an attached signed MoU,
 license, or license-fee receipt. A manager reviews and corrects the suggestion

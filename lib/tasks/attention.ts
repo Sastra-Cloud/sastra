@@ -1,6 +1,40 @@
 import type { MyTaskRow } from "./queries";
+import { formatInTimeZone } from "date-fns-tz";
 
 export const TASK_ATTENTION_WINDOW_DAYS = 30;
+
+type PaymentTaskTiming = {
+  printPaymentStatus?: string | null;
+  printWireRequestedAt?: Date | string | null;
+  printPaymentDueDate?: string | null;
+  printPaymentNeededByDate?: string | null;
+  dueDate: string | null;
+};
+
+function addBusinessDays(dateIso: string, count: number): string {
+  const day = new Date(`${dateIso}T12:00:00Z`);
+  let added = 0;
+  while (added < count) {
+    day.setUTCDate(day.getUTCDate() + 1);
+    if (day.getUTCDay() !== 0 && day.getUTCDay() !== 6) added += 1;
+  }
+  return day.toISOString().slice(0, 10);
+}
+
+export function printPaymentFollowUp(task: PaymentTaskTiming, todayIso: string, timeZone = "UTC"):
+  { state: "waiting" | "due"; date: string } | null {
+  if (task.printPaymentStatus !== "requested") return null;
+  if (!task.printWireRequestedAt) return { state: "due", date: todayIso };
+  const requestedDate = formatInTimeZone(new Date(task.printWireRequestedAt), timeZone, "yyyy-MM-dd");
+  const dates = [
+    addBusinessDays(requestedDate, 3),
+    task.printPaymentDueDate,
+    task.printPaymentNeededByDate,
+    task.dueDate,
+  ].filter((value): value is string => Boolean(value));
+  const date = dates.sort()[0];
+  return { state: date <= todayIso ? "due" : "waiting", date };
+}
 
 function dayDiff(fromIso: string, toIso: string): number | null {
   const from = Date.parse(`${fromIso}T00:00:00Z`);
@@ -35,10 +69,25 @@ export function splitTasksByAttention<
   return { attention, later };
 }
 
-export function selectPersonalWork<T extends Pick<MyTaskRow, "dueDate" | "status">>(tasks: T[], todayIso: string) {
+export function selectPersonalWork<T extends Pick<MyTaskRow, "dueDate" | "status"> & PaymentTaskTiming>(tasks: T[], todayIso: string, timeZone = "UTC") {
   const open = tasks.filter(task => task.status !== "done");
-  const working = open.filter(task => task.status === "in_progress" || task.status === "review");
-  const unstarted = open.filter(task => task.status !== "in_progress" && task.status !== "review");
+  const waiting: T[] = [];
+  const followUpDue: T[] = [];
+  const ordinary: T[] = [];
+  for (const task of open) {
+    const followUp = printPaymentFollowUp(task, todayIso, timeZone);
+    if (followUp?.state === "waiting") waiting.push(task);
+    else if (followUp?.state === "due") followUpDue.push(task);
+    else ordinary.push(task);
+  }
+  const byFollowUpDate = (a: T, b: T) =>
+    (printPaymentFollowUp(a, todayIso, timeZone)?.date ?? "").localeCompare(
+      printPaymentFollowUp(b, todayIso, timeZone)?.date ?? ""
+    );
+  waiting.sort(byFollowUpDate);
+  followUpDue.sort(byFollowUpDate);
+  const working = ordinary.filter(task => task.status === "in_progress" || task.status === "review");
+  const unstarted = ordinary.filter(task => task.status !== "in_progress" && task.status !== "review");
   const { attention, later } = splitTasksByAttention(unstarted, todayIso);
-  return { working, attention, later, ordered: [...working, ...attention] };
+  return { working, waiting, followUpDue, attention: [...followUpDue, ...attention], later, ordered: [...working, ...followUpDue, ...attention] };
 }

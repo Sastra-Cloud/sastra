@@ -2674,7 +2674,7 @@
 
 ## `lib/print/payment-task-copy.ts`
 
-- PrinterPaymentTaskCopyInput, printerPaymentTaskDescription, printerPaymentTaskTitle
+- PrinterPaymentTaskCopyInput, PrinterPaymentTaskStatus, isGeneratedPrinterPaymentTaskDescription, isGeneratedPrinterPaymentTaskTitle, printerPaymentTaskDescription, printerPaymentTaskTitle
 
 ## `lib/print/payment-tasks.ts`
 
@@ -2982,7 +2982,7 @@
 
 ## `lib/tasks/attention.ts`
 
-- TASK_ATTENTION_WINDOW_DAYS, selectPersonalWork, splitTasksByAttention
+- TASK_ATTENTION_WINDOW_DAYS, printPaymentFollowUp, selectPersonalWork, splitTasksByAttention
 
 ## `lib/tasks/board-order.ts`
 
@@ -3027,6 +3027,10 @@
 ## `lib/tasks/recurring.ts`
 
 - generateDueRecurringTasks, materializeRuleById
+
+## `lib/tasks/task-source.ts`
+
+- isSourceControlledTask, taskSourceLink
 
 ## `lib/tasks/time-actions.ts`
 

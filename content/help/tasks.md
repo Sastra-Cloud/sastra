@@ -2,7 +2,7 @@
 title: "Tasks & the board"
 category: "Work"
 roles: [member, manager, admin]
-keywords: [task, kanban, board, column, to do, in progress, review, done, drag, move, assign, priority, due date, earliest due first, task order, reschedule, edit task, move task to project, milestone, recurring, recurring schedule, google drive, task attachment, upload file, attach file, working folder, license obligation, printer payment, printing coordinator, proof review, approve proof, reply to printer, budget approval, approve, request changes, wip, time tracking, comment, mention, email task, forwarded email, meeting reminder, booking link, email assistant, task suggestion, learn from email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice]
+keywords: [task, kanban, board, column, to do, in progress, review, done, drag, move, assign, priority, due date, earliest due first, task order, reschedule, edit task, move task to project, milestone, recurring, recurring schedule, google drive, task attachment, upload file, attach file, working folder, license obligation, printer payment, printing coordinator, proof review, approve proof, reply to printer, budget approval, approve, request changes, wip, time tracking, comment, mention, email task, forwarded email, meeting reminder, booking link, email assistant, task suggestion, learn from email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice, waiting for payment, follow up due, source linked task]
 order: 30
 summary: "My Work's Focus and Board views, moving cards, task fields, and time tracking."
 ---
@@ -14,7 +14,8 @@ project also keeps its own task board.
 ## My Work
 
 - **Focus** is the daily workspace. It shows work already in progress, what
-  needs attention next, farther-future work under **Later**, and tasks completed
+  needs attention next, printer payment tasks under **Waiting** after a wire
+  request is sent, farther-future work under **Later**, and tasks completed
   today. The summary reports open work, today's completions, and today's tracked
   time.
 - **Board** shows all tasks assigned to you as **To do**, **In progress**,
@@ -22,6 +23,14 @@ project also keeps its own task board.
   filter by project or priority when the board is busy.
 - **Agenda** orders tasks and operational deadlines by date. Managers can filter
   the same view to tasks, project deadlines, rights, or finance obligations.
+
+Requested printer payments leave the top action queue while waiting for payment
+confirmation. They return with **Follow up due** after three business days or
+on an earlier due date. Open the linked payment to record that it was paid;
+the task then closes automatically. Linked printer, royalty, license fee,
+invoice, and budget approval tasks follow their source records, so ordinary
+task status and deletion controls are unavailable for them. Payment tasks link
+back to the record that controls them.
 
 Managers also see due **External follow-ups** in My Work. These are lightweight
 email-response watches rather than tasks: open the thread, snooze the reminder,

@@ -25,7 +25,8 @@ import type { AgendaItem } from "@/lib/agenda/bucket";
 import { bucketAgenda } from "@/lib/agenda/bucket";
 import type { MyWorkTaskRow } from "@/lib/tasks/queries";
 import type { ActiveTimer } from "@/lib/tasks/time-queries";
-import { selectPersonalWork } from "@/lib/tasks/attention";
+import { printPaymentFollowUp, selectPersonalWork } from "@/lib/tasks/attention";
+import { isSourceControlledTask, taskSourceLink } from "@/lib/tasks/task-source";
 import {
   isCompletedOn,
   matchesAgendaFilter,
@@ -170,7 +171,7 @@ export function MyWorkHub({
   };
 
   const moveTask = (task: MyWorkTaskRow, status: Status) => {
-    if (task.status === status) return;
+    if (task.status === status || isSourceControlledTask(task)) return;
     const previousTimer = activeTimer;
     const previousTask = task;
     const completing = status === "done";
@@ -312,6 +313,7 @@ export function MyWorkHub({
         <FocusView
           tasks={tasks}
           todayIso={todayIso}
+          timeZone={timeZone}
           completedToday={completedToday}
           trackedTodaySeconds={trackedTodaySeconds}
           activeTimer={activeTimer}
@@ -400,6 +402,7 @@ export function MyWorkHub({
 function FocusView({
   tasks,
   todayIso,
+  timeZone,
   completedToday,
   trackedTodaySeconds,
   activeTimer,
@@ -410,6 +413,7 @@ function FocusView({
 }: {
   tasks: MyWorkTaskRow[];
   todayIso: string;
+  timeZone: string;
   completedToday: MyWorkTaskRow[];
   trackedTodaySeconds: number;
   activeTimer: ActiveTimer | null;
@@ -422,7 +426,7 @@ function FocusView({
   const [showCompleted, setShowCompleted] = useState(true);
   const runningSeconds = useLiveElapsed(activeTimer?.startedAt ?? null);
   const open = tasks.filter((task) => task.status !== "done");
-  const { working, attention, later } = selectPersonalWork(open, todayIso);
+  const { working, waiting, attention, later } = selectPersonalWork(open, todayIso, timeZone);
 
   return (
     <div className="space-y-5">
@@ -464,6 +468,8 @@ function FocusView({
           title="Working now"
           description="In progress and waiting for review"
           tasks={working}
+          todayIso={todayIso}
+          timeZone={timeZone}
           pending={pending}
           activeTimerTaskId={activeTimer?.taskId ?? null}
           onOpen={onOpen}
@@ -474,8 +480,10 @@ function FocusView({
 
       <FocusSection
         title="Needs attention"
-        description="Overdue, due within 30 days, and undated work"
+        description="Follow-ups due, overdue, due within 30 days, and undated work"
         tasks={attention}
+        todayIso={todayIso}
+        timeZone={timeZone}
         pending={pending}
         activeTimerTaskId={activeTimer?.taskId ?? null}
         onOpen={onOpen}
@@ -483,6 +491,22 @@ function FocusView({
         onTimer={onTimer}
         emptyTitle="Nothing needs attention right now"
       />
+
+      {waiting.length > 0 ? (
+        <FocusSection
+          id="waiting"
+          title="Waiting on confirmation"
+          description="Payment requests sent; follow-up dates bring them back to your action queue"
+          tasks={waiting}
+          todayIso={todayIso}
+          timeZone={timeZone}
+          pending={pending}
+          activeTimerTaskId={activeTimer?.taskId ?? null}
+          onOpen={onOpen}
+          onStatus={onStatus}
+          onTimer={onTimer}
+        />
+      ) : null}
 
       {later.length > 0 ? (
         <CollapsibleSection
@@ -493,6 +517,8 @@ function FocusView({
         >
           <FocusTaskList
             tasks={later}
+            todayIso={todayIso}
+            timeZone={timeZone}
             pending={pending}
             activeTimerTaskId={activeTimer?.taskId ?? null}
             onOpen={onOpen}
@@ -512,6 +538,8 @@ function FocusView({
         >
           <FocusTaskList
             tasks={completedToday}
+            todayIso={todayIso}
+            timeZone={timeZone}
             pending={pending}
             activeTimerTaskId={activeTimer?.taskId ?? null}
             onOpen={onOpen}
@@ -547,9 +575,12 @@ function FocusStat({
 }
 
 function FocusSection({
+  id,
   title,
   description,
   tasks,
+  todayIso,
+  timeZone,
   pending,
   activeTimerTaskId,
   onOpen,
@@ -557,9 +588,12 @@ function FocusSection({
   onTimer,
   emptyTitle,
 }: {
+  id?: string;
   title: string;
   description: string;
   tasks: MyWorkTaskRow[];
+  todayIso: string;
+  timeZone: string;
   pending: boolean;
   activeTimerTaskId: string | null;
   onOpen: (task: MyWorkTaskRow) => void;
@@ -568,7 +602,7 @@ function FocusSection({
   emptyTitle?: string;
 }) {
   return (
-    <section className="space-y-2">
+    <section id={id} className="scroll-mt-24 space-y-2">
       <div className="flex items-baseline justify-between gap-3">
         <div>
           <h2 className="font-heading text-lg font-semibold">{title}</h2>
@@ -579,6 +613,8 @@ function FocusSection({
       {tasks.length > 0 ? (
         <FocusTaskList
           tasks={tasks}
+          todayIso={todayIso}
+          timeZone={timeZone}
           pending={pending}
           activeTimerTaskId={activeTimerTaskId}
           onOpen={onOpen}
@@ -597,6 +633,8 @@ function FocusSection({
 
 function FocusTaskList({
   tasks,
+  todayIso,
+  timeZone,
   pending,
   activeTimerTaskId,
   onOpen,
@@ -604,6 +642,8 @@ function FocusTaskList({
   onTimer,
 }: {
   tasks: MyWorkTaskRow[];
+  todayIso: string;
+  timeZone: string;
   pending: boolean;
   activeTimerTaskId: string | null;
   onOpen: (task: MyWorkTaskRow) => void;
@@ -614,9 +654,14 @@ function FocusTaskList({
     <ul className="divide-y overflow-hidden rounded-xl border bg-card" aria-busy={pending}>
       <AnimatePresence initial={false}>
         {tasks.map((task) => {
-        const due = dueLabel(task.dueDate);
+        const followUp = printPaymentFollowUp(task, todayIso, timeZone);
+        const due = followUp
+          ? { text: `${followUp.state === "due" ? "Follow up due" : "Follow up"} ${followUp.date}`, tone: followUp.state === "due" ? "soon" : "normal" }
+          : dueLabel(task.dueDate);
         const done = task.status === "done";
         const timerRunning = activeTimerTaskId === task.id;
+        const controlled = isSourceControlledTask(task);
+        const sourceLink = taskSourceLink(task, task.projectSlug);
         return (
           <motion.li
             key={task.id}
@@ -627,9 +672,9 @@ function FocusTaskList({
             transition={{ duration: 0.28, ease: EASE, layout: ROW_SPRING }}
             className="flex items-start gap-2 px-3 py-3 sm:items-center sm:gap-3"
           >
-            {task.approvalAssignmentId ? (
+            {controlled ? (
               <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <ShieldCheck className="size-5" />
+                {task.approvalAssignmentId ? <ShieldCheck className="size-5" /> : <CircleDollarSign className="size-5" />}
               </span>
             ) : (
               <TaskCompleteButton
@@ -666,6 +711,8 @@ function FocusTaskList({
                 ) : null}
               </div>
               <TaskAttachmentShortcut task={task} />
+              {sourceLink ? <Link href={sourceLink.href} className="text-xs text-primary hover:underline">{sourceLink.label}</Link> : null}
+              {followUp ? <p className={cn("mt-1 text-xs lg:hidden", followUp.state === "due" ? "font-medium text-warning-text" : "text-muted-foreground")}>{due.text}</p> : null}
             </div>
             <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
               <div className="hidden items-center gap-2 lg:flex">
@@ -695,7 +742,7 @@ function FocusTaskList({
               ) : null}
               <Select
                 value={task.status}
-                disabled={Boolean(task.approvalAssignmentId)}
+                disabled={controlled}
                 itemToStringLabel={(status) => TASK_STATUS[status].label}
                 onValueChange={(value) => value && onStatus(task, value as Status)}
               >

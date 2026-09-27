@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { selectPersonalWork, splitTasksByAttention } from "./attention";
+import { printPaymentFollowUp, selectPersonalWork, splitTasksByAttention } from "./attention";
 
 type Task = { id: string; dueDate: string | null; status: string };
 
@@ -50,4 +50,17 @@ it("uses the same started-first queue without disturbing manual order", () => {
   const selected = selectPersonalWork(rows, "2026-07-10");
   expect(selected.ordered.map(t => t.id)).toEqual(["working", "review", "manual-first", "overdue"]);
   expect(selected.later.map(t => t.id)).toEqual(["later"]);
+});
+
+it("waits three business days after a wire request and then returns the task to attention", () => {
+  const payment = { ...task("payment", null, "review"), printPaymentStatus: "requested", printWireRequestedAt: new Date("2026-09-25T20:00:00Z") };
+  expect(printPaymentFollowUp(payment, "2026-09-29", "America/Los_Angeles")).toEqual({ state: "waiting", date: "2026-09-30" });
+  expect(selectPersonalWork([payment], "2026-09-29", "America/Los_Angeles").waiting.map(t => t.id)).toEqual(["payment"]);
+  expect(selectPersonalWork([payment], "2026-09-30", "America/Los_Angeles").ordered.map(t => t.id)).toEqual(["payment"]);
+});
+
+it("uses an earlier payment due date and treats an unknown send time as due", () => {
+  const payment = { ...task("payment", null, "review"), printPaymentStatus: "requested", printWireRequestedAt: new Date("2026-09-25T20:00:00Z"), printPaymentDueDate: "2026-09-28" };
+  expect(printPaymentFollowUp(payment, "2026-09-27", "America/Los_Angeles")).toEqual({ state: "waiting", date: "2026-09-28" });
+  expect(printPaymentFollowUp({ ...payment, printWireRequestedAt: null }, "2026-09-27")).toEqual({ state: "due", date: "2026-09-27" });
 });

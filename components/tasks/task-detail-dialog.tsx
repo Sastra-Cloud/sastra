@@ -3,7 +3,8 @@
 import { confirmDialog } from "@/lib/dialog-requests";
 
 import { useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
 import {
   ChevronDown,
@@ -72,6 +73,7 @@ import { updateBudgetApprovalTaskDueDate } from "@/lib/budget/approval-actions";
 import { cn } from "@/lib/utils";
 import { requestNotificationRefresh } from "@/lib/notifications/client-events";
 import { undoAutoCreatedEmailTask } from "@/lib/email/task-suggestion-actions";
+import { isSourceControlledTask, taskSourceLink } from "@/lib/tasks/task-source";
 
 type Option = { id: string; name: string };
 type Priority = "low" | "medium" | "high" | "urgent";
@@ -122,6 +124,7 @@ function TaskDetailDialogContent({
   onOptimisticDelete,
 }: TaskDetailDialogProps & { task: TaskRow }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [saving, startSave] = useTransition();
   const [completionRequested, setCompletionRequested] = useState(false);
   const [comments, setComments] = useState<TaskComment[] | null>(null);
@@ -156,6 +159,12 @@ function TaskDetailDialogContent({
 
   const t = task;
   const isApprovalTask = Boolean(t.approvalAssignmentId);
+  const isSharedInvoiceTask = Boolean(t.mouInvoiceSharedGroupId);
+  const isControlledTask = isSourceControlledTask(t);
+  const projectSlug = "projectSlug" in t && typeof t.projectSlug === "string"
+    ? t.projectSlug
+    : pathname.match(/^\/projects\/([^/]+)/)?.[1] ?? null;
+  const sourceLink = taskSourceLink(t, projectSlug);
 
   function save(statusOverride?: string) {
     if (isApprovalTask) {
@@ -411,6 +420,11 @@ function TaskDetailDialogContent({
               tasks.
             </p>
           ) : null}
+          {isControlledTask && !isApprovalTask ? (
+            <p className="text-xs text-muted-foreground">
+              This task follows its linked record. {sourceLink ? <Link href={sourceLink.href} className="font-medium text-primary hover:underline">{sourceLink.label}</Link> : null}
+            </p>
+          ) : null}
         </DialogHeader>
 
         <div className="min-h-0 min-w-0 overflow-x-hidden overflow-y-auto px-5 py-5 sm:px-6">
@@ -454,7 +468,7 @@ function TaskDetailDialogContent({
                     <Input
                       id="d-title"
                       value={title}
-                      readOnly={isApprovalTask}
+                      readOnly={isApprovalTask || isSharedInvoiceTask}
                       onChange={(e) => setTitle(e.target.value)}
                     />
                   </div>
@@ -465,7 +479,7 @@ function TaskDetailDialogContent({
                       rows={7}
                       className="min-h-36 resize-y"
                       value={description}
-                      readOnly={isApprovalTask}
+                      readOnly={isApprovalTask || isSharedInvoiceTask}
                       onChange={(e) => setDescription(e.target.value)}
                     />
                   </div>
@@ -686,7 +700,7 @@ function TaskDetailDialogContent({
                         id="d-project"
                         className={selectClass}
                         value={projectId}
-                        disabled={isApprovalTask}
+                        disabled={isControlledTask}
                         onChange={(e) => setProjectId(e.target.value)}
                       >
                         <option value="">None — general task</option>
@@ -704,7 +718,7 @@ function TaskDetailDialogContent({
                       id="d-status"
                       className={selectClass}
                       value={status}
-                      disabled={isApprovalTask}
+                      disabled={isControlledTask}
                       onChange={(e) => setStatus(e.target.value)}
                     >
                       {TASK_STATUS_ORDER.map((s) => (
@@ -720,7 +734,7 @@ function TaskDetailDialogContent({
                       id="d-assignee"
                       className={selectClass}
                       value={assignedTo}
-                      disabled={isApprovalTask}
+                      disabled={isApprovalTask || isSharedInvoiceTask || (!canManage && Boolean(t.royaltyPaymentId || t.licenseFeePaymentId))}
                       onChange={(e) => setAssignedTo(e.target.value)}
                     >
                       <option value="">Unassigned</option>
@@ -737,7 +751,7 @@ function TaskDetailDialogContent({
                       id="d-priority"
                       className={selectClass}
                       value={priority}
-                      disabled={isApprovalTask}
+                      disabled={isApprovalTask || isSharedInvoiceTask}
                       onChange={(e) => setPriority(e.target.value as Priority)}
                     >
                       <option value="low">Low</option>
@@ -764,7 +778,7 @@ function TaskDetailDialogContent({
                     type="checkbox"
                     className="size-4"
                     checked={isMilestone}
-                    disabled={isApprovalTask}
+                    disabled={isApprovalTask || isSharedInvoiceTask}
                     onChange={(e) => setIsMilestone(e.target.checked)}
                   />
                   Mark as milestone
@@ -911,15 +925,11 @@ function TaskDetailDialogContent({
         <DialogFooter className="mx-0 mb-0 flex-col rounded-none border-t bg-muted/30 px-5 py-4 sm:flex-row sm:px-6">
           {!isApprovalTask ? (
             <>
-              <Button
-                variant="destructive"
-                onClick={removeTask}
-                disabled={saving}
-                className="sm:mr-auto"
-              >
-                <Trash2 className="size-4" />
-                Delete task
-              </Button>
+              {!isControlledTask ? (
+                <Button variant="destructive" onClick={removeTask} disabled={saving} className="sm:mr-auto">
+                  <Trash2 className="size-4" /> Delete task
+                </Button>
+              ) : null}
               <Button variant="outline" onClick={onClose} disabled={saving}>
                 Cancel
               </Button>
@@ -930,7 +940,7 @@ function TaskDetailDialogContent({
               >
                 {saving ? "Saving…" : "Save changes"}
               </Button>
-              {status !== "done" || completionRequested ? (
+              {!isControlledTask && (status !== "done" || completionRequested) ? (
                 <Button onClick={() => save("done")} disabled={saving}>
                   <CheckCircle2 className="size-4" />
                   {completionRequested ? "Marking done…" : "Mark task done"}

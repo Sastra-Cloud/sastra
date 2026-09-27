@@ -92,6 +92,7 @@ export function LicenseFeePayments({
         return (
           <li
             key={p.id}
+            id={`license-fee-${p.id}`}
             className="flex flex-wrap items-center justify-between gap-2 py-2"
           >
             <div className="min-w-0">

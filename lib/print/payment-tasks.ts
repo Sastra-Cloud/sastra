@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {
@@ -15,8 +15,11 @@ import {
 import { clearOverdueNotifications } from "@/lib/notifications";
 import { invoiceFilePaymentKinds } from "@/lib/print/quote-reconciliation";
 import {
+  isGeneratedPrinterPaymentTaskDescription,
+  isGeneratedPrinterPaymentTaskTitle,
   printerPaymentTaskDescription,
   printerPaymentTaskTitle,
+  type PrinterPaymentTaskStatus,
 } from "@/lib/print/payment-task-copy";
 import { insertTaskRow, revalidateForTask } from "@/lib/tasks/create";
 
@@ -89,8 +92,11 @@ export async function ensurePrintPaymentTask(
         projectId: row.payment.projectId,
         printRunId: row.payment.runId,
         printPaymentId: row.payment.id,
-        title: printerPaymentTaskTitle(copy),
-        description: printerPaymentTaskDescription(copy),
+        title: printerPaymentTaskTitle(copy, row.payment.status === "requested" ? "requested" : "planned"),
+        description: printerPaymentTaskDescription(
+          copy,
+          row.payment.status === "requested" ? "requested" : "planned"
+        ),
         status: row.payment.status === "requested" ? "review" : "todo",
         priority: "high",
         assignedTo: assigneeId,
@@ -132,7 +138,7 @@ export async function ensureAcceptedInvoicePaymentTasks(
 /** Keep the generated task aligned with the payment's real lifecycle. */
 export async function syncPrintPaymentTaskStatus(
   paymentId: string,
-  paymentStatus: "planned" | "requested" | "paid"
+  paymentStatus: PrinterPaymentTaskStatus
 ): Promise<void> {
   const status =
     paymentStatus === "paid"
@@ -140,10 +146,40 @@ export async function syncPrintPaymentTaskStatus(
       : paymentStatus === "requested"
         ? ("review" as const)
         : ("todo" as const);
+  const [linked] = await db
+    .select({
+      title: tasks.title,
+      description: tasks.description,
+      payment: printPayments,
+      runTitle: printRuns.title,
+      invoiceNumber: printQuotes.invoiceNumber,
+    })
+    .from(tasks)
+    .innerJoin(printPayments, eq(printPayments.id, tasks.printPaymentId))
+    .innerJoin(printRuns, eq(printRuns.id, printPayments.runId))
+    .leftJoin(printQuotes, eq(printQuotes.id, printPayments.quoteId))
+    .where(eq(tasks.printPaymentId, paymentId))
+    .limit(1);
+  if (!linked) return;
+  const copy = {
+    kind: linked.payment.kind,
+    amount: linked.payment.amount,
+    currency: linked.payment.currency,
+    runTitle: linked.runTitle,
+    invoiceNumber: linked.invoiceNumber,
+  };
+  const description = isGeneratedPrinterPaymentTaskDescription(copy, linked.description)
+    ? printerPaymentTaskDescription(copy, paymentStatus)
+    : linked.description;
+  const title = isGeneratedPrinterPaymentTaskTitle(copy, linked.title)
+    ? printerPaymentTaskTitle(copy, paymentStatus)
+    : linked.title;
   const [task] = await db
     .update(tasks)
     .set({
       status,
+      title: sql`CASE WHEN ${tasks.title} = ${linked.title} THEN ${title} ELSE ${tasks.title} END`,
+      description: sql`CASE WHEN ${tasks.description} IS NOT DISTINCT FROM ${linked.description} THEN ${description} ELSE ${tasks.description} END`,
       completedAt: status === "done" ? new Date() : null,
       updatedAt: new Date(),
     })

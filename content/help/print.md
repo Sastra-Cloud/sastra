@@ -2,7 +2,7 @@
 title: "Print runs, printer quote requests & quotes"
 category: "Publishing"
 roles: [manager, admin]
-keywords: [request printer quotes, source page count, full payment, consolidate payments, wrong wire amount, print, print run, reprint, previous print, historical print, old print, collapse print run, show print details, old quote, legacy quote, copy specs, apply specs, measurement unit, millimetres, millimeters, mm, inches, trim size, rfq, quote request, printer, printing coordinator, payment task, quantity, tier, total price, price per copy, quote learning, document learning, printing in five steps, print steps, first print run, walk me through printing, how to print, recommended balance, economic elbow, sell-through, lowest cost per copy, total cost, cost per copy, incremental cost, comparison, wire, finance, funding received, printer paid, deposit, balance, proof, proof attachment, proof download, proof files, printer waiting for approval, proofing status, suggested project update, invoice, deposit invoice, final invoice, invoice attachment, attachment preview, preview invoice, estimate vs actual, accept quote, accepted, collapse quotes, hide other quotes, show other quotes, reopen quote, un-accept, unaccept, reject quote, reverse acceptance, ai email draft, generated sign-off, learns from edits, email style, draft tone, awaiting payment, wire requested, run status, print correspondence, printer email, email thread, open thread, view thread, missing price, per copy price, cover pdf, book pdf, artwork not a quote, file note, attachment note]
+keywords: [request printer quotes, source page count, full payment, consolidate payments, wrong wire amount, print, print run, reprint, previous print, historical print, old print, collapse print run, show print details, old quote, legacy quote, copy specs, apply specs, measurement unit, millimetres, millimeters, mm, inches, trim size, rfq, quote request, printer, printing coordinator, payment task, payment confirmation task, quantity, tier, total price, price per copy, quote learning, document learning, printing in five steps, print steps, first print run, walk me through printing, how to print, recommended balance, economic elbow, sell-through, lowest cost per copy, total cost, cost per copy, incremental cost, comparison, wire, finance, funding received, printer paid, deposit, balance, proof, proof attachment, proof download, proof files, printer waiting for approval, proofing status, suggested project update, invoice, deposit invoice, final invoice, invoice attachment, attachment preview, preview invoice, estimate vs actual, accept quote, accepted, collapse quotes, hide other quotes, show other quotes, reopen quote, un-accept, unaccept, reject quote, reverse acceptance, ai email draft, generated sign-off, learns from edits, email style, draft tone, awaiting payment, wire requested, run status, print correspondence, printer email, email thread, open thread, view thread, missing price, per copy price, cover pdf, book pdf, artwork not a quote, file note, attachment note, payment follow up, awaiting payment confirmation, confirm printer received payment]
 order: 70
 summary: "Set up print runs, request printer quotes, review extracted prices, and track print costs."
 ---
@@ -283,12 +283,17 @@ itself does not create payment work.
 
 The task is assigned to the project's **Printing Coordinator**. If the project
 does not have one, it is assigned to the manager who accepted or uploaded the
-invoice. It is an ordinary project task, so a manager can reassign it from the
-Tasks board. The payment row on the Print tab shows the owner and links to the
-task.
+invoice. A manager can reassign it from the task details. The payment row on
+the Print tab shows the owner and links to the task.
 
-The task starts in **To do**, moves to **Review** while the wire request is
-awaiting confirmation, and closes when the payment is marked paid. Reopening a
+The task starts in **To do** as **Send … payment request**. After you confirm
+the wire email send, its title changes to **Confirm printer received … payment**
+and its status becomes **Review**. It moves into **Waiting** in My Work while
+the payment is pending. Three business days after the request, or on an earlier
+payment or task due date, it returns to the action queue as **Follow up due**.
+Use the link on the task to open the payment. The task closes automatically
+when the payment is marked paid on the Print tab; its status cannot be changed
+directly from a task board. Reopening a
 payment reopens its task; deleting the payment removes the generated task. A
 confirmed deletion removes only that payment while it saves, so actions on the
 other payment rows remain available.

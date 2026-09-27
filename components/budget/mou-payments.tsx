@@ -692,6 +692,7 @@ export function MouPayments({
             {visiblePayments.map((p) => (
               <li
                 key={p.id}
+                id={`mou-payment-${p.id}`}
                 className={
                   editingId === p.id
                     ? "bg-muted/20 px-3 py-3 text-sm"

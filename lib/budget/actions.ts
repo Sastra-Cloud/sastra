@@ -8,6 +8,8 @@ import { z } from "zod";
 import { requireRole } from "@/lib/auth/guards";
 import { recomputeProjectBlockers } from "@/lib/blockers/engine";
 import { db } from "@/lib/db";
+import { clearOverdueNotifications } from "@/lib/notifications";
+import { revalidateForTask } from "@/lib/tasks/create";
 import {
   activityLog,
   budgetItems,
@@ -1127,24 +1129,43 @@ export async function ensureRoyaltyReminderTasksForAllProjects(): Promise<number
 
 export async function markRoyaltyPaid(id: string): Promise<{ error?: string }> {
   const { user } = await requireRole("manager");
-  const [row] = await db
-    .update(royaltyPayments)
-    .set({ paidAt: new Date(), paidBy: user.id })
-    .where(eq(royaltyPayments.id, id))
-    .returning({ projectId: royaltyPayments.projectId });
-  if (row) await revalidate(row.projectId);
+  const row = await db.transaction(async (tx) => {
+    const [payment] = await tx.update(royaltyPayments)
+      .set({ paidAt: new Date(), paidBy: user.id })
+      .where(eq(royaltyPayments.id, id))
+      .returning({ projectId: royaltyPayments.projectId, taskId: royaltyPayments.taskId });
+    if (payment?.taskId) await tx.update(tasks)
+      .set({ status: "done", completedAt: new Date(), updatedAt: new Date() })
+      .where(eq(tasks.id, payment.taskId));
+    return payment;
+  });
+  if (row) {
+    if (row.taskId) {
+      await clearOverdueNotifications(row.taskId);
+      await revalidateForTask(row.projectId);
+    }
+    await revalidate(row.projectId);
+  }
   return {};
 }
 
 export async function markRoyaltyUnpaid(id: string): Promise<{ error?: string }> {
   const { user } = await requireRole("manager");
   void user;
-  const [row] = await db
-    .update(royaltyPayments)
-    .set({ paidAt: null, paidBy: null })
-    .where(eq(royaltyPayments.id, id))
-    .returning({ projectId: royaltyPayments.projectId });
-  if (row) await revalidate(row.projectId);
+  const row = await db.transaction(async (tx) => {
+    const [payment] = await tx.update(royaltyPayments)
+      .set({ paidAt: null, paidBy: null })
+      .where(eq(royaltyPayments.id, id))
+      .returning({ projectId: royaltyPayments.projectId, taskId: royaltyPayments.taskId });
+    if (payment?.taskId) await tx.update(tasks)
+      .set({ status: "todo", completedAt: null, updatedAt: new Date() })
+      .where(eq(tasks.id, payment.taskId));
+    return payment;
+  });
+  if (row) {
+    if (row.taskId) await revalidateForTask(row.projectId);
+    await revalidate(row.projectId);
+  }
   return {};
 }
 
@@ -1525,6 +1546,16 @@ export async function sendInvoiceEmail(
     .update(invoices)
     .set({ status: "sent" })
     .where(eq(invoices.id, invoiceId));
+  if (invoice.paymentId && !invoice.groupId) {
+    const [payment] = await db.select({ taskId: mouPayments.invoiceTaskId })
+      .from(mouPayments).where(eq(mouPayments.id, invoice.paymentId)).limit(1);
+    if (payment?.taskId) {
+      await db.update(tasks).set({ status: "done", completedAt: new Date(), updatedAt: new Date() })
+        .where(eq(tasks.id, payment.taskId));
+      await clearOverdueNotifications(payment.taskId);
+      await revalidateForTask(invoice.projectId);
+    }
+  }
   if (invoice.groupId) {
     await reevaluateSharedMouPayments({ groupId: invoice.groupId, actorId: user.id });
     revalidatePath(`/agreements/${invoice.groupId}`);

@@ -166,7 +166,8 @@
     "@/lib/projects/visibility",
     "@/lib/projects/dashboard-order",
     "@/lib/projects/print-funding",
-    "@/lib/projects/status-queries"
+    "@/lib/projects/status-queries",
+    "@/lib/workspace/queries"
   ],
   "app/(app)/donations/page.tsx": [
     "lucide-react",
@@ -3341,7 +3342,9 @@
     "sonner",
     "@/hooks/use-prop-state",
     "@/components/tasks/task-detail-dialog",
-    "@/components/tasks/task-attachment-shortcut"
+    "@/components/tasks/task-attachment-shortcut",
+    "@/lib/tasks/attention",
+    "@/lib/tasks/task-source"
   ],
   "components/tasks/my-work-hub.tsx": [
     "react",
@@ -3355,6 +3358,7 @@
     "@/lib/tasks/queries",
     "@/lib/tasks/time-queries",
     "@/lib/tasks/attention",
+    "@/lib/tasks/task-source",
     "@/lib/tasks/my-work",
     "@/lib/tasks/actions",
     "@/lib/tasks/time-actions",
@@ -3381,9 +3385,11 @@
   ],
   "components/tasks/personal-task-board.tsx": [
     "react",
+    "next/link",
     "@dnd-kit/core",
     "lucide-react",
     "@/lib/tasks/queries",
+    "@/lib/tasks/task-source",
     "@/components/badges",
     "@/components/ui/badge",
     "@/components/ui/button",
@@ -3427,6 +3433,7 @@
     "@dnd-kit/core",
     "lucide-react",
     "@/lib/tasks/queries",
+    "@/lib/tasks/task-source",
     "@/lib/tasks/actions",
     "@/lib/tasks/time-actions",
     "@/components/badges",
@@ -3457,6 +3464,7 @@
     "@/lib/dialog-requests",
     "react",
     "next/navigation",
+    "next/link",
     "sonner",
     "lucide-react",
     "date-fns",
@@ -3479,7 +3487,8 @@
     "@/lib/budget/approval-actions",
     "@/lib/utils",
     "@/lib/notifications/client-events",
-    "@/lib/email/task-suggestion-actions"
+    "@/lib/email/task-suggestion-actions",
+    "@/lib/tasks/task-source"
   ],
   "components/tasks/task-time-section.tsx": [
     "@/lib/dialog-requests",
@@ -4552,6 +4561,8 @@
     "@/lib/auth/guards",
     "@/lib/blockers/engine",
     "@/lib/db",
+    "@/lib/notifications",
+    "@/lib/tasks/create",
     "@/lib/db/schema",
     "@/lib/budget/royalty-recurring",
     "@/lib/budget/compute",
@@ -6917,6 +6928,7 @@
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/notifications",
+    "@/lib/tasks/create",
     "@/lib/tasks/actions",
     "@/lib/activity/log",
     "@/lib/format",
@@ -7119,7 +7131,8 @@
     "./attention"
   ],
   "lib/tasks/attention.ts": [
-    "./queries"
+    "./queries",
+    "date-fns-tz"
   ],
   "lib/tasks/board-order.test.ts": [
     "vitest",
@@ -7213,6 +7226,13 @@
     "@/lib/db/schema",
     "@/lib/recurring/schedule",
     "./create"
+  ],
+  "lib/tasks/task-source.test.ts": [
+    "vitest",
+    "./task-source"
+  ],
+  "lib/tasks/task-source.ts": [
+    "./queries"
   ],
   "lib/tasks/time-actions.ts": [
     "next/cache",

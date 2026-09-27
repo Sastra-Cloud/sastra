@@ -2,7 +2,7 @@
 title: "Budget & quotation"
 category: "Publishing"
 roles: [member, manager, admin]
-keywords: [budget, quotation, quote, internal costs, partner quote, partner safe, assistant project blueprint, create project with budget, conversational project setup, price per copy, per copy invoice, organization donation fee, organization fee, admin fee, donation deduction, fee coverage, funding target, expected net, actual net, available funding, budget attention, next action, section navigation, budget in four steps, what do i do next, walk me through the budget, budget steps, getting started with budget, reprint budget, accepted print quote, add print cost, custom reprint cost, edit budget line, optimistic budget line, unit price, word count, typesetting, funding assigned, raised, to raise, spent, funding, royalties, excel, pdf, export, reconciliation, cashflow, donation mou match, apply donation to mou, shared mou, allocated funding, shared receipt, funding partner, sponsor, funding contact, proposal, funding proposal subject, proposal sign-off, mou proposal, send proposal, proposal history, email attachment, attachment preview, preview quotation, proposed completion date, completion date, suggest a date, completion planner, planning capacity, projects at once, project duration, timeline, deadline, budget approval, approver, approve, request changes, unanimous approval, stale approval, logo, branding, accent color, partners directory, saved partner, paid invoice, upload invoice, past invoice, invoice received, immutable invoice, void invoice, replacement invoice, split payment, edit payment schedule, change mou payment, payment date, invoice owner]
+keywords: [budget, quotation, quote, internal costs, partner quote, partner safe, assistant project blueprint, create project with budget, conversational project setup, price per copy, per copy invoice, organization donation fee, organization fee, admin fee, donation deduction, fee coverage, funding target, expected net, actual net, available funding, budget attention, next action, section navigation, budget in four steps, what do i do next, walk me through the budget, budget steps, getting started with budget, reprint budget, accepted print quote, add print cost, custom reprint cost, edit budget line, optimistic budget line, unit price, word count, typesetting, funding assigned, raised, to raise, spent, funding, royalties, excel, pdf, export, reconciliation, cashflow, donation mou match, apply donation to mou, shared mou, allocated funding, shared receipt, funding partner, sponsor, funding contact, proposal, funding proposal subject, proposal sign-off, mou proposal, send proposal, proposal history, email attachment, attachment preview, preview quotation, proposed completion date, completion date, suggest a date, completion planner, planning capacity, projects at once, project duration, timeline, deadline, budget approval, approver, approve, request changes, unanimous approval, stale approval, logo, branding, accent color, partners directory, saved partner, paid invoice, upload invoice, past invoice, invoice received, immutable invoice, void invoice, replacement invoice, split payment, edit payment schedule, change mou payment, payment date, invoice owner, royalty payment task, mark royalty paid]
 order: 60
 summary: "Internal costs, partner-safe quotations, organization donation fees, receipts, and invoices."
 ---
@@ -45,6 +45,10 @@ New to budgets? The page works in order, from top to bottom:
    arrives and check that it matches the plan.
 4. **Handle agreements and fees.** In **Agreements and fees**, schedule partner
    payments, royalties, and license fees.
+
+Marking a royalty payment paid completes its linked task; undoing the paid mark
+reopens it. Managers can reassign the task, which also changes the payment
+owner. A linked task points back to its payment, where the paid state is changed.
 
 You can open any section at any time. Nothing is sent or changed until you
 approve it.
@@ -368,3 +372,7 @@ delivery evidence, and invoices. Generating a PDF does not complete the invoice
 task: explicit reviewed sending completes it. The earliest invoice date is separate
 from the partner's optional payment deadline. See **Shared MoU funding** for the
 full review and delivery workflow.
+
+The same send action completes a linked invoice task for a regular, single-project
+MoU payment. The task links back to its payment or shared agreement. Invoice
+tasks cannot be marked done or deleted through ordinary task controls.

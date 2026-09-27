@@ -17,7 +17,8 @@ import {
   rightsItems,
   tasks,
 } from "@/lib/db/schema";
-import { notify } from "@/lib/notifications";
+import { clearOverdueNotifications, notify } from "@/lib/notifications";
+import { revalidateForTask } from "@/lib/tasks/create";
 import { assignTask } from "@/lib/tasks/actions";
 import { logActivity } from "@/lib/activity/log";
 import { formatDate } from "@/lib/format";
@@ -250,24 +251,43 @@ export async function updateRights(
 /** Mark a license-fee payment as paid (managers only). */
 export async function markLicenseFeePaid(id: string): Promise<{ error?: string }> {
   const { user } = await requireRole("manager");
-  const [row] = await db
-    .update(licenseFeePayments)
-    .set({ paidAt: new Date(), paidBy: user.id })
-    .where(eq(licenseFeePayments.id, id))
-    .returning({ projectId: licenseFeePayments.projectId });
-  if (row) await revalidate(row.projectId);
+  const row = await db.transaction(async (tx) => {
+    const [payment] = await tx.update(licenseFeePayments)
+      .set({ paidAt: new Date(), paidBy: user.id })
+      .where(eq(licenseFeePayments.id, id))
+      .returning({ projectId: licenseFeePayments.projectId, taskId: licenseFeePayments.taskId });
+    if (payment?.taskId) await tx.update(tasks)
+      .set({ status: "done", completedAt: new Date(), updatedAt: new Date() })
+      .where(eq(tasks.id, payment.taskId));
+    return payment;
+  });
+  if (row) {
+    if (row.taskId) {
+      await clearOverdueNotifications(row.taskId);
+      await revalidateForTask(row.projectId);
+    }
+    await revalidate(row.projectId);
+  }
   return {};
 }
 
 /** Undo a license-fee paid mark (managers only). */
 export async function markLicenseFeeUnpaid(id: string): Promise<{ error?: string }> {
   await requireRole("manager");
-  const [row] = await db
-    .update(licenseFeePayments)
-    .set({ paidAt: null, paidBy: null })
-    .where(eq(licenseFeePayments.id, id))
-    .returning({ projectId: licenseFeePayments.projectId });
-  if (row) await revalidate(row.projectId);
+  const row = await db.transaction(async (tx) => {
+    const [payment] = await tx.update(licenseFeePayments)
+      .set({ paidAt: null, paidBy: null })
+      .where(eq(licenseFeePayments.id, id))
+      .returning({ projectId: licenseFeePayments.projectId, taskId: licenseFeePayments.taskId });
+    if (payment?.taskId) await tx.update(tasks)
+      .set({ status: "todo", completedAt: null, updatedAt: new Date() })
+      .where(eq(tasks.id, payment.taskId));
+    return payment;
+  });
+  if (row) {
+    if (row.taskId) await revalidateForTask(row.projectId);
+    await revalidate(row.projectId);
+  }
   return {};
 }
 

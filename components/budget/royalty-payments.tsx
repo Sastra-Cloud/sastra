@@ -81,6 +81,7 @@ export function RoyaltyPayments({
             return (
               <li
                 key={p.id}
+                id={`royalty-${p.id}`}
                 className="flex flex-wrap items-center justify-between gap-2 py-2"
               >
                 <div className="min-w-0">

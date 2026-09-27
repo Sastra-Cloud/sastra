@@ -43,6 +43,7 @@ import {
   needsPrintFundingReview,
 } from "@/lib/projects/print-funding";
 import { listManagerUpdateRecommendations } from "@/lib/projects/status-queries";
+import { getWorkspaceSettings } from "@/lib/workspace/queries";
 
 export const metadata = { title: "Home" };
 export const dynamic = "force-dynamic";
@@ -65,6 +66,7 @@ export default async function DashboardPage() {
     possibleCounterparties,
     possibleProjectUpdates,
     projectUpdateRecommendations,
+    workspace,
   ] = await Promise.all([
     getMyTasks(user.id),
     listAssignableUsers(),
@@ -81,6 +83,7 @@ export default async function DashboardPage() {
     canReviewCorrespondence
       ? listManagerUpdateRecommendations(8)
       : Promise.resolve([]),
+    getWorkspaceSettings(),
   ]);
   const notificationSuggestions = [
     ...possibleNewProjects,
@@ -130,7 +133,8 @@ export default async function DashboardPage() {
       return d !== null && d < 0;
     })
     .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""));
-  const { ordered, later } = selectPersonalWork(myTasks, formatInTimeZone(new Date(), user.timezone ?? "UTC", "yyyy-MM-dd"));
+  const todayIso = formatInTimeZone(new Date(), workspace.timezone, "yyyy-MM-dd");
+  const { ordered, later, waiting } = selectPersonalWork(myTasks, todayIso, workspace.timezone);
   const dueThisWeek = myTasks.filter((t) => {
     const d = daysUntil(t.dueDate);
     return d !== null && d >= 0 && d <= 7;
@@ -225,6 +229,8 @@ export default async function DashboardPage() {
           <>
             <MyTasksList
               tasks={focusTasks}
+              todayIso={todayIso}
+              timeZone={workspace.timezone}
               editor={{
                 assignees: users.map((item) => ({ id: item.id, name: item.name })),
                 projects: projectOptions,
@@ -257,6 +263,11 @@ export default async function DashboardPage() {
             </div>
           </div>
         )}
+        {waiting.length > 0 ? (
+          <Link href="/tasks#waiting" className="inline-flex min-h-10 items-center text-sm text-muted-foreground hover:underline">
+            {waiting.length} awaiting payment confirmation · View waiting work
+          </Link>
+        ) : null}
       </section>
 
       <ManagerReviewQueue items={reviewItems} />
