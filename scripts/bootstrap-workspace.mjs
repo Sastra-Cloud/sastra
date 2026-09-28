@@ -31,17 +31,17 @@ const roles = [
 
 const aiModels = [
   ["assistant", "openai/gpt-5-mini", ["anthropic/claude-haiku-4.5"]],
-  ["assistant_complex", "openai/gpt-5.4-mini", ["anthropic/claude-sonnet-5"]],
+  ["assistant_complex", "openai/gpt-5.4-mini", ["anthropic/claude-sonnet-5.5"]],
   ["assistant_summary", "openai/gpt-5-mini", ["anthropic/claude-haiku-4.5"]],
-  ["assistant_reflection", "openai/gpt-5.4-mini", ["anthropic/claude-sonnet-5"]],
+  ["assistant_reflection", "openai/gpt-5.4-mini", ["anthropic/claude-sonnet-5.5"]],
   ["project_update_review", "openai/gpt-5-mini", ["anthropic/claude-haiku-4.5"]],
   ["email_project_signal", "openai/gpt-5-mini", ["anthropic/claude-haiku-4.5"]],
   ["email_task_signal", "openai/gpt-5-mini", ["anthropic/claude-haiku-4.5"]],
   ["email_follow_up_summary", "openai/gpt-5-mini", ["anthropic/claude-haiku-4.5"]],
-  ["assistant_eval", "openai/gpt-5.4-mini", ["anthropic/claude-sonnet-5"]],
-  ["email_draft", "anthropic/claude-sonnet-5", ["anthropic/claude-sonnet-4.6"]],
-  ["planner", "anthropic/claude-sonnet-4.5", []],
-  ["doc_import", "anthropic/claude-sonnet-5", []],
+  ["assistant_eval", "openai/gpt-5.4-mini", ["anthropic/claude-sonnet-5.5"]],
+  ["email_draft", "anthropic/claude-sonnet-5.5", ["anthropic/claude-sonnet-5"]],
+  ["planner", "anthropic/claude-sonnet-5.5", []],
+  ["doc_import", "anthropic/claude-sonnet-5.5", []],
   ["standup_insights", "anthropic/claude-haiku-4.5", []],
 ];
 

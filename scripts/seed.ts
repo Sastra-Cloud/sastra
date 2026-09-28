@@ -173,7 +173,7 @@ async function main() {
     {
       taskKey: "assistant_complex",
       model: "openai/gpt-5.4-mini",
-      fallbackModels: ["anthropic/claude-sonnet-5"],
+      fallbackModels: ["anthropic/claude-sonnet-5.5"],
     },
     {
       taskKey: "assistant_summary",
@@ -183,7 +183,7 @@ async function main() {
     {
       taskKey: "assistant_reflection",
       model: "openai/gpt-5.4-mini",
-      fallbackModels: ["anthropic/claude-sonnet-5"],
+      fallbackModels: ["anthropic/claude-sonnet-5.5"],
     },
     {
       taskKey: "project_update_review",
@@ -213,19 +213,19 @@ async function main() {
     {
       taskKey: "assistant_eval",
       model: "openai/gpt-5.4-mini",
-      fallbackModels: ["anthropic/claude-sonnet-5"],
+      fallbackModels: ["anthropic/claude-sonnet-5.5"],
     },
     {
       taskKey: "email_draft",
-      model: "anthropic/claude-sonnet-5",
-      fallbackModels: ["anthropic/claude-sonnet-4.6"],
+      model: "anthropic/claude-sonnet-5.5",
+      fallbackModels: ["anthropic/claude-sonnet-5"],
     },
-    { taskKey: "planner", model: "anthropic/claude-sonnet-4.5" },
-    { taskKey: "doc_import", model: "anthropic/claude-sonnet-5" },
+    { taskKey: "planner", model: "anthropic/claude-sonnet-5.5" },
+    { taskKey: "doc_import", model: "anthropic/claude-sonnet-5.5" },
     { taskKey: "agreement_ocr", model: "openai/gpt-5-mini" },
     {
       taskKey: "agreement_qa",
-      model: "anthropic/claude-sonnet-5",
+      model: "anthropic/claude-sonnet-5.5",
       fallbackModels: ["openai/gpt-5.4"],
     },
     { taskKey: "standup_insights", model: "anthropic/claude-haiku-4.5" },

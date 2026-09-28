@@ -50,7 +50,7 @@ if (!apiKey) {
   process.exit(0);
 }
 
-const model = process.env.EVAL_MODEL ?? "anthropic/claude-sonnet-5";
+const model = process.env.EVAL_MODEL ?? "anthropic/claude-sonnet-5.5";
 const client = new OpenAI({
   apiKey,
   baseURL: "https://openrouter.ai/api/v1",

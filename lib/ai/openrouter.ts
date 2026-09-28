@@ -18,13 +18,13 @@ import { resolveOpenRouterApiKey } from "@/lib/ai/keys";
 import type { ConversationMessage } from "./types";
 
 const DEFAULTS: Record<string, string> = {
-  planner: "anthropic/claude-sonnet-4.5",
+  planner: "anthropic/claude-sonnet-5.5",
   standup_insights: "anthropic/claude-haiku-4.5",
   // PDF/vision-capable — reads MOU/license documents natively. Sonnet was the
   // most complete at extracting itemized budget lines in head-to-head testing.
-  // Sonnet 5 (1M ctx, file+structured-output) supersedes 4.6 here — cheaper
-  // ($2/$10 vs $3/$15 per M) and stronger extraction.
-  doc_import: "anthropic/claude-sonnet-5",
+  // Sonnet 5.5 (1M ctx, file+structured-output) supersedes Sonnet 5 at the same
+  // $2/$10 per M.
+  doc_import: "anthropic/claude-sonnet-5.5",
   // Mistral's file parser performs the PDF OCR; this model faithfully cleans
   // and returns that text, so the premium document-import model is unnecessary.
   agreement_ocr: "openai/gpt-5-mini",
@@ -48,16 +48,16 @@ const DEFAULTS: Record<string, string> = {
   assistant_eval: "openai/gpt-5.4-mini",
   // Composing rights/partner emails — quality-sensitive writing, so a stronger
   // model than the assistant. Split out from `assistant` via the compose step.
-  email_draft: "anthropic/claude-sonnet-5",
+  email_draft: "anthropic/claude-sonnet-5.5",
   // Reads a printer's quotation/invoice PDF (or a screenshot image) and extracts
   // quantity, unit price, totals, and specs. Vision-capable, PDF-native.
-  print_quote_extract: "anthropic/claude-sonnet-5",
+  print_quote_extract: "anthropic/claude-sonnet-5.5",
   // Extracts printer quote tiers from plain email TEXT (no vision needed) — cheap
   // model, cross-checked against the regex parser before anything is suggested.
   print_text_quote_extract: "anthropic/claude-haiku-4.5",
   // Private, read-only project agreement Q&A. Long context and precise
   // structured citations matter more than tool use here.
-  agreement_qa: "anthropic/claude-sonnet-5",
+  agreement_qa: "anthropic/claude-sonnet-5.5",
 };
 
 const DEFAULT_FALLBACKS: Record<string, string[]> = {
@@ -141,15 +141,32 @@ async function createCompletion(
   body: Record<string, unknown>,
   opts?: { timeoutMs?: number }
 ): Promise<OpenAI.Chat.Completions.ChatCompletion> {
-  return callWithRetry(
-    label,
-    async (signal) =>
-      (await client()).chat.completions.create(
-        body as unknown as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming,
-        { signal }
-      ),
-    { timeoutMs: opts?.timeoutMs }
-  ).catch(translateProviderLimit);
+  const send = (payload: Record<string, unknown>) =>
+    callWithRetry(
+      label,
+      async (signal) =>
+        (await client()).chat.completions.create(
+          payload as unknown as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming,
+          { signal }
+        ),
+      { timeoutMs: opts?.timeoutMs }
+    );
+  try {
+    return await send(body);
+  } catch (err) {
+    // Model metadata can list `temperature` because one provider accepts it
+    // while every provider our privacy settings allow rejects it (e.g.
+    // anthropic/claude-sonnet-5.5, where only non-ZDR Azure does). OpenRouter
+    // then answers 404 "No endpoints found", so drop the setting and try once.
+    if (statusOf(err) === 404 && body.temperature != null) {
+      const { temperature, ...rest } = body;
+      console.warn(
+        `${label}: no allowed provider accepts temperature ${temperature}; retrying without it.`
+      );
+      return send(rest).catch(translateProviderLimit);
+    }
+    return translateProviderLimit(err);
+  }
 }
 
 async function createEmbeddings(

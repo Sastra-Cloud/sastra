@@ -2,7 +2,7 @@
  * Curated OpenRouter model catalog + per-task metadata for the admin Settings ▸ AI
  * picker. Pure data (no server imports) so the client component can render it.
  *
- * Prices are indicative USD per 1M tokens (input/output) as of July 2026 and are
+ * Prices are indicative USD per 1M tokens (input/output) as of September 2026 and are
  * for guidance only — actual spend is billed by OpenRouter's returned `usage.cost`.
  * Any OpenRouter `provider/model` slug also works via the "Custom…" option, so this
  * list does not need to be exhaustive.
@@ -90,13 +90,22 @@ export const MODEL_CATALOG: CatalogModel[] = [
     notes: "Long-context document reasoning; agreement Q&A fallback.",
   },
   {
+    slug: "anthropic/claude-sonnet-5.5",
+    label: "Claude Sonnet 5.5",
+    tier: "premium",
+    inPrice: 2.0,
+    outPrice: 10.0,
+    vision: true,
+    notes: "Best writing/tone + instruction-following. 1M context.",
+  },
+  {
     slug: "anthropic/claude-sonnet-5",
     label: "Claude Sonnet 5",
     tier: "premium",
     inPrice: 2.0,
     outPrice: 10.0,
     vision: true,
-    notes: "Best writing/tone + instruction-following. 1M context.",
+    notes: "Previous Sonnet; fallback for email drafting.",
   },
   {
     slug: "google/gemini-3.1-pro",
@@ -108,29 +117,11 @@ export const MODEL_CATALOG: CatalogModel[] = [
     notes: "Flagship reasoning; strong vision.",
   },
   {
-    slug: "anthropic/claude-sonnet-4.6",
-    label: "Claude Sonnet 4.6",
+    slug: "anthropic/claude-opus-5.5",
+    label: "Claude Opus 5.5",
     tier: "premium",
-    inPrice: 3.0,
-    outPrice: 15.0,
-    vision: true,
-    notes: "Production workhorse; near-Opus quality.",
-  },
-  {
-    slug: "anthropic/claude-sonnet-4.5",
-    label: "Claude Sonnet 4.5",
-    tier: "premium",
-    inPrice: 3.0,
-    outPrice: 15.0,
-    vision: true,
-    notes: "Reliable structured output; used by the planner.",
-  },
-  {
-    slug: "anthropic/claude-opus-4.8",
-    label: "Claude Opus 4.8",
-    tier: "premium",
-    inPrice: 5.0,
-    outPrice: 25.0,
+    inPrice: 4.0,
+    outPrice: 20.0,
     vision: true,
     notes: "Top intelligence; use only where depth is worth it.",
   },
@@ -241,21 +232,21 @@ export const TASK_META: Record<string, TaskMeta> = {
     label: "Email drafting",
     description:
       "Composes rights, partner, print, and finance emails for your approval. Writing quality and tone matter here, so a stronger model is usually worth it.",
-    recommended: "anthropic/claude-sonnet-5",
+    recommended: "anthropic/claude-sonnet-5.5",
     order: 8,
   },
   planner: {
     label: "Project planner",
     description:
       "Runs the planning interview and generates the structured project/task plan. Needs reliable structured output.",
-    recommended: "anthropic/claude-sonnet-4.5",
+    recommended: "anthropic/claude-sonnet-5.5",
     order: 8,
   },
   doc_import: {
     label: "Document import",
     description:
       "Reads MoU/licence PDFs and extracts structured budget/rights data. Requires a vision-capable model.",
-    recommended: "anthropic/claude-sonnet-5",
+    recommended: "anthropic/claude-sonnet-5.5",
     order: 9,
     requires: "vision",
   },
@@ -270,7 +261,7 @@ export const TASK_META: Record<string, TaskMeta> = {
     label: "Agreement Q&A",
     description:
       "Answers read-only questions from selected project MoU and License text with server-validated clause citations. Long context and precise structured output matter.",
-    recommended: "anthropic/claude-sonnet-5",
+    recommended: "anthropic/claude-sonnet-5.5",
     order: 10,
   },
   standup_insights: {
@@ -284,7 +275,7 @@ export const TASK_META: Record<string, TaskMeta> = {
     label: "Print quote extraction",
     description:
       "Reads printer quote/invoice PDFs or images and extracts quantity, pricing, and specs. Requires a vision-capable model.",
-    recommended: "anthropic/claude-sonnet-5",
+    recommended: "anthropic/claude-sonnet-5.5",
     order: 10,
     requires: "vision",
   },
