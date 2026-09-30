@@ -165,6 +165,12 @@
   h1, h2, h3, h4 {
     @apply text-balance;
   }
+  /* Reserve inactive budget panels in the shared grid. Keep this in base so
+     it overrides Preflight's important hidden rule within the same layer.
+     Base UI keeps inactive panels inert; data-hidden also hides them visually. */
+  [data-budget-section][hidden] {
+    display: block !important;
+  }
 }
 
 @media (max-width: 767px) and (pointer: coarse) {

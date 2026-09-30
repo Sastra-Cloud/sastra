@@ -10,7 +10,10 @@ summary: "Review funding totals, then switch between Quotation, Approvals, Cash 
 Open **Publishing ▸ Budget**. The current scope's quotation, committed funding,
 and funding gap stay visible above the content tabs. **Quotation** is selected
 first. Choose **Approvals**, **Cash flow**, **Payments**, or **Notes** to show
-that section directly. Switching tabs retains unsaved fields. Bookmarks and
+that section directly. Tabs use a short fade and a sliding indicator. The content
+area keeps the height of the tallest tab so the page stays steady while switching;
+only the selected tab is interactive. Reduced-motion preferences skip the animation.
+Switching tabs retains unsaved fields. Bookmarks and
 exception links select the matching tab, including links to a payment or field.
 Errors reveal their section. **Show steps** beside the Budget heading explains
 the flow. Main, active reprint, and all-history scopes keep their existing records;

@@ -1614,6 +1614,7 @@
   "components/budget/budget-section.tsx": [
     "react",
     "react-dom",
+    "motion/react",
     "@/components/ui/tabs"
   ],
   "components/budget/cashflow-card.tsx": [
