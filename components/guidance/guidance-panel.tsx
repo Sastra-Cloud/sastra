@@ -1,3 +1,4 @@
+import Link from "next/link";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -33,6 +34,7 @@ export function GuidancePanel({
   title,
   action,
   className,
+  compact = false,
 }: {
   guidanceKey: string;
   slug: string;
@@ -41,6 +43,7 @@ export function GuidancePanel({
   title?: React.ReactNode;
   action?: React.ReactNode;
   className?: string;
+  compact?: boolean;
 }) {
   const doc = getHelpDoc(slug);
   if (!doc) return null;
@@ -51,19 +54,16 @@ export function GuidancePanel({
     <CoachCard
       guidanceKey={guidanceKey}
       title={title ?? doc.title}
-      helpSlug={slug}
-      action={action}
       className={className}
+      compact={compact}
     >
-      <p>{doc.summary}</p>
-      {heading ? <details>
-      <summary className="cursor-pointer font-medium text-foreground">Show steps</summary>
-      <div className={COACH_PROSE}>
-        <ReactMarkdown remarkPlugins={[remarkGfm]} components={COACH_MARKDOWN}>
-          {body}
-        </ReactMarkdown>
-      </div>
-      </details> : null}
+      <details>
+        <summary className="inline-flex min-h-11 cursor-pointer items-center font-medium text-foreground">{heading ? "Show steps" : "Show guidance"}</summary>
+        <div className={COACH_PROSE}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={COACH_MARKDOWN}>{body}</ReactMarkdown>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-3">{action}<Link href={`/help#${slug}`} className="inline-flex min-h-11 items-center font-medium text-primary hover:underline">Learn more</Link></div>
+      </details>
     </CoachCard>
   );
 }

@@ -5,11 +5,9 @@ import {
   ArrowRight,
   Banknote,
   CalendarClock,
-  CalendarPlus,
   Download,
   FolderKanban,
   ShieldAlert,
-  Sparkles,
   TrendingUp,
   UserRound,
   Users,
@@ -34,7 +32,9 @@ import { getCronRuns } from "@/lib/cron/runs";
 import { getAgendaItems, agendaToday } from "@/lib/agenda/queries";
 import { bucketAgenda } from "@/lib/agenda/bucket";
 import { getProjectForecasts } from "@/lib/forecast/queries";
-import { listManagerUpdateRecommendations } from "@/lib/projects/status-queries";
+import { getManagerAttention } from "@/lib/dashboard/attention";
+import { ManagerReviewQueue } from "@/components/dashboard/manager-review-queue";
+import { SectionDisclosure } from "@/components/section-disclosure";
 import { daysUntil, dueLabel, timeAgo } from "@/lib/format";
 
 const CRON_LABEL: Record<string, string> = {
@@ -89,7 +89,7 @@ function todayYmd() {
 
 const RISK_RANK: Record<string, number> = { low: 0, medium: 1, high: 2 };
 
-export const metadata = { title: "Overview" };
+export const metadata = { title: "Team planning" };
 export const dynamic = "force-dynamic";
 
 export default async function OverviewPage() {
@@ -109,7 +109,6 @@ export default async function OverviewPage() {
     cronRuns,
     agendaItems,
     milestones,
-    updateRecommendations,
   ] = await Promise.all([
     listProjects(),
     listProjectBudgetTotals(),
@@ -127,8 +126,9 @@ export default async function OverviewPage() {
       horizonDays: 21,
     }),
     listProjectMilestones(),
-    listManagerUpdateRecommendations(8),
   ]);
+
+  const reviewItems = await getManagerAttention(projects, teamLoad.length);
 
   const milestonesByProject = new Map<string, { date: string; label: string }[]>();
   for (const m of milestones) {
@@ -205,11 +205,6 @@ export default async function OverviewPage() {
       p.status !== "cancelled"
     );
   }).length;
-  const missingDueDateCount = projects.filter(
-    (p) =>
-      !p.dueDate &&
-      (p.status === "planning" || p.status === "active" || p.status === "on_hold")
-  ).length;
   const totalToRaise = rows.reduce((s, r) => s + r.toRaise, 0);
   const criticalBlockers = rows.reduce((s, r) => s + r.critical, 0);
   const currency = rows.find((r) => r.toRaise > 0)?.currency ?? "USD";
@@ -263,7 +258,7 @@ export default async function OverviewPage() {
       <Reveal className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-heading text-3xl font-semibold tracking-tight text-balance">
-            Overview
+            Team planning
           </h1>
           <p className="text-pretty text-muted-foreground">
             See every project in one place — health, funding, blockers, and deadlines.
@@ -279,6 +274,8 @@ export default async function OverviewPage() {
         </a>
       </Reveal>
 
+      <ManagerReviewQueue items={reviewItems} />
+
       {projects.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-sm text-muted-foreground">
@@ -287,6 +284,91 @@ export default async function OverviewPage() {
         </Card>
       ) : (
         <>
+          {hasAttention ? (
+            <section className="space-y-3">
+              <h2 className="text-lg font-semibold">Attention needed</h2>
+              <StaggerGroup className="grid gap-4 md:grid-cols-3" inView>
+                {criticalList.length > 0 ? (
+                <StaggerItem className="h-full">
+                <AttentionCard
+                  icon={ShieldAlert}
+                  title="Critical blockers"
+                  count={criticalList.length}
+                  empty="None"
+                >
+                  {criticalList.map((b) => (
+                    <li key={b.key} className="text-sm">
+                      <Link href={`/projects/${b.slug}`} className="hover:underline">
+                        <span className="font-medium">{b.project}</span>
+                      </Link>{" "}
+                      <span className="text-muted-foreground">— {b.title}</span>
+                    </li>
+                  ))}
+                </AttentionCard>
+                </StaggerItem>
+                ) : null}
+
+                {overdueList.length > 0 ? (
+                <StaggerItem className="h-full">
+                <AttentionCard
+                  icon={CalendarClock}
+                  title="Overdue projects"
+                  count={overdueList.length}
+                  empty="None"
+                >
+                  {overdueList.map((p) => (
+                    <li key={p.id} className="flex items-center justify-between gap-2 text-sm">
+                      <Link href={`/projects/${p.slug}`} className="truncate font-medium hover:underline">
+                        {p.title}
+                      </Link>
+                      <span className="shrink-0 text-xs font-medium text-destructive">
+                        {dueLabel(p.dueDate).text}
+                      </span>
+                    </li>
+                  ))}
+                </AttentionCard>
+                </StaggerItem>
+                ) : null}
+
+                {atRisk.length > 0 ? (
+                <StaggerItem className="h-full">
+                <AttentionCard
+                  icon={UserRound}
+                  title="People at risk"
+                  count={atRisk.length}
+                  empty="Everyone's clear"
+                >
+                  {atRisk.map((p) => (
+                    <li key={p.userName} className="text-sm">
+                      <span className="font-medium">{p.userName}</span>
+                      <span
+                        className={
+                          p.stuckRisk === "high"
+                            ? "ml-1.5 text-xs font-medium text-destructive"
+                            : "ml-1.5 text-xs font-medium text-warning"
+                        }
+                      >
+                        {p.stuckRisk}
+                      </span>
+                      {p.impediments[0] ? (
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {p.impediments[0]}
+                        </span>
+                      ) : null}
+                    </li>
+                  ))}
+                </AttentionCard>
+                </StaggerItem>
+                ) : null}
+              </StaggerGroup>
+            </section>
+          ) : null}
+
+          <Reveal inView>
+            <PortfolioTable rows={rows} />
+          </Reveal>
+
+          <SectionDisclosure id="portfolio-summary" title="Portfolio summary" description="Health, funding totals, and project counts">
           <div className="grid gap-4 lg:grid-cols-3">
             <Reveal>
               <Card>
@@ -353,191 +435,7 @@ export default async function OverviewPage() {
             </StaggerGroup>
           </div>
 
-          {hasAttention ? (
-            <section className="space-y-3">
-              <h2 className="font-heading text-lg font-semibold">Attention needed</h2>
-              <StaggerGroup className="grid gap-4 md:grid-cols-3" inView>
-                <StaggerItem className="h-full">
-                <AttentionCard
-                  icon={ShieldAlert}
-                  title="Critical blockers"
-                  count={criticalList.length}
-                  empty="None"
-                >
-                  {criticalList.slice(0, 6).map((b) => (
-                    <li key={b.key} className="text-sm">
-                      <Link href={`/projects/${b.slug}`} className="hover:underline">
-                        <span className="font-medium">{b.project}</span>
-                      </Link>{" "}
-                      <span className="text-muted-foreground">— {b.title}</span>
-                    </li>
-                  ))}
-                </AttentionCard>
-                </StaggerItem>
-
-                <StaggerItem className="h-full">
-                <AttentionCard
-                  icon={CalendarClock}
-                  title="Overdue projects"
-                  count={overdueList.length}
-                  empty="None"
-                >
-                  {overdueList.slice(0, 6).map((p) => (
-                    <li key={p.id} className="flex items-center justify-between gap-2 text-sm">
-                      <Link href={`/projects/${p.slug}`} className="truncate font-medium hover:underline">
-                        {p.title}
-                      </Link>
-                      <span className="shrink-0 text-xs font-medium text-destructive">
-                        {dueLabel(p.dueDate).text}
-                      </span>
-                    </li>
-                  ))}
-                </AttentionCard>
-                </StaggerItem>
-
-                <StaggerItem className="h-full">
-                <AttentionCard
-                  icon={UserRound}
-                  title="People at risk"
-                  count={atRisk.length}
-                  empty="Everyone's clear"
-                >
-                  {atRisk.slice(0, 6).map((p) => (
-                    <li key={p.userName} className="text-sm">
-                      <span className="font-medium">{p.userName}</span>
-                      <span
-                        className={
-                          p.stuckRisk === "high"
-                            ? "ml-1.5 text-xs font-medium text-destructive"
-                            : "ml-1.5 text-xs font-medium text-warning"
-                        }
-                      >
-                        {p.stuckRisk}
-                      </span>
-                      {p.impediments[0] ? (
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {p.impediments[0]}
-                        </span>
-                      ) : null}
-                    </li>
-                  ))}
-                </AttentionCard>
-                </StaggerItem>
-              </StaggerGroup>
-            </section>
-          ) : null}
-
-          {updateRecommendations.length > 0 ? (
-            <Reveal inView className="block">
-              <section className="space-y-3" aria-labelledby="update-recommendations-heading">
-                <div className="flex flex-wrap items-end justify-between gap-2">
-                  <div>
-                    <h2
-                      id="update-recommendations-heading"
-                      className="font-heading text-lg font-semibold"
-                    >
-                      Follow up from project updates
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                      AI found work, decisions, or ownership that may not be reflected
-                      in the project plan yet.
-                    </p>
-                  </div>
-                  <span className="text-xs tabular-nums text-muted-foreground">
-                    {updateRecommendations.length} awaiting review
-                  </span>
-                </div>
-                <Card>
-                  <CardContent className="p-0">
-                    <ul className="divide-y">
-                      {updateRecommendations.map((item) => (
-                        <li
-                          key={item.updateId}
-                          className="grid gap-2 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
-                        >
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <Sparkles className="size-4 text-info" />
-                              <Link
-                                href={`/projects/${item.projectSlug}`}
-                                className="font-medium hover:underline"
-                              >
-                                {item.projectTitle}
-                              </Link>
-                              <span
-                                className={
-                                  item.analysis.priority === "high"
-                                    ? "text-xs font-medium text-destructive"
-                                    : item.analysis.priority === "medium"
-                                      ? "text-xs font-medium text-warning"
-                                      : "text-xs text-muted-foreground"
-                                }
-                              >
-                                {item.analysis.priority} priority
-                              </span>
-                            </div>
-                            <p className="mt-1 text-sm text-pretty">
-                              {item.analysis.recommendations[0]?.title ??
-                                item.analysis.summary}
-                            </p>
-                            {item.analysis.recommendations[0]?.reason ? (
-                              <p className="mt-0.5 text-xs text-muted-foreground text-pretty">
-                                {item.analysis.recommendations[0].reason}
-                              </p>
-                            ) : null}
-                            {item.analysis.recommendations.length > 1 ? (
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                +{item.analysis.recommendations.length - 1} more on the
-                                project
-                              </p>
-                            ) : null}
-                          </div>
-                          <div className="flex items-center gap-3 sm:justify-end">
-                            <span className="text-xs text-muted-foreground">
-                              {timeAgo(item.createdAt)}
-                            </span>
-                            <Link
-                              href={`/projects/${item.projectSlug}`}
-                              className="text-sm font-medium text-primary hover:underline"
-                            >
-                              Review project
-                            </Link>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              </section>
-            </Reveal>
-          ) : null}
-
-          {missingDueDateCount > 0 ? (
-            <Reveal inView className="block">
-              <Link
-                href="/overview/due-dates"
-                className="group flex items-center gap-3 rounded-lg border border-dashed bg-card px-4 py-2.5 text-sm transition-colors hover:border-primary/40 hover:bg-muted/40"
-              >
-                <CalendarPlus className="size-4 shrink-0 text-primary" />
-                <span className="min-w-0 flex-1 text-pretty">
-                  <span className="font-medium tabular-nums">
-                    {missingDueDateCount}
-                  </span>{" "}
-                  active {missingDueDateCount === 1 ? "project has" : "projects have"}{" "}
-                  no due date — they&apos;re missing from the timeline and
-                  forecast.
-                </span>
-                <span className="inline-flex shrink-0 items-center gap-1 font-medium text-primary">
-                  Add dates
-                  <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-                </span>
-              </Link>
-            </Reveal>
-          ) : null}
-
-          <Reveal inView>
-            <PortfolioTable rows={rows} />
-          </Reveal>
+          </SectionDisclosure>
 
           {comingDue.length > 0 ? (
             <Reveal inView className="block">
@@ -567,6 +465,11 @@ export default async function OverviewPage() {
             </Reveal>
           ) : null}
 
+          <div className="flex flex-wrap gap-3 text-sm">
+            <Link href="/schedule" className="inline-flex min-h-11 items-center gap-1 text-primary hover:underline">Open schedule <ArrowRight className="size-3.5" /></Link>
+            <Link href="/workload" className="inline-flex min-h-11 items-center gap-1 text-primary hover:underline">Review team workload <ArrowRight className="size-3.5" /></Link>
+          </div>
+          <SectionDisclosure id="planning-timeline" title="Timeline preview">
           {rows.some((r) => r.dueDate || projects.find((p) => p.id === r.id)?.startDate) ? (
             <Reveal inView className="block">
             <Card>
@@ -596,6 +499,9 @@ export default async function OverviewPage() {
             </Reveal>
           ) : null}
 
+          </SectionDisclosure>
+
+          <SectionDisclosure id="trends" title="Trends and capacity">
           <Reveal inView className="grid gap-4 lg:grid-cols-2">
             <Card>
               <CardContent className="space-y-2 py-4">
@@ -620,6 +526,9 @@ export default async function OverviewPage() {
             </Card>
           </Reveal>
 
+          </SectionDisclosure>
+
+          <SectionDisclosure id="activity" title="Recent activity" summary={recentActivity.length}>
           {recentActivity.length > 0 ? (
             <Reveal inView className="block">
             <Card>
@@ -654,6 +563,9 @@ export default async function OverviewPage() {
             </Reveal>
           ) : null}
 
+          </SectionDisclosure>
+
+          <SectionDisclosure id="automations" title="Automations" summary={cronRuns.filter(c => !c.ok).length ? `${cronRuns.filter(c => !c.ok).length} need attention` : undefined}>
           {cronRuns.length > 0 ? (
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
               <span className="font-medium">Automations:</span>
@@ -680,6 +592,7 @@ export default async function OverviewPage() {
               <RefreshAllHealthButton />
             </p>
           ) : null}
+          </SectionDisclosure>
         </>
       )}
     </div>

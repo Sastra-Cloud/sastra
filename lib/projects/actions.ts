@@ -192,7 +192,7 @@ export async function createProject(
   });
 
   revalidatePath("/projects");
-  redirect(`/projects/${slug}`);
+  redirect(`/projects/${slug}?created=1`);
 }
 
 const updateSchema = z.object({

@@ -1,5 +1,7 @@
 "use client";
 
+import { SectionDisclosure } from "@/components/section-disclosure";
+
 import { confirmDialog } from "@/lib/dialog-requests";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -1143,6 +1145,7 @@ export function PrintManager({
           label="Next payment"
           value={nextPayment ? money(nextPayment.amount, nextPayment.currency) : "None"}
           detail={nextPayment?.kind ?? "No unpaid print payment"}
+          href={nextPayment ? `#payment-${nextPayment.id}` : undefined}
         />
         <SummaryTile
           icon={<Download className="size-4" />}
@@ -1219,394 +1222,6 @@ export function PrintManager({
             ) : null}
           </CardContent>
         </Card>
-      ) : null}
-
-      {canEdit ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings2 className="size-4" />
-              Print settings
-            </CardTitle>
-            <CardDescription>
-              Defaults for page estimates, printer quote requests, and finance requests.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
-            <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
-              <Field
-                label="Source page count"
-                hint="Shared with Budget; used to estimate target-language text pages."
-              >
-                <Input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={settingsDraft.sourcePageCount}
-                  onChange={(e) =>
-                    setSettingsDraft({
-                      ...settingsDraft,
-                      sourcePageCount: e.target.value,
-                    })
-                  }
-                  className="tabular-nums"
-                />
-              </Field>
-              <Field
-                label="Language expansion factor"
-                help="How much longer the translated text runs than the source. For example, 1.3 means the translation takes about 30% more pages."
-                hint={`Live estimate: ${draftEstimate.toLocaleString()} target-language pages`}
-              >
-                <Input
-                  type="number"
-                  min="0.5"
-                  max="3"
-                  step="0.01"
-                  value={settingsDraft.languageExpansionFactor}
-                  onChange={(e) =>
-                    setSettingsDraft({
-                      ...settingsDraft,
-                      languageExpansionFactor: e.target.value,
-                    })
-                  }
-                  className="tabular-nums"
-                />
-              </Field>
-              <Field label="Default printer">
-                <select
-                  className={selectClass}
-                  value={settingsDraft.contactId}
-                  onChange={(e) =>
-                    setSettingsDraft({ ...settingsDraft, contactId: e.target.value })
-                  }
-                >
-                  <option value="">No default</option>
-                  {contacts.map((contact) => (
-                    <option key={contact.id} value={contact.id}>
-                      {contact.company || contact.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field
-                label={`Trim width (${settingsDraft.measurementUnit})`}
-                help={`Trim size is the finished page size after the paper is cut. This project uses ${settingsDraft.measurementUnit === "mm" ? "millimetres" : "inches"}.`}
-              >
-                <Input
-                  type="number"
-                  step="0.01"
-                  min={settingsDraft.measurementUnit === "mm" ? "25.4" : "1"}
-                  max={settingsDraft.measurementUnit === "mm" ? "508" : "20"}
-                  value={settingsDraft.trimWidth}
-                  onChange={(e) =>
-                    setSettingsDraft({ ...settingsDraft, trimWidth: e.target.value })
-                  }
-                />
-              </Field>
-              <Field
-                label={`Trim height (${settingsDraft.measurementUnit})`}
-                help={`The finished page height after cutting, in ${settingsDraft.measurementUnit === "mm" ? "millimetres" : "inches"}.`}
-              >
-                <Input
-                  type="number"
-                  step="0.01"
-                  min={settingsDraft.measurementUnit === "mm" ? "25.4" : "1"}
-                  max={settingsDraft.measurementUnit === "mm" ? "508" : "20"}
-                  value={settingsDraft.trimHeight}
-                  onChange={(e) =>
-                    setSettingsDraft({ ...settingsDraft, trimHeight: e.target.value })
-                  }
-                />
-              </Field>
-              <Field
-                label="Measurement unit"
-                help="Controls trim-size inputs and displays across this project, including print runs, quotes, and printer quote request drafts."
-              >
-                <select
-                  className={selectClass}
-                  value={settingsDraft.measurementUnit}
-                  onChange={(event) =>
-                    changeMeasurementUnit(measurementUnit(event.target.value))
-                  }
-                >
-                  <option value="in">Inches (in)</option>
-                  <option value="mm">Millimetres (mm)</option>
-                </select>
-              </Field>
-              <Field label="Finance recipient">
-                <Input
-                  type="email"
-                  value={settingsDraft.financialEmail}
-                  onChange={(e) =>
-                    setSettingsDraft({
-                      ...settingsDraft,
-                      financialEmail: e.target.value,
-                    })
-                  }
-                />
-              </Field>
-              <div className="md:col-span-2 2xl:col-span-3">
-                <Field
-                  label="Default CC recipients"
-                  hint="Separate multiple emails with commas or new lines. These are added to printer quote requests and finance wire requests."
-                >
-                  <Textarea
-                    rows={2}
-                    value={settingsDraft.ccEmails}
-                    onChange={(e) =>
-                      setSettingsDraft({ ...settingsDraft, ccEmails: e.target.value })
-                    }
-                  />
-                </Field>
-              </div>
-              <div className="md:col-span-2 2xl:col-span-3">
-                <Button onClick={saveSettings} disabled={pending}>
-                  Save settings
-                </Button>
-              </div>
-            </div>
-
-            <div className="rounded-lg border bg-muted/20 p-3">
-              <p className="mb-2 text-sm font-medium">Add printer contact</p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Input
-                  placeholder="Name"
-                  value={contactDraft.name}
-                  onChange={(e) =>
-                    setContactDraft({ ...contactDraft, name: e.target.value })
-                  }
-                />
-                <Input
-                  placeholder="Company"
-                  value={contactDraft.company}
-                  onChange={(e) =>
-                    setContactDraft({ ...contactDraft, company: e.target.value })
-                  }
-                />
-                <Input
-                  placeholder="Email"
-                  value={contactDraft.email}
-                  onChange={(e) =>
-                    setContactDraft({ ...contactDraft, email: e.target.value })
-                  }
-                />
-                <Input
-                  placeholder="Domain"
-                  value={contactDraft.domain}
-                  onChange={(e) =>
-                    setContactDraft({ ...contactDraft, domain: e.target.value })
-                  }
-                />
-                <Button
-                  variant="outline"
-                  className="sm:col-span-2"
-                  onClick={addContact}
-                  disabled={pending}
-                >
-                  <Plus className="size-4" />
-                  Add contact
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {canEdit ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Set up print run</CardTitle>
-            <CardDescription>
-              Save the internal run first. This does not email the printer.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-[1fr_12rem_1fr_auto]">
-            <Field label="Run title">
-              <Input
-                value={runDraft.title}
-                onChange={(e) => setRunDraft({ ...runDraft, title: e.target.value })}
-              />
-            </Field>
-            <Field label="Printer">
-              <select
-                className={selectClass}
-                value={runDraft.contactId}
-                onChange={(e) => setRunDraft({ ...runDraft, contactId: e.target.value })}
-              >
-                <option value="">No printer</option>
-                {contacts.map((contact) => (
-                  <option key={contact.id} value={contact.id}>
-                    {contact.company || contact.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field
-              label="Quote request quantities"
-              hint="Copy counts to ask the printer to price when you draft the printer quote request."
-            >
-              <Input
-                value={runDraft.quantities}
-                placeholder="1000, 2000, 3000"
-                onChange={(e) =>
-                  setRunDraft({ ...runDraft, quantities: e.target.value })
-                }
-              />
-            </Field>
-            <div className="flex items-end">
-              <Button onClick={addRun} disabled={pending || !runDraft.title.trim()}>
-                <Plus className="size-4" />
-                Create run
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {canEdit && runs.length > 0 ? (
-        <Card>
-          <CardHeader className="has-data-[slot=card-action]:grid-cols-1 sm:has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto]">
-            <CardTitle className="flex items-center gap-2">
-              <RotateCcw className="size-4" />
-              Reprints
-            </CardTitle>
-            <CardDescription>
-              Copy specs from a previous run, then track reprint-only budget,
-              sponsor funding, tasks, quotes, and payments.
-            </CardDescription>
-            <CardAction className="col-start-1 row-start-auto row-span-1 mt-2 justify-self-start sm:col-start-2 sm:row-start-1 sm:row-span-2 sm:mt-0 sm:justify-self-end">
-              <Button
-                type="button"
-                variant={reprintOpen ? "ghost" : "outline"}
-                size="sm"
-                className="min-h-11"
-                aria-expanded={reprintOpen}
-                onClick={() => setReprintOpen((open) => !open)}
-              >
-                <RotateCcw className="size-4" />
-                {reprintOpen ? "Hide setup" : "Set up reprint"}
-              </Button>
-            </CardAction>
-          </CardHeader>
-          {reprintOpen ? (
-            <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-12">
-              <div className="xl:col-span-3">
-                <Field label="Copy specs from">
-                  <select
-                    className={selectClass}
-                    value={reprintDraft.sourceRunId}
-                    onChange={(e) =>
-                      setReprintDraft({
-                        ...reprintDraft,
-                        sourceRunId: e.target.value,
-                      })
-                    }
-                  >
-                    {runs.map((run) => (
-                      <option key={run.id} value={run.id}>
-                        {run.title}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-              </div>
-              <div className="xl:col-span-4">
-                <Field label="Reprint title">
-                  <Input
-                    value={reprintDraft.title}
-                    onChange={(e) =>
-                      setReprintDraft({ ...reprintDraft, title: e.target.value })
-                    }
-                  />
-                </Field>
-              </div>
-              <div className="xl:col-span-2">
-                <Field label="Printing #">
-                  <Input
-                    type="number"
-                    min={2}
-                    value={reprintDraft.printNumber}
-                    onChange={(e) =>
-                      setReprintDraft({
-                        ...reprintDraft,
-                        printNumber: e.target.value,
-                      })
-                    }
-                  />
-                </Field>
-              </div>
-              <div className="xl:col-span-3">
-                <Field label="Due date">
-                  <Input
-                    type="date"
-                    value={reprintDraft.dueDate}
-                    onChange={(e) =>
-                      setReprintDraft({ ...reprintDraft, dueDate: e.target.value })
-                    }
-                  />
-                </Field>
-              </div>
-              <div className="xl:col-span-3">
-                <Field label="Funding goal">
-                  <Input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    placeholder="Optional"
-                    value={reprintDraft.fundingGoal}
-                    onChange={(e) =>
-                      setReprintDraft({
-                        ...reprintDraft,
-                        fundingGoal: e.target.value,
-                      })
-                    }
-                  />
-                </Field>
-              </div>
-              <div className="xl:col-span-4">
-                <Field label="Quantity tiers">
-                  <Input
-                    value={reprintDraft.quantities}
-                    onChange={(e) =>
-                      setReprintDraft({
-                        ...reprintDraft,
-                        quantities: e.target.value,
-                      })
-                    }
-                  />
-                </Field>
-              </div>
-              <div className="md:col-span-2 xl:col-span-3">
-                <Field label="Reason / sponsor notes">
-                  <Input
-                    placeholder="e.g. sponsor requested another 2,000 copies"
-                    value={reprintDraft.reason}
-                    onChange={(e) =>
-                      setReprintDraft({
-                        ...reprintDraft,
-                        reason: e.target.value,
-                      })
-                    }
-                  />
-                </Field>
-              </div>
-              <div className="flex items-end md:col-span-2 xl:col-span-2">
-                <Button
-                  className="w-full xl:w-auto"
-                  onClick={createReprint}
-                  disabled={pending || !reprintDraft.title.trim()}
-                >
-                  <RotateCcw className="size-4" />
-                  Start reprint
-                </Button>
-              </div>
-            </CardContent>
-          ) : null}
-        </Card>
-      ) : null}
-
-      {emailDelivery ? (
-        <OutgoingEmailStatus delivery={emailDelivery} />
       ) : null}
 
       {compose ? (
@@ -1808,7 +1423,7 @@ export function PrintManager({
                   <h3 className="font-medium">No print run yet</h3>
                   <p className="text-pretty text-sm text-muted-foreground">
                     {canEdit
-                      ? "A print run is one order to print copies of this book. Use “Set up print run” above — give it a title, choose the printer, and list the copy amounts you want prices for. Saving it does not email anyone."
+                      ? "A print run is one order to print copies of this book. Use “Set up print run” below — give it a title, choose the printer, and list the copy amounts you want prices for. Saving it does not email anyone."
                       : "A manager hasn’t set up a print run for this book yet."}
                   </p>
                 </div>
@@ -1835,7 +1450,7 @@ export function PrintManager({
                 ].join(":")}
                 run={run}
                 measurementUnit={preferredMeasurementUnit}
-                isHistorical={run.id !== latestRun?.id}
+                isHistorical={run.id !== latestRun?.id && ["completed", "cancelled"].includes(run.status)}
                 projectSlug={projectSlug}
                 finance={financeByRun.get(run.id) ?? null}
                 canEdit={canEdit}
@@ -2181,6 +1796,394 @@ export function PrintManager({
           {canEdit ? <PrintCorrespondenceCard threads={threads} /> : null}
         </aside>
       </div>
+      {canEdit ? (
+        <SectionDisclosure id="print-setup" title="Set up print run" description="Save a run before requesting a quote" defaultOpen={runs.length === 0}>
+          <CardHeader>
+            <CardTitle>Set up print run</CardTitle>
+            <CardDescription>
+              Save the internal run first. This does not email the printer.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-[1fr_12rem_1fr_auto]">
+            <Field label="Run title">
+              <Input
+                value={runDraft.title}
+                onChange={(e) => setRunDraft({ ...runDraft, title: e.target.value })}
+              />
+            </Field>
+            <Field label="Printer">
+              <select
+                className={selectClass}
+                value={runDraft.contactId}
+                onChange={(e) => setRunDraft({ ...runDraft, contactId: e.target.value })}
+              >
+                <option value="">No printer</option>
+                {contacts.map((contact) => (
+                  <option key={contact.id} value={contact.id}>
+                    {contact.company || contact.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field
+              label="Quote request quantities"
+              hint="Copy counts to ask the printer to price when you draft the printer quote request."
+            >
+              <Input
+                value={runDraft.quantities}
+                placeholder="1000, 2000, 3000"
+                onChange={(e) =>
+                  setRunDraft({ ...runDraft, quantities: e.target.value })
+                }
+              />
+            </Field>
+            <div className="flex items-end">
+              <Button onClick={addRun} disabled={pending || !runDraft.title.trim()}>
+                <Plus className="size-4" />
+                Create run
+              </Button>
+            </div>
+          </CardContent>
+        </SectionDisclosure>
+      ) : null}
+
+      {canEdit && runs.length > 0 ? (
+        <Card>
+          <CardHeader className="has-data-[slot=card-action]:grid-cols-1 sm:has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto]">
+            <CardTitle className="flex items-center gap-2">
+              <RotateCcw className="size-4" />
+              Reprints
+            </CardTitle>
+            <CardDescription>
+              Copy specs from a previous run, then track reprint-only budget,
+              sponsor funding, tasks, quotes, and payments.
+            </CardDescription>
+            <CardAction className="col-start-1 row-start-auto row-span-1 mt-2 justify-self-start sm:col-start-2 sm:row-start-1 sm:row-span-2 sm:mt-0 sm:justify-self-end">
+              <Button
+                type="button"
+                variant={reprintOpen ? "ghost" : "outline"}
+                size="sm"
+                className="min-h-11"
+                aria-expanded={reprintOpen}
+                onClick={() => setReprintOpen((open) => !open)}
+              >
+                <RotateCcw className="size-4" />
+                {reprintOpen ? "Hide setup" : "Set up reprint"}
+              </Button>
+            </CardAction>
+          </CardHeader>
+          {reprintOpen ? (
+            <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-12">
+              <div className="xl:col-span-3">
+                <Field label="Copy specs from">
+                  <select
+                    className={selectClass}
+                    value={reprintDraft.sourceRunId}
+                    onChange={(e) =>
+                      setReprintDraft({
+                        ...reprintDraft,
+                        sourceRunId: e.target.value,
+                      })
+                    }
+                  >
+                    {runs.map((run) => (
+                      <option key={run.id} value={run.id}>
+                        {run.title}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+              <div className="xl:col-span-4">
+                <Field label="Reprint title">
+                  <Input
+                    value={reprintDraft.title}
+                    onChange={(e) =>
+                      setReprintDraft({ ...reprintDraft, title: e.target.value })
+                    }
+                  />
+                </Field>
+              </div>
+              <div className="xl:col-span-2">
+                <Field label="Printing #">
+                  <Input
+                    type="number"
+                    min={2}
+                    value={reprintDraft.printNumber}
+                    onChange={(e) =>
+                      setReprintDraft({
+                        ...reprintDraft,
+                        printNumber: e.target.value,
+                      })
+                    }
+                  />
+                </Field>
+              </div>
+              <div className="xl:col-span-3">
+                <Field label="Due date">
+                  <Input
+                    type="date"
+                    value={reprintDraft.dueDate}
+                    onChange={(e) =>
+                      setReprintDraft({ ...reprintDraft, dueDate: e.target.value })
+                    }
+                  />
+                </Field>
+              </div>
+              <div className="xl:col-span-3">
+                <Field label="Funding goal">
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    placeholder="Optional"
+                    value={reprintDraft.fundingGoal}
+                    onChange={(e) =>
+                      setReprintDraft({
+                        ...reprintDraft,
+                        fundingGoal: e.target.value,
+                      })
+                    }
+                  />
+                </Field>
+              </div>
+              <div className="xl:col-span-4">
+                <Field label="Quantity tiers">
+                  <Input
+                    value={reprintDraft.quantities}
+                    onChange={(e) =>
+                      setReprintDraft({
+                        ...reprintDraft,
+                        quantities: e.target.value,
+                      })
+                    }
+                  />
+                </Field>
+              </div>
+              <div className="md:col-span-2 xl:col-span-3">
+                <Field label="Reason / sponsor notes">
+                  <Input
+                    placeholder="e.g. sponsor requested another 2,000 copies"
+                    value={reprintDraft.reason}
+                    onChange={(e) =>
+                      setReprintDraft({
+                        ...reprintDraft,
+                        reason: e.target.value,
+                      })
+                    }
+                  />
+                </Field>
+              </div>
+              <div className="flex items-end md:col-span-2 xl:col-span-2">
+                <Button
+                  className="w-full xl:w-auto"
+                  onClick={createReprint}
+                  disabled={pending || !reprintDraft.title.trim()}
+                >
+                  <RotateCcw className="size-4" />
+                  Start reprint
+                </Button>
+              </div>
+            </CardContent>
+          ) : null}
+        </Card>
+      ) : null}
+
+      {emailDelivery ? (
+        <OutgoingEmailStatus delivery={emailDelivery} />
+      ) : null}
+
+      {canEdit ? (
+        <SectionDisclosure id="print-settings" title="Print defaults and printer contacts" description="Page estimate, trim size, finance recipients, and contacts">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings2 className="size-4" />
+              Print settings
+            </CardTitle>
+            <CardDescription>
+              Defaults for page estimates, printer quote requests, and finance requests.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+            <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+              <Field
+                label="Source page count"
+                hint="Shared with Budget; used to estimate target-language text pages."
+              >
+                <Input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={settingsDraft.sourcePageCount}
+                  onChange={(e) =>
+                    setSettingsDraft({
+                      ...settingsDraft,
+                      sourcePageCount: e.target.value,
+                    })
+                  }
+                  className="tabular-nums"
+                />
+              </Field>
+              <Field
+                label="Language expansion factor"
+                help="How much longer the translated text runs than the source. For example, 1.3 means the translation takes about 30% more pages."
+                hint={`Live estimate: ${draftEstimate.toLocaleString()} target-language pages`}
+              >
+                <Input
+                  type="number"
+                  min="0.5"
+                  max="3"
+                  step="0.01"
+                  value={settingsDraft.languageExpansionFactor}
+                  onChange={(e) =>
+                    setSettingsDraft({
+                      ...settingsDraft,
+                      languageExpansionFactor: e.target.value,
+                    })
+                  }
+                  className="tabular-nums"
+                />
+              </Field>
+              <Field label="Default printer">
+                <select
+                  className={selectClass}
+                  value={settingsDraft.contactId}
+                  onChange={(e) =>
+                    setSettingsDraft({ ...settingsDraft, contactId: e.target.value })
+                  }
+                >
+                  <option value="">No default</option>
+                  {contacts.map((contact) => (
+                    <option key={contact.id} value={contact.id}>
+                      {contact.company || contact.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field
+                label={`Trim width (${settingsDraft.measurementUnit})`}
+                help={`Trim size is the finished page size after the paper is cut. This project uses ${settingsDraft.measurementUnit === "mm" ? "millimetres" : "inches"}.`}
+              >
+                <Input
+                  type="number"
+                  step="0.01"
+                  min={settingsDraft.measurementUnit === "mm" ? "25.4" : "1"}
+                  max={settingsDraft.measurementUnit === "mm" ? "508" : "20"}
+                  value={settingsDraft.trimWidth}
+                  onChange={(e) =>
+                    setSettingsDraft({ ...settingsDraft, trimWidth: e.target.value })
+                  }
+                />
+              </Field>
+              <Field
+                label={`Trim height (${settingsDraft.measurementUnit})`}
+                help={`The finished page height after cutting, in ${settingsDraft.measurementUnit === "mm" ? "millimetres" : "inches"}.`}
+              >
+                <Input
+                  type="number"
+                  step="0.01"
+                  min={settingsDraft.measurementUnit === "mm" ? "25.4" : "1"}
+                  max={settingsDraft.measurementUnit === "mm" ? "508" : "20"}
+                  value={settingsDraft.trimHeight}
+                  onChange={(e) =>
+                    setSettingsDraft({ ...settingsDraft, trimHeight: e.target.value })
+                  }
+                />
+              </Field>
+              <Field
+                label="Measurement unit"
+                help="Controls trim-size inputs and displays across this project, including print runs, quotes, and printer quote request drafts."
+              >
+                <select
+                  className={selectClass}
+                  value={settingsDraft.measurementUnit}
+                  onChange={(event) =>
+                    changeMeasurementUnit(measurementUnit(event.target.value))
+                  }
+                >
+                  <option value="in">Inches (in)</option>
+                  <option value="mm">Millimetres (mm)</option>
+                </select>
+              </Field>
+              <Field label="Finance recipient">
+                <Input
+                  type="email"
+                  value={settingsDraft.financialEmail}
+                  onChange={(e) =>
+                    setSettingsDraft({
+                      ...settingsDraft,
+                      financialEmail: e.target.value,
+                    })
+                  }
+                />
+              </Field>
+              <div className="md:col-span-2 2xl:col-span-3">
+                <Field
+                  label="Default CC recipients"
+                  hint="Separate multiple emails with commas or new lines. These are added to printer quote requests and finance wire requests."
+                >
+                  <Textarea
+                    rows={2}
+                    value={settingsDraft.ccEmails}
+                    onChange={(e) =>
+                      setSettingsDraft({ ...settingsDraft, ccEmails: e.target.value })
+                    }
+                  />
+                </Field>
+              </div>
+              <div className="md:col-span-2 2xl:col-span-3">
+                <Button onClick={saveSettings} disabled={pending}>
+                  Save settings
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-lg border bg-muted/20 p-3">
+              <p className="mb-2 text-sm font-medium">Add printer contact</p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Input
+                  placeholder="Name"
+                  value={contactDraft.name}
+                  onChange={(e) =>
+                    setContactDraft({ ...contactDraft, name: e.target.value })
+                  }
+                />
+                <Input
+                  placeholder="Company"
+                  value={contactDraft.company}
+                  onChange={(e) =>
+                    setContactDraft({ ...contactDraft, company: e.target.value })
+                  }
+                />
+                <Input
+                  placeholder="Email"
+                  value={contactDraft.email}
+                  onChange={(e) =>
+                    setContactDraft({ ...contactDraft, email: e.target.value })
+                  }
+                />
+                <Input
+                  placeholder="Domain"
+                  value={contactDraft.domain}
+                  onChange={(e) =>
+                    setContactDraft({ ...contactDraft, domain: e.target.value })
+                  }
+                />
+                <Button
+                  variant="outline"
+                  className="sm:col-span-2"
+                  onClick={addContact}
+                  disabled={pending}
+                >
+                  <Plus className="size-4" />
+                  Add contact
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </SectionDisclosure>
+      ) : null}
+
     </div>
   );
 }
@@ -2204,7 +2207,7 @@ function SummaryTile({
         {icon}
         {label}
       </div>
-      <p className="mt-2 font-heading text-lg font-semibold">{value}</p>
+      <p className="mt-2 text-lg font-semibold">{value}</p>
       <p className="mt-1 truncate text-xs text-muted-foreground">{detail}</p>
     </div>
   );
@@ -2229,13 +2232,13 @@ function MiniStat({
   tone?: "over" | "under";
 }) {
   return (
-    <div className="min-w-0 rounded-xl border bg-card p-3">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+    <div className="min-w-0">
+      <p className="text-xs text-muted-foreground">
         {label}
       </p>
       <p
         className={cn(
-          "mt-1 font-heading text-lg font-semibold tabular-nums",
+          "mt-1 text-base font-semibold tabular-nums",
           tone === "over" && "text-destructive",
           tone === "under" && "text-success",
         )}
@@ -2243,7 +2246,7 @@ function MiniStat({
         {value}
       </p>
       {hint ? (
-        <p className="mt-0.5 truncate text-xs text-muted-foreground">{hint}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>
       ) : null}
     </div>
   );
@@ -2338,6 +2341,19 @@ function RunPanel({
   onDraftWire: (id: string) => void;
 }) {
   const [collapsed, setCollapsed] = useState(isHistorical);
+  useEffect(() => {
+    const revealPayment = () => {
+      let target: string;
+      try { target = decodeURIComponent(window.location.hash.slice(1)); } catch { return; }
+      if (target === `print-run-${run.id}-details` || payments.some(payment => target === `payment-${payment.id}`)) {
+        setCollapsed(false);
+        requestAnimationFrame(() => document.getElementById(target)?.scrollIntoView({ block: "start" }));
+      }
+    };
+    revealPayment();
+    window.addEventListener("hashchange", revealPayment);
+    return () => window.removeEventListener("hashchange", revealPayment);
+  }, [run.id, payments]);
   const [editing, setEditing] = useState(false);
   const [qtyDraft, setQtyDraft] = useState("");
   const [showOtherQuotes, setShowOtherQuotes] = useState(false);
@@ -2517,6 +2533,7 @@ function RunPanel({
                 size="sm"
                 className="min-h-11 sm:min-h-9"
                 aria-expanded={!collapsed}
+                aria-controls={`print-run-${run.id}-details`}
                 onClick={() => setCollapsed((value) => !value)}
               >
                 <ChevronDown
@@ -2531,11 +2548,41 @@ function RunPanel({
           </div>
         </CardAction>
       </CardHeader>
-      {!collapsed ? (
-        <CardContent
+        <CardContent hidden={collapsed}
           id={`print-run-${run.id}-details`}
           className="min-w-0 space-y-4"
         >
+        {canEdit ? (
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={onDraftRfq} disabled={pending}>
+                  <Mail className="size-4" />
+                  {hasRfqDraft ? "Resume printer quote request email" : "Request printer quotes"}
+                </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setEditing((v) => !v)}
+              disabled={pending}
+            >
+              <Settings2 className="size-4" />
+              Edit specs
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => {
+                if ((await confirmDialog(`Delete print run "${run.title}"?`))) onDelete();
+              }}
+              disabled={pending}
+            >
+              <Trash2 className="size-4" />
+              Delete
+            </Button>
+          </div>
+        ) : null}
+          <p className="text-sm text-muted-foreground">
+            {quotes.some(quote => quote.reviewStatus === "suggested") ? "Next: review suggested quotes before accepting a price." : payments.some(payment => !payment.paidAt) ? "Next: review unpaid payments and record payment confirmation." : !quotes.length ? "Next: request printer quotes, then review the prices they send." : !hasAccepted ? "Next: compare quotes and choose the price for this run." : run.status === "completed" || run.status === "cancelled" ? "This run is closed. Its records remain available below." : "Review the accepted quote, proof, and delivery status below."}
+          </p>
           {run.kind === "reprint" || finance ? (
             <div className="grid grid-cols-2 gap-2 text-sm lg:grid-cols-5">
               <MiniStat
@@ -2576,6 +2623,7 @@ function RunPanel({
               sponsor commitment, MoU receivable, or donation.
             </div>
           ) : null}
+          <SectionDisclosure id={`print-run-${run.id}-specs`} title="Run specifications and quantity" summary={run.quantityTarget ? `${run.quantityTarget.toLocaleString()} copies` : "Quantity not confirmed"}>
           <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-3 lg:grid-cols-5">
             {run.kind === "reprint" ? (
               <Spec
@@ -2688,6 +2736,7 @@ function RunPanel({
           </div>
         ) : null}
 
+          </SectionDisclosure>
         {editing ? (
           <div className="grid gap-3 rounded-lg border bg-muted/20 p-3 sm:grid-cols-3">
             <Field label="Title">
@@ -2904,34 +2953,7 @@ function RunPanel({
           </div>
         ) : null}
 
-        {canEdit ? (
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={onDraftRfq} disabled={pending}>
-                  <Mail className="size-4" />
-                  {hasRfqDraft ? "Resume printer quote request email" : "Request printer quotes"}
-                </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setEditing((v) => !v)}
-              disabled={pending}
-            >
-              <Settings2 className="size-4" />
-              Edit specs
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={async () => {
-                if ((await confirmDialog(`Delete print run "${run.title}"?`))) onDelete();
-              }}
-              disabled={pending}
-            >
-              <Trash2 className="size-4" />
-              Delete
-            </Button>
-          </div>
-        ) : null}
+
 
         <section className="space-y-2">
           <h3 className="text-sm font-semibold">Quotes and invoices</h3>
@@ -3593,7 +3615,6 @@ function RunPanel({
           ) : null}
         </section>
         </CardContent>
-      ) : null}
     </Card>
   );
 }

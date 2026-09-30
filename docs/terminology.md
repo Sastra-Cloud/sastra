@@ -78,3 +78,11 @@ a component.
 - **Team planning**: Overview, Schedule, and Workload, preserving their existing URLs.
 - **Project roles**, **Voice dictionary**, **AI usage**: use these full Settings labels.
 - **Source page count**, **Add standard budget items**, and **Request printer quotes**: publishing labels.
+
+## Navigation groups
+
+- **Daily work**: Home, My Work, and Projects.
+- **Team planning**: the manager area with Overview, Schedule, and Workload.
+- **Publishing**: a project's Rights, Budget, and Print, Episodes, or Videos.
+- **Suggestions to review**: proposed email tasks and candidate personal rules.
+- **Email assistant preferences**: personal controls and approved rules in Profile.

@@ -57,12 +57,12 @@ export function EmailTaskLearningRules({
         </span>
         <div>
           <h2 className="text-sm font-semibold">
-            {workspace ? "Forwarded-email task learning" : "Sastra noticed a preference"}
+            {workspace ? "Forwarded-email task learning" : (candidates.length > 0 ? "Suggested email preferences" : "Active email preferences")}
           </h2>
           <p className="text-xs leading-5 text-muted-foreground">
             {workspace
               ? "Patterns shared across teammates are review-only until an admin approves them."
-              : "Your decisions can suggest a personal rule. Nothing changes until you approve it."}
+              : candidates.length > 0 ? "Your decisions can suggest a personal rule. Nothing changes until you approve it." : "These approved preferences guide your email task suggestions."}
           </p>
         </div>
       </div>

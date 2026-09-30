@@ -2,7 +2,7 @@ import { requireUser } from "@/lib/auth/guards";
 import { getEmailPreferences, listPushDevices } from "@/lib/notifications/queries";
 import { NotificationPrefs } from "@/components/settings/notification-prefs";
 import { PushSettings } from "@/components/settings/push-settings";
-import { EmailTaskPreferences } from "@/components/settings/email-task-preferences";
+import Link from "next/link";
 
 export const metadata = { title: "Notification settings" };
 export const dynamic = "force-dynamic";
@@ -27,10 +27,7 @@ export default async function NotificationSettingsPage() {
         emailDigestTimeMinutes={prefs.emailDigestTimeMinutes}
         timezone={user.timezone || "UTC"}
       />
-      <EmailTaskPreferences
-        suggestionsEnabled={prefs.emailTaskSuggestionsEnabled}
-        learningEnabled={prefs.emailTaskLearningEnabled}
-      />
+      <Link href="/settings/profile#email-assistant" className="inline-flex min-h-11 items-center text-sm text-primary hover:underline">Email assistant preferences → Profile</Link>
       <PushSettings
         devices={devices}
         schedule={{

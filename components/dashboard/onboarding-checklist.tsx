@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Check, Rocket, X } from "lucide-react";
+import { ArrowRight, Check, X } from "lucide-react";
 
 import { useGuidance } from "@/components/guidance/guidance-provider";
 import { Button } from "@/components/ui/button";
@@ -36,10 +36,9 @@ export function OnboardingChecklist({
   // Once every step is done, onboarding is over — stop showing it.
   if (doneCount === items.length) return null;
   const next = items.find(item => !item.done)!;
-  const pct = Math.round((doneCount / items.length) * 100);
 
   return (
-    <section className="surface-shadow relative rounded-xl border border-primary/20 bg-primary/[0.06] p-4">
+    <section className="relative rounded-xl border bg-card px-4 py-3 pr-12">
       <Button
         type="button"
         variant="ghost"
@@ -52,29 +51,17 @@ export function OnboardingChecklist({
         <X className="size-4" />
       </Button>
       <div className="flex items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/15">
-          <Rocket className="size-5" />
-        </span>
         <div className="min-w-0 flex-1">
-          <p className="font-heading font-semibold text-foreground">
-            Get started with Sastra
-          </p>
-          <p className="text-sm text-muted-foreground">
-            A few first steps. {doneCount} of {items.length} done.
-          </p>
-          <div className="mt-2 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
-              style={{ width: `${pct}%` }}
-            />
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <p className="text-sm font-semibold text-foreground">Next setup step</p>
+            <span className="text-xs text-muted-foreground">{doneCount} of {items.length} done</span>
           </div>
-
-          <Link href={next.href} onClick={() => { if (next.type === "visit") dismiss(itemKey(next.key)); }} className="mt-3 inline-flex min-h-11 items-center gap-2 font-medium text-primary">
+          <div className="flex flex-wrap items-start gap-x-6">
+          <Link href={next.href} onClick={() => { if (next.type === "visit") dismiss(itemKey(next.key)); }} className="mt-1 inline-flex min-h-11 items-center gap-2 font-medium text-primary">
             {next.label}<ArrowRight className="size-4" />
           </Link>
-          {role === "member" && signals.assignedTaskCount === 0 && signals.completedTaskCount === 0 ? <p className="text-sm text-muted-foreground">Your assigned tasks will appear in My Work. Ask a manager to assign your first task.</p> : null}
-          <details className="mt-2">
-          <summary className="cursor-pointer text-sm font-medium">Show all steps</summary>
+          <details className="mt-1">
+          <summary className="inline-flex min-h-11 cursor-pointer items-center text-sm font-medium">Show all steps</summary>
           <ul className="mt-3 space-y-1">
             {items.map((item) => (
               <li key={item.key}>
@@ -109,6 +96,9 @@ export function OnboardingChecklist({
             ))}
           </ul>
           </details>
+          </div>
+          {role === "member" && signals.assignedTaskCount === 0 && signals.completedTaskCount === 0 ? <p className="text-sm text-muted-foreground">Your assigned tasks will appear in My Work. Ask a manager to assign your first task.</p> : null}
+
         </div>
       </div>
     </section>

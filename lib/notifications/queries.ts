@@ -99,9 +99,9 @@ export async function listNotifications(userId: string, limit = 30) {
 export async function listUnreadNotificationsByType(
   userId: string,
   type: string,
-  limit = 5
+  limit: number | null = 5
 ) {
-  return db
+  const query = db
     .select()
     .from(notifications)
     .where(
@@ -111,8 +111,8 @@ export async function listUnreadNotificationsByType(
         isNull(notifications.readAt)
       )
     )
-    .orderBy(desc(notifications.createdAt))
-    .limit(limit);
+    .orderBy(desc(notifications.createdAt));
+  return limit === null ? query : query.limit(limit);
 }
 
 export type PossibleCounterpartySuggestion = {

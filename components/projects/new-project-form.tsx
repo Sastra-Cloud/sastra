@@ -2,6 +2,7 @@
 
 
 import { useDraftField, useProjectDraft } from "./project-draft";
+import { SectionDisclosure } from "@/components/section-disclosure";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -129,6 +130,9 @@ export function NewProjectForm({
             ))}
           </select>
         </div>
+      </div>
+      <SectionDisclosure title="Status and priority" description="Optional planning details">
+        <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
           <Label htmlFor="status">Status</Label>
           <select id="status" name="status" className={selectClass} value={draft.status} onChange={event => setDraft(current => ({ ...current, status: event.target.value }))}>
@@ -147,7 +151,8 @@ export function NewProjectForm({
             <option value="urgent">Urgent</option>
           </select>
         </div>
-      </div>
+        </div>
+      </SectionDisclosure>
 
       {kind === "book" ? (
         <div className="grid gap-2">
@@ -202,7 +207,7 @@ export function NewProjectForm({
             value={planTemplateId}
             onChange={(event) => setPlanTemplateId(event.target.value)}
           >
-            <option value="none">Blank — no phases/tasks</option>
+            <option value="none">Blank — no stages or tasks</option>
             {compatibleTemplates.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name}
@@ -211,7 +216,7 @@ export function NewProjectForm({
           </select>
           <p className="text-xs text-muted-foreground">
             {selectedTemplate?.description ??
-              "Blank projects keep the units above but do not create phases or tasks."}
+              "Blank projects keep the units above but do not create stages or tasks."}
           </p>
         </div>
       ) : null}

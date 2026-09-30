@@ -2,7 +2,7 @@
 title: "Getting started & roles"
 category: "Getting started"
 roles: [member, manager, admin]
-keywords: [home, onboarding outcomes, next step, hidden tips, invite, invitation, seven days, sign in, login, magic link, 5 minutes, one-time link, password, password reset, one hour, roles, member, manager, admin, super admin, timezone, profile, account, save, saving, sync, retry, page error, page not found, spinner, mobile menu, navigation, today, work, management, workspace, pull to refresh, refresh, guidance, guided setup, tips, dismiss tip, coaching, checklist, across browsers, show helpful guidance, learn the app, passkey, fingerprint, two factor, security code]
+keywords: [daily work, team planning, publishing, home, onboarding outcomes, next step, hidden tips, invite, invitation, seven days, sign in, login, magic link, 5 minutes, one-time link, password, password reset, one hour, roles, member, manager, admin, super admin, timezone, profile, account, save, saving, sync, retry, page error, page not found, spinner, mobile menu, navigation, today, work, management, workspace, pull to refresh, refresh, guidance, guided setup, tips, dismiss tip, coaching, checklist, across browsers, show helpful guidance, learn the app, passkey, fingerprint, two factor, security code]
 order: 10
 summary: "Start with Home, complete role-appropriate setup, find assigned work, and restore your personal guidance."
 ---
@@ -68,7 +68,7 @@ admin can do everything an admin can.
 
 - **Member** — work on your own tasks, chat, answer standups, upload files, and
   use the Assistant, Agenda, and Home.
-- **Manager** — everything a member can, plus the **Overview** and **Workload**
+- **Manager** — everything a member can, plus **Team planning** and its **Workload**
   pages, editing **Rights**, **Budget**, and **Print**, running the **AI
   planner** and **document import**, reading **Correspondence**, and configuring
   the team, roles, publishers, printers, email, and standups.
@@ -101,11 +101,15 @@ confirmation before disappearing.
 
 The left sidebar is grouped by the kind of work you are doing:
 
-- **Today** — Home, My Work, and Standups.
-- **Work** — Projects, Chat, Assistant, and Correspondence for managers.
-- **Management** — Overview, Schedule, and Workload for managers, plus
-  Donations for admins.
-- **Workspace** — Wiki, Settings, and Help.
+- **Daily work** — Home, My Work, and Projects.
+- **Team** — Chat and Standups.
+- **Management** — Team planning and Correspondence for managers, plus Donations for admins.
+- **Workspace** — Wiki, Assistant, Settings, and Help.
+
+**Team planning** opens Overview; its **Schedule** and **Workload** views remain one
+click away. Home previews your next three tasks, up to three manager attention
+items, and six active projects. The setup card shows only the next step and a
+completion count; **Show all steps** reveals the rest.
 
 At compact desktop widths the sidebar becomes an icon rail; pause over an icon
 to see its label. Look for the small **?** icons around the app for tips on

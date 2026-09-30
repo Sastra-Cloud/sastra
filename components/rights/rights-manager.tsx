@@ -1,5 +1,7 @@
 "use client";
 
+import { SectionDisclosure } from "@/components/section-disclosure";
+import { daysUntil, formatDate } from "@/lib/format";
 import { promptDialog } from "@/lib/dialog-requests";
 
 import { useState, useTransition } from "react";
@@ -17,7 +19,7 @@ import {
 import type { Attachment } from "@/lib/files/queries";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { HelpTip } from "@/components/ui/help-tip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -341,10 +343,18 @@ export function RightsPanel({
         </div>
       </div>
 
+      <section className="space-y-2 rounded-xl border bg-card px-4 py-3" aria-label="Rights summary">
+        <p className="text-sm"><span className="font-medium">Permitted formats: </span>{[[f.formatPrint, "Print"], [f.formatEbook, "eBook"], [f.formatAudio, "Audio"], [f.formatVideo, "Video"]].filter(([allowed]) => allowed).map(([, label]) => label).join(" · ") || "None recorded"}</p>
+        <p className="text-xs text-muted-foreground">{f.completeByDate ? `Complete by ${formatDate(f.completeByDate)}` : "No complete-by date"} · Rights permission and print funding are tracked separately.</p>
+        {[[showMou && !["signed", "not_needed"].includes(f.mouStatus), "mou", "Review the MoU"], [showLicense && !["signed", "not_needed"].includes(f.licenseStatus), "license", "Review the commercial license"]].filter(([incomplete]) => incomplete).slice(0, 1).map(([, step, label]) => <a key={String(step)} href={`#rights-${step}`} className="inline-flex min-h-11 items-center text-sm font-medium text-primary">Next step: {label}</a>)}
+        {[{ label: "MoU", date: f.mouExpiresDate, needed: showMou, autoRenews: false }, { label: "License", date: f.licenseExpiresDate, needed: showLicense, autoRenews: f.licenseAutoRenews }].filter(item => item.needed && item.date).map(item => <p key={item.label} className={cn("text-xs", !item.autoRenews && (daysUntil(item.date) ?? 999) < 0 ? "font-medium text-destructive" : !item.autoRenews && (daysUntil(item.date) ?? 999) <= 30 ? "font-medium text-warning-text" : "text-muted-foreground")}>{item.label} {item.autoRenews ? "auto-renews" : "expires"} {formatDate(item.date)}</p>)}
+        {feePayments.filter(payment => !payment.paidAt).map(payment => <p key={payment.id} className={cn("text-xs", (daysUntil(payment.dueDate) ?? 0) < 0 ? "font-medium text-destructive" : "text-muted-foreground")}>Unpaid license fee: {payment.amount} {payment.currency}{payment.dueDate ? ` · Due ${formatDate(payment.dueDate)}` : ""}</p>)}
+      </section>
+
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] xl:items-start 2xl:grid-cols-[minmax(0,1fr)_minmax(22rem,27rem)]">
         <div className="min-w-0 space-y-5">
           {/* Agreement type */}
-          <Card>
+          <SectionDisclosure title="Agreement type">
             <CardContent className="space-y-3 py-4">
               <Label className="flex items-center gap-1.5">
                 Agreement type
@@ -387,7 +397,7 @@ export function RightsPanel({
                 ))}
               </div>
             </CardContent>
-          </Card>
+          </SectionDisclosure>
 
           {showMou ? (
             <StepBlock
@@ -432,7 +442,7 @@ export function RightsPanel({
 
           {showLicense ? (
             <StepBlock
-              title="Step 2 — Commercial license"
+              title={showMou ? "Step 2 — Commercial license" : "Step 1 — Commercial license"}
               status={f.licenseStatus}
               onStatus={(v) => set("licenseStatus", v)}
               signedDate={f.licenseSignedDate}
@@ -660,7 +670,7 @@ export function RightsPanel({
 
         <div className="min-w-0 space-y-5 xl:sticky xl:top-20">
           {/* Outcome */}
-          <Card>
+          <SectionDisclosure id="rights-permissions" title="Formats and permission details">
             <CardContent className="space-y-4 py-4">
               <div className="flex items-center gap-1.5">
                 <label className="flex items-center gap-2 text-sm font-medium">
@@ -751,10 +761,10 @@ export function RightsPanel({
                 />
               </div>
             </CardContent>
-          </Card>
+          </SectionDisclosure>
 
           {/* Copyright */}
-          <Card>
+          <SectionDisclosure id="rights-copyright" title="Copyright">
             <CardContent className="space-y-3 py-4">
               <div className="flex items-center gap-1.5">
                 <p className="font-medium">Copyright</p>
@@ -805,7 +815,7 @@ export function RightsPanel({
                 />
               </div>
             </CardContent>
-          </Card>
+          </SectionDisclosure>
 
           {canEdit ? (
             <Button onClick={save} disabled={pending} className="w-full">
@@ -848,9 +858,8 @@ function StepBlock(props: {
 }) {
   const holderContacts = props.contacts.filter((c) => c.holderId === props.holderId);
   return (
-    <Card>
+    <SectionDisclosure id={`rights-${props.fileLabel}`} title={props.title} summary={STEP_OPTIONS.find(option => option.v === props.status)?.l ?? props.status}>
       <CardContent className="space-y-3 py-4">
-        <p className="font-medium">{props.title}</p>
         <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
           <div className="grid gap-1">
             <Label className="text-xs">Status</Label>
@@ -909,9 +918,9 @@ function StepBlock(props: {
             <Label className="flex items-center gap-1.5 text-xs">
               Request
               <HelpTip title="Initiate request" side="left">
-                Creates a task in the project's Rights phase, assigned to the
+                Creates a task in the project's Rights stage, assigned to the
                 person above, to go obtain this agreement — and flips the step to
-                “in progress”. It shows up in their My Tasks and notifications.
+                “in progress”. It shows up in their My Work and notifications.
               </HelpTip>
             </Label>
             {props.taskId ? (
@@ -925,12 +934,12 @@ function StepBlock(props: {
             )}
           </div>
         </div>
-        {props.extra}
+        {props.extra ? <SectionDisclosure title="Fees and renewal details">{props.extra}</SectionDisclosure> : null}
         <div>
           <Label className="mb-1.5 block text-xs">Document</Label>
           <FileAttachments targetType="rights_item" targetId={props.targetId} attachments={props.attachments} label={props.fileLabel} canEdit={props.canEdit} />
         </div>
       </CardContent>
-    </Card>
+    </SectionDisclosure>
   );
 }

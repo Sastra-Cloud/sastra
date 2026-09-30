@@ -3,26 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Bell,
-  Bot,
-  BookOpenCheck,
-  Building2,
-  Check,
-  ChevronDown,
-  CircleDollarSign,
-  Handshake,
-  IdCard,
-  Mail,
-  LayoutTemplate,
-  Mic,
-  Printer,
-  ShieldCheck,
-  Settings2,
-  Sunrise,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { Check, ChevronDown, Settings2, type LucideIcon } from "lucide-react";
+import { settingsNavigation } from "@/lib/navigation";
+import { navigationIcons } from "@/components/navigation-icons";
 
 import { MotionTabLink } from "@/components/motion/tab-link";
 import {
@@ -35,7 +18,7 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
-type Tab = { href: string; label: string; icon: LucideIcon; show: boolean };
+type Tab = { href: string; label: string; icon: LucideIcon };
 type Group = { label: string; tabs: Tab[] };
 
 export function SettingsNav({
@@ -47,48 +30,16 @@ export function SettingsNav({
 }) {
   const pathname = usePathname();
 
-  const groups: Group[] = [
-    {
-      label: "Personal",
-      tabs: [
-        { href: "/settings/profile", label: "Profile", icon: IdCard, show: true },
-        { href: "/settings/security", label: "Security", icon: ShieldCheck, show: isAdmin },
-        { href: "/settings/notifications", label: "Notifications", icon: Bell, show: true },
-      ],
-    },
-    {
-      label: "Workspace",
-      tabs: [
-        { href: "/settings/dictionary", label: "Voice dictionary", icon: Mic, show: true },
-        { href: "/settings/team", label: "Team", icon: Users, show: canManage },
-        { href: "/settings/workspace", label: "Workspace", icon: Building2, show: isAdmin },
-        { href: "/settings/standups", label: "Standups", icon: Sunrise, show: canManage },
-      ],
-    },
-    { label: "Publishing", tabs: [
-        { href: "/settings/roles", label: "Project roles", icon: Settings2, show: canManage },
-        { href: "/settings/templates", label: "Templates", icon: LayoutTemplate, show: isAdmin },
-        { href: "/settings/publishers", label: "Publishers", icon: Building2, show: canManage },
-        { href: "/settings/partners", label: "Partners", icon: Handshake, show: canManage },
-        { href: "/settings/printers", label: "Printers", icon: Printer, show: canManage },
-      ],
-    },
-    { label: "AI & email", tabs: [
-        { href: "/settings/email", label: "Email", icon: Mail, show: canManage },
-        { href: "/settings/costs", label: "AI usage", icon: CircleDollarSign, show: isAdmin },
-        { href: "/settings/ai", label: "AI", icon: Bot, show: isAdmin },
-        { href: "/settings/document-learning", label: "Document learning", icon: BookOpenCheck, show: canManage },
-      ],
-    },
-  ]
-    .map((g) => ({ ...g, tabs: g.tabs.filter((t) => t.show) }))
-    .filter((g) => g.tabs.length > 0);
+  const groups: Group[] = settingsNavigation({ canManage, isAdmin }).map(group => ({
+    label: group.label,
+    tabs: group.items.map(item => ({ ...item, icon: navigationIcons[item.icon] })),
+  }));
 
   const allTabs = groups.flatMap((g) => g.tabs);
   const active =
     allTabs.find(
       (t) => pathname === t.href || pathname.startsWith(`${t.href}/`)
-    ) ?? allTabs[0];
+    );
 
   return (
     <>
@@ -102,9 +53,10 @@ export function SettingsNav({
         aria-label="Settings sections"
         className="hidden lg:max-h-[calc(100dvh-5rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:pr-1 lg:sticky lg:top-20 lg:flex lg:flex-col lg:gap-5"
       >
+        <Link href="/settings" aria-current={pathname === "/settings" ? "page" : undefined} className="min-h-10 rounded-lg px-3 py-2 text-sm font-medium text-primary hover:bg-muted">Find a setting</Link>
         {groups.map((group) => (
           <div key={group.label} className="flex flex-col gap-1">
-            <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+            <p className="px-3 text-xs font-medium text-muted-foreground">
               {group.label}{group.label !== "Personal" ? " · shared" : ""}
             </p>
             <div className="flex flex-col gap-0.5">
@@ -168,9 +120,10 @@ function MobileNav({ groups, active }: { groups: Group[]; active?: Tab }) {
           aria-label="Settings sections"
           className="space-y-5 overflow-y-auto overscroll-contain px-3 py-4"
         >
+          <Link href="/settings" onNavigate={() => setOpen(false)} className="flex min-h-12 items-center rounded-lg px-3 text-sm font-medium text-primary hover:bg-muted">Find a setting</Link>
           {groups.map((group) => (
             <section key={group.label} className="space-y-1">
-              <h2 className="px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+              <h2 className="px-3 text-xs font-medium text-muted-foreground">
                 {group.label}{group.label !== "Personal" ? " · shared" : ""}
               </h2>
               <div className="grid gap-1">

@@ -1,3 +1,5 @@
+import { SectionDisclosure } from "@/components/section-disclosure";
+import { summarizeCurrentWork } from "@/lib/projects/current-work";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -119,10 +121,11 @@ export default async function ProjectOverviewPage({
   searchParams: Promise<{
     settings?: string | string[];
     focus?: string | string[];
+    created?: string | string[];
   }>;
 }) {
   const { slug } = await params;
-  const { settings, focus } = await searchParams;
+  const { settings, focus, created } = await searchParams;
   const settingsOpen = settings === "1";
   const data = await getProjectBySlug(slug);
   if (!data) notFound();
@@ -294,6 +297,9 @@ export default async function ProjectOverviewPage({
     );
   }
 
+  const currentWork = summarizeCurrentWork(tasks, phases, session?.user.id ?? "", depEdges);
+  const owners = new Map(members.map(member => [member.userId, member.userName]));
+  if (session?.user.name) owners.set(session.user.id, session.user.name);
   const attentionRows = projectBlockers.map((blocker) => ({
     ...blocker,
     ...blockerDestination(blocker, project.slug, project.kind),
@@ -352,6 +358,31 @@ export default async function ProjectOverviewPage({
           fileCount={projectFiles.length}
         />
       ) : null}
+
+      <div className="min-w-0">
+        <ProjectStatusUpdate
+          projectId={project.id}
+          slug={project.slug}
+          status={status}
+          isManager={isManager && !projectClosed}
+          currentUserId={session?.user.id ?? ""}
+          members={mentionTargets}
+        />
+      </div>
+
+      {created === "1" && isManager ? <div className="rounded-xl border border-success/30 bg-success/5 px-4 py-3 text-sm" role="status"><p className="font-medium">Project created</p><p className="mt-1 text-muted-foreground">{tasks.length ? `${tasks.length} tasks saved. Assign owners so work can start.` : "Add the first task or set up a task plan."}</p><Link href={`/projects/${project.slug}/${tasks.length ? "members" : "tasks"}`} className="inline-flex min-h-11 items-center gap-1 font-medium text-primary">{tasks.length ? "Assign project roles" : "Set up tasks"}<ArrowRight className="size-4" /></Link></div> : null}
+
+      <section className="space-y-3" aria-labelledby="current-work-heading">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="current-work-heading" className="text-base font-semibold">Current work</h2>
+          <span className="text-xs tabular-nums text-muted-foreground">{done}/{total} tasks done · {pct}%</span>
+        </div>
+        {currentWork.stageNames.length > 0 ? <p className="text-sm text-muted-foreground">{currentWork.started ? `Work underway: ${currentWork.stageNames.join(" · ")}` : `${currentWork.stageNames.length} stages with open work`} · <a href="#work-plan" className="underline underline-offset-4">View stages and owners</a></p> : null}
+        {currentWork.nextTask ? <Link href={`/projects/${project.slug}/tasks?run=all&task=${currentWork.nextTask.id}`} className="flex min-h-14 flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3 hover:bg-muted/40">
+          <span className="min-w-0"><span className="block text-xs text-muted-foreground">{currentWork.nextTask.assignedTo === session?.user.id ? "Your next action" : "Next saved task"}</span><span className="text-sm font-medium">{currentWork.nextTask.title}</span><span className="mt-1 block text-xs text-muted-foreground">{owners.get(currentWork.nextTask.assignedTo ?? "") ?? (currentWork.nextTask.assignedTo ? "Assigned teammate" : "Unassigned")}{currentWork.nextTask.dueDate ? ` · Due ${formatDate(currentWork.nextTask.dueDate)}` : ""}{currentWork.blocked ? " · Waiting on prerequisites" : ""}</span></span>
+          <span className="inline-flex items-center gap-1 text-sm text-primary">Open task <ArrowRight className="size-4" /></span>
+        </Link> : <p className="text-sm text-muted-foreground">{total ? "All saved tasks are complete." : "No tasks saved yet."} <Link href={`/projects/${project.slug}/tasks`} className="text-primary underline">{isManager && !projectClosed ? "Assign the next work" : "View tasks"}</Link></p>}
+      </section>
 
       <div className="space-y-3">
         <OverdueReasonCard
@@ -529,34 +560,16 @@ export default async function ProjectOverviewPage({
         ) : null}
       </div>
 
-      {band}
-
-      <div
-        className={cn(
-          "grid min-w-0 items-start gap-6",
-          canViewCorrespondence
-            ? "xl:grid-cols-[minmax(0,3fr)_minmax(20rem,2fr)]"
-            : ""
-        )}
-      >
-        <ProjectStatusUpdate
-          projectId={project.id}
-          slug={project.slug}
-          status={status}
-          isManager={isManager && !projectClosed}
-          currentUserId={session?.user.id ?? ""}
-          members={mentionTargets}
-        />
-
         {canViewCorrespondence ? (
-          <div className="min-w-0">
+          <SectionDisclosure id="project-correspondence" title="Recent correspondence" summary={`${recentThreads.length} threads`}>
             <ProjectCorrespondencePreview
               threads={recentThreads}
               projectSlug={project.slug}
             />
-          </div>
+          </SectionDisclosure>
         ) : null}
-      </div>
+
+      {band ? <SectionDisclosure id="manager-analytics" title="Project analytics" description="Funding, rights, forecast, and team capacity">{band}</SectionDisclosure> : null}
 
       {project.description ? (
         <section
@@ -576,18 +589,7 @@ export default async function ProjectOverviewPage({
       ) : null}
 
       {phases.length > 0 || tasks.some((t) => t.dueDate) ? (
-        <section className="min-w-0 space-y-3" aria-labelledby="timeline-heading">
-          <div className="flex items-center justify-between gap-4">
-            <h2 id="timeline-heading" className="text-base font-semibold">
-              Timeline
-            </h2>
-            <Link
-              href={`/projects/${project.slug}/tasks`}
-              className="text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-            >
-              Open tasks
-            </Link>
-          </div>
+        <SectionDisclosure id="project-timeline" title="Timeline" summary={`${tasks.filter(t => t.dueDate).length} dated tasks`}>
           <Gantt
             today={todayYmd()}
             canEdit={isManager}
@@ -614,20 +616,17 @@ export default async function ProjectOverviewPage({
               toTaskId: e.taskId,
             }))}
           />
-        </section>
+        </SectionDisclosure>
       ) : null}
 
-      <section className="space-y-3" aria-labelledby="work-plan-heading">
-        <h2 id="work-plan-heading" className="text-base font-semibold">
-          Work plan
-        </h2>
+      <SectionDisclosure id="work-plan" title="Stages and team" summary={`${phases.length} stages · ${members.length} members`}>
         <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="min-w-0 space-y-4">
             <div>
-              <h3 className="mb-3 text-sm font-semibold">Phases</h3>
+              <h3 className="mb-3 text-sm font-semibold">Stages</h3>
               {phases.length === 0 ? (
                 <div className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
-                  No phases yet. Create the project from a plan template, or add
+                  No stages yet. Create the project from a plan template, or add
                   tasks directly in the Tasks tab.{" "}
                   <Link
                     href={`/projects/${project.slug}/tasks`}
@@ -805,12 +804,9 @@ export default async function ProjectOverviewPage({
             </CardContent>
           </Card>
         </div>
-      </section>
+      </SectionDisclosure>
 
-      <section className="space-y-3" aria-labelledby="resources-heading">
-        <h2 id="resources-heading" className="text-base font-semibold">
-          Project resources
-        </h2>
+      <SectionDisclosure id="resources" title="Project resources" summary={`${projectFiles.length} files`}>
         <Card size="sm">
           <CardContent className="grid items-start gap-6 lg:grid-cols-[minmax(16rem,3fr)_minmax(0,5fr)]">
             <div className="min-w-0 space-y-2">
@@ -846,13 +842,10 @@ export default async function ProjectOverviewPage({
             </div>
           </CardContent>
         </Card>
-      </section>
+      </SectionDisclosure>
 
       {activity.length > 0 || copyright.notice ? (
-        <section className="space-y-3" aria-labelledby="record-heading">
-          <h2 id="record-heading" className="text-base font-semibold">
-            Project record
-          </h2>
+        <SectionDisclosure id="record" title="Project record" description="Recent activity and copyright notice">
           <div
             className={cn(
               "grid items-start gap-6",
@@ -906,7 +899,7 @@ export default async function ProjectOverviewPage({
               </Card>
             ) : null}
           </div>
-        </section>
+        </SectionDisclosure>
       ) : null}
     </div>
   );

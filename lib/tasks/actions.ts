@@ -15,7 +15,7 @@ import {
   taskDriveFiles,
   tasks,
 } from "@/lib/db/schema";
-import { advanceChapterAfterDone } from "@/lib/projects/pipeline";
+import { advanceChapterAfterDone, type TaskHandoff } from "@/lib/projects/pipeline";
 import { clearOverdueNotifications } from "@/lib/notifications";
 import { logActivity } from "@/lib/activity/log";
 import { formatDate } from "@/lib/format";
@@ -280,6 +280,7 @@ export async function updateTaskStatus(taskId: string, status: string) {
       assignedTo: tasks.assignedTo,
     });
   let notificationsChanged = false;
+  let handoff: TaskHandoff | null = null;
   if (row) {
     await logActivity({
       actorId: user.id,
@@ -303,13 +304,13 @@ export async function updateTaskStatus(taskId: string, status: string) {
     if (s === "done") {
       // Completing a chapter's stage advances it to the next coordinator, and
       // any "task overdue" notification for it is now stale — clear it.
-      await advanceChapterAfterDone(taskId, user.id);
+      handoff = await advanceChapterAfterDone(taskId, user.id);
       notificationsChanged = (await clearOverdueNotifications(taskId)) > 0;
       await notifyReadyEpisodeStages(taskId, user.id);
     }
   }
   await revalidateForTask(row?.projectId ?? null);
-  return { notificationsChanged };
+  return { notificationsChanged, handoff };
 }
 
 export async function assignTask(taskId: string, userId: string | null) {

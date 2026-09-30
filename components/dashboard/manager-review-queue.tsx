@@ -5,24 +5,18 @@ import {
   FileCheck2,
   FolderPlus,
   Sparkles,
+  CalendarPlus, WalletCards, Users,
 } from "lucide-react";
 
 import { timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-export type ManagerReviewItem = {
-  id: string;
-  source: "project_follow_up" | "project_update" | "new_project" | "counterparty";
-  title: string;
-  detail: string | null;
-  project: string | null;
-  priority: "low" | "medium" | "high";
-  href: string;
-  actionLabel: string;
-  createdAt: Date;
-};
+import type { ManagerReviewItem } from "@/lib/dashboard/attention";
 
 const SOURCE = {
+  dates: { label: "Scheduling", icon: CalendarPlus },
+  funding: { label: "Print funding", icon: WalletCards },
+  coordination: { label: "Coordination", icon: Users },
   project_follow_up: {
     label: "Project follow-up",
     icon: Sparkles,
@@ -41,19 +35,18 @@ const SOURCE = {
   },
 } as const;
 
-export function ManagerReviewQueue({ items }: { items: ManagerReviewItem[] }) {
+export function ManagerReviewQueue({ items, limit, id = "manager-attention" }: { items: ManagerReviewItem[]; limit?: number; id?: string }) {
   if (items.length === 0) return null;
 
   return (
-    <section className="space-y-2" aria-labelledby="manager-review-heading">
+    <section id={id} className="scroll-mt-32 space-y-2" aria-labelledby={`${id}-heading`}>
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h2 id="manager-review-heading" className="text-lg font-semibold">
-            Needs your review
+          <h2 id={`${id}-heading`} className="text-lg font-semibold">
+            Manager attention
           </h2>
           <p className="text-sm text-muted-foreground text-pretty">
-            Suggested follow-ups from email and project updates. Nothing changes
-            until you review it.
+            Reviews and planning decisions. Suggested changes require your approval.
           </p>
         </div>
         <span className="text-xs tabular-nums text-muted-foreground">
@@ -62,7 +55,7 @@ export function ManagerReviewQueue({ items }: { items: ManagerReviewItem[] }) {
       </div>
 
       <ul className="divide-y overflow-hidden rounded-xl border bg-card">
-        {items.map((item) => {
+        {items.slice(0, limit ?? items.length).map((item) => {
           const source = SOURCE[item.source];
           const Icon = source.icon;
           return (
@@ -108,7 +101,7 @@ export function ManagerReviewQueue({ items }: { items: ManagerReviewItem[] }) {
                   ) : null}
                 </span>
                 <span className="col-start-2 flex min-w-0 items-center justify-between gap-3 pr-10 text-xs text-muted-foreground sm:col-start-3 sm:row-start-1 sm:flex-col sm:items-end sm:self-stretch sm:pr-0">
-                  <span>{timeAgo(item.createdAt)}</span>
+                  <span>{item.createdAt ? timeAgo(item.createdAt) : "Needs attention"}</span>
                   <span className="inline-flex items-center gap-1 font-medium text-primary sm:mt-auto">
                     {item.actionLabel}
                     <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
@@ -119,6 +112,7 @@ export function ManagerReviewQueue({ items }: { items: ManagerReviewItem[] }) {
           );
         })}
       </ul>
+      {limit && items.length > limit ? <Link href="/overview#manager-attention" className="inline-flex min-h-11 items-center gap-1 text-sm text-primary">View all {items.length} items <ArrowRight className="size-3.5" /></Link> : null}
     </section>
   );
 }

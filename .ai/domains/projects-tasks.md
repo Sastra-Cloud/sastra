@@ -58,6 +58,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/projects/project-settings-dialog.tsx`
 - `components/projects/project-surface-notes.tsx`
 - `components/projects/project-tabs.tsx`
+- `components/projects/project-task-views.tsx`
 - `components/projects/project-title-context.tsx`
 - `components/projects/project-workspace-frame.tsx`
 - `components/projects/projects-browser.tsx`
@@ -91,9 +92,8 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/projects/book-format.test.ts`
 - `lib/projects/book-format.ts`
 - `lib/projects/create-from-blueprint.ts`
+- `lib/projects/current-work.test.ts`
+- `lib/projects/current-work.ts`
 - `lib/projects/dashboard-order.test.ts`
 - `lib/projects/dashboard-order.ts`
-- `lib/projects/deadline.test.ts`
-- `lib/projects/deadline.ts`
-- `lib/projects/default-templates.test.ts`
-... 53 more
+... 59 more

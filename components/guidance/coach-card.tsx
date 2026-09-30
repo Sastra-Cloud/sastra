@@ -23,6 +23,7 @@ export function CoachCard({
   action,
   dismissLabel = "Got it",
   className,
+  compact = false,
 }: {
   /** Stable id; remembers this card's dismissal for the signed-in user. */
   guidanceKey: string;
@@ -36,14 +37,22 @@ export function CoachCard({
   action?: React.ReactNode;
   dismissLabel?: string;
   className?: string;
+  compact?: boolean;
 }) {
   const { show, dismiss } = useGuidedElement(guidanceKey);
   if (!show) return null;
 
+  if (compact) return (
+    <aside aria-label={typeof title === "string" ? title : "Guidance"} className={cn("relative min-w-0 pr-9 text-sm text-muted-foreground", className)}>
+      {children}
+      <Button type="button" variant="ghost" size="icon-xs" aria-label={`Dismiss: ${typeof title === "string" ? title : "guidance"}`} title={dismissLabel} className="absolute right-0 top-2 text-muted-foreground" onClick={dismiss}><X className="size-4" /></Button>
+    </aside>
+  );
+
   return (
     <aside
       className={cn(
-        "surface-shadow relative flex gap-3 rounded-xl border border-primary/20 bg-primary/[0.06] p-4 text-sm",
+        "relative flex gap-3 rounded-xl border bg-card px-4 py-3 text-sm",
         className
       )}
     >
@@ -51,7 +60,7 @@ export function CoachCard({
         {icon ?? <Lightbulb className="size-4" />}
       </span>
       <div className="min-w-0 flex-1 space-y-2 pr-6">
-        <p className="font-heading font-semibold text-foreground text-pretty">
+        <p className="text-sm font-semibold text-foreground text-pretty">
           {title}
         </p>
         {children ? (

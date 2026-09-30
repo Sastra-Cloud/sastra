@@ -2,10 +2,19 @@
 title: "Budget & quotation"
 category: "Publishing"
 roles: [member, manager, admin]
-keywords: [budget, quotation, quote, internal costs, partner quote, partner safe, assistant project blueprint, create project with budget, conversational project setup, price per copy, per copy invoice, organization donation fee, organization fee, admin fee, donation deduction, fee coverage, funding target, expected net, actual net, available funding, budget attention, next action, section navigation, budget in four steps, what do i do next, walk me through the budget, budget steps, getting started with budget, reprint budget, accepted print quote, add print cost, custom reprint cost, edit budget line, optimistic budget line, unit price, word count, typesetting, funding assigned, raised, to raise, spent, funding, royalties, excel, pdf, export, reconciliation, cashflow, donation mou match, apply donation to mou, shared mou, allocated funding, shared receipt, funding partner, sponsor, funding contact, proposal, funding proposal subject, proposal sign-off, mou proposal, send proposal, proposal history, email attachment, attachment preview, preview quotation, proposed completion date, completion date, suggest a date, completion planner, planning capacity, projects at once, project duration, timeline, deadline, budget approval, approver, approve, request changes, unanimous approval, stale approval, logo, branding, accent color, partners directory, saved partner, paid invoice, upload invoice, past invoice, invoice received, immutable invoice, void invoice, replacement invoice, split payment, edit payment schedule, change mou payment, payment date, invoice owner, royalty payment task, mark royalty paid]
+keywords: [publishing, content tabs, budget tabs, retained drafts, quotation tab, approvals tab, cash flow tab, payments tab, notes tab, committed funding, funding gap, budget, quotation, quote, internal costs, partner quote, partner safe, assistant project blueprint, create project with budget, conversational project setup, price per copy, per copy invoice, organization donation fee, organization fee, admin fee, donation deduction, fee coverage, funding target, expected net, actual net, available funding, budget attention, next action, section navigation, budget in four steps, what do i do next, walk me through the budget, budget steps, getting started with budget, reprint budget, accepted print quote, add print cost, custom reprint cost, edit budget line, optimistic budget line, unit price, word count, typesetting, funding assigned, raised, to raise, spent, funding, royalties, excel, pdf, export, reconciliation, cashflow, donation mou match, apply donation to mou, shared mou, allocated funding, shared receipt, funding partner, sponsor, funding contact, proposal, funding proposal subject, proposal sign-off, mou proposal, send proposal, proposal history, email attachment, attachment preview, preview quotation, proposed completion date, completion date, suggest a date, completion planner, planning capacity, projects at once, project duration, timeline, deadline, budget approval, approver, approve, request changes, unanimous approval, stale approval, logo, branding, accent color, partners directory, saved partner, paid invoice, upload invoice, past invoice, invoice received, immutable invoice, void invoice, replacement invoice, split payment, edit payment schedule, change mou payment, payment date, invoice owner, royalty payment task, mark royalty paid]
 order: 60
-summary: "Internal costs, partner-safe quotations, organization donation fees, receipts, and invoices."
+summary: "Review funding totals, then switch between Quotation, Approvals, Cash flow, Payments, and Notes without losing drafts."
 ---
+
+Open **Publishing ▸ Budget**. The current scope's quotation, committed funding,
+and funding gap stay visible above the content tabs. **Quotation** is selected
+first. Choose **Approvals**, **Cash flow**, **Payments**, or **Notes** to show
+that section directly. Switching tabs retains unsaved fields. Bookmarks and
+exception links select the matching tab, including links to a payment or field.
+Errors reveal their section. **Show steps** beside the Budget heading explains
+the flow. Main, active reprint, and all-history scopes keep their existing records;
+the read-only all-history view has no Approvals tab.
 
 The Budget separates the real **Project costs** from the **Partner quote** a
 donor or funding partner sees and pays. Managers can present selected itemized
@@ -35,15 +44,15 @@ save fails.
 
 ## Budget in four steps
 
-New to budgets? The page works in order, from top to bottom:
+New to budgets? Work through these tabs:
 
-1. **Plan the costs.** In **Planning**, list what the work will cost. Then set
+1. **Plan the costs.** In **Quotation**, list what the work will cost. Then set
    the partner quote — the price the funding partner sees.
-2. **Get approval and send the proposal.** In **Decisions**, ask your team to
+2. **Get approval and send the proposal.** In **Approvals**, ask your team to
    approve the quote (this is optional), then send the proposal to the partner.
-3. **Track the money.** In **Cash and reconciliation**, record funding as it
+3. **Track the money.** In **Cash flow**, record funding as it
    arrives and check that it matches the plan.
-4. **Handle agreements and fees.** In **Agreements and fees**, schedule partner
+4. **Handle agreements and fees.** In **Payments**, schedule partner
    payments, royalties, and license fees.
 
 Marking a royalty payment paid completes its linked task; undoing the paid mark
@@ -172,16 +181,20 @@ saved totals, reopens the attempted values for correction, and shows the error.
 The project quotation is your **fundraising plan** — what to raise. The Print
 tab remains the operational source for printer quotes, invoices, and payments;
 the run-scoped Budget view itemizes the accepted reprint cost and any additional
-costs. **AI spend** is shown as an operational cost and is deliberately *not*
+costs. **AI operating cost** in Notes is shown as an operational cost and is deliberately *not*
 part of the quotation.
 
 ## Moving between budget sections
 
-Use the section bar to jump between **Planning**, **Decisions**, **Cash &
-reconciliation**, **Agreements & fees**, and **AI spend & notes**. All sections
-are open by default so nothing is hidden; collapse one from its header when you
-want to tidy the page. Collapsing a section changes only the page layout—it does
-not approve, complete, or dismiss anything.
+Use the tabs to switch between **Quotation**, **Approvals**, **Cash flow**,
+**Payments**, and **Notes**. One section is visible at a time; its editors stay
+mounted, so switching tabs does not discard drafts. On mobile, scroll the tab
+row to reach another section. The selected tab stays visible. Pending approval
+and cash issues show counts on their tabs, and urgent issues remain above them.
+
+Existing section bookmarks keep working. For example, `#operations-notes`
+selects Notes and `#cash-reconciliation` selects Cash flow. Changing tabs changes
+only the view: it does not approve, complete, send, or dismiss anything.
 
 On books with more than one print run, **Budget scope** switches between **Main
 project**, each reprint, and **All history**. Main and reprint finances remain
@@ -252,7 +265,7 @@ Budget approval is optional. If your team wants internal sign-off for a
 quotation, a manager can set it up directly on the Budget screen. Approval is
 separate for the main project and each reprint scope:
 
-1. Open **Budget approval** beneath the quotation.
+1. Select **Approvals** and open **Budget approval**.
 2. Select one or more active workspace managers or admins directly on the Budget
    screen. They do not need a project coordinator role. The requester cannot
    select themself, and every selected person is required.

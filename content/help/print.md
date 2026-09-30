@@ -2,10 +2,20 @@
 title: "Print runs, printer quote requests & quotes"
 category: "Publishing"
 roles: [manager, admin]
-keywords: [request printer quotes, source page count, full payment, consolidate payments, wrong wire amount, print, print run, reprint, previous print, historical print, old print, collapse print run, show print details, old quote, legacy quote, copy specs, apply specs, measurement unit, millimetres, millimeters, mm, inches, trim size, rfq, quote request, printer, printing coordinator, payment task, payment confirmation task, quantity, tier, total price, price per copy, quote learning, document learning, printing in five steps, print steps, first print run, walk me through printing, how to print, recommended balance, economic elbow, sell-through, lowest cost per copy, total cost, cost per copy, incremental cost, comparison, wire, finance, funding received, printer paid, deposit, balance, proof, proof attachment, proof download, proof files, printer waiting for approval, proofing status, suggested project update, invoice, deposit invoice, final invoice, invoice attachment, attachment preview, preview invoice, estimate vs actual, accept quote, accepted, collapse quotes, hide other quotes, show other quotes, reopen quote, un-accept, unaccept, reject quote, reverse acceptance, ai email draft, generated sign-off, learns from edits, email style, draft tone, awaiting payment, wire requested, run status, print correspondence, printer email, email thread, open thread, view thread, missing price, per copy price, cover pdf, book pdf, artwork not a quote, file note, attachment note, payment follow up, awaiting payment confirmation, confirm printer received payment]
+keywords: [publishing, print defaults and printer contacts, active runs, request printer quotes, source page count, full payment, consolidate payments, wrong wire amount, print, print run, reprint, previous print, historical print, old print, collapse print run, show print details, old quote, legacy quote, copy specs, apply specs, measurement unit, millimetres, millimeters, mm, inches, trim size, rfq, quote request, printer, printing coordinator, payment task, payment confirmation task, quantity, tier, total price, price per copy, quote learning, document learning, printing in five steps, print steps, first print run, walk me through printing, how to print, recommended balance, economic elbow, sell-through, lowest cost per copy, total cost, cost per copy, incremental cost, comparison, wire, finance, funding received, printer paid, deposit, balance, proof, proof attachment, proof download, proof files, printer waiting for approval, proofing status, suggested project update, invoice, deposit invoice, final invoice, invoice attachment, attachment preview, preview invoice, estimate vs actual, accept quote, accepted, collapse quotes, hide other quotes, show other quotes, reopen quote, un-accept, unaccept, reject quote, reverse acceptance, ai email draft, generated sign-off, learns from edits, email style, draft tone, awaiting payment, wire requested, run status, print correspondence, printer email, email thread, open thread, view thread, missing price, per copy price, cover pdf, book pdf, artwork not a quote, file note, attachment note, payment follow up, awaiting payment confirmation, confirm printer received payment]
 order: 70
-summary: "Set up print runs, request printer quotes, review extracted prices, and track print costs."
+summary: "Review active Print runs, quotes, payments, and proofs; expand specifications, setup, and defaults as needed."
 ---
+
+Open **Publishing ▸ Print**. Status, the next unpaid payment, proof, funding
+warnings, quote comparisons, and active runs come before setup defaults. Use
+**Set up print run** for a new run; it starts expanded when there are no runs.
+Expand **Print defaults and printer contacts** for estimate, trim, recipient,
+and contact settings. Completed or cancelled previous runs start collapsed;
+ongoing runs remain open. Expand **Run specifications and quantity** for the
+full specification and quantity controls; quote comparisons remain visible.
+A linked payment opens its previous run automatically. Printer quote and finance emails still require
+recipient review and explicit send confirmation.
 
 The **Print** tab is the book production and procurement hub for books and
 articles. Managers manage it. Nothing here emails anyone until you review and
@@ -297,7 +307,6 @@ directly from a task board. Reopening a
 payment reopens its task; deleting the payment removes the generated task. A
 confirmed deletion removes only that payment while it saves, so actions on the
 other payment rows remain available.
-
 
 ### Paying an accepted invoice in full
 

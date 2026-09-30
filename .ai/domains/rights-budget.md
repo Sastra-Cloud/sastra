@@ -11,6 +11,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/budget/budget-approval-panel.tsx`
 - `components/budget/budget-attention-summary.tsx`
 - `components/budget/budget-manager.tsx`
+- `components/budget/budget-section.test.tsx`
 - `components/budget/budget-section.tsx`
 - `components/budget/cashflow-card.tsx`
 - `components/budget/completion-date-planner.tsx`

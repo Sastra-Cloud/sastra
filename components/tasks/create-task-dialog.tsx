@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
+import { SectionDisclosure } from "@/components/section-disclosure";
 import { createTask } from "@/lib/tasks/actions";
 import { createRecurringTask } from "@/lib/tasks/recurring-actions";
 import {
@@ -80,7 +81,9 @@ export function CreateTaskDialog({
 }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const submissionInFlight = useRef(false);
   const [open, setOpen] = useState(false);
+  const [hasOpened, setHasOpened] = useState(false);
   const [repeat, setRepeat] = useState<Repeat>("none");
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -95,6 +98,7 @@ export function CreateTaskDialog({
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (submissionInFlight.current) return;
     setError(null);
     const fd = new FormData(e.currentTarget);
     fd.set("driveFiles", JSON.stringify(driveFiles));
@@ -111,6 +115,7 @@ export function CreateTaskDialog({
       setError("Pick a start date for the repeat");
       return;
     }
+    submissionInFlight.current = true;
 
     if (!recurring && onOptimisticCreate) {
       const temporaryId = `optimistic-task-${crypto.randomUUID()}`;
@@ -177,6 +182,7 @@ export function CreateTaskDialog({
           task,
           save: () => createTask({}, fd),
           onSuccess: (result) => {
+            submissionInFlight.current = false;
             setOptimisticPending(false);
             setRepeat("none");
             setDriveFolder(null);
@@ -186,12 +192,14 @@ export function CreateTaskDialog({
             else toast.success("Task created");
           },
           onError: (message) => {
+            submissionInFlight.current = false;
             setOptimisticPending(false);
             setError(message);
             setOpen(true);
           },
         });
       } catch {
+        submissionInFlight.current = false;
         setOptimisticPending(false);
         setError("Couldn't create the task. Please check your internet and try again.");
         setOpen(true);
@@ -229,6 +237,7 @@ export function CreateTaskDialog({
           warning = res.warning;
         }
         setOpen(false);
+        formRef.current?.reset();
         setRepeat("none");
         setDriveFolder(null);
         setDriveFiles([]);
@@ -240,12 +249,14 @@ export function CreateTaskDialog({
         router.refresh();
       } catch {
         setError("Couldn't create the task. Please check your internet and try again.");
+      } finally {
+        submissionInFlight.current = false;
       }
     });
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={next => { setOpen(next); if (next) setHasOpened(true); }}>
       <DialogTrigger
         render={
           <Button
@@ -258,7 +269,7 @@ export function CreateTaskDialog({
         <Plus className="size-4" />
         {triggerLabel}
       </DialogTrigger>
-      <DialogContent keepMounted={Boolean(onOptimisticCreate)}>
+      <DialogContent keepMounted={hasOpened}>
         <DialogHeader>
           <DialogTitle>New task</DialogTitle>
         </DialogHeader>
@@ -290,6 +301,38 @@ export function CreateTaskDialog({
             </>
           ) : null}
 
+          <div className="grid gap-2">
+            <Label htmlFor="t-title">Title</Label>
+            <Input
+              id="t-title"
+              name="title"
+              defaultValue={defaultTitle}
+              required
+              autoFocus
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="t-assignee">Assignee</Label>
+              <select id="t-assignee" name="assignedTo" className={selectClass} defaultValue={defaultAssignee}>
+                <option value="">Unassigned</option>
+                {assignees.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="t-due">{recurring ? "Starts on" : "Due date"}</Label>
+              <Input
+                id="t-due"
+                name="dueDate"
+                type="date"
+                required={recurring}
+              />
+            </div>
+          </div>
           {!projectId && projects.length > 0 ? (
             <div className="grid gap-2">
               <Label htmlFor="t-project">Project</Label>
@@ -309,16 +352,7 @@ export function CreateTaskDialog({
             </div>
           ) : null}
 
-          <div className="grid gap-2">
-            <Label htmlFor="t-title">Title</Label>
-            <Input
-              id="t-title"
-              name="title"
-              defaultValue={defaultTitle}
-              required
-              autoFocus
-            />
-          </div>
+          <SectionDisclosure title="Description and files" defaultOpen={Boolean(defaultDescription)}>
           <div className="grid gap-2">
             <Label htmlFor="t-desc">Description</Label>
             <Textarea
@@ -348,18 +382,8 @@ export function CreateTaskDialog({
             </>
           ) : null}
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid gap-2">
-              <Label htmlFor="t-assignee">Assignee</Label>
-              <select id="t-assignee" name="assignedTo" className={selectClass} defaultValue={defaultAssignee}>
-                <option value="">Unassigned</option>
-                {assignees.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          </SectionDisclosure>
+          <SectionDisclosure title="More options" description="Priority, repeat, estimate, stage, and milestone">
             <div className="grid gap-2">
               <Label htmlFor="t-priority">Priority</Label>
               <select
@@ -374,8 +398,6 @@ export function CreateTaskDialog({
                 <option value="urgent">Urgent</option>
               </select>
             </div>
-          </div>
-
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-2">
               <Label htmlFor="t-repeat">Repeat</Label>
@@ -392,17 +414,7 @@ export function CreateTaskDialog({
                 <option value="annual">Annually</option>
               </select>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="t-due">{recurring ? "Starts on" : "Due date"}</Label>
-              <Input
-                id="t-due"
-                name="dueDate"
-                type="date"
-                required={recurring}
-              />
-            </div>
           </div>
-
           {recurring ? (
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">
@@ -427,7 +439,7 @@ export function CreateTaskDialog({
             </div>
             {phases.length > 0 && !recurring ? (
               <div className="grid gap-2">
-                <Label htmlFor="t-phase">Phase</Label>
+                <Label htmlFor="t-phase">Stage</Label>
                 <select id="t-phase" name="phaseId" className={selectClass} defaultValue="">
                   <option value="">None</option>
                   {phases.map((p) => (
@@ -452,6 +464,7 @@ export function CreateTaskDialog({
             </p>
           ) : null}
 
+          </SectionDisclosure>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
           <DialogFooter>

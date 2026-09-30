@@ -26,6 +26,9 @@ const severityIcons = {
 };
 
 export function BudgetAttentionSummary({ summary }: { summary: Summary }) {
+  if (summary.items.length === 0) return (
+    <p className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle2 className="size-4 text-success" />No budget exceptions need attention</p>
+  );
   return (
     <section
       className="overflow-hidden rounded-xl border bg-card"

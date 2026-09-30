@@ -1,7 +1,6 @@
-import Link from "next/link";
+import { ProjectTaskViews } from "@/components/projects/project-task-views";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
-import { ChevronLeft } from "lucide-react";
 
 import { requireUser } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
@@ -31,13 +30,7 @@ export default async function ProjectPipelinePage({
 
   return (
     <div className="space-y-4">
-      <Link
-        href={`/projects/${slug}/tasks`}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="size-4" />
-        Board
-      </Link>
+      <ProjectTaskViews slug={slug} />
       <PipelineView
         data={data}
         projectSlug={slug}

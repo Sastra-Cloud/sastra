@@ -2,13 +2,16 @@
 title: "Settings"
 category: "Settings"
 roles: [member, manager, admin]
-keywords: [personal, publishing, AI usage, document learning, pause learning, reviewed examples, voice dictionary, project roles, IANA, pending invitations, file space, storage, storage full, out of space, upload limit, your plan, manage plan, people limit, billing address, partner address, invoice description, settings, setup, profile, timezone, languages, currency, invoice issuer, payment instructions, invoice numbering, organization donation fee, organization fee, admin fee, donation deduction, net available, templates, avatar, team, invite, roles, super admin, publishers, printers, email, default cc, cc recipients, outbound email defaults, dictionary, voice, ai, model, budget, costs, usage, cloudflare, r2, openrouter, ai key, api key, openrouter key, credits, ai credits, credits used up, buy credits, branding, logo, workspace, organization identity, aliases, internal domains, mobile settings, planning capacity, projects at once, project duration, completion date planner, work path, work paths, creative path, project type capacity, books at once, articles podcasts and video, guidance, show helpful guidance, guided setup, tips, hide tips, expert mode, security, passkey, fingerprint, trusted browser, two factor, dependency audit, security updates, check again, run security check, GitHub Actions, fast AI pre-checks, pre-check, typesafe, jev, skip AI calls]
+keywords: [search settings, find a setting, email assistant preferences, active email preferences, personal, publishing, AI usage, document learning, pause learning, reviewed examples, voice dictionary, project roles, IANA, pending invitations, file space, storage, storage full, out of space, upload limit, your plan, manage plan, people limit, billing address, partner address, invoice description, settings, setup, profile, timezone, languages, currency, invoice issuer, payment instructions, invoice numbering, organization donation fee, organization fee, admin fee, donation deduction, net available, templates, avatar, team, invite, roles, super admin, publishers, printers, email, default cc, cc recipients, outbound email defaults, dictionary, voice, ai, model, budget, costs, usage, cloudflare, r2, openrouter, ai key, api key, openrouter key, credits, ai credits, credits used up, buy credits, branding, logo, workspace, organization identity, aliases, internal domains, mobile settings, planning capacity, projects at once, project duration, completion date planner, work path, work paths, creative path, project type capacity, books at once, articles podcasts and video, guidance, show helpful guidance, guided setup, tips, hide tips, expert mode, security, passkey, fingerprint, trusted browser, two factor, dependency audit, security updates, check again, run security check, GitHub Actions, fast AI pre-checks, pre-check, typesafe, jev, skip AI calls]
 order: 140
-summary: "Manage personal and shared settings, including document learning, timezones, hosted seats, and AI usage."
+summary: "Search personal and shared settings, manage Profile email preferences, workspace defaults, publishing, and AI."
 ---
 
 **Settings** holds your personal preferences and the workspace's shared
-configuration. Which tabs you see depends on your role.
+configuration. It opens a searchable **Find a setting** directory, grouped as
+**Personal**, **Workspace**, **Publishing**, and **AI & email**. Search labels or
+descriptions, such as printer, timezone, or notifications. Only permitted
+settings appear; existing section links still work.
 
 Managers can review and disable document intake examples under **Document
 learning**. Admins can also pause workspace learning and, on Sastra Cloud,
@@ -29,7 +32,8 @@ confirmed.
 
 - **Profile** — your **name**, **timezone** (drives standup timing and due
   dates), **avatar**, the **Show helpful guidance** toggle, and the
-  **auto-start time-tracking** toggle. Guidance turns the guided setup steps and
+  **auto-start time-tracking** toggle. Expand **Email assistant preferences**
+  for task suggestions, learning, and active personal email rules. Guidance turns the guided setup steps and
   on-screen tips on or off; leave it on while you are learning the app and turn
   it off once you know it well. You can also hide any single tip with its close
   button. Cropped profile photos are stored with the user account rather than

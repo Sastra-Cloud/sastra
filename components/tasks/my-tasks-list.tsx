@@ -9,6 +9,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { CircleDollarSign, Flag, Repeat2, ShieldCheck, Trash2 } from "lucide-react";
 
 import type { MyTaskRow } from "@/lib/tasks/queries";
+import { showTaskCompleted } from "@/lib/tasks/completion-feedback";
 import { deleteTask, updateTaskStatus } from "@/lib/tasks/actions";
 import { PriorityBadge, TaskStatusBadge } from "@/components/badges";
 import { TaskCompleteButton } from "@/components/tasks/task-complete-button";
@@ -64,13 +65,15 @@ export function MyTasksList({
   const markDone = (task: MyTaskRow) => {
     const previous = visibleTasks;
     setVisibleTasks((current) => current.filter((item) => item.id !== task.id));
+    const completionToast = toast.loading("Saving completion and checking the next step…");
     start(async () => {
       try {
-        await updateTaskStatus(task.id, "done");
+        const result = await updateTaskStatus(task.id, "done");
+        showTaskCompleted(result, href => router.push(href), completionToast);
         router.refresh();
       } catch (error) {
         setVisibleTasks(previous);
-        toast.error(error instanceof Error ? error.message : "Could not complete the task.");
+        toast.error(error instanceof Error ? error.message : "Could not complete the task.", { id: completionToast });
       }
     });
   };

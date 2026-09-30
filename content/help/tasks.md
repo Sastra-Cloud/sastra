@@ -2,9 +2,9 @@
 title: "Tasks & the board"
 category: "Work"
 roles: [member, manager, admin]
-keywords: [task, kanban, board, column, to do, in progress, review, done, drag, move, assign, priority, due date, earliest due first, task order, reschedule, edit task, move task to project, milestone, recurring, recurring schedule, google drive, task attachment, upload file, attach file, working folder, license obligation, printer payment, printing coordinator, proof review, approve proof, reply to printer, budget approval, approve, request changes, wip, time tracking, comment, mention, email task, forwarded email, meeting reminder, booking link, email assistant, task suggestion, learn from email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice, waiting for payment, follow up due, source linked task]
+keywords: [suggestions to review, next task, handoff, more options, task, kanban, board, column, to do, in progress, review, done, drag, move, assign, priority, due date, earliest due first, task order, reschedule, edit task, move task to project, milestone, recurring, recurring schedule, google drive, task attachment, upload file, attach file, working folder, license obligation, printer payment, printing coordinator, proof review, approve proof, reply to printer, budget approval, approve, request changes, wip, time tracking, comment, mention, email task, forwarded email, meeting reminder, booking link, email assistant, task suggestion, learn from email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice, waiting for payment, follow up due, source linked task]
 order: 30
-summary: "My Work's Focus and Board views, moving cards, task fields, and time tracking."
+summary: "Find your next assigned work, review email suggestions, use Board and Agenda, and follow task handoffs."
 ---
 
 Tasks are the unit of work. **My Work** brings your personal tasks and dated
@@ -14,9 +14,9 @@ project also keeps its own task board.
 ## My Work
 
 - **Focus** is the daily workspace. It shows work already in progress, what
-  needs attention next, printer payment tasks under **Waiting** after a wire
-  request is sent, farther-future work under **Later**, and tasks completed
-  today. The summary reports open work, today's completions, and today's tracked
+  needs attention next (the next five, with **Show all** for the full queue),
+  and collapsed **Waiting on confirmation**, **Later**, and **Completed today**
+  sections with counts. All started and review tasks remain visible. The summary reports open work, today's completions, and today's tracked
   time.
 - **Board** shows all tasks assigned to you as **To do**, **In progress**,
   **Review**, and recent **Done** columns. Drag cards or use their status menu;
@@ -51,7 +51,7 @@ to that person; people copied in **Cc** never imply assignment. For example,
 email sent to Bora with a revised cover proof can suggest **Review revised cover
 proof and reply to Stone**, linked to the project and with no invented due date.
 The recipient gets an in-app notification, and the editable suggestion stays at
-the top of **My Work** until they choose **Add task**, **Already done**, or
+**My Work ▸ Suggestions to review** until they choose **Add task**, **Already done**, or
 **Not a task**. Managers also see it in the correspondence thread's review
 area.
 
@@ -68,8 +68,8 @@ quote, project suggestion, or grant reminder when appropriate.
 - If your note above the forwarded message explicitly asks Sastra to create a
   task or reminder, it may create an undated, medium-priority task assigned to
   you. A manager or admin can explicitly delegate to another active teammate.
-- If the work is only inferred from the original email, it appears at the top of
-  **My Work** for review. Edit the task, notes, due date, priority, project, and
+- If the work is only inferred from the original email, it appears under
+  **My Work ▸ Suggestions to review**. Edit the task, notes, due date, priority, project, and
   (for managers) assignee, then choose **Add task**, **Already done**, or
   **Not a task**. The suggestion shows the original email date when Sastra can
   recover it from forwarded headers. **Already done** clears historical work
@@ -85,11 +85,27 @@ the manager-only correspondence inbox. An automatically created task also has
 **Undo automatic task**, which removes it after confirmation.
 
 Sastra can learn narrow personal preferences from repeated accepts, edits,
-dismissals, and undos. A proposed preference appears in My Work and does nothing
+dismissals, and undos. A proposed preference appears under **My Work ▸ Suggestions to review** and does nothing
 until you choose **Apply**. Patterns shared by several teammates are likewise
 reviewed by an admin under **Settings ▸ AI** before becoming workspace rules.
-Turn task suggestions or this learning off under **Settings ▸ Notifications ▸
-Email assistant**.
+Manage approved personal preferences and turn task suggestions or learning off
+under **Settings ▸ Profile ▸ Email assistant preferences**. Notification settings
+link to this section. Suggestion notification links open the review section.
+
+## Creating and finishing tasks
+
+**Create task** starts with the title, assignee, due date, and project. Open
+**Description and files** for instructions and Drive references, or **More
+options** for priority, repetition, estimate, stage, and milestone. Closing an
+optional section keeps the fields and values in the form. In task details,
+instructions and task files remain visible; time tracking and Drive management
+expand below the core controls.
+
+Completing an ordinary task updates its visible status immediately while Sastra
+saves and checks the pipeline. A saved chapter handoff shows the next task, its
+owner and due date, with **Open next task**. A failed save restores the prior
+state. Source-controlled approval and payment tasks still use their linked
+record's actions.
 
 ## The board
 

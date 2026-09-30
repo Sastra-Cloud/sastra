@@ -2,10 +2,17 @@
 title: "Rights & licensing"
 category: "Publishing"
 roles: [member, manager, admin]
-keywords: [rights, license, licence, mou, commercial, publisher, holder, formats, copyright, obligation, compliance, agreement, multiple projects, multi-project mou, shared agreement pdf, agreement chat, ask about agreements, citations, source selection, indexing, retry index, compare agreements, initiate request, signed email, payment receipt, license fee, file note, attachment note, license fee task, mark license fee paid]
+keywords: [publishing, rights summary, next step, expiry, rights, license, licence, mou, commercial, publisher, holder, formats, copyright, obligation, compliance, agreement, multiple projects, multi-project mou, shared agreement pdf, agreement chat, ask about agreements, citations, source selection, indexing, retry index, compare agreements, initiate request, signed email, payment receipt, license fee, file note, attachment note, license fee task, mark license fee paid]
 order: 50
-summary: "The single rights record per project, agreement types, and obligations."
+summary: "Review Rights under Publishing: status, deadlines, permitted formats, agreement steps, and obligations."
 ---
+
+Open **Publishing ▸ Rights**. The summary shows permitted formats, the
+complete-by date, agreement expiry dates, unpaid license fees, and a link to the
+next incomplete agreement step. Expand the MoU or license to edit its fields
+and documents. Fees and renewal details, permission details, agreement type,
+and copyright remain available in expandable sections. These sections retain
+unsaved input when closed. Print funding is a separate project setting.
 
 Every project has **one rights record** answering a single question: *do we have
 the rights we need?* Everyone can view it; editing is a manager action.

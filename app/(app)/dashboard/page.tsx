@@ -1,27 +1,16 @@
 import Link from "next/link";
 import { formatInTimeZone } from "date-fns-tz";
-import {
-  AlertTriangle,
-  ArrowRight,
-  CalendarClock,
-  CalendarPlus,
-  CheckCircle2,
-  ListChecks,
-  WalletCards,
-} from "lucide-react";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 
 import { requireUser } from "@/lib/auth/guards";
 import { getMyTasks } from "@/lib/tasks/queries";
 import { listAssignableUsers, listProjects } from "@/lib/projects/queries";
 import { daysUntil, timeAgo } from "@/lib/format";
 import { HealthDot } from "@/components/badges";
-import { StatCard } from "@/components/portfolio/stat-card";
 import { MyTasksList } from "@/components/tasks/my-tasks-list";
 import { CreateTaskDialog } from "@/components/tasks/create-task-dialog";
-import {
-  ManagerReviewQueue,
-  type ManagerReviewItem,
-} from "@/components/dashboard/manager-review-queue";
+import { ManagerReviewQueue } from "@/components/dashboard/manager-review-queue";
+import { getManagerAttention } from "@/lib/dashboard/attention";
 import { PrintFundingBadge } from "@/components/projects/print-funding-badge";
 import { PushNudge } from "@/components/pwa/push-nudge";
 import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist";
@@ -29,20 +18,12 @@ import {
   getOnboardingSignals,
   type OnboardingSignals,
 } from "@/lib/onboarding/queries";
-import { activeProjectCoordinationLimit } from "@/lib/flow";
 import { selectPersonalWork } from "@/lib/tasks/attention";
-import {
-  listUnreadNotificationsByType,
-  notificationProject,
-} from "@/lib/notifications/queries";
+
 import { can, canManage } from "@/lib/auth/policy";
 import { projectOptionLabel } from "@/lib/projects/visibility";
 import { orderProjectsByDashboardActivity } from "@/lib/projects/dashboard-order";
-import {
-  isBookProjectKind,
-  needsPrintFundingReview,
-} from "@/lib/projects/print-funding";
-import { listManagerUpdateRecommendations } from "@/lib/projects/status-queries";
+import { isBookProjectKind } from "@/lib/projects/print-funding";
 import { getWorkspaceSettings } from "@/lib/workspace/queries";
 
 export const metadata = { title: "Home" };
@@ -58,74 +39,12 @@ export default async function DashboardPage() {
   const onboardingSignals: OnboardingSignals | null = guidanceEnabled
     ? await getOnboardingSignals(user.id)
     : null;
-  const [
-    myTasks,
-    users,
-    projects,
-    possibleNewProjects,
-    possibleCounterparties,
-    possibleProjectUpdates,
-    projectUpdateRecommendations,
-    workspace,
-  ] = await Promise.all([
-    getMyTasks(user.id),
-    listAssignableUsers(),
-    listProjects({ includeDashboardActivity: true }),
-    canReviewCorrespondence
-      ? listUnreadNotificationsByType(user.id, "possible_new_project", 4)
-      : Promise.resolve([]),
-    canReviewCorrespondence
-      ? listUnreadNotificationsByType(user.id, "possible_counterparty", 4)
-      : Promise.resolve([]),
-    canReviewCorrespondence
-      ? listUnreadNotificationsByType(user.id, "possible_project_update", 4)
-      : Promise.resolve([]),
-    canReviewCorrespondence
-      ? listManagerUpdateRecommendations(8)
-      : Promise.resolve([]),
-    getWorkspaceSettings(),
+  const [myTasks, users, projects, workspace] = await Promise.all([
+    getMyTasks(user.id), listAssignableUsers(),
+    listProjects({ includeDashboardActivity: true }), getWorkspaceSettings(),
   ]);
-  const notificationSuggestions = [
-    ...possibleNewProjects,
-    ...possibleCounterparties,
-    ...possibleProjectUpdates,
-  ];
-  const reviewPriority = { high: 0, medium: 1, low: 2 } as const;
-  const reviewItems: ManagerReviewItem[] = [
-    ...projectUpdateRecommendations.map((item) => ({
-      id: `project-update:${item.updateId}`,
-      source: "project_follow_up" as const,
-      title: item.analysis.recommendations[0]?.title ?? item.analysis.summary,
-      detail: item.analysis.recommendations[0]?.reason ?? item.analysis.summary,
-      project: item.projectTitle,
-      priority: item.analysis.priority,
-      href: `/projects/${item.projectSlug}#status-update`,
-      actionLabel: "Review project",
-      createdAt: item.createdAt,
-    })),
-    ...notificationSuggestions.map((item) => ({
-      id: `notification:${item.id}`,
-      source:
-        item.type === "possible_project_update"
-          ? ("project_update" as const)
-          : item.type === "possible_new_project"
-            ? ("new_project" as const)
-            : ("counterparty" as const),
-      title: item.title,
-      detail: item.body,
-      project: notificationProject(item.data),
-      priority: "medium" as const,
-      href: item.link ?? "/correspondence",
-      actionLabel: "Review email",
-      createdAt: item.createdAt,
-    })),
-  ]
-    .sort(
-      (a, b) =>
-        reviewPriority[a.priority] - reviewPriority[b.priority] ||
-        b.createdAt.getTime() - a.createdAt.getTime()
-    )
-    .slice(0, 5);
+  const reviewItems = canReviewCorrespondence
+    ? await getManagerAttention(projects, users.length) : [];
 
   const overdue = myTasks
     .filter((t) => {
@@ -143,29 +62,6 @@ export default async function DashboardPage() {
   const allActiveProjects = projects.filter(
     (p) => p.status === "active" || p.status === "planning"
   );
-  // Managers/admins get a nudge to schedule live projects that lack a target
-  // completion date — undated work is invisible to the timeline and forecasts.
-  const missingDueDate = can(user, "project.edit")
-    ? projects.filter(
-        (p) =>
-          !p.dueDate &&
-          (p.status === "planning" ||
-            p.status === "active" ||
-            p.status === "on_hold")
-      )
-    : [];
-  const printFundingNeeds = can(user, "project.edit")
-    ? projects.filter(
-        (project) =>
-          isBookProjectKind(project.kind) &&
-          (project.status === "planning" ||
-            project.status === "active" ||
-            project.status === "on_hold") &&
-          needsPrintFundingReview(project.printFundingStatus)
-      )
-    : [];
-  const teamSize = users.length;
-  const projectCoordinationLimit = activeProjectCoordinationLimit(teamSize);
   const activeProjects = orderProjectsByDashboardActivity(allActiveProjects).slice(
     0,
     6
@@ -175,11 +71,6 @@ export default async function DashboardPage() {
     0,
     ordered.length - focusTasks.length
   );
-  const visibleStats = [
-    { key: "assigned", value: myTasks.length },
-    { key: "overdue", value: overdue.length },
-    { key: "week", value: dueThisWeek },
-  ].filter((stat) => stat.value > 0);
   const projectOptions = projects.map((project) => ({
     id: project.id,
     name: projectOptionLabel(project),
@@ -187,11 +78,8 @@ export default async function DashboardPage() {
 
   return (
     <div className="w-full space-y-6">
-      <section className="surface-shadow flex flex-col gap-4 rounded-xl border bg-card p-4 sm:flex-row sm:items-end sm:justify-between">
+      <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex min-w-0 items-start gap-3">
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
-            <ListChecks className="size-6" />
-          </span>
           <div className="min-w-0">
             <h1 className="font-heading text-3xl font-semibold tracking-tight text-pretty">
               Home
@@ -219,12 +107,15 @@ export default async function DashboardPage() {
       <section className="space-y-2" aria-labelledby="dashboard-order-heading">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 id="dashboard-order-heading" className="text-lg font-semibold">
-            Do in this order
+            Your next work
           </h2>
           <span className="text-xs text-muted-foreground">
             Started work first, then your attention queue
           </span>
         </div>
+        <p className="text-xs text-muted-foreground">
+          {myTasks.length} open · {overdue.length} overdue · <Link href="/tasks?view=agenda" className="underline underline-offset-4">{dueThisWeek} due in the next 7 days</Link>
+        </p>
         {focusTasks.length > 0 ? (
           <>
             <MyTasksList
@@ -270,7 +161,7 @@ export default async function DashboardPage() {
         ) : null}
       </section>
 
-      <ManagerReviewQueue items={reviewItems} />
+      <ManagerReviewQueue items={reviewItems} limit={3} />
 
       {activeProjects.length > 0 ? (
         <section className="space-y-2" aria-labelledby="active-projects-heading">
@@ -367,122 +258,6 @@ export default async function DashboardPage() {
           </ul>
         </section>
       ) : null}
-
-      {missingDueDate.length > 0 ? (
-        <Link
-          href="/overview/due-dates"
-          className="group flex items-center gap-4 rounded-xl border bg-card px-4 py-3.5 transition-colors hover:border-primary/40 hover:bg-muted/40"
-        >
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
-            <CalendarPlus className="size-5.5" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="font-medium">
-              <span className="tabular-nums">{missingDueDate.length}</span>{" "}
-              {missingDueDate.length === 1 ? "project needs" : "projects need"} a
-              due date
-            </p>
-            <p className="text-sm text-muted-foreground text-pretty">
-              Set target completion dates so they show on the timeline and
-              forecast.
-            </p>
-          </div>
-          <span className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-primary">
-            Add dates
-            <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-          </span>
-        </Link>
-      ) : null}
-
-      {printFundingNeeds.length > 0 ? (
-        <Link
-          href="/projects?printFunding=needs_review"
-          className="group flex items-center gap-4 rounded-xl border border-warning/35 bg-warning/5 px-4 py-3.5 transition-colors hover:border-warning/55 hover:bg-warning/10"
-        >
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-warning/15 text-foreground">
-            <WalletCards className="size-5.5" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="font-medium text-foreground">
-              <span className="tabular-nums">{printFundingNeeds.length}</span>{" "}
-              {printFundingNeeds.length === 1 ? "book needs" : "books need"}{" "}
-              print funding review
-            </p>
-            <p className="text-sm text-muted-foreground text-pretty">
-              Set or update the funding flag in each book&apos;s Project settings.
-            </p>
-          </div>
-          <span className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-primary">
-            Review funding
-            <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-          </span>
-        </Link>
-      ) : null}
-
-      {allActiveProjects.length > projectCoordinationLimit ? (
-        <section className="flex flex-col gap-3 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm sm:flex-row sm:items-center">
-          <div className="min-w-0 flex-1">
-            <p className="font-medium text-foreground">
-              Portfolio needs a coordination pass
-            </p>
-            <p className="text-muted-foreground text-pretty">
-              {allActiveProjects.length} projects are active or planning across{" "}
-              {teamSize} team {teamSize === 1 ? "member" : "members"}. Open a
-              project&apos;s Tasks to assign its next step, then use Overview to
-              review blockers and team capacity before starting more work.
-            </p>
-          </div>
-          <Link
-            href="/projects"
-            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1 rounded-md px-3 font-medium text-primary transition-colors hover:bg-background/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            Review projects
-            <ArrowRight className="size-3.5" />
-          </Link>
-        </section>
-      ) : null}
-
-      <section className="space-y-2" aria-labelledby="dashboard-status-heading">
-        <h2 id="dashboard-status-heading" className="text-lg font-semibold">
-          Work status
-        </h2>
-        {visibleStats.length === 0 ? (
-          <div className="flex items-center gap-2 rounded-xl border bg-card px-4 py-3 text-sm text-muted-foreground">
-            <CheckCircle2 className="size-4 text-success" />
-            No assigned, overdue, or upcoming tasks need attention.
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-3">
-            {myTasks.length > 0 ? (
-              <StatCard
-                icon={ListChecks}
-                label="Assigned to me"
-                value={myTasks.length}
-                hint="open tasks"
-              />
-            ) : null}
-            {overdue.length > 0 ? (
-              <StatCard
-                icon={AlertTriangle}
-                label="Overdue"
-                value={overdue.length}
-                hint="need attention"
-                tone="destructive"
-              />
-            ) : null}
-            {dueThisWeek > 0 ? (
-              <Link href="/tasks?view=agenda" className="block">
-                <StatCard
-                  icon={CalendarClock}
-                  label="Due this week"
-                  value={dueThisWeek}
-                  hint="next 7 days · view agenda"
-                />
-              </Link>
-            ) : null}
-          </div>
-        )}
-      </section>
 
       {/* Self-hides unless this device can still install/enable push. */}
       <PushNudge />

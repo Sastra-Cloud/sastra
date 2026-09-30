@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -55,6 +55,8 @@ import { elapsedSeconds, formatClock, formatDuration } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { usePropState } from "@/hooks/use-prop-state";
 import { useActiveTimer } from "@/components/time/active-timer-provider";
+import { SectionDisclosure } from "@/components/section-disclosure";
+import { showTaskCompleted } from "@/lib/tasks/completion-feedback";
 import { EmailTaskSuggestions } from "@/components/tasks/email-task-suggestions";
 import type { EmailTaskSuggestionRow } from "@/lib/email/task-suggestions";
 import { EmailTaskLearningRules } from "@/components/tasks/email-task-learning-rules";
@@ -148,6 +150,13 @@ export function MyWorkHub({
   const { activeTimer, setActiveTimer } = useActiveTimer();
   const [pending, startTransition] = useTransition();
   const [tasks, setTasks] = usePropState(initialTasks);
+  const statusInFlight = useRef(new Set<string>());
+  const [previousTaskId, setPreviousTaskId] = useState(initialTaskId);
+  if (initialTaskId !== previousTaskId) {
+    setPreviousTaskId(initialTaskId);
+    if (initialTaskId) setDetailTask(initialTasks.find(task => task.id === initialTaskId) ?? null);
+  }
+
 
   useEffect(() => {
     const syncFromHistory = () => {
@@ -171,10 +180,12 @@ export function MyWorkHub({
   };
 
   const moveTask = (task: MyWorkTaskRow, status: Status) => {
-    if (task.status === status || isSourceControlledTask(task)) return;
+    if (task.id.startsWith("optimistic-task-") || task.status === status || isSourceControlledTask(task) || statusInFlight.current.has(task.id)) return;
+    statusInFlight.current.add(task.id);
     const previousTimer = activeTimer;
     const previousTask = task;
     const completing = status === "done";
+    const completionToast = completing ? toast.loading("Saving completion and checking the next step…") : undefined;
     if (status === "in_progress" && autoStartTimer) {
       setActiveTimer({
         entryId: `pending-${crypto.randomUUID()}`,
@@ -196,20 +207,21 @@ export function MyWorkHub({
     );
     startTransition(async () => {
       try {
-        await updateTaskStatus(task.id, status);
+        const result = await updateTaskStatus(task.id, status);
         router.refresh();
-        if (completing) toast.success("Task completed");
+        if (completing) showTaskCompleted(result, href => router.push(href), completionToast);
       } catch (error) {
         setTasks((current) =>
           current.map((item) => (item.id === previousTask.id ? previousTask : item))
         );
         setActiveTimer(previousTimer);
-        toast.error(error instanceof Error ? error.message : "Could not move the task.");
-      }
+        toast.error(error instanceof Error ? error.message : "Could not move the task.", { id: completionToast });
+      } finally { statusInFlight.current.delete(task.id); }
     });
   };
 
   const toggleTimer = (task: MyWorkTaskRow) => {
+    if (task.id.startsWith("optimistic-task-")) return;
     const previous = activeTimer;
     const isRunning = activeTimer?.taskId === task.id;
     setActiveTimer(
@@ -247,33 +259,6 @@ export function MyWorkHub({
 
   return (
     <div className="space-y-5">
-      <EmailTaskSuggestions
-        initialSuggestions={initialEmailSuggestions}
-        assignees={assignees}
-        projects={projects}
-        currentUserId={currentUserId}
-        canManage={canManage}
-        highlightedId={initialEmailSuggestionId}
-        showCorrespondenceLink={canManage}
-      />
-      <EmailTaskLearningRules rules={initialEmailTaskRules} />
-
-      {initialExternalFollowUps.length > 0 ? (
-        <section className="space-y-3" aria-labelledby="external-follow-ups-heading">
-          <div>
-            <h2 id="external-follow-ups-heading" className="text-sm font-medium">
-              External follow-ups
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Project email that has not received a response by its follow-up date.
-            </p>
-          </div>
-          {initialExternalFollowUps.map((followUp) => (
-            <ExternalFollowUpCard key={followUp.id} followUp={followUp} showProject />
-          ))}
-        </section>
-      ) : null}
-
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <nav
           aria-label="My Work views"
@@ -306,6 +291,23 @@ export function MyWorkHub({
           projects={projects}
           defaultAssignee={currentUserId}
           triggerLabel="Create task"
+          onOptimisticCreate={({ task, save, onSuccess, onError }) => {
+            const mine = task.assignedTo === currentUserId;
+            if (mine) setTasks(current => [...current, { ...task, projectSlug: null, projectTitle: projects.find(project => project.id === task.projectId)?.name ?? null, completedAt: null, trackedSeconds: 0 }]);
+            startTransition(async () => {
+              try {
+                const result = await save();
+                if (result.error) throw new Error(result.error);
+                if (!result.id) throw new Error("The task was saved without an ID.");
+                setTasks(current => current.map(item => item.id === task.id && result.id ? { ...item, id: result.id } : item));
+                onSuccess(result);
+                router.refresh();
+              } catch (error) {
+                setTasks(current => current.filter(item => item.id !== task.id));
+                onError(error instanceof Error ? error.message : "Could not create the task.");
+              }
+            });
+          }}
         />
       </div>
 
@@ -318,7 +320,7 @@ export function MyWorkHub({
           trackedTodaySeconds={trackedTodaySeconds}
           activeTimer={activeTimer}
           pending={pending}
-          onOpen={setDetailTask}
+          onOpen={task => { if (!task.id.startsWith("optimistic-task-")) setDetailTask(task); }}
           onStatus={moveTask}
           onTimer={toggleTimer}
         />
@@ -331,7 +333,7 @@ export function MyWorkHub({
           blockedByTaskId={blockedByTaskId}
           activeTimerTaskId={activeTimer?.taskId ?? null}
           pending={pending}
-          onOpen={setDetailTask}
+          onOpen={task => { if (!task.id.startsWith("optimistic-task-")) setDetailTask(task); }}
           onStatus={moveTask}
           onTimer={toggleTimer}
         />
@@ -339,6 +341,36 @@ export function MyWorkHub({
 
       {view === "agenda" ? (
         <AgendaView items={agendaItems} todayIso={todayIso} />
+      ) : null}
+
+      {initialExternalFollowUps.length > 0 ? (
+        <section className="space-y-3" aria-labelledby="external-follow-ups-heading">
+          <div>
+            <h2 id="external-follow-ups-heading" className="text-sm font-medium">
+              External follow-ups
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Project email that has not received a response by its follow-up date.
+            </p>
+          </div>
+          {initialExternalFollowUps.map((followUp) => (
+            <ExternalFollowUpCard key={followUp.id} followUp={followUp} showProject />
+          ))}
+        </section>
+      ) : null}
+      {initialEmailSuggestions.length > 0 || initialEmailTaskRules.some(rule => rule.status === "candidate") ? (
+        <SectionDisclosure id="suggestions" title="Suggestions to review" summary={initialEmailSuggestions.length + initialEmailTaskRules.filter(rule => rule.status === "candidate").length} description="Email task suggestions and proposed preferences" defaultOpen={Boolean(initialEmailSuggestionId)} revealFor={initialEmailSuggestionId}>
+          <EmailTaskSuggestions
+            initialSuggestions={initialEmailSuggestions}
+            assignees={assignees}
+            projects={projects}
+            currentUserId={currentUserId}
+            canManage={canManage}
+            highlightedId={initialEmailSuggestionId}
+            showCorrespondenceLink={canManage}
+          />
+          <EmailTaskLearningRules rules={initialEmailTaskRules.filter(rule => rule.status === "candidate")} />
+        </SectionDisclosure>
       ) : null}
 
       <TaskDetailDialog
@@ -423,14 +455,15 @@ function FocusView({
   onTimer: (task: MyWorkTaskRow) => void;
 }) {
   const [showLater, setShowLater] = useState(false);
-  const [showCompleted, setShowCompleted] = useState(true);
+  const [showCompleted, setShowCompleted] = useState(false);
+  const [showAllAttention, setShowAllAttention] = useState(false);
   const runningSeconds = useLiveElapsed(activeTimer?.startedAt ?? null);
   const open = tasks.filter((task) => task.status !== "done");
   const { working, waiting, attention, later } = selectPersonalWork(open, todayIso, timeZone);
 
   return (
     <div className="space-y-5">
-      <div className="grid overflow-hidden rounded-xl border bg-card sm:grid-cols-3">
+      <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-xl border bg-card px-4 py-3">
         <FocusStat label="Open" value={open.length} icon={ListChecks} />
         <FocusStat label="Completed today" value={completedToday.length} icon={CheckCircle2} />
         <FocusStat label="Tracked today" value={formatDuration(trackedTodaySeconds)} icon={Clock3} />
@@ -439,7 +472,7 @@ function FocusView({
       {activeTimer ? (
         <div className="flex flex-col gap-3 rounded-xl border border-success/30 bg-success/8 px-4 py-3 sm:flex-row sm:items-center">
           <span className="relative flex size-3 shrink-0" aria-hidden>
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-60" />
+            <span className="absolute inline-flex size-full animate-ping motion-reduce:animate-none rounded-full bg-success opacity-60" />
             <span className="relative inline-flex size-3 rounded-full bg-success" />
           </span>
           <div className="min-w-0 flex-1">
@@ -481,7 +514,8 @@ function FocusView({
       <FocusSection
         title="Needs attention"
         description="Follow-ups due, overdue, due within 30 days, and undated work"
-        tasks={attention}
+        tasks={showAllAttention ? attention : attention.slice(0, 5)}
+        totalCount={attention.length}
         todayIso={todayIso}
         timeZone={timeZone}
         pending={pending}
@@ -492,9 +526,11 @@ function FocusView({
         emptyTitle="Nothing needs attention right now"
       />
 
+      {attention.length > 5 ? <Button variant="ghost" onClick={() => setShowAllAttention(value => !value)}>{showAllAttention ? "Show next 5" : `Show all ${attention.length} needing attention`}</Button> : null}
+
       {waiting.length > 0 ? (
+        <SectionDisclosure id="waiting" title="Waiting on confirmation" summary={waiting.length}>
         <FocusSection
-          id="waiting"
           title="Waiting on confirmation"
           description="Payment requests sent; follow-up dates bring them back to your action queue"
           tasks={waiting}
@@ -506,6 +542,7 @@ function FocusView({
           onStatus={onStatus}
           onTimer={onTimer}
         />
+        </SectionDisclosure>
       ) : null}
 
       {later.length > 0 ? (
@@ -562,20 +599,18 @@ function FocusStat({
   icon: React.ComponentType<{ className?: string }>;
 }) {
   return (
-    <div className="flex items-center gap-3 border-b px-4 py-3 last:border-b-0 sm:border-r sm:border-b-0 sm:last:border-r-0">
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+    <div className="flex items-center gap-2">
+      <span className="text-muted-foreground">
         <Icon className="size-4" />
       </span>
-      <div>
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="font-heading text-xl font-semibold tabular-nums">{value}</p>
-      </div>
+      <span className="text-xs text-muted-foreground">{label} <span className="ml-1 text-sm font-semibold tabular-nums text-foreground">{value}</span></span>
     </div>
   );
 }
 
 function FocusSection({
   id,
+  totalCount,
   title,
   description,
   tasks,
@@ -589,6 +624,7 @@ function FocusSection({
   emptyTitle,
 }: {
   id?: string;
+  totalCount?: number;
   title: string;
   description: string;
   tasks: MyWorkTaskRow[];
@@ -605,10 +641,10 @@ function FocusSection({
     <section id={id} className="scroll-mt-24 space-y-2">
       <div className="flex items-baseline justify-between gap-3">
         <div>
-          <h2 className="font-heading text-lg font-semibold">{title}</h2>
+          <h2 className="text-lg font-semibold">{title}</h2>
           <p className="text-xs text-muted-foreground">{description}</p>
         </div>
-        <span className="text-xs tabular-nums text-muted-foreground">{tasks.length}</span>
+        <span className="text-xs tabular-nums text-muted-foreground">{totalCount ?? tasks.length}</span>
       </div>
       {tasks.length > 0 ? (
         <FocusTaskList
@@ -679,6 +715,7 @@ function FocusTaskList({
             ) : (
               <TaskCompleteButton
                 done={done}
+                disabled={task.id.startsWith("optimistic-task-")}
                 onToggle={() => onStatus(task, done ? "todo" : "done")}
                 title={task.title}
                 className="flex size-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-success/10 hover:text-success focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
@@ -688,6 +725,7 @@ function FocusTaskList({
               <button
                 type="button"
                 onClick={() => onOpen(task)}
+                disabled={task.id.startsWith("optimistic-task-")}
                 className={cn(
                   "line-clamp-2 text-left text-sm font-semibold hover:underline sm:block sm:truncate",
                   done && "text-muted-foreground line-through"
@@ -702,8 +740,9 @@ function FocusTaskList({
                     {task.projectTitle}
                   </Link>
                 ) : (
-                  <span>No project</span>
+                  <span>{task.projectTitle ?? "No project"}</span>
                 )}
+                {task.id.startsWith("optimistic-task-") ? <span role="status">Saving…</span> : null}
                 {task.trackedSeconds > 0 ? (
                   <span className="flex items-center gap-1">
                     <Clock3 className="size-3" /> {formatDuration(task.trackedSeconds)}
@@ -733,6 +772,7 @@ function FocusTaskList({
                   type="button"
                   size="icon-xs"
                   variant={timerRunning ? "destructive" : "ghost"}
+                  disabled={task.id.startsWith("optimistic-task-")}
                   onClick={() => onTimer(task)}
                   aria-label={timerRunning ? `Stop timer for ${task.title}` : `Start timer for ${task.title}`}
                   title={timerRunning ? "Stop timer" : "Start timer"}
@@ -742,7 +782,7 @@ function FocusTaskList({
               ) : null}
               <Select
                 value={task.status}
-                disabled={controlled}
+                disabled={controlled || task.id.startsWith("optimistic-task-")}
                 itemToStringLabel={(status) => TASK_STATUS[status].label}
                 onValueChange={(value) => value && onStatus(task, value as Status)}
               >
@@ -872,7 +912,7 @@ function AgendaView({ items, todayIso }: { items: AgendaItem[]; todayIso: string
           return (
             <section key={section.key} className="space-y-2">
               <div className="flex items-baseline justify-between">
-                <h2 className={cn("font-heading text-lg font-semibold", section.destructive && "text-destructive")}>{section.label}</h2>
+                <h2 className={cn("text-lg font-semibold", section.destructive && "text-destructive")}>{section.label}</h2>
                 <span className="text-xs tabular-nums text-muted-foreground">{rows.length}</span>
               </div>
               <ul className="divide-y overflow-hidden rounded-xl border bg-card">

@@ -156,6 +156,10 @@
 
 - dynamic, metadata
 
+## `app/(app)/settings/page.tsx`
+
+- metadata
+
 ## `app/(app)/settings/partners/page.tsx`
 
 - dynamic, metadata
@@ -582,7 +586,7 @@
 
 ## `components/budget/budget-section.tsx`
 
-- BudgetSection, BudgetSectionDefinition, BudgetSectionNav
+- BudgetSection, BudgetSectionDefinition, BudgetTabs
 
 ## `components/budget/cashflow-card.tsx`
 
@@ -726,7 +730,7 @@
 
 ## `components/dashboard/manager-review-queue.tsx`
 
-- ManagerReviewItem, ManagerReviewQueue
+- ManagerReviewQueue
 
 ## `components/dashboard/onboarding-checklist.tsx`
 
@@ -835,6 +839,10 @@
 ## `components/motion/tab-link.tsx`
 
 - MotionTabLink
+
+## `components/navigation-icons.ts`
+
+- navigationIcons
 
 ## `components/notifications/notification-bell.tsx`
 
@@ -964,6 +972,10 @@
 
 - ProjectTabs
 
+## `components/projects/project-task-views.tsx`
+
+- ProjectTaskViews
+
 ## `components/projects/project-title-context.tsx`
 
 - ProjectTitleHeading, ProjectTitleProvider, useProjectTitle
@@ -1035,6 +1047,10 @@
 ## `components/schedule/team-capacity-view.tsx`
 
 - TeamCapacityView
+
+## `components/section-disclosure.tsx`
+
+- SectionDisclosure
 
 ## `components/settings/ai-key-card.tsx`
 
@@ -1155,6 +1171,10 @@
 ## `components/settings/security-monitor-status.tsx`
 
 - SecurityMonitorStatus
+
+## `components/settings/settings-directory.tsx`
+
+- SettingsDirectory
 
 ## `components/settings/settings-nav.tsx`
 
@@ -1852,6 +1872,10 @@
 
 - SecretBoxError, openSecret, sealSecret, secretBoxConfigured, secretBoxKeyMaterial
 
+## `lib/dashboard/attention.ts`
+
+- ManagerReviewItem, getManagerAttention
+
 ## `lib/db/config.ts`
 
 - DbClientOptions, looksLikePooler, resolveDbClientOptions
@@ -2500,6 +2524,10 @@
 
 - MentionTarget, listAllMentionTargets, listMentionTargetsByIds, listProjectMentionTargets
 
+## `lib/navigation.ts`
+
+- NavigationGroup, NavigationItem, appNavigation, navigationItemActive, projectNavigation, settingsNavigation
+
 ## `lib/notifications/actions.ts`
 
 - markAllNotificationsRead, markNotificationRead, removePushDevice, sendTestPush, setEmailPreference, submitUnsubscribe, unsubscribeByToken, updateEmailDeliverySettings, updatePushSchedule
@@ -2736,6 +2764,10 @@
 
 - CreatedProjectBlueprint, createProjectFromBlueprint
 
+## `lib/projects/current-work.ts`
+
+- summarizeCurrentWork
+
 ## `lib/projects/dashboard-order.ts`
 
 - DashboardActivityProject, orderProjectsByDashboardActivity
@@ -2778,7 +2810,7 @@
 
 ## `lib/projects/pipeline.ts`
 
-- advanceChapterAfterDone
+- TaskHandoff, advanceChapterAfterDone
 
 ## `lib/projects/print-funding.ts`
 
@@ -2991,6 +3023,10 @@
 ## `lib/tasks/comment-actions.ts`
 
 - addTaskComment, deleteTaskComment, editTaskComment, listTaskComments
+
+## `lib/tasks/completion-feedback.ts`
+
+- showTaskCompleted
 
 ## `lib/tasks/create.ts`
 

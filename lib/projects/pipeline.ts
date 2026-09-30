@@ -1,10 +1,10 @@
 import "server-only";
 
 import { addDays } from "date-fns";
-import { and, asc, eq, gt } from "drizzle-orm";
+import { and, asc, eq, gt, ne } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { phases, projectMembers, projects, tasks } from "@/lib/db/schema";
+import { phases, projectMembers, projects, tasks, user } from "@/lib/db/schema";
 import { notify } from "@/lib/notifications";
 import { clearTaskDueDateNotifications } from "@/lib/tasks/due-date-notifications";
 
@@ -18,10 +18,12 @@ function ymd(d: Date): string {
  * duration), ensure it's assigned to the stage coordinator, and notify them.
  * Best-effort — never blocks the status change.
  */
+export type TaskHandoff = { taskId: string; title: string; assigneeName: string | null; dueDate: string | null; href: string };
+
 export async function advanceChapterAfterDone(
   taskId: string,
   actorId: string
-): Promise<void> {
+): Promise<TaskHandoff | null> {
   try {
     const [t] = await db
       .select({
@@ -34,14 +36,14 @@ export async function advanceChapterAfterDone(
       .where(eq(tasks.id, taskId))
       .limit(1);
     // Only chapter (unit) tasks within a phase participate in the pipeline.
-    if (!t?.projectId || !t.unitId || !t.phaseId) return;
+    if (!t?.projectId || !t.unitId || !t.phaseId) return null;
 
     const [cur] = await db
       .select({ orderIndex: phases.orderIndex })
       .from(phases)
       .where(eq(phases.id, t.phaseId))
       .limit(1);
-    if (!cur) return;
+    if (!cur) return null;
 
     // Stages after the current one, in order.
     const later = await db
@@ -67,7 +69,8 @@ export async function advanceChapterAfterDone(
           and(
             eq(tasks.projectId, t.projectId),
             eq(tasks.unitId, t.unitId),
-            eq(tasks.phaseId, np.id)
+            eq(tasks.phaseId, np.id),
+            ne(tasks.status, "done")
           )
         )
         .limit(1);
@@ -114,9 +117,12 @@ export async function advanceChapterAfterDone(
           data: { taskId: nextTask.id },
         });
       }
-      return; // advance only to the immediate next stage
+      const [saved] = await db.select({ taskId: tasks.id, title: tasks.title, dueDate: tasks.dueDate, assigneeName: user.name, slug: projects.slug })
+        .from(tasks).innerJoin(projects, eq(projects.id, tasks.projectId)).leftJoin(user, eq(user.id, tasks.assignedTo)).where(eq(tasks.id, nextTask.id)).limit(1);
+      return saved ? { taskId: saved.taskId, title: saved.title, dueDate: saved.dueDate, assigneeName: saved.assigneeName, href: `/projects/${saved.slug}/tasks?run=all&task=${saved.taskId}` } : null;
     }
   } catch {
     // best-effort; pipeline advancement must never break a status update
   }
+  return null;
 }

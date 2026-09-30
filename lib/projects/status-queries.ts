@@ -114,9 +114,9 @@ export type ManagerUpdateRecommendation = {
 
 /** Unreviewed, actionable AI follow-ups for manager review surfaces. */
 export async function listManagerUpdateRecommendations(
-  limit = 8
+  limit: number | null = 8
 ): Promise<ManagerUpdateRecommendation[]> {
-  const rows = await db
+  const query = db
     .select({
       updateId: projectUpdates.id,
       projectId: projects.id,
@@ -148,8 +148,8 @@ export async function listManagerUpdateRecommendations(
     .orderBy(
       sql`case ${projectUpdates.aiAnalysis} ->> 'priority' when 'high' then 0 when 'medium' then 1 else 2 end`,
       desc(projectUpdates.createdAt)
-    )
-    .limit(Math.max(1, Math.min(20, limit)));
+    );
+  const rows = await (limit === null ? query : query.limit(Math.max(1, Math.min(20, limit))));
 
   return rows.filter(
     (row): row is typeof row & { analysis: ProjectUpdateAnalysis } =>

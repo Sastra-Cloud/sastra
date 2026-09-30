@@ -124,9 +124,9 @@ export default async function ProjectWorkspaceLayout({
               {activeReprint ? `Reprint · ${due.text}` : due.text}
             </span>
           ) : null}
-          <details className="project-secondary group w-full sm:w-auto">
-            <summary className="cursor-pointer text-xs text-muted-foreground sm:hidden">Project details</summary>
-            <div className="mt-2 hidden flex-wrap items-center gap-2 group-open:flex sm:mt-0 sm:flex">
+          <details className="project-secondary group w-full">
+            <summary className="inline-flex min-h-11 cursor-pointer items-center text-xs font-medium text-muted-foreground">Project details</summary>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
           {project.kind ? (
             <span className="rounded-full border bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground">
               {PROJECT_KIND_LABELS[project.kind as ProjectKind]}

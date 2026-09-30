@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { showTaskCompleted } from "@/lib/tasks/completion-feedback";
+
+import { useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -130,11 +132,17 @@ export function TaskBoard({
   const searchParams = useSearchParams();
   const [pending, start] = useTransition();
   // Deep link: /…/tasks?task=<id> (e.g. from a mention notification) opens that
-  // task on load. Read once at mount so it works through SSR + hydration.
+  // task on load and when another task link is followed on the same board.
   const [detailTask, setDetailTask] = useState<TaskRow | null>(() => {
     const id = searchParams.get("task");
     return id ? initialTasks.find((t) => t.id === id) ?? null : null;
   });
+  const requestedTaskId = searchParams.get("task");
+  const [previousRequestedTaskId, setPreviousRequestedTaskId] = useState(requestedTaskId);
+  if (requestedTaskId !== previousRequestedTaskId) {
+    setPreviousRequestedTaskId(requestedTaskId);
+    if (requestedTaskId) setDetailTask(initialTasks.find(task => task.id === requestedTaskId) ?? null);
+  }
   const [taskSource, setTasks] = usePropState(initialTasks);
   const taskCreation = useOptimisticAction({
     state: taskSource,
@@ -154,7 +162,10 @@ export function TaskBoard({
     ? `task-board-${projectId}-${printRunId}`
     : `task-board-${projectId}`;
 
+  const mutationInFlight = useRef(new Set<string>());
   const run = (fn: () => Promise<unknown>, mutation?: TaskMutation) => {
+    if (mutation && mutationInFlight.current.has(mutation.taskId)) return;
+    if (mutation) mutationInFlight.current.add(mutation.taskId);
     const previousTask = mutation
       ? tasks.find((task) => task.id === mutation.taskId)
       : undefined;
@@ -179,14 +190,21 @@ export function TaskBoard({
           });
         }
         toast.error(error instanceof Error ? error.message : "Could not save the task change.");
-      }
+      } finally { if (mutation) mutationInFlight.current.delete(mutation.taskId); }
     });
   };
 
   const moveTo = (taskId: string, status: string) => {
     const task = tasks.find((t) => t.id === taskId);
     if (!task || task.status === status) return;
-    run(() => updateTaskStatus(taskId, status), {
+    run(async () => {
+      const completionToast = status === "done" ? toast.loading("Saving completion and checking the next step…") : undefined;
+      try {
+        const result = await updateTaskStatus(taskId, status);
+        if (status === "done") showTaskCompleted(result, href => router.push(href), completionToast);
+        return result;
+      } catch (error) { if (completionToast !== undefined) toast.dismiss(completionToast); throw error; }
+    }, {
       type: "status",
       taskId,
       status,

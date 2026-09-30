@@ -62,7 +62,7 @@ import { GuidancePanel } from "@/components/guidance/guidance-panel";
 import { WalkMeThrough } from "@/components/guidance/walk-me-through";
 import {
   BudgetSection,
-  BudgetSectionNav,
+  BudgetTabs,
 } from "@/components/budget/budget-section";
 import { buildBudgetAttentionSummary } from "@/lib/budget/attention";
 import { toCents } from "@/lib/budget/reconcile-math";
@@ -437,6 +437,7 @@ export default async function ProjectBudgetPage({
     approvalState?.active?.assignments.filter(
       (assignment) => assignment.decision !== "approved"
     ).length ?? 0;
+  const committedTotal = committedFundingTotal(items.reduce((sum, item) => sum + Number(item.amountSecured), 0), scheduledFunding, receivedContributions);
   const attentionSummary = buildBudgetAttentionSummary({
     currency: settings.currency,
     quotationTotalCents: Math.round(partnerQuoteTotal * 100),
@@ -482,11 +483,11 @@ export default async function ProjectBudgetPage({
         }
       : attentionSummary;
   const budgetSections = [
-    { id: "planning", label: "Planning" },
-    ...(!allHistory ? [{ id: "decisions", label: "Decisions" }] : []),
-    { id: "cash-reconciliation", label: "Cash & reconciliation" },
-    { id: "agreements-fees", label: "Agreements & fees" },
-    { id: "operations-notes", label: "AI spend & notes" },
+    { id: "planning", label: "Quotation" },
+    ...(!allHistory ? [{ id: "decisions", label: "Approvals", attentionCount: pendingApprovalCount }] : []),
+    { id: "cash-reconciliation", label: "Cash flow", attentionCount: overdueReceivables.length + reconciliationIssueCount },
+    { id: "agreements-fees", label: "Payments" },
+    { id: "operations-notes", label: "Notes" },
   ];
 
   return (
@@ -503,25 +504,32 @@ export default async function ProjectBudgetPage({
         selectedRunId={selectedRunId ?? null}
         allHistory={allHistory}
       />
-      <BudgetAttentionSummary summary={displayedAttentionSummary} />
-      {canEdit && !scoped && !allHistory ? (
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <h2 className="pt-2 text-lg font-semibold">Budget</h2>
+        {canEdit && !scoped && !allHistory ? (
         <GuidancePanel
           guidanceKey="budget-whats-next"
           slug="budget"
           heading="Budget in four steps"
           title="New to budgets? Here is the flow"
+          compact
+          className="ml-auto max-w-full has-[details[open]]:w-full"
           action={
             <WalkMeThrough prompt="Please walk me through the budget for this project, step by step. Explain in simple words what I should do next." />
           }
         />
-      ) : null}
-      <BudgetSectionNav sections={budgetSections} />
+        ) : null}
+      </div>
+      <dl className="flex flex-wrap gap-x-8 gap-y-3 rounded-xl border bg-card px-4 py-3" aria-label="Budget summary">
+        {[{ label: "Partner quotation", value: partnerQuoteTotal }, { label: "Committed funding", value: committedTotal }, { label: "Funding gap", value: Math.max(0, partnerQuoteTotal - committedTotal) }].map(item => <div key={item.label}><dt className="text-xs text-muted-foreground">{item.label}</dt><dd className="text-base font-semibold tabular-nums">{new Intl.NumberFormat(undefined, { style: "currency", currency: settings.currency }).format(item.value)}</dd></div>)}
+      </dl>
+      <BudgetAttentionSummary summary={displayedAttentionSummary} />
+      <BudgetTabs sections={budgetSections}>
 
       <BudgetSection
         id="planning"
-        title="Planning"
+        title="Quotation"
         description="Quotation assumptions, line items, funding, and editable totals."
-        defaultOpen
       >
         <BudgetManager
           projectId={project.id}
@@ -613,7 +621,8 @@ export default async function ProjectBudgetPage({
       {!allHistory ? (
         <BudgetSection
           id="decisions"
-          title="Decisions and approvals"
+          title="Approvals"
+          summary={pendingApprovalCount ? `${pendingApprovalCount} pending` : undefined}
           description="Approval state and proposal history before anything is sent."
         >
           <BudgetApprovalPanel
@@ -692,7 +701,8 @@ export default async function ProjectBudgetPage({
 
       <BudgetSection
         id="cash-reconciliation"
-        title="Cash and reconciliation"
+        title="Cash flow"
+        summary={overdueReceivables.length || reconciliationIssueCount ? `${overdueReceivables.length} overdue · ${reconciliationIssueCount} issues` : undefined}
         description="Receipts, cash flow, and differences between recorded and manual spend."
       >
         {reconciliation ? (
@@ -739,7 +749,7 @@ export default async function ProjectBudgetPage({
 
       <BudgetSection
         id="agreements-fees"
-        title="Agreements and fees"
+        title="Payments"
         description="Scheduled funding, royalties, license fees, and shared agreement allocations."
       >
         {sharedMouGroups.map((group) => (
@@ -851,13 +861,13 @@ export default async function ProjectBudgetPage({
 
       <BudgetSection
         id="operations-notes"
-        title="AI spend and notes"
-        description="Operational AI cost and the project team's budget discussion."
+        title="Notes"
+        description="Budget discussion and AI operating costs, separate from the quotation."
       >
         {aiSpend && aiSpend.requests > 0 ? (
           <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card px-4 py-3 text-sm">
             <Sparkles className="size-4 text-muted-foreground" />
-            <span className="font-medium">AI spend on this project:</span>
+            <span className="font-medium">AI operating cost:</span>
             <span className="tabular-nums">
               ${aiSpend.allTimeUsd.toFixed(2)} all time
               {aiSpend.monthUsd > 0
@@ -896,6 +906,7 @@ export default async function ProjectBudgetPage({
           }))}
         />
       </BudgetSection>
+      </BudgetTabs>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { useRef } from "react";
+import { SectionDisclosure } from "@/components/section-disclosure";
 
 import { useDraftField, useProjectDraft } from "./project-draft";
 import { GuidedSteps, type GuidedStep } from "@/components/guidance/guided-steps";
@@ -84,7 +84,6 @@ export function NewProjectGuided({
   const [dueDate, setDueDate] = useDraftField("dueDate");
   const [planTemplateId, setPlanTemplateId] = useDraftField("planTemplateId");
   const [chapters, setChapters] = useDraftField("chapters");
-  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const units = projectUnitTerms(kind);
   const episodic = isEpisodicKind(kind);
@@ -316,20 +315,8 @@ export function NewProjectGuided({
             </div>
           ) : null}
 
-          <div className="rounded-lg border">
-            <button
-              type="button"
-              onClick={() => setAdvancedOpen((v) => !v)}
-              aria-expanded={advancedOpen}
-              className="flex w-full items-center justify-between px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              Advanced options
-              <ChevronDown
-                className={`size-4 transition-transform ${advancedOpen ? "rotate-180" : ""}`}
-              />
-            </button>
-            {advancedOpen ? (
-              <div className="grid gap-4 border-t px-3 py-3 sm:grid-cols-2">
+          <SectionDisclosure title="Status and priority" description="Optional planning details">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label htmlFor="status">Status</Label>
                   <select
@@ -361,8 +348,7 @@ export function NewProjectGuided({
                   </select>
                 </div>
               </div>
-            ) : null}
-          </div>
+          </SectionDisclosure>
         </div>
       ),
     },

@@ -5,51 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
 import {
-  LayoutDashboard,
-  FolderKanban,
-  BriefcaseBusiness,
-  MessageSquare,
-  Mail,
-  Sparkles,
-  Sunrise,
-  Settings,
-  CircleHelp,
-  Gauge,
-  BookOpenText,
-  HandCoins,
-} from "lucide-react";
-
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-
-const TODAY_NAV = [
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
-  { href: "/tasks", label: "My Work", icon: BriefcaseBusiness },
-  { href: "/standups", label: "Standups", icon: Sunrise },
-];
-
-const WORK_NAV = [
-  { href: "/projects", label: "Projects", icon: FolderKanban },
-  { href: "/chat", label: "Chat", icon: MessageSquare },
-  { href: "/correspondence", label: "Correspondence", icon: Mail, manageOnly: true },
-  { href: "/assistant", label: "Assistant", icon: Sparkles },
-];
-
-const MANAGER_NAV = [
-  { href: "/overview", label: "Team planning", icon: Gauge },
-  { href: "/donations", label: "Donations", icon: HandCoins, adminOnly: true },
-];
-
-const SETTINGS_NAV = [
-  { href: "/wiki", label: "Wiki", icon: BookOpenText },
-  { href: "/settings", label: "Settings", icon: Settings },
-  { href: "/help", label: "Help", icon: CircleHelp },
-];
+import { appNavigation, navigationItemActive, type NavigationItem } from "@/lib/navigation";
+import { navigationIcons } from "@/components/navigation-icons";
 
 export function AppNav({
   onNavigate,
@@ -74,63 +37,15 @@ export function AppNav({
   return (
     <TooltipProvider delay={250}>
       <nav className={cn("grid gap-5", collapsed && "gap-4")}>
-        <div className={cn("grid gap-1", collapsed && "justify-items-center")}>
-          <NavLabel collapsed={collapsed} mobile={mobile}>Today</NavLabel>
-          {TODAY_NAV.map((item) => (
-            <NavItem
-              key={item.href}
-              item={item}
-              onNavigate={onNavigate}
-              collapsed={collapsed}
-              mobile={mobile}
-              layoutId={`nav-${layoutScope}-today`}
-            />
-          ))}
-        </div>
-
-        <div className={cn("grid gap-1", collapsed && "justify-items-center")}>
-          <NavLabel collapsed={collapsed} mobile={mobile}>Work</NavLabel>
-          {WORK_NAV.filter((item) => !item.manageOnly || canManage).map((item) => (
-            <NavItem
-              key={item.href}
-              item={item}
-              onNavigate={onNavigate}
-              collapsed={collapsed}
-              mobile={mobile}
-              layoutId={`nav-${layoutScope}-work`}
-            />
-          ))}
-        </div>
-
-        {canManage ? (
-          <div className={cn("grid gap-1", collapsed && "justify-items-center")}>
-            <NavLabel collapsed={collapsed} mobile={mobile}>Management</NavLabel>
-            {MANAGER_NAV.filter((item) => !item.adminOnly || isAdmin).map((item) => (
-              <NavItem
-                key={item.href}
-                item={item}
-                onNavigate={onNavigate}
-                collapsed={collapsed}
-                mobile={mobile}
-                layoutId={`nav-${layoutScope}-manage`}
-              />
+        {appNavigation({ canManage, isAdmin }).map(group => (
+          <div key={group.label} className={cn("grid gap-1", collapsed && "justify-items-center")}>
+            <NavLabel collapsed={collapsed} mobile={mobile}>{group.label}</NavLabel>
+            {group.items.map(item => (
+              <NavItem key={item.href} item={item} onNavigate={onNavigate}
+                collapsed={collapsed} mobile={mobile} layoutId={`nav-${layoutScope}-${group.label}`} />
             ))}
           </div>
-        ) : null}
-
-        <div className={cn("grid gap-1", collapsed && "justify-items-center")}>
-          <NavLabel collapsed={collapsed} mobile={mobile}>Workspace</NavLabel>
-          {SETTINGS_NAV.map((item) => (
-            <NavItem
-              key={item.href}
-              item={item}
-              onNavigate={onNavigate}
-              collapsed={collapsed}
-              mobile={mobile}
-              layoutId={`nav-${layoutScope}-workspace`}
-            />
-          ))}
-        </div>
+        ))}
       </nav>
     </TooltipProvider>
   );
@@ -157,7 +72,7 @@ function NavLabel({
   return (
     <p
       className={cn(
-        "px-3 pb-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/45",
+        "px-3 pb-1 text-xs font-medium text-sidebar-foreground/70",
         mobile ? "block" : "hidden xl:block"
       )}
     >
@@ -173,21 +88,15 @@ function NavItem({
   mobile,
   layoutId,
 }: {
-  item: {
-    href: string;
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-  };
+  item: NavigationItem;
   onNavigate?: () => void;
   collapsed?: boolean;
   mobile?: boolean;
   layoutId: string;
 }) {
   const pathname = usePathname();
-  const active =
-    pathname === item.href || pathname.startsWith(`${item.href}/`) ||
-    (item.href === "/overview" && ["/schedule", "/workload"].some(path => pathname === path || pathname.startsWith(`${path}/`)));
-  const Icon = item.icon;
+  const active = navigationItemActive(pathname, item);
+  const Icon = navigationIcons[item.icon];
 
   const navLink = (
     <Link

@@ -1,5 +1,7 @@
 "use client";
 
+import { showTaskCompleted } from "@/lib/tasks/completion-feedback";
+import { SectionDisclosure } from "@/components/section-disclosure";
 import { confirmDialog } from "@/lib/dialog-requests";
 
 import { useEffect, useState, useTransition } from "react";
@@ -228,7 +230,7 @@ function TaskDetailDialogContent({
         if (Object.keys(fieldUpdates).length > 0) {
           await updateTaskFields(t.id, fieldUpdates);
         }
-        if (nextStatus !== t.status) await updateTaskStatus(t.id, nextStatus);
+        const statusResult = nextStatus !== t.status ? await updateTaskStatus(t.id, nextStatus) : null;
         if ((projectId || null) !== (t.projectId ?? null)) {
           const res = await moveTaskToProject(t.id, {
             projectId: projectId || null,
@@ -238,7 +240,8 @@ function TaskDetailDialogContent({
           }
         }
         if (nextTitle !== t.title) offerToLearnTerms(t.title, nextTitle);
-        toast.success(statusOverride === "done" ? "Task marked done" : "Task updated");
+        if (nextStatus === "done" && statusResult) showTaskCompleted(statusResult, href => router.push(href));
+        else toast.success("Task updated");
         requestNotificationRefresh();
         router.refresh();
         onClose();
@@ -746,6 +749,20 @@ function TaskDetailDialogContent({
                     </select>
                   </div>
                   <div className="grid gap-2">
+                    <Label htmlFor="d-due">Due date</Label>
+                    <Input
+                      id="d-due"
+                      type="date"
+                      value={dueDate}
+                      disabled={isApprovalTask && !canManage}
+                      required={isApprovalTask && canManage}
+                      onChange={(e) => setDueDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <SectionDisclosure title="Task details" description="Priority and milestone">
+                  <div className="grid gap-2">
                     <Label htmlFor="d-priority">Priority</Label>
                     <select
                       id="d-priority"
@@ -760,19 +777,6 @@ function TaskDetailDialogContent({
                       <option value="urgent">Urgent</option>
                     </select>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="d-due">Due date</Label>
-                    <Input
-                      id="d-due"
-                      type="date"
-                      value={dueDate}
-                      disabled={isApprovalTask && !canManage}
-                      required={isApprovalTask && canManage}
-                      onChange={(e) => setDueDate(e.target.value)}
-                    />
-                  </div>
-                </div>
-
                 <label className="mt-3 flex min-h-10 items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm">
                   <input
                     type="checkbox"
@@ -783,8 +787,10 @@ function TaskDetailDialogContent({
                   />
                   Mark as milestone
                 </label>
+                </SectionDisclosure>
               </section>
 
+              <SectionDisclosure title="Time tracking" description="Estimate and tracked time">
               {!isApprovalTask ? (
             <TaskTimeSection
               taskId={t.id}
@@ -795,10 +801,11 @@ function TaskDetailDialogContent({
                 />
               ) : null}
 
-              <section className={panelClass}>
+              </SectionDisclosure>
+              <SectionDisclosure title="Manage Google Drive" description="Working folder and linked files">
                 <div className="mb-3 flex items-center gap-2">
                   <Paperclip className="size-4 text-muted-foreground" />
-                  <h3 className="text-sm font-semibold">Manage Google Drive</h3>
+                  <h3 className="sr-only">Manage Google Drive</h3>
                 </div>
                 <div className="grid gap-3">
                   {/* Working folder: default upload destination for this task. */}
@@ -917,7 +924,7 @@ function TaskDetailDialogContent({
                     </details>
                   ) : null}
                 </div>
-              </section>
+              </SectionDisclosure>
             </aside>
           </div>
         </div>

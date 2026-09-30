@@ -1,43 +1,31 @@
 ---
-title: "Overview (portfolio)"
+title: "Team planning & portfolio overview"
 category: "Work"
 roles: [manager, admin]
-keywords: [confirmation dialog, confirmation modal, cancel action, overview, portfolio, managers, rag, health, velocity, capacity, timeline, report, export, attention, project update, AI recommendation, follow up, automation, cron, wiki search index, due date, target completion date, projects without a due date, schedule dates, print funding, funding review, coordination pass]
+keywords: [team planning, manager attention, portfolio summary, trends and capacity, confirmation dialog, confirmation modal, cancel action, overview, portfolio, managers, rag, health, velocity, capacity, timeline, report, export, attention, project update, AI recommendation, follow up, automation, cron, wiki search index, due date, target completion date, projects without a due date, schedule dates, print funding, funding review, coordination pass]
 order: 42
-summary: "The manager portfolio dashboard across all projects."
+summary: "Review the complete manager attention queue and portfolio, then open Schedule, Workload, or expanded analytics."
 ---
 
-**Overview** is the manager command center across the whole portfolio. Members
-don't see it; managers and admins use it to run the program.
+**Team planning** opens the portfolio Overview. Its **Schedule** and **Workload**
+views keep the full timeline and capacity tools available. Members do not see
+these manager pages.
 
 ## What it shows
 
-- A **RAG health donut** (on-track / needs-attention / at-risk) and stat cards:
-  active projects, overdue tasks, total still **to raise** across budgets, and
-  critical blockers.
-- **Attention needed** — critical blockers, overdue projects, and people flagged
-  at-risk by standup digests.
-- **Follow up from project updates** — unreviewed AI recommendations derived
-  from new status updates, ordered by priority. Open the project to see the full
-  reasoning and mark the advice reviewed.
-- A sortable **portfolio table**, a **Coming due** list of money and rights
-  deadlines, and a **timeline** across projects. The table sorts by **due date**
-  by default (the next project due for completion on top; finished and undated
-  projects sink to the bottom). On phones it collapses to a card list with a
-  **Sort by** control.
-- A **Projects without a due date** prompt when any live project is missing a
-  target completion date.
-- A **print funding review** prompt when a current book is not assessed, has no
-  funding, is seeking funding, or is only partially funded. It opens Projects
-  with the funding-review filter already applied; managers update each book in
-  **Project settings ▸ Print plan and funding**. Mark an eBook-first project as
-  **No printing planned yet** so it leaves the funding-review queue without
-  changing the Print rights the organization may use later.
-- A **coordination pass** warning when active work exceeds the team-size limit.
-  Its action opens Projects, where managers use each project&apos;s **Tasks** area to
-  assign the next step and **Overview** to review blockers and team capacity.
-- A **velocity** trend (tasks completed per week), a **team-load** capacity
-  heatmap, recent activity, and indicators for automation/cron health.
+- **Manager attention** is the complete list shared with Home's three-item
+  preview: suggested project follow-ups, email reviews, missing target dates,
+  print funding review, and coordination decisions. Suggestions still require
+  review before changing anything.
+- **Attention needed** shows current critical blockers, overdue projects, and
+  people flagged at risk by standup digests. Empty categories are omitted.
+- The sortable **portfolio table** keeps health, progress, funding, blockers,
+  dates, forecasts, and rights together. On phones it uses project cards.
+- **Coming due** lists money and rights deadlines.
+- Expand **Portfolio summary** for health and financial totals, **Timeline
+  preview**, **Trends and capacity**, **Recent activity**, or **Automations** for
+  reference detail. Use **Open schedule** and **Review team workload** for the
+  full planning views.
 
 The existing daily assistant-reflection schedule also runs the project-update
 review. Its automation health appears separately as **Project update review** so

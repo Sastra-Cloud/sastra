@@ -131,7 +131,7 @@ export function TabScroller({
     <div className={cn("relative min-w-0 max-w-full", className)}>
       <div className="pointer-events-none absolute inset-y-1 left-1 z-10 w-6 rounded-l-lg bg-[linear-gradient(90deg,var(--card),transparent)] sm:hidden" />
       <div className="pointer-events-none absolute inset-y-1 right-1 z-10 w-8 rounded-r-lg bg-[linear-gradient(270deg,var(--card),transparent)] sm:hidden" />
-      <div className="max-w-full overflow-x-auto rounded-xl bg-card p-1 ring-1 ring-border/80">
+      <div data-tab-scroller className="max-w-full overflow-x-auto rounded-xl bg-card p-1 ring-1 ring-border/80">
         <nav
           aria-label={ariaLabel}
           className="flex min-w-max snap-x snap-mandatory gap-1"

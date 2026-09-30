@@ -93,7 +93,7 @@ export default async function TasksPage({
               My Work
             </h1>
             <p className="text-muted-foreground">
-              Focus on today, move work through the board, or review every deadline.
+              Start with assigned work, or use Board and Agenda to plan ahead.
             </p>
           </div>
         </div>

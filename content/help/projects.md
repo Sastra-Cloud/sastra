@@ -1,8 +1,8 @@
 ---
-title: "Projects & phases"
+title: "Projects & stages"
 category: "Work"
 roles: [member, manager, admin]
-keywords: [create project, shared draft, guided setup, project actions, project, project name, rename project, edit project name, phase, proposal stage, proposed project, project status, planning, active, on hold, book, ebook, ebook only, ebook for now, print, print plan, book format, format plan not set, article, podcast, video series, videos, create project, new project, guided setup, guided project, step by step, one page form, overview, portfolio, filter, sort, print funding, print covered, print funding not assigned, funding assigned, no funding, seeking funding, partially funded, funded, no printing planned yet, due date, start date, schedule, estimated duration, planned finish, timeline, gantt, drive, file note, attachment note, delete project, completed project, project archive, archived project, reprint, status update, recent correspondence, project email, linked email, AI recommendation, daily review, mention, note, shared mou, shared agreement, project type, change project type, set project type, work path, wrong path]
+keywords: [publishing, current work, project details, stages and team, create project, shared draft, guided setup, project actions, project, project name, rename project, edit project name, phase, proposal stage, proposed project, project status, planning, active, on hold, book, ebook, ebook only, ebook for now, print, print plan, book format, format plan not set, article, podcast, video series, videos, create project, new project, guided setup, guided project, step by step, one page form, overview, portfolio, filter, sort, print funding, print covered, print funding not assigned, funding assigned, no funding, seeking funding, partially funded, funded, no printing planned yet, due date, start date, schedule, estimated duration, planned finish, timeline, gantt, drive, file note, attachment note, delete project, completed project, project archive, archived project, reprint, status update, recent correspondence, project email, linked email, AI recommendation, daily review, mention, note, shared mou, shared agreement, project type, change project type, set project type, work path, wrong path]
 order: 20
 summary: "Create and manage publishing projects, preserve creation drafts, and find project settings and actions."
 ---
@@ -132,19 +132,21 @@ completion is a later lifecycle action.
 
 ## Reading a project overview
 
-The project overview is arranged in working order. Issues that need action appear
-first, followed by project health, the latest team update and linked email, the
-full-width **timeline**, the work plan, then project resources and history. This
-keeps current decisions above reference material and gives schedules enough room
-on smaller screens.
+The overview starts with the latest team update and **Current work**: open
+stages, progress, and your next saved task with its owner and due date. Parallel
+work can show several stages. If prerequisites are incomplete, the task is
+labelled as waiting. Issues show a short preview and links to their full records.
 
-The **Work plan** combines per-phase progress with overall task progress, dates,
-and the assigned team. **Project resources** keeps the Google Drive folder and
-attached files together, while **Project record** contains recent activity and
-production references such as a copyright notice. Empty or short phase lists no
-longer create a tall blank area beside files and history. Books show chapters,
-article projects show articles, and podcasts and video series show episode/video
-progress. The Projects portfolio also shows and filters by project type.
+The project brief stays visible. Expand **Timeline**, **Stages and team**,
+**Project resources**, **Project record**, or manager-only **Recent correspondence** and **Project analytics**
+when you need those details. Project status and due date stay in the header;
+**Project details** reveals type, format, funding, priority, and reprint metadata
+on every screen size. Rights permission and print funding remain independent.
+
+After creating a project, a confirmation links to assigning project roles when
+tasks exist, or setting up tasks when the project is blank. Both the four-step
+guided setup and one-page form preserve the draft; **Status and priority** are
+optional expandable settings.
 
 Choose **Add note** beneath an attached file to record context such as its
 version, purpose, approval state, or next step. The note appears directly below
@@ -195,9 +197,11 @@ so the next daily review uses the corrected text.
 
 ## Project tabs
 
-Across the top of a project: **Overview**, **Tasks**, **Chat**, **Rights**,
-**Budget**, then **Print** (books and articles), **Episodes** (podcasts), or
-**Videos** (video series), then **Members**.
+Across the top: **Overview**, **Tasks**, **Chat**, **Publishing**, and **Members**.
+**Publishing** opens Rights, Budget, and Print (books and articles), Episodes
+(podcasts), or Videos (video series). Inside Publishing, the specialist sections
+remain visible as secondary links. **Tasks** has Board and Pipeline views.
+Existing direct links to specialist pages and individual tasks still work.
 
 ## Project settings and deletion
 

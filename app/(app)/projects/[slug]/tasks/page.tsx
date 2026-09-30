@@ -1,6 +1,7 @@
+import { ProjectTaskViews } from "@/components/projects/project-task-views";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Sparkles, Table2 } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 import { getSession } from "@/lib/auth/guards";
 import { can } from "@/lib/auth/policy";
@@ -131,6 +132,7 @@ export default async function ProjectTasksPage({
 
   return (
     <div className="space-y-6">
+      <ProjectTaskViews slug={slug} />
       <TaskScopeNav
         slug={slug}
         runs={printRuns.map((run) => ({
@@ -143,13 +145,6 @@ export default async function ProjectTasksPage({
         selectedRunId={selectedRunId ?? null}
       />
       <div className="flex justify-end gap-2">
-        <Link
-          href={`/projects/${slug}/tasks/pipeline`}
-          className={buttonVariants({ variant: "outline", size: "sm" })}
-        >
-          <Table2 className="size-4" />
-          Pipeline view
-        </Link>
         {isManager ? (
           <Link
             href={generateHref}

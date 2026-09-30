@@ -151,22 +151,19 @@
     "@/lib/projects/queries",
     "@/lib/format",
     "@/components/badges",
-    "@/components/portfolio/stat-card",
     "@/components/tasks/my-tasks-list",
     "@/components/tasks/create-task-dialog",
     "@/components/dashboard/manager-review-queue",
+    "@/lib/dashboard/attention",
     "@/components/projects/print-funding-badge",
     "@/components/pwa/push-nudge",
     "@/components/dashboard/onboarding-checklist",
     "@/lib/onboarding/queries",
-    "@/lib/flow",
     "@/lib/tasks/attention",
-    "@/lib/notifications/queries",
     "@/lib/auth/policy",
     "@/lib/projects/visibility",
     "@/lib/projects/dashboard-order",
     "@/lib/projects/print-funding",
-    "@/lib/projects/status-queries",
     "@/lib/workspace/queries"
   ],
   "app/(app)/donations/page.tsx": [
@@ -246,7 +243,9 @@
     "@/lib/agenda/queries",
     "@/lib/agenda/bucket",
     "@/lib/forecast/queries",
-    "@/lib/projects/status-queries",
+    "@/lib/dashboard/attention",
+    "@/components/dashboard/manager-review-queue",
+    "@/components/section-disclosure",
     "@/lib/format",
     "@/components/badges",
     "@/components/ui/card",
@@ -380,6 +379,8 @@
     "@/components/projects/members-manager"
   ],
   "app/(app)/projects/[slug]/page.tsx": [
+    "@/components/section-disclosure",
+    "@/lib/projects/current-work",
     "react",
     "next/link",
     "next/navigation",
@@ -479,6 +480,7 @@
     "@/components/page-skeleton"
   ],
   "app/(app)/projects/[slug]/tasks/page.tsx": [
+    "@/components/projects/project-task-views",
     "next/link",
     "next/navigation",
     "lucide-react",
@@ -501,10 +503,9 @@
     "@/components/page-skeleton"
   ],
   "app/(app)/projects/[slug]/tasks/pipeline/page.tsx": [
-    "next/link",
+    "@/components/projects/project-task-views",
     "next/navigation",
     "drizzle-orm",
-    "lucide-react",
     "@/lib/auth/guards",
     "@/lib/db",
     "@/lib/db/schema",
@@ -666,7 +667,6 @@
     "@/lib/auth/policy"
   ],
   "app/(app)/settings/layout.tsx": [
-    "lucide-react",
     "@/lib/auth/guards",
     "@/components/cockpit",
     "@/components/settings/settings-nav",
@@ -677,10 +677,13 @@
     "@/lib/notifications/queries",
     "@/components/settings/notification-prefs",
     "@/components/settings/push-settings",
-    "@/components/settings/email-task-preferences"
+    "next/link"
   ],
   "app/(app)/settings/page.tsx": [
-    "next/navigation"
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/navigation",
+    "@/components/settings/settings-directory"
   ],
   "app/(app)/settings/partners/page.tsx": [
     "@/lib/auth/guards",
@@ -695,6 +698,11 @@
     "@/lib/format"
   ],
   "app/(app)/settings/profile/page.tsx": [
+    "@/lib/notifications/queries",
+    "@/lib/email/task-rule-queries",
+    "@/components/settings/email-task-preferences",
+    "@/components/tasks/email-task-learning-rules",
+    "@/components/section-disclosure",
     "@/lib/auth/guards",
     "@/lib/tasks/time-service",
     "@/components/settings/profile-form",
@@ -1370,9 +1378,10 @@
     "next/link",
     "next/navigation",
     "motion/react",
-    "lucide-react",
     "@/components/ui/tooltip",
-    "@/lib/utils"
+    "@/lib/utils",
+    "@/lib/navigation",
+    "@/components/navigation-icons"
   ],
   "components/app-shell.tsx": [
     "react",
@@ -1597,9 +1606,15 @@
     "@/hooks/use-optimistic-action",
     "@/components/budget/partner-quote-panel"
   ],
+  "components/budget/budget-section.test.tsx": [
+    "react-dom/server",
+    "vitest",
+    "./budget-section"
+  ],
   "components/budget/budget-section.tsx": [
     "react",
-    "lucide-react"
+    "react-dom",
+    "@/components/ui/tabs"
   ],
   "components/budget/cashflow-card.tsx": [
     "lucide-react",
@@ -2033,7 +2048,8 @@
     "next/link",
     "lucide-react",
     "@/lib/format",
-    "@/lib/utils"
+    "@/lib/utils",
+    "@/lib/dashboard/attention"
   ],
   "components/dashboard/onboarding-checklist.tsx": [
     "next/link",
@@ -2130,6 +2146,7 @@
     "@/lib/utils"
   ],
   "components/guidance/guidance-panel.tsx": [
+    "next/link",
     "react-markdown",
     "remark-gfm",
     "@/components/guidance/coach-card",
@@ -2265,6 +2282,9 @@
     "motion/react",
     "@/lib/utils"
   ],
+  "components/navigation-icons.ts": [
+    "lucide-react"
+  ],
   "components/notifications/notification-bell.tsx": [
     "react",
     "next/navigation",
@@ -2368,6 +2388,7 @@
     "@/components/correspondence/thread-message-list"
   ],
   "components/print/print-manager.tsx": [
+    "@/components/section-disclosure",
     "@/lib/dialog-requests",
     "react",
     "next/link",
@@ -2462,6 +2483,7 @@
   ],
   "components/projects/new-project-form.tsx": [
     "./project-draft",
+    "@/components/section-disclosure",
     "@/components/ui/button",
     "@/components/ui/input",
     "@/components/ui/label",
@@ -2471,7 +2493,7 @@
   ],
   "components/projects/new-project-guided.tsx": [
     "react",
-    "lucide-react",
+    "@/components/section-disclosure",
     "./project-draft",
     "@/components/guidance/guided-steps",
     "@/components/ui/input",
@@ -2595,11 +2617,20 @@
   ],
   "components/projects/project-tabs.tsx": [
     "react",
+    "next/link",
     "next/navigation",
     "lucide-react",
     "@/components/cockpit",
     "@/components/motion/tab-link",
-    "@/lib/projects/kinds"
+    "@/components/navigation-icons",
+    "@/lib/navigation",
+    "@/components/ui/dropdown-menu",
+    "@/lib/utils"
+  ],
+  "components/projects/project-task-views.tsx": [
+    "next/link",
+    "next/navigation",
+    "@/lib/utils"
   ],
   "components/projects/project-title-context.tsx": [
     "next/link",
@@ -2742,6 +2773,8 @@
     "@/lib/utils"
   ],
   "components/rights/rights-manager.tsx": [
+    "@/components/section-disclosure",
+    "@/lib/format",
     "@/lib/dialog-requests",
     "react",
     "next/navigation",
@@ -2798,6 +2831,16 @@
     "@/lib/capacity/roles",
     "@/lib/utils",
     "@/lib/projects/kinds"
+  ],
+  "components/section-disclosure.test.tsx": [
+    "react-dom/server",
+    "vitest",
+    "./section-disclosure"
+  ],
+  "components/section-disclosure.tsx": [
+    "react",
+    "lucide-react",
+    "@/lib/utils"
   ],
   "components/settings/ai-key-card.tsx": [
     "react",
@@ -3110,11 +3153,21 @@
     "@/components/settings/dependency-security-check-button",
     "@/lib/security/database-transport-rules"
   ],
+  "components/settings/settings-directory.tsx": [
+    "react",
+    "next/link",
+    "lucide-react",
+    "@/components/ui/input",
+    "@/components/ui/button",
+    "@/lib/navigation"
+  ],
   "components/settings/settings-nav.tsx": [
     "react",
     "next/link",
     "next/navigation",
     "lucide-react",
+    "@/lib/navigation",
+    "@/components/navigation-icons",
     "@/components/motion/tab-link",
     "@/components/ui/sheet",
     "@/lib/utils"
@@ -3271,6 +3324,7 @@
     "next/navigation",
     "lucide-react",
     "sonner",
+    "@/components/section-disclosure",
     "@/lib/tasks/actions",
     "@/lib/tasks/recurring-actions",
     "@/components/tasks/drive-picker",
@@ -3333,6 +3387,7 @@
     "motion/react",
     "lucide-react",
     "@/lib/tasks/queries",
+    "@/lib/tasks/completion-feedback",
     "@/lib/tasks/actions",
     "@/components/badges",
     "@/components/tasks/task-complete-button",
@@ -3376,6 +3431,8 @@
     "@/lib/utils",
     "@/hooks/use-prop-state",
     "@/components/time/active-timer-provider",
+    "@/components/section-disclosure",
+    "@/lib/tasks/completion-feedback",
     "@/components/tasks/email-task-suggestions",
     "@/lib/email/task-suggestions",
     "@/components/tasks/email-task-learning-rules",
@@ -3427,6 +3484,7 @@
     "@/lib/utils"
   ],
   "components/tasks/task-board.tsx": [
+    "@/lib/tasks/completion-feedback",
     "react",
     "next/navigation",
     "sonner",
@@ -3461,6 +3519,8 @@
     "@/lib/utils"
   ],
   "components/tasks/task-detail-dialog.tsx": [
+    "@/lib/tasks/completion-feedback",
+    "@/components/section-disclosure",
     "@/lib/dialog-requests",
     "react",
     "next/navigation",
@@ -4925,6 +4985,14 @@
   "lib/crypto/secret-box.ts": [
     "node:crypto"
   ],
+  "lib/dashboard/attention.ts": [
+    "@/lib/auth/guards",
+    "@/lib/notifications/queries",
+    "@/lib/projects/status-queries",
+    "@/lib/projects/queries",
+    "@/lib/projects/print-funding",
+    "@/lib/flow"
+  ],
   "lib/db/config.test.ts": [
     "vitest",
     "./config"
@@ -6173,6 +6241,13 @@
     "@/lib/db",
     "@/lib/db/schema"
   ],
+  "lib/navigation.test.ts": [
+    "vitest",
+    "./navigation"
+  ],
+  "lib/navigation.ts": [
+    "@/lib/projects/kinds"
+  ],
   "lib/notifications/actions.ts": [
     "next/navigation",
     "next/cache",
@@ -6659,6 +6734,11 @@
     "./materialize",
     "./project-blueprint"
   ],
+  "lib/projects/current-work.test.ts": [
+    "vitest",
+    "./current-work"
+  ],
+  "lib/projects/current-work.ts": [],
   "lib/projects/dashboard-order.test.ts": [
     "vitest",
     "./dashboard-order"
@@ -6725,6 +6805,10 @@
     "@/lib/db/schema",
     "@/lib/activity/log",
     "@/lib/timeline/scale"
+  ],
+  "lib/projects/pipeline.test.ts": [
+    "vitest",
+    "./pipeline"
   ],
   "lib/projects/pipeline.ts": [
     "date-fns",
@@ -7150,6 +7234,14 @@
     "@/lib/mentions/roster",
     "./queries",
     "./create"
+  ],
+  "lib/tasks/completion-feedback.test.ts": [
+    "vitest",
+    "./completion-feedback"
+  ],
+  "lib/tasks/completion-feedback.ts": [
+    "sonner",
+    "@/lib/projects/pipeline"
   ],
   "lib/tasks/create.ts": [
     "next/cache",
