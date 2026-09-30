@@ -10,6 +10,10 @@ Sastra runs well on [Coolify](https://coolify.io). Two options:
    instance; the full walkthrough, including verified TLS to Postgres, backups,
    scheduled tasks, and push notifications, is in [DEPLOY.md](../../DEPLOY.md).
 
+For the Dockerfile build pack, we recommend [Neon](./neon.md) if you want
+managed Postgres. Set `DATABASE_URL` and `DATABASE_MIGRATION_URL` in Coolify
+using the pooled and direct Neon connection strings from that guide.
+
 Either way:
 
 - Set `BETTER_AUTH_URL` to the exact public HTTPS URL.

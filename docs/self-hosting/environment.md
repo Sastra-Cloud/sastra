@@ -6,8 +6,8 @@ repository root carries the same list with comments.
 
 | Variable | Required | Notes |
 |---|---|---|
-| `DATABASE_URL` | ✅ | SSL-enabled Postgres connection string from §1, using `sslmode=verify-full` in production |
-| `NODE_EXTRA_CA_CERTS` | ✅ | Production path `/etc/ssl/certs/coolify-ca.crt` for Coolify's mounted CA |
+| `DATABASE_URL` | ✅ | Postgres connection string; use `sslmode=verify-full` for external production databases. For our recommended managed option, see [Neon setup](./neon.md) |
+| `NODE_EXTRA_CA_CERTS` | ➖ | Needed when the database uses a private CA, such as Coolify's mounted `/etc/ssl/certs/coolify-ca.crt`. Neon uses publicly trusted certificates and needs no Coolify CA |
 | `BETTER_AUTH_URL` | ✅ | **Exact** public HTTPS URL (e.g. `https://sastra.example`). Drives auth callbacks, magic/invite links, email CTAs, and Origin/CORS checks — must be exact |
 | `BETTER_AUTH_SECRET` | ✅ | `openssl rand -base64 32` |
 | `SMTP_HOST` | ✅ | e.g. `smtp.postmarkapp.com` |

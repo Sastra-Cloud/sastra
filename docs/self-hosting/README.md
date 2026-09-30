@@ -6,7 +6,7 @@ publishing or translation team. You need:
 | Piece | What works |
 |---|---|
 | Runtime | The container image `ghcr.io/sastra-cloud/sastra:<tag>` (linux/amd64 and linux/arm64), or a build from this repository's `Dockerfile` |
-| Database | PostgreSQL 16 or newer with the `vector` extension (the `pgvector/pgvector` images have it) |
+| Database | PostgreSQL 16 or newer with the `vector` extension. We recommend [Neon](./neon.md) for managed Postgres; the `pgvector/pgvector` images provide it on your own server |
 | Files | Any S3-compatible bucket: Cloudflare R2, AWS S3, Railway Buckets, MinIO |
 | Email | Resend (HTTPS) or any SMTP provider. Required: sign-in links and invitations are email |
 | AI | An OpenRouter key, set as `OPENROUTER_API_KEY` or pasted by an admin in Settings ▸ AI. Optional; the app works without AI |
@@ -17,6 +17,7 @@ Guides:
 - [Docker Compose](./compose.md): everything on one server, including Postgres and optional MinIO.
 - [Coolify](./coolify.md): the Compose or Dockerfile build pack on a Coolify server.
 - [Railway](./railway.md): the one-click template.
+- [Neon](./neon.md): our recommended managed Postgres option, with the app hosted on your own server or platform.
 
 Reference:
 
