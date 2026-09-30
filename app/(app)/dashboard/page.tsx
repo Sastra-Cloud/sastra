@@ -85,7 +85,7 @@ export default async function DashboardPage() {
               Home
             </h1>
             <p className="text-muted-foreground">
-              Welcome, {user.name.split(" ")[0]}. Here is your next work.
+              Welcome, {user.name.split(" ")[0]}. Here&apos;s what&apos;s next.
             </p>
           </div>
         </div>
@@ -107,10 +107,10 @@ export default async function DashboardPage() {
       <section className="space-y-2" aria-labelledby="dashboard-order-heading">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 id="dashboard-order-heading" className="text-lg font-semibold">
-            Your next work
+            Your next tasks
           </h2>
           <span className="text-xs text-muted-foreground">
-            Started work first, then your attention queue
+            Continue tasks you&apos;ve started
           </span>
         </div>
         <p className="text-xs text-muted-foreground">

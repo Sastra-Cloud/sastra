@@ -2,7 +2,7 @@
 title: "Getting started & roles"
 category: "Getting started"
 roles: [member, manager, admin]
-keywords: [daily work, team planning, publishing, home, onboarding outcomes, next step, hidden tips, invite, invitation, seven days, sign in, login, magic link, 5 minutes, one-time link, password, password reset, one hour, roles, member, manager, admin, super admin, timezone, profile, account, save, saving, sync, retry, page error, page not found, spinner, mobile menu, navigation, today, work, management, workspace, pull to refresh, refresh, guidance, guided setup, tips, dismiss tip, coaching, checklist, across browsers, show helpful guidance, learn the app, passkey, fingerprint, two factor, security code]
+keywords: [daily work, team planning, publishing, home, your next tasks, onboarding outcomes, next step, hidden tips, invite, invitation, seven days, sign in, login, magic link, 5 minutes, one-time link, password, password reset, one hour, roles, member, manager, admin, super admin, timezone, profile, account, save, saving, sync, retry, page error, page not found, spinner, mobile menu, navigation, today, work, management, workspace, pull to refresh, refresh, guidance, guided setup, tips, dismiss tip, coaching, checklist, across browsers, show helpful guidance, learn the app, passkey, fingerprint, two factor, security code]
 order: 10
 summary: "Start with Home, complete role-appropriate setup, find assigned work, and restore your personal guidance."
 ---
@@ -107,7 +107,7 @@ The left sidebar is grouped by the kind of work you are doing:
 - **Workspace** — Wiki, Assistant, Settings, and Help.
 
 **Team planning** opens Overview; its **Schedule** and **Workload** views remain one
-click away. Home previews your next three tasks, up to three manager attention
+click away. Home previews your next three tasks under **Your next tasks**, up to three manager attention
 items, and six active projects. The setup card shows only the next step and a
 completion count; **Show all steps** reveals the rest.
 

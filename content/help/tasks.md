@@ -2,7 +2,7 @@
 title: "Tasks & the board"
 category: "Work"
 roles: [member, manager, admin]
-keywords: [suggestions to review, next task, handoff, more options, task, kanban, board, column, to do, in progress, review, done, drag, move, assign, priority, due date, earliest due first, task order, reschedule, edit task, move task to project, milestone, recurring, recurring schedule, google drive, task attachment, upload file, attach file, working folder, license obligation, printer payment, printing coordinator, proof review, approve proof, reply to printer, budget approval, approve, request changes, wip, time tracking, comment, mention, email task, forwarded email, meeting reminder, booking link, email assistant, task suggestion, learn from email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice, waiting for payment, follow up due, source linked task]
+keywords: [your next tasks, suggestions to review, next task, handoff, more options, task, kanban, board, column, to do, in progress, review, done, drag, move, assign, priority, due date, earliest due first, task order, reschedule, edit task, move task to project, milestone, recurring, recurring schedule, google drive, task attachment, upload file, attach file, working folder, license obligation, printer payment, printing coordinator, proof review, approve proof, reply to printer, budget approval, approve, request changes, wip, time tracking, comment, mention, email task, forwarded email, meeting reminder, booking link, email assistant, task suggestion, learn from email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice, waiting for payment, follow up due, source linked task]
 order: 30
 summary: "Find your next assigned work, review email suggestions, use Board and Agenda, and follow task handoffs."
 ---
@@ -193,8 +193,8 @@ to compare every article across those stages.
 
 ## Your personal queue
 
-Your **Home** shows your assigned tasks in a **Do in this order** queue,
-with started work first, followed by the existing attention queue. It shows up to three tasks. Select a task title to edit it without leaving Home.
+The **Your next tasks** section on **Home** shows up to three assigned tasks, with tasks
+you have already started first. Select a task title to edit it without leaving Home.
 The row reflects a changed due date immediately while it saves. Managers set
 the queue order for you from **Workload**.
 
