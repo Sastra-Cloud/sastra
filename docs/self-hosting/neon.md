@@ -55,13 +55,45 @@ above is a starting point for a small team. See the
 [Neon's pooling guide](https://neon.com/docs/connect/connection-pooling) for
 pooled and direct connection behavior.
 
-## 3. Start Sastra
+## 3. Start Sastra with Docker Compose
 
-Use the [Coolify Dockerfile build pack](./coolify.md) or deploy the published
-`ghcr.io/sastra-cloud/sastra:<tag>` image on your container platform. Provide
-the database variables above alongside the other required app variables.
-The image applies migrations and workspace bootstrap data on startup by
-default. If your platform runs those in a separate release step, use:
+For a new installation, download the Neon Compose bundle and the shared
+environment template into a new folder:
+
+```sh
+mkdir sastra-neon && cd sastra-neon
+curl -fsSL https://raw.githubusercontent.com/Sastra-Cloud/sastra/main/deploy/compose/docker-compose.neon.yml -o docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/Sastra-Cloud/sastra/main/deploy/compose/.env.example -o .env
+```
+
+Edit `.env`. Uncomment and fill in `DATABASE_URL` and
+`DATABASE_MIGRATION_URL` using the pooled and direct URLs above. Leave
+`POSTGRES_PASSWORD` blank: this bundle does not start a local Postgres
+container. Set the app address, auth and cron secrets, file storage, email,
+and first-admin settings from the template. Pin `SASTRA_TAG` to the release
+you want to run.
+
+```sh
+docker compose up -d
+docker compose logs -f migrate app
+```
+
+The bundle applies migrations and workspace bootstrap data over the direct
+connection, then starts the app with its pooled connection. It also runs the
+scheduler. Optional local file storage works with
+`docker compose --profile minio up -d`; see the
+[Compose guide](./compose.md#files-without-an-external-bucket) for those settings.
+
+After startup, check `/api/ready` for database and schema readiness, then
+complete the first-admin setup from the [Compose guide](./compose.md).
+
+### Other container platforms
+
+You can also use the [Coolify Dockerfile build pack](./coolify.md) or deploy the
+published `ghcr.io/sastra-cloud/sastra:<tag>` image on another container
+platform. Provide the same database variables alongside the other required
+app variables. The image applies migrations and workspace bootstrap data on
+startup by default. If your platform runs those in a separate release step, use:
 
 ```sh
 node scripts/migrate.mjs && node scripts/bootstrap-workspace.mjs
@@ -69,13 +101,10 @@ node scripts/migrate.mjs && node scripts/bootstrap-workspace.mjs
 
 and set `MIGRATE_ON_START=false` on the app container.
 
-The stock [Compose bundle](./compose.md) sets `DATABASE_URL` to its bundled
-Postgres and depends on that service. Setting a Neon URL in `.env` alone will
-not switch that bundle to Neon; use the container or Dockerfile deployment
-described above.
-
-After startup, check `/api/ready` for database and schema readiness, then
-complete the first-admin setup from the self-hosting guide.
+The default local-database Compose bundle sets `DATABASE_URL` to its bundled
+Postgres. Use the Neon bundle above when installing with an external database.
+Changing a connection URL does not copy an existing installation's data; restore
+its database backup into Neon before pointing that installation at Neon.
 
 ## Backups and usage
 

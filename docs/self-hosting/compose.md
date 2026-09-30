@@ -8,7 +8,8 @@ mkdir sastra && cd sastra
 curl -fsSLO https://raw.githubusercontent.com/Sastra-Cloud/sastra/main/deploy/compose/docker-compose.yml
 curl -fsSL  https://raw.githubusercontent.com/Sastra-Cloud/sastra/main/deploy/compose/.env.example -o .env
 # (each GitHub release also attaches these two files as docker-compose.yml and compose.env.example)
-# edit .env: POSTGRES_PASSWORD, BETTER_AUTH_URL, BETTER_AUTH_SECRET, CRON_SECRET,
+# edit .env: POSTGRES_PASSWORD, BETTER_AUTH_URL, BETTER_AUTH_SECRET,
+#            AUTH_PROVISIONING_SECRET, CRON_SECRET,
 #            APP_ENCRYPTION_KEY, email, storage, ENABLE_INITIAL_ADMIN_BOOTSTRAP=true
 #            plus INITIAL_ADMIN_EMAIL/TOKEN
 docker compose up -d
@@ -19,6 +20,14 @@ Then open your URL: `/login` shows **Create the first admin**. Enter the email
 and token from `.env`, complete the workspace setup, and invite your team from
 **Settings ▸ Team**. Afterwards set `ENABLE_INITIAL_ADMIN_BOOTSTRAP=false` in
 `.env` and run `docker compose up -d` again so the screen cannot reappear.
+
+## Use Neon for the database
+
+For a new installation with managed Postgres, use the ready-made
+`deploy/compose/docker-compose.neon.yml` bundle. It runs the same app image,
+migration step, scheduler, and optional MinIO file storage, and connects to
+your database without running a local Postgres container. See the
+[Neon guide](./neon.md) for the download commands and connection setup.
 
 ## Files without an external bucket
 

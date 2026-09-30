@@ -5,6 +5,8 @@ Sastra runs well on [Coolify](https://coolify.io). Two options:
 1. **Compose**: paste `deploy/compose/docker-compose.yml` as a Docker Compose
    resource and set the variables from `deploy/compose/.env.example` in the
    Coolify UI. Coolify handles HTTPS and the domain.
+   For a managed database, use `deploy/compose/docker-compose.neon.yml`
+   with the pooled and direct connection URLs from the [Neon guide](./neon.md).
 2. **Dockerfile build pack** from a Git checkout of this repository, with a
    separate Coolify Postgres resource. This is how the maintainers run their own
    instance; the full walkthrough, including verified TLS to Postgres, backups,

@@ -32,11 +32,13 @@ published at `ghcr.io/sastra-cloud/sastra` for `linux/amd64` and `linux/arm64`.
 
 You need PostgreSQL with `pgvector`, an S3-compatible bucket, an email provider
 (Resend or SMTP), and optionally an OpenRouter key for the AI features.
+Without an AI key, manual planning and tracking work, while the assistant,
+AI planning, document extraction, drafting, and summaries are unavailable.
 
 For managed Postgres, we recommend [Neon](https://neon.com). You host the
 Sastra app on your own server or platform, and Neon manages the database. See
-the [Neon setup guide](./docs/self-hosting/neon.md) for `pgvector`, secure
-connections, and migrations.
+the [Neon setup guide](./docs/self-hosting/neon.md) for the ready-made Compose
+bundle, `pgvector`, secure connections, and migrations.
 
 ## Sastra Cloud
 

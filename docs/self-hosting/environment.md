@@ -10,6 +10,7 @@ repository root carries the same list with comments.
 | `NODE_EXTRA_CA_CERTS` | ➖ | Needed when the database uses a private CA, such as Coolify's mounted `/etc/ssl/certs/coolify-ca.crt`. Neon uses publicly trusted certificates and needs no Coolify CA |
 | `BETTER_AUTH_URL` | ✅ | **Exact** public HTTPS URL (e.g. `https://sastra.example`). Drives auth callbacks, magic/invite links, email CTAs, and Origin/CORS checks — must be exact |
 | `BETTER_AUTH_SECRET` | ✅ | `openssl rand -base64 32` |
+| `AUTH_PROVISIONING_SECRET` | ✅ | Separate secret for first-admin setup and invitation grants; generate with `openssl rand -base64 32` |
 | `SMTP_HOST` | ✅ | e.g. `smtp.postmarkapp.com` |
 | `SMTP_PORT` | ✅ | `587` (STARTTLS) or `465` (TLS) |
 | `SMTP_USER` / `SMTP_PASS` | ✅ | provider credentials / API token |
@@ -23,7 +24,7 @@ repository root carries the same list with comments.
 | `R2_BUCKET` | ✅ | bucket name (e.g. `sastraworkdata`). Alias: `S3_BUCKET` |
 | `R2_ENDPOINT` | ✅ | `https://<account-id>.r2.cloudflarestorage.com`, or any S3-compatible endpoint. Alias: `S3_ENDPOINT` |
 | `R2_REGION` | ➖ | S3 signing region; defaults to `auto` (R2, MinIO). Alias: `S3_REGION`. `R2_*` wins over `S3_*` when both are set |
-| `OPENROUTER_API_KEY` | ⚠️ | needed for the AI planner + standup insights; without it those degrade, everything else works |
+| `OPENROUTER_API_KEY` | ⚠️ | needed for the assistant, AI planning, document extraction, drafting, and summaries. An admin can also save the key in Settings → AI. Manual planning and tracking work without AI |
 | `TYPESAFEAI_API_KEY` | ➖ | optional — fast typed pre-checks (TypeSafe Jev) that skip unnecessary AI calls in email intake and assistant routing. Also needs a super admin to enable **Fast AI pre-checks** in Settings → AI; unset or disabled = previous behavior |
 | `CRON_SECRET` | ✅ | `openssl rand -base64 32` — shared bearer for `/api/cron/*` |
 | `MIGRATE_ON_START` | ➖ | default `true`: the container migrates and bootstraps before serving. Set `false` when a pre-deploy command runs `node scripts/migrate.mjs && node scripts/bootstrap-workspace.mjs` instead |

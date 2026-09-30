@@ -9,7 +9,7 @@ publishing or translation team. You need:
 | Database | PostgreSQL 16 or newer with the `vector` extension. We recommend [Neon](./neon.md) for managed Postgres; the `pgvector/pgvector` images provide it on your own server |
 | Files | Any S3-compatible bucket: Cloudflare R2, AWS S3, Railway Buckets, MinIO |
 | Email | Resend (HTTPS) or any SMTP provider. Required: sign-in links and invitations are email |
-| AI | An OpenRouter key, set as `OPENROUTER_API_KEY` or pasted by an admin in Settings ▸ AI. Optional; the app works without AI |
+| AI | An OpenRouter key, set as `OPENROUTER_API_KEY` or pasted by an admin in Settings ▸ AI. Optional for manual work; the assistant, AI planning, document extraction, drafting, and summaries require it |
 | Scheduler | Anything that can `POST /api/cron/tick` once a minute with the `CRON_SECRET` bearer token |
 
 Guides:
