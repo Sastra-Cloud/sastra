@@ -30,7 +30,7 @@ plus the full [environment reference](./docs/self-hosting/environment.md), are i
 [`docs/self-hosting/`](./docs/self-hosting/README.md). Container images are
 published at `ghcr.io/sastra-cloud/sastra` for `linux/amd64` and `linux/arm64`.
 
-You need PostgreSQL with `pgvector`, an S3-compatible bucket, an email provider
+You need PostgreSQL 18 or newer with `pgvector`, an S3-compatible bucket, an email provider
 (Resend or SMTP), and optionally an OpenRouter key for the AI features.
 Without an AI key, manual planning and tracking work, while the assistant,
 AI planning, document extraction, drafting, and summaries are unavailable.
@@ -51,7 +51,7 @@ features; the application is this repository.
 
 - **Next.js 16** (App Router) + React 19 + TypeScript
 - **Tailwind v4** + **shadcn/ui** (Base UI), dark mode
-- **PostgreSQL** + **Drizzle ORM**, `pgvector` for semantic search
+- **PostgreSQL 18** + **Drizzle ORM**, `pgvector` for semantic search
 - **Better Auth** (password, magic link, passkeys)
 - Email through **Resend** or **SMTP**; inbound mail by IMAP or webhook
 - Files on any **S3-compatible** bucket
@@ -66,6 +66,11 @@ pnpm install
 pnpm db:migrate && pnpm db:seed
 pnpm dev                  # http://localhost:3243
 ```
+
+The development bundle pins PostgreSQL 18.6 with pgvector 0.8.6. Existing
+PostgreSQL 17 workspaces must follow the [database upgrade guide](./docs/self-hosting/postgresql-upgrade.md)
+before starting the new bundle. Keep the old volume and backup for at least
+seven days; do not reseed an existing workspace.
 
 `/login` shows **Create the first admin** on an empty database. Useful commands:
 

@@ -15,14 +15,17 @@ x-app-env: &app-env
 
 services:
   postgres:
-    image: pgvector/pgvector:0.8.2-pg17-bookworm
+    # PostgreSQL 18.6 + pgvector 0.8.6, pinned for amd64 and arm64.
+    # Upgrading from 17 requires a restore into pgdata18; see the upgrade guide.
+    image: pgvector/pgvector:0.8.6-pg18-bookworm@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
     restart: unless-stopped
     environment:
       POSTGRES_USER: sastra
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: sastra
+      PGDATA: /var/lib/postgresql/18/docker
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata18:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U sastra -d sastra"]
       interval: 5s
@@ -32,7 +35,7 @@ services:
   # Applies migrations and the baseline workspace bootstrap, then exits.
   # Runs before the app so the app container can start without MIGRATE_ON_START.
   migrate:
-    image: ghcr.io/sastra-cloud/sastra:${SASTRA_TAG:-latest}
+    image: ghcr.io/sastra-cloud/sastra:${SASTRA_TAG:-0.2.0}
     <<: *app-env
     command: ["sh", "-c", "node scripts/migrate.mjs && node scripts/bootstrap-workspace.mjs"]
     depends_on:
@@ -41,7 +44,7 @@ services:
     restart: "no"
 
   app:
-    image: ghcr.io/sastra-cloud/sastra:${SASTRA_TAG:-latest}
+    image: ghcr.io/sastra-cloud/sastra:${SASTRA_TAG:-0.2.0}
     <<: *app-env
     restart: unless-stopped
     environment:
@@ -105,5 +108,5 @@ services:
     env_file: .env
 
 volumes:
-  pgdata:
+  pgdata18:
   minio:

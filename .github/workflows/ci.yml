@@ -6,6 +6,34 @@ on:
   pull_request:
 
 jobs:
+  postgres18:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.6-pg18-bookworm@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
+        env:
+          POSTGRES_USER: sastra
+          POSTGRES_PASSWORD: smoke-only
+          POSTGRES_DB: sastra_smoke
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U sastra -d sastra_smoke"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Migrate twice, preserve admin edits, and exercise HNSW search
+        run: pnpm db:smoke
+        env:
+          DATABASE_URL: postgres://sastra:smoke-only@localhost:5432/sastra_smoke
+          SASTRA_DISPOSABLE_DATABASE: "true"
   verify:
     runs-on: ubuntu-latest
     steps:

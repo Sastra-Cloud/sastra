@@ -1,6 +1,6 @@
 {
   "name": "sastra",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "license": "AGPL-3.0-only",
   "repository": {
@@ -9,9 +9,9 @@
   },
   "packageManager": "pnpm@10.32.1",
   "scripts": {
-    "dev": "next dev -p 3243",
+    "dev": "node scripts/database-preflight.mjs --next-env=development && next dev -p 3243",
     "build": "next build",
-    "start": "next start",
+    "start": "node scripts/database-preflight.mjs --next-env=production && next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -26,12 +26,14 @@
     "agent-browser:snapshot": "node scripts/agent-browser-dev.mjs snapshot",
     "agent-browser:screenshot": "node scripts/agent-browser-dev.mjs screenshot",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:push": "node scripts/database-preflight.mjs && drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx scripts/seed.ts",
     "podcast:backfill": "NODE_OPTIONS=--conditions=react-server tsx scripts/backfill-podcast-workflows.ts",
-    "auth:generate": "better-auth generate"
+    "auth:generate": "better-auth generate",
+    "db:check": "node scripts/database-preflight.mjs",
+    "db:smoke": "node scripts/database-smoke.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1075.0",

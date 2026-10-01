@@ -46,6 +46,7 @@ COPY --chown=node:node --from=build /app/drizzle ./drizzle
 # tool (the build is not `output: standalone`), so ship the markdown into the image.
 COPY --chown=node:node --from=build /app/content ./content
 COPY --chown=node:node --from=build /app/scripts/migrate.mjs ./scripts/migrate.mjs
+COPY --chown=node:node --from=build /app/scripts/database-preflight.mjs ./scripts/database-preflight.mjs
 COPY --chown=node:node --from=build /app/scripts/bootstrap-workspace.mjs ./scripts/bootstrap-workspace.mjs
 COPY --chown=node:node --from=build /app/lib/projects/default-templates.json ./lib/projects/default-templates.json
 
@@ -56,4 +57,4 @@ USER node
 # Machine) runs `node scripts/migrate.mjs && node scripts/bootstrap-workspace.mjs`
 # instead, so cold starts stay fast and only one process migrates. Call next
 # directly so pnpm/corepack isn't needed at runtime.
-CMD ["sh", "-c", "if [ \"${MIGRATE_ON_START:-true}\" != \"false\" ]; then node scripts/migrate.mjs && node scripts/bootstrap-workspace.mjs; fi && exec node_modules/.bin/next start"]
+CMD ["sh", "-c", "node scripts/database-preflight.mjs && if [ \"${MIGRATE_ON_START:-true}\" != \"false\" ]; then node scripts/migrate.mjs && node scripts/bootstrap-workspace.mjs; fi && exec node_modules/.bin/next start"]

@@ -1,6 +1,7 @@
 // Idempotent production bootstrap for non-schema baseline data. This script only
 // inserts missing rows; admin customizations are never overwritten on deploy.
 import postgres from "postgres";
+import { assertSupportedDatabase } from "./database-preflight.mjs";
 import templates from "../lib/projects/default-templates.json" with { type: "json" };
 
 try {
@@ -47,6 +48,7 @@ const aiModels = [
 
 const sql = postgres(url, { max: 1 });
 try {
+  await assertSupportedDatabase(sql);
   const initialSuperAdminEmail = process.env.INITIAL_SUPER_ADMIN_EMAIL
     ?.trim()
     .toLowerCase();

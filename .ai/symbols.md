@@ -3156,6 +3156,10 @@
 
 - InvoiceIssuerSnapshot, WorkspaceAiContext, WorkspaceSettings, getInvoiceIssuerSnapshot, getInvoiceSequenceSettings, getWorkspaceAiContext, getWorkspaceLogoFile, getWorkspaceSettings, workspaceSetupComplete
 
+## `scripts/database-preflight.mjs`
+
+- MIN_POSTGRES_VERSION_NUM, POSTGRES_UPGRADE_GUIDE, assertSupportedDatabase, assertSupportedVersion, checkDatabase
+
 ## `scripts/eval/assistant-cases.ts`
 
 - ASSISTANT_EVAL_CASES, AssistantEvalCase

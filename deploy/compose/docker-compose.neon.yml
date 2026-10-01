@@ -11,13 +11,13 @@ x-app-env: &app-env
 
 services:
   migrate:
-    image: ghcr.io/sastra-cloud/sastra:${SASTRA_TAG:-latest}
+    image: ghcr.io/sastra-cloud/sastra:${SASTRA_TAG:-0.2.0}
     <<: *app-env
     command: ["sh", "-c", "node scripts/migrate.mjs && node scripts/bootstrap-workspace.mjs"]
     restart: "no"
 
   app:
-    image: ghcr.io/sastra-cloud/sastra:${SASTRA_TAG:-latest}
+    image: ghcr.io/sastra-cloud/sastra:${SASTRA_TAG:-0.2.0}
     <<: *app-env
     restart: unless-stopped
     environment:

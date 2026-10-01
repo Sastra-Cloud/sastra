@@ -10,8 +10,12 @@ the [self-hosting guide](./README.md).
 
 ## 1. Create the database
 
-Create a Neon project with PostgreSQL 17, in a region close to your app server.
-Use a separate database for each Sastra installation.
+Create a Neon project with PostgreSQL 18, in a region close to your app server.
+Use a separate database for each Sastra installation. Neon controls minor patch
+availability: check `SHOW server_version` and record the actual version. The
+minimum is major version 18; the bundled database is pinned to 18.6. For an
+existing older project, follow the [upgrade guide](./postgresql-upgrade.md);
+changing an app connection string does not upgrade or transfer its data.
 
 Sastra requires the `vector` extension for document search. Its migrations
 enable the extension automatically, so the migration role must be allowed to

@@ -10,11 +10,11 @@ bucket, and an OpenRouter API key.
 
 Create a **PostgreSQL 18 service with pgvector 0.8+ available** in Coolify (or
 use an external managed PostgreSQL service that supports the `vector`
-extension). Production currently uses `pgvector/pgvector:pg18`, which layers
-pgvector onto the official PostgreSQL 18 image and supports Coolify's native
-PostgreSQL SSL configuration. For reproducible upgrades, pin a tested pgvector
-version tag or image digest instead of leaving the floating `pg18` tag
-indefinitely. Note its connection string—you'll set it as `DATABASE_URL`.
+extension). Use `pgvector/pgvector:0.8.6-pg18-bookworm@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a`,
+which pins PostgreSQL 18.6 and pgvector 0.8.6 for Intel and ARM and supports
+Coolify's native PostgreSQL SSL configuration. Sastra 0.2.0 requires major
+version 18 or newer. See the [upgrade guide](./docs/self-hosting/postgresql-upgrade.md)
+for major upgrades, patch updates, storage paths, and recovery. Note its connection string—you'll set it as `DATABASE_URL`.
 
 For an existing deployment, take and test a backup first, restore it into the
 pgvector-enabled PostgreSQL 18 service, then point `DATABASE_URL` at the restored

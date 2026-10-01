@@ -4999,6 +4999,10 @@
     "./config"
   ],
   "lib/db/config.ts": [],
+  "lib/db/database-preflight.test.ts": [
+    "vitest",
+    "../../scripts/database-preflight.mjs"
+  ],
   "lib/db/index.ts": [
     "drizzle-orm/postgres-js",
     "postgres",
@@ -7513,8 +7517,21 @@
   ],
   "scripts/bootstrap-workspace.mjs": [
     "postgres",
+    "./database-preflight.mjs",
     "../lib/projects/default-templates.json",
     "user"
+  ],
+  "scripts/database-preflight.mjs": [
+    "postgres",
+    "node:url",
+    "node:module"
+  ],
+  "scripts/database-smoke.mjs": [
+    "node:assert/strict",
+    "node:child_process",
+    "node:fs",
+    "postgres",
+    "./database-preflight.mjs"
   ],
   "scripts/eval-assistant.ts": [
     "openai",
@@ -7554,7 +7571,8 @@
   "scripts/migrate.mjs": [
     "drizzle-orm/postgres-js",
     "drizzle-orm/postgres-js/migrator",
-    "postgres"
+    "postgres",
+    "./database-preflight.mjs"
   ],
   "scripts/r2-cors.mjs": [
     "@aws-sdk/client-s3"

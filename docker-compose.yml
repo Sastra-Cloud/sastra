@@ -3,18 +3,20 @@
 #   Mailpit web UI: http://localhost:8025
 services:
   postgres:
-    # Same Postgres major as production, with the vector extension used by Wiki search.
-    image: pgvector/pgvector:0.8.2-pg17-bookworm
+    # PostgreSQL 18.6 + pgvector 0.8.6, pinned for amd64 and arm64.
+    # Existing PostgreSQL 17 users: follow docs/self-hosting/postgresql-upgrade.md.
+    image: pgvector/pgvector:0.8.6-pg18-bookworm@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
     container_name: sastra-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: sastra
       POSTGRES_PASSWORD: sastra
       POSTGRES_DB: sastra
+      PGDATA: /var/lib/postgresql/18/docker
     ports:
       - "5433:5432"
     volumes:
-      - sastra-pgdata:/var/lib/postgresql/data
+      - sastra-pgdata18:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U sastra -d sastra"]
       interval: 5s
@@ -62,5 +64,5 @@ services:
       "
 
 volumes:
-  sastra-pgdata:
+  sastra-pgdata18:
   sastra-minio:

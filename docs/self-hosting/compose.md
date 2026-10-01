@@ -1,7 +1,9 @@
 # Docker Compose
 
 Runs Sastra, Postgres (pgvector), a one-shot migration step, and a scheduler on
-one server. Put a reverse proxy with HTTPS in front (Caddy, Traefik, nginx).
+one server. The database image pins PostgreSQL 18.6 and pgvector 0.8.6 for
+Intel and ARM, using a volume mounted at `/var/lib/postgresql` and
+`PGDATA=/var/lib/postgresql/18/docker`. Put a reverse proxy with HTTPS in front (Caddy, Traefik, nginx).
 
 ```bash
 mkdir sastra && cd sastra
@@ -42,6 +44,11 @@ from users' browsers through your proxy (or use an external bucket, which is
 simpler for a public installation).
 
 ## Upgrading
+
+Sastra 0.2.0 requires PostgreSQL 18 or newer. If your current database is 17,
+complete the [dump-and-restore upgrade](./postgresql-upgrade.md) before using
+the new bundle. It uses a new `pgdata18` volume, so simply replacing the
+Compose file will start an empty database instead of copying your data.
 
 ```bash
 # edit SASTRA_TAG in .env to the new release

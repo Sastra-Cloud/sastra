@@ -5,6 +5,9 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
+import { assertSupportedDatabase } from "./database-preflight.mjs";
+
+try { process.loadEnvFile(".env"); } catch { /* Containers use ambient env. */ }
 
 // Prefer a direct (unpooled) connection: the migrator needs one session for
 // its transaction and the advisory lock. Falls back to the app's URL.
@@ -16,6 +19,7 @@ if (!url) {
 
 const sql = postgres(url, { max: 1, prepare: false });
 try {
+  await assertSupportedDatabase(sql);
   await sql`select pg_advisory_lock(hashtext('sastra-migrate'))`;
   try {
     await migrate(drizzle(sql), { migrationsFolder: "./drizzle" });
