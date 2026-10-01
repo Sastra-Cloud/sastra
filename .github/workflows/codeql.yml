@@ -9,11 +9,15 @@ on:
     - cron: "41 6 * * 1"
 
 permissions:
+  # CodeQL reads workflow metadata when uploading results in private repositories.
+  actions: read
   contents: read
   security-events: write
 
 jobs:
   analyze:
+    # Personal private repositories do not support GitHub CodeQL code scanning.
+    if: ${{ !github.event.repository.private }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
