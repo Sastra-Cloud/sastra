@@ -16,7 +16,6 @@ x-app-env: &app-env
 services:
   postgres:
     # PostgreSQL 18.6 + pgvector 0.8.6, pinned for amd64 and arm64.
-    # Upgrading from 17 requires a restore into pgdata18; see the upgrade guide.
     image: pgvector/pgvector:0.8.6-pg18-bookworm@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
     restart: unless-stopped
     environment:

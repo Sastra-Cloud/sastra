@@ -3158,7 +3158,7 @@
 
 ## `scripts/database-preflight.mjs`
 
-- MIN_POSTGRES_VERSION_NUM, POSTGRES_UPGRADE_GUIDE, assertSupportedDatabase, assertSupportedVersion, checkDatabase
+- MIN_POSTGRES_VERSION_NUM, POSTGRES_REQUIREMENTS_GUIDE, assertSupportedDatabase, assertSupportedVersion, checkDatabase
 
 ## `scripts/eval/assistant-cases.ts`
 

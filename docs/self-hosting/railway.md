@@ -7,11 +7,9 @@ account by usage; a small team typically stays under $10 a month.
 **Deploy:** use the "Deploy on Railway" button in the README, or search for
 "Sastra" in Railway's template gallery.
 
-Check the database service before deploying Sastra 0.2.0: it requires
-PostgreSQL 18 or newer with pgvector. Use the pinned PostgreSQL 18.6 image
-from the Compose bundle, mount the data volume at `/var/lib/postgresql`, and
-set `PGDATA=/var/lib/postgresql/18/docker` for a new service. Existing older
-databases need the [dump-and-restore upgrade](./postgresql-upgrade.md).
+Sastra requires PostgreSQL 18 or newer with pgvector. Use the pinned PostgreSQL
+18.6 image from the Compose bundle, mount the data volume at
+`/var/lib/postgresql`, and set `PGDATA=/var/lib/postgresql/18/docker`.
 
 After deploying:
 

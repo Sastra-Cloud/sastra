@@ -45,11 +45,6 @@ simpler for a public installation).
 
 ## Upgrading
 
-Sastra 0.2.0 requires PostgreSQL 18 or newer. If your current database is 17,
-complete the [dump-and-restore upgrade](./postgresql-upgrade.md) before using
-the new bundle. It uses a new `pgdata18` volume, so simply replacing the
-Compose file will start an empty database instead of copying your data.
-
 ```bash
 # edit SASTRA_TAG in .env to the new release
 docker compose pull

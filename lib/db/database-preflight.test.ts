@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import { assertSupportedDatabase, assertSupportedVersion, checkDatabase } from "../../scripts/database-preflight.mjs";
 
 describe("PostgreSQL minimum version", () => {
-  it.each([170010, 160015, 0, undefined, "invalid", 180000.5])("rejects %s with a safe upgrade link", (version) => {
-    expect(() => assertSupportedVersion(version)).toThrow(/requires PostgreSQL 18.*Upgrade guide:/);
+  it.each([170010, 160015, 0, undefined, "invalid", 180000.5])("rejects %s with a safe requirements link", (version) => {
+    expect(() => assertSupportedVersion(version)).toThrow(/requires PostgreSQL 18.*Database requirements:/);
   });
   it.each([180000, 180006, "180006", 190000])("accepts %s", (version) => {
     expect(assertSupportedVersion(version)).toBe(Number(version));

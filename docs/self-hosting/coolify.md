@@ -18,9 +18,6 @@ using the pooled and direct Neon connection strings from that guide.
 
 For a Coolify-managed database, use PostgreSQL 18 or newer with pgvector.
 Pin the tested PostgreSQL 18.6/pgvector 0.8.6 image from the Compose bundle.
-Preserve the existing volume path, `PGDATA`, TLS mounts, and database settings
-for 18.x patch updates; use the [upgrade guide](./postgresql-upgrade.md) for
-older major versions.
 
 Either way:
 

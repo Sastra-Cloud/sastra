@@ -13,9 +13,7 @@ the [self-hosting guide](./README.md).
 Create a Neon project with PostgreSQL 18, in a region close to your app server.
 Use a separate database for each Sastra installation. Neon controls minor patch
 availability: check `SHOW server_version` and record the actual version. The
-minimum is major version 18; the bundled database is pinned to 18.6. For an
-existing older project, follow the [upgrade guide](./postgresql-upgrade.md);
-changing an app connection string does not upgrade or transfer its data.
+minimum is major version 18; the bundled database is pinned to 18.6.
 
 Sastra requires the `vector` extension for document search. Its migrations
 enable the extension automatically, so the migration role must be allowed to
@@ -107,8 +105,6 @@ and set `MIGRATE_ON_START=false` on the app container.
 
 The default local-database Compose bundle sets `DATABASE_URL` to its bundled
 Postgres. Use the Neon bundle above when installing with an external database.
-Changing a connection URL does not copy an existing installation's data; restore
-its database backup into Neon before pointing that installation at Neon.
 
 ## Backups and usage
 

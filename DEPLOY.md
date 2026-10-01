@@ -12,13 +12,10 @@ Create a **PostgreSQL 18 service with pgvector 0.8+ available** in Coolify (or
 use an external managed PostgreSQL service that supports the `vector`
 extension). Use `pgvector/pgvector:0.8.6-pg18-bookworm@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a`,
 which pins PostgreSQL 18.6 and pgvector 0.8.6 for Intel and ARM and supports
-Coolify's native PostgreSQL SSL configuration. Sastra 0.2.0 requires major
-version 18 or newer. See the [upgrade guide](./docs/self-hosting/postgresql-upgrade.md)
-for major upgrades, patch updates, storage paths, and recovery. Note its connection string—you'll set it as `DATABASE_URL`.
+Coolify's native PostgreSQL SSL configuration. Sastra requires major
+version 18 or newer. Note its connection string—you'll set it as `DATABASE_URL`.
 
-For an existing deployment, take and test a backup first, restore it into the
-pgvector-enabled PostgreSQL 18 service, then point `DATABASE_URL` at the restored
-database. Verify `SELECT default_version FROM pg_available_extensions WHERE
+Verify `SELECT default_version FROM pg_available_extensions WHERE
 name = 'vector';` returns a version before deploying the app. The application
 migration runs `CREATE EXTENSION IF NOT EXISTS vector`; it intentionally fails
 instead of deploying an incomplete Wiki search index when the extension is

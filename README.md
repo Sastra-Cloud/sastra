@@ -67,10 +67,7 @@ pnpm db:migrate && pnpm db:seed
 pnpm dev                  # http://localhost:3243
 ```
 
-The development bundle pins PostgreSQL 18.6 with pgvector 0.8.6. Existing
-PostgreSQL 17 workspaces must follow the [database upgrade guide](./docs/self-hosting/postgresql-upgrade.md)
-before starting the new bundle. Keep the old volume and backup for at least
-seven days; do not reseed an existing workspace.
+The development bundle pins PostgreSQL 18.6 with pgvector 0.8.6.
 
 `/login` shows **Create the first admin** on an empty database. Useful commands:
 

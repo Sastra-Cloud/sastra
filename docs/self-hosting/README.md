@@ -22,7 +22,7 @@ Guides:
 Reference:
 
 - [Environment variables](./environment.md)
-- [PostgreSQL upgrades](./postgresql-upgrade.md): required before upgrading a PostgreSQL 17 installation to Sastra 0.2.0.
+- [PostgreSQL requirements](./postgresql-upgrade.md)
 - Upgrades: pull the new tag; migrations run in the `migrate` step (Compose) or at container start (`MIGRATE_ON_START=true`, the default). Migrations are forward-only; back up first.
 - Health: `GET /api/health` (liveness, no database) and `GET /api/ready` (database, schema, bootstrap; 503 with reasons until ready).
 - Version: `GET /api/version` reports the version and source revision; the same link is in the app sidebar.

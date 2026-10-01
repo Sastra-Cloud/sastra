@@ -5,14 +5,14 @@ import { pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
 
 export const MIN_POSTGRES_VERSION_NUM = 180000;
-export const POSTGRES_UPGRADE_GUIDE = "https://github.com/Sastra-Cloud/sastra/blob/main/docs/self-hosting/postgresql-upgrade.md";
+export const POSTGRES_REQUIREMENTS_GUIDE = "https://github.com/Sastra-Cloud/sastra/blob/main/docs/self-hosting/postgresql-upgrade.md";
 
 export function assertSupportedVersion(versionNum) {
   const version = Number(versionNum);
   if (!Number.isInteger(version) || version < MIN_POSTGRES_VERSION_NUM) {
     const detected = Number.isInteger(version) && version > 0
       ? ` Detected PostgreSQL ${Math.floor(version / 10000)}.` : "";
-    throw new Error(`Sastra requires PostgreSQL 18 or newer.${detected} Upgrade guide: ${POSTGRES_UPGRADE_GUIDE}`);
+    throw new Error(`Sastra requires PostgreSQL 18 or newer.${detected} Database requirements: ${POSTGRES_REQUIREMENTS_GUIDE}`);
   }
   return version;
 }
