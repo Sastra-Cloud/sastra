@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Trash2 } from "lucide-react";
+import { Combobox } from "@base-ui/react/combobox";
+import { Check, ChevronsUpDown, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -62,10 +63,29 @@ export function SponsorshipForm({ initial, options, pending, onSave, onCancel, l
         <div className="divide-y">
           {value.lines.map((line, index) => <div key={lineKeys[index]} className="grid min-w-0 gap-3 py-4 first:pt-0 sm:grid-cols-[minmax(0,1fr)_6rem_8rem_auto]">
             <div className="grid min-w-0 gap-1.5"><Label htmlFor={`sponsorship-book-${index}`}>Book {index + 1}</Label>
-              <select id={`sponsorship-book-${index}`} required value={line.projectId} className={sponsorshipSelectClass} onChange={event => {
-                const book = options.books.find(row => row.id === event.target.value);
-                patchLine(index, { projectId: event.target.value, description: book ? `${book.title} — book sponsorship` : "" });
-              }}><option value="">Choose a book</option>{options.books.map(book => <option key={book.id} value={book.id}>{book.title}</option>)}</select>
+              <Combobox.Root items={options.books} value={options.books.find(book => book.id === line.projectId) ?? null}
+                itemToStringLabel={book => book.title} isItemEqualToValue={(a, b) => a.id === b.id}
+                disabled={pending || !options.books.length}
+                onValueChange={book => patchLine(index, { projectId: book?.id ?? "", description: book ? `${book.title} — book sponsorship` : "" })}>
+                <div className="relative min-w-0">
+                  <Combobox.Input id={`sponsorship-book-${index}`} aria-label={`Book ${index + 1}`} required placeholder="Search books…"
+                    className={`${sponsorshipSelectClass} pr-11 disabled:opacity-50`} />
+                  <Combobox.Trigger type="button" aria-label={`Show books for book ${index + 1}`}
+                    className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50">
+                    <ChevronsUpDown className="size-4" />
+                  </Combobox.Trigger>
+                </div>
+                <Combobox.Portal><Combobox.Positioner sideOffset={4} className="isolate z-50">
+                  <Combobox.Popup className="max-h-[min(18rem,var(--available-height))] w-[var(--anchor-width)] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
+                    <Combobox.Empty className="p-3 text-sm text-muted-foreground">No matching books.</Combobox.Empty>
+                    <Combobox.List>{(book: SponsorshipOptions["books"][number]) => <Combobox.Item key={book.id} value={book}
+                      className="flex min-h-11 cursor-default items-center justify-between gap-3 rounded-sm px-3 py-2.5 text-sm outline-none data-highlighted:bg-accent data-highlighted:text-accent-foreground">
+                      <span className="min-w-0 break-words">{book.title}</span>
+                      <Combobox.ItemIndicator><Check className="size-4 shrink-0" /></Combobox.ItemIndicator>
+                    </Combobox.Item>}</Combobox.List>
+                  </Combobox.Popup>
+                </Combobox.Positioner></Combobox.Portal>
+              </Combobox.Root>
             </div>
             <div className="grid gap-1.5"><Label htmlFor={`sponsorship-quantity-${index}`}>Copies</Label><Input className="min-h-11" id={`sponsorship-quantity-${index}`} type="number" min="1" max="1000000" step="1" required value={line.quantity || ""} onChange={event => patchLine(index, { quantity: Number(event.target.value) })} /></div>
             <div className="grid gap-1.5"><Label htmlFor={`sponsorship-price-${index}`}>Price per copy</Label><Input className="min-h-11" id={`sponsorship-price-${index}`} inputMode="decimal" required value={line.unitPrice} onChange={event => patchLine(index, { unitPrice: event.target.value })} /></div>

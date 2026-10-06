@@ -3093,6 +3093,7 @@
   "components/settings/modules-settings.tsx": [
     "next/link",
     "@/components/ui/label",
+    "@/components/ui/switch",
     "./workspace-modules-provider",
     "@/lib/workspace/modules"
   ],
@@ -3437,6 +3438,7 @@
   "components/sponsorships/sponsorship-form.tsx": [
     "react",
     "next/link",
+    "@base-ui/react/combobox",
     "lucide-react",
     "@/components/ui/button",
     "@/components/ui/input",
@@ -3963,6 +3965,10 @@
   "components/ui/stepper.tsx": [
     "react",
     "lucide-react",
+    "@/lib/utils"
+  ],
+  "components/ui/switch.tsx": [
+    "@base-ui/react/switch",
     "@/lib/utils"
   ],
   "components/ui/table.tsx": [

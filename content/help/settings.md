@@ -185,7 +185,8 @@ label with no authority attached.
 
 ## Optional modules
 
-Admins can enable or disable **Sponsorships** in **Settings → Modules**. It adds
+Admins can use the **Sponsorships** toggle switch in **Settings → Modules** to
+enable or disable it. It adds
 manager-only book sponsorship invoices and separate balances for funds received,
 used, and available. Disabling it keeps the records. See **Sponsorships** for the
 invoice, partial-payment, and partial-use workflow.

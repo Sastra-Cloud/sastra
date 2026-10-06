@@ -2,7 +2,7 @@
 title: "Sponsorships"
 category: "Publishing"
 roles: [manager, admin]
-keywords: [sponsorship, sponsored books, sponsor, partner invoice, individual partner, module, modules, enable sponsorships, disable sponsorships, sponsorship funds, reserve, reprint reserve, funds available, funds used, partial payment, partial use, invoice, payment correction]
+keywords: [sponsorship, sponsored books, search books, book picker, sponsor, partner invoice, individual partner, module, modules, enable sponsorships, disable sponsorships, sponsorship funds, reserve, reprint reserve, funds available, funds used, partial payment, partial use, invoice, payment correction]
 order: 66
 summary: "Enable book sponsorships, invoice partners, and track separate book funds with partial uses and a correction history."
 ---
@@ -23,7 +23,9 @@ individual's or organization's bill-to name. A contact email is optional until
 you send the invoice. Saved partners fill their billing address and contact email;
 you can change these for this sponsorship.
 
-Add each book project, the number of sponsored copies, and the agreed price per
+In each **Book** field, type part of a title to search, then choose a matching
+book project. You can also open the list to browse, or use the arrow keys and
+Enter to choose a book. Add the number of sponsored copies and agreed price per
 copy. Review the invoice description for each book. One invoice can cover several
 books. Prices are sponsorship prices; enter the amount agreed with the partner.
 Sponsored quantities do not record copies distributed or change print quantities.
