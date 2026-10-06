@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { appNavigation, settingsNavigation, navigationItemActive, projectNavigation } from "./navigation";
 
 describe("navigation permissions and preserved destinations", () => {
+  it("shows sponsorships only to managers when the workspace enables it", () => {
+    const paths = (access: Parameters<typeof appNavigation>[0]) => appNavigation(access).flatMap(group => group.items.map(item => item.href));
+    expect(paths({ canManage: true, isAdmin: true })).not.toContain("/sponsorships");
+    expect(paths({ canManage: false, isAdmin: false, enabledModules: ["sponsorships"] })).not.toContain("/sponsorships");
+    expect(paths({ canManage: true, isAdmin: false, enabledModules: ["sponsorships"] })).toContain("/sponsorships");
+  });
   it.each([{ canManage: false, isAdmin: false }, { canManage: true, isAdmin: false }, { canManage: true, isAdmin: true }])("keeps manager and admin destinations within their role boundaries (%o)", access => {
     for (const groups of [appNavigation(access), settingsNavigation(access)]) {
       const items = groups.flatMap(group => group.items);

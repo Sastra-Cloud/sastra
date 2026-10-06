@@ -52,6 +52,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/budget/invoice-description.ts`
 - `lib/budget/invoice-details.test.ts`
 - `lib/budget/invoice-details.ts`
+- `lib/budget/invoice-number.ts`
 - `lib/budget/invoice-preview.test.ts`
 - `lib/budget/invoice-regeneration.test.ts`
 - `lib/budget/mou-payments.test.ts`

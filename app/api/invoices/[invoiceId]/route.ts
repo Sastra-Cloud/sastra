@@ -4,6 +4,9 @@ import { eq } from "drizzle-orm";
 import { requireUser } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { invoices, projects } from "@/lib/db/schema";
+import { canManage } from "@/lib/auth/policy";
+import { getWorkspaceSettings } from "@/lib/workspace/queries";
+import { moduleEnabled } from "@/lib/workspace/modules";
 
 export const dynamic = "force-dynamic";
 
@@ -32,11 +35,12 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ invoiceId: string }> }
 ) {
-  await requireUser();
+  const session = await requireUser();
   const { invoiceId } = await params;
   const [invoice] = await db
     .select({
       id: invoices.id,
+      sponsorshipId: invoices.sponsorshipId,
       invoiceNumber: invoices.invoiceNumber,
       recipientName: invoices.recipientName,
       recipientEmail: invoices.recipientEmail,
@@ -57,6 +61,10 @@ export async function GET(
     .limit(1);
 
   if (!invoice) {
+    return NextResponse.json({ error: "Invoice not found." }, { status: 404 });
+  }
+  if (invoice.sponsorshipId && (!canManage(session.user) ||
+    !moduleEnabled((await getWorkspaceSettings()).enabledModules, "sponsorships"))) {
     return NextResponse.json({ error: "Invoice not found." }, { status: 404 });
   }
 

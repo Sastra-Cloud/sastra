@@ -149,6 +149,8 @@ export async function buildInvoicePdf(input: {
   issueDate: string;
   dueDate: string | null;
   description: string;
+  lineItems?: Array<{ description: string; quantity: number; unitPrice: string; amount: string }>;
+  notes?: string | null;
 }): Promise<Buffer> {
   const doc = new PDFDocument({ size: "LETTER", margin: PAGE_MARGIN });
   const result = collect(doc);
@@ -178,18 +180,46 @@ export async function buildInvoicePdf(input: {
   const billBottom = doc.y;
   doc.fontSize(9).text(input.dueDate ? `Payment due: ${formatInvoiceDate(input.dueDate)}\nCurrency: ${input.currency}` : `Currency: ${input.currency}`, PAGE_MARGIN + width / 2, y + 22, { width: width / 2 });
   y = Math.max(billBottom, doc.y) + 22;
-  doc.rect(PAGE_MARGIN, y, width, 24).fill(accent);
-  doc.fillColor("white").fontSize(9).text("DESCRIPTION", PAGE_MARGIN + 5, y + 8, { width: 300 })
-    .text("UNIT PRICE", right - 166, y + 8, { width: 76, align: "right" })
-    .text("TOTAL", right - 80, y + 8, { width: 75, align: "right" });
-  y += 33;
-  doc.fillColor(ink).fontSize(10).text(input.description, PAGE_MARGIN + 5, y, { width: width - 188, lineGap: 2 });
-  const bottom = doc.y;
-  doc.text(formatMoney(input.amount, input.currency), right - 174, y, { width: 84, align: "right" })
-    .text(formatMoney(input.amount, input.currency), right - 84, y, { width: 79, align: "right" });
-  y = Math.max(bottom, doc.y) + 16;
-  doc.moveTo(PAGE_MARGIN, y).lineTo(right, y).strokeColor("#CCCCCC").stroke();
-  doc.font("Helvetica-Bold").fontSize(12).text(`Total: ${formatMoney(input.amount, input.currency)}`, PAGE_MARGIN, y + 12, { width, align: "right" });
+  if (input.lineItems?.length) {
+    const tableHeader = () => {
+      doc.rect(PAGE_MARGIN, y, width, 24).fill(accent);
+      doc.fillColor("white").font("Helvetica").fontSize(9)
+        .text("DESCRIPTION", PAGE_MARGIN + 5, y + 8, { width: 222 })
+        .text("COPIES", PAGE_MARGIN + 232, y + 8, { width: 44, align: "right" })
+        .text("PRICE / COPY", PAGE_MARGIN + 286, y + 8, { width: 93, align: "right" })
+        .text("TOTAL", PAGE_MARGIN + 389, y + 8, { width: width - 394, align: "right" });
+      y += 32;
+    };
+    if (y > doc.page.height - PAGE_MARGIN - 80) { doc.addPage(); y = PAGE_MARGIN; }
+    tableHeader();
+    for (const item of input.lineItems) {
+      doc.font("Helvetica").fontSize(10);
+      const height = Math.max(22, doc.heightOfString(item.description, { width: 222, lineGap: 2 }) + 18);
+      if (y + height > doc.page.height - PAGE_MARGIN) { doc.addPage(); y = PAGE_MARGIN; tableHeader(); }
+      doc.fillColor(ink).text(item.description, PAGE_MARGIN + 5, y, { width: 222, lineGap: 2 });
+      doc.text(String(item.quantity), PAGE_MARGIN + 232, y, { width: 44, align: "right" });
+      doc.text(formatMoney(Number(item.unitPrice), input.currency), PAGE_MARGIN + 286, y, { width: 93, align: "right" });
+      doc.text(formatMoney(Number(item.amount), input.currency), PAGE_MARGIN + 389, y, { width: width - 394, align: "right" });
+      y += height;
+      doc.moveTo(PAGE_MARGIN, y - 8).lineTo(right, y - 8).strokeColor("#CCCCCC").stroke();
+    }
+    if (y + 40 > doc.page.height - PAGE_MARGIN) { doc.addPage(); y = PAGE_MARGIN; }
+    doc.font("Helvetica-Bold").fontSize(12).fillColor(ink).text(`Total: ${formatMoney(input.amount, input.currency)}`, PAGE_MARGIN, y + 8, { width, align: "right" });
+    if (input.notes) doc.font("Helvetica").fontSize(10).text(input.notes, PAGE_MARGIN, doc.y + 22, { width, lineGap: 3 });
+  } else {
+    doc.rect(PAGE_MARGIN, y, width, 24).fill(accent);
+    doc.fillColor("white").fontSize(9).text("DESCRIPTION", PAGE_MARGIN + 5, y + 8, { width: 300 })
+      .text("UNIT PRICE", right - 166, y + 8, { width: 76, align: "right" })
+      .text("TOTAL", right - 80, y + 8, { width: 75, align: "right" });
+    y += 33;
+    doc.fillColor(ink).fontSize(10).text(input.description, PAGE_MARGIN + 5, y, { width: width - 188, lineGap: 2 });
+    const bottom = doc.y;
+    doc.text(formatMoney(input.amount, input.currency), right - 174, y, { width: 84, align: "right" })
+      .text(formatMoney(input.amount, input.currency), right - 84, y, { width: 79, align: "right" });
+    y = Math.max(bottom, doc.y) + 16;
+    doc.moveTo(PAGE_MARGIN, y).lineTo(right, y).strokeColor("#CCCCCC").stroke();
+    doc.font("Helvetica-Bold").fontSize(12).text(`Total: ${formatMoney(input.amount, input.currency)}`, PAGE_MARGIN, y + 12, { width, align: "right" });
+  }
   const details = input.issuer.invoicePaymentDetails;
   if (details?.fields.length || input.issuer.paymentInstructions) {
     doc.addPage();

@@ -1,4 +1,5 @@
 import { isEpisodicKind } from "@/lib/projects/kinds";
+import { moduleEnabled } from "@/lib/workspace/modules";
 
 export type NavigationItem = {
   href: string;
@@ -9,7 +10,7 @@ export type NavigationItem = {
   relatedPaths?: string[];
 };
 export type NavigationGroup = { label: string; items: NavigationItem[] };
-type Access = { canManage: boolean; isAdmin: boolean };
+type Access = { canManage: boolean; isAdmin: boolean; enabledModules?: string[] };
 
 function visibleGroups(groups: NavigationGroup[], access: Access): NavigationGroup[] {
   return groups.map(group => ({ ...group, items: group.items.filter(item =>
@@ -31,6 +32,7 @@ export function appNavigation(access: Access): NavigationGroup[] {
     { label: "Management", items: [
       { href: "/overview", label: "Team planning", icon: "planning", access: "manager", relatedPaths: ["/schedule", "/workload"] },
       { href: "/correspondence", label: "Correspondence", icon: "mail", access: "manager" },
+      ...(moduleEnabled(access.enabledModules ?? [], "sponsorships") ? [{ href: "/sponsorships", label: "Sponsorships", icon: "partners", access: "manager" as const }] : []),
       { href: "/donations", label: "Donations", icon: "donations", access: "admin" },
     ] },
     { label: "Workspace", items: [
@@ -53,6 +55,7 @@ export function settingsNavigation(access: Access): NavigationGroup[] {
       { href: "/settings/dictionary", label: "Voice dictionary", icon: "dictionary", description: "Names and words used in voice input." },
       { href: "/settings/team", label: "Team", icon: "members", access: "manager", description: "Invite teammates and manage workspace roles." },
       { href: "/settings/workspace", label: "Workspace", icon: "workspace", access: "admin", description: "Organization identity and defaults for new projects." },
+      { href: "/settings/modules", label: "Modules", icon: "settings", access: "admin", description: "Enable optional tools, including book sponsorships." },
       { href: "/settings/standups", label: "Standups", icon: "standups", access: "manager", description: "Set up team check-ins and their schedules." },
     ] },
     { label: "Publishing", items: [

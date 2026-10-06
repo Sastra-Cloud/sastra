@@ -113,7 +113,7 @@ export async function listPayments(
     .orderBy(asc(mouPayments.dueDate), asc(mouPayments.createdAt));
 }
 
-/** Generated invoices for a project, newest first. */
+/** Project budget invoices only; sponsorship invoices have a separate ledger. */
 export async function listInvoices(
   projectId: string,
   printRunId?: string,
@@ -122,13 +122,14 @@ export async function listInvoices(
   return db
     .select()
     .from(invoices)
-    .where(
+    .where(and(
+      isNull(invoices.sponsorshipId),
       includeAll
         ? eq(invoices.projectId, projectId)
         : printRunId
         ? and(eq(invoices.projectId, projectId), eq(invoices.printRunId, printRunId))
         : and(eq(invoices.projectId, projectId), isNull(invoices.printRunId))
-    )
+    ))
     .orderBy(desc(invoices.createdAt));
 }
 

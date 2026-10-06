@@ -3,6 +3,10 @@
 import { z } from "zod";
 
 import { requireRole } from "@/lib/auth/guards";
+import { db } from "@/lib/db";
+import { invoices } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { requireWorkspaceModule } from "@/lib/workspace/module-guard";
 import {
   EMAIL_DRAFT_KINDS,
   type EmailDraftKind,
@@ -29,6 +33,10 @@ export async function saveEmailDraft(input: z.input<typeof saveDraftSchema>) {
   const session = await requireRole("manager");
   const parsed = saveDraftSchema.safeParse(input);
   if (!parsed.success) return { error: "Check the draft fields and try again." };
+  if (parsed.data.kind === "mou_invoice") {
+    const [invoice] = await db.select({ sponsorshipId: invoices.sponsorshipId }).from(invoices).where(eq(invoices.id, parsed.data.contextId)).limit(1);
+    if (invoice?.sponsorshipId) await requireWorkspaceModule("sponsorships");
+  }
   const draft = await saveEmailDraftForUser(session.user.id, parsed.data);
   return { draft };
 }
@@ -42,6 +50,10 @@ export async function discardEmailDraft(
     .object({ kind: z.enum(EMAIL_DRAFT_KINDS), contextId: z.uuid() })
     .safeParse({ kind, contextId });
   if (!parsed.success) return { error: "That email draft is not valid." };
+  if (parsed.data.kind === "mou_invoice") {
+    const [invoice] = await db.select({ sponsorshipId: invoices.sponsorshipId }).from(invoices).where(eq(invoices.id, parsed.data.contextId)).limit(1);
+    if (invoice?.sponsorshipId) await requireWorkspaceModule("sponsorships");
+  }
   await removeEmailDraftForUser(
     session.user.id,
     parsed.data.kind,

@@ -52,10 +52,16 @@ const PROGRESS_ACTIONS = new Set([
   "startManualEmailRightsReview",
   "contributeDocumentCase",
   "setImportTargetProject",
+  "recordSponsorshipReceipt", // reviewed finance allocation, atomic server computation
+  "reverseSponsorshipReceipt",
+  "recordSponsorshipFundUse",
+  "reverseSponsorshipFundUse",
 ]);
 const CONFIRMED_DESTRUCTIVE_ACTIONS = new Set([
   "undoAutoCreatedEmailTask",
   "voidMouInvoice",
+  "voidSponsorshipInvoice",
+  "cancelSponsorship",
 ]);
 const OPTIMISTIC_ACTIONS = new Set([
   // Chat message pins: predictable, reversible, and rolled back on failure.
@@ -74,6 +80,7 @@ const NAVIGATION = new Set([
   "createChannel",
   "openDirectMessage",
   "createProject",
+  "createSponsorship",
   "commitPlan",
   "commitProjectPlan",
 ]);

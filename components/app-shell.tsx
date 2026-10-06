@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { ActiveTimerProvider } from "@/components/time/active-timer-provider";
 import { AppCanvas } from "@/components/cockpit";
 import { isAdminRole } from "@/lib/auth/policy";
+import { WorkspaceModulesProvider } from "@/components/settings/workspace-modules-provider";
 
 const SIDEBAR_COOKIE = "sastra-sidebar-collapsed";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
@@ -42,6 +43,7 @@ export function AppShell({
   initialGuidanceDismissals,
   sourceUrl,
   versionLabel,
+  enabledModules = [],
 }: {
   children: React.ReactNode;
   userId: string;
@@ -56,6 +58,7 @@ export function AppShell({
   /** AGPL source link for the running build. */
   sourceUrl: string;
   versionLabel: string | null;
+  enabledModules?: string[];
 }) {
   const [collapsed, setCollapsed] = useState(initialSidebarCollapsed);
 
@@ -68,6 +71,7 @@ export function AppShell({
   }
 
   return (
+    <WorkspaceModulesProvider enabledModules={enabledModules}>
     <GuidanceProvider
       enabled={guidanceEnabled}
       initialDismissedKeys={initialGuidanceDismissals}
@@ -152,5 +156,6 @@ export function AppShell({
     </PresenceProvider>
     </ActiveTimerProvider>
     </GuidanceProvider>
+    </WorkspaceModulesProvider>
   );
 }

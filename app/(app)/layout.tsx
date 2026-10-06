@@ -43,6 +43,7 @@ export default async function AppLayout({
       initialGuidanceDismissals={guidanceDismissals}
       sourceUrl={sourceUrlFor(build)}
       versionLabel={cleanVersion(build.version)}
+      enabledModules={workspace.enabledModules}
     >
       {children}
     </AppShell>

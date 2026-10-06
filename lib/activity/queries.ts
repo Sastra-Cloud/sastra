@@ -1,6 +1,6 @@
 import "server-only";
 
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, ne } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { activityLog, projects, user } from "@/lib/db/schema";
@@ -28,7 +28,7 @@ export async function listProjectActivity(
     })
     .from(activityLog)
     .leftJoin(user, eq(user.id, activityLog.actorId))
-    .where(eq(activityLog.projectId, projectId))
+    .where(and(eq(activityLog.projectId, projectId), ne(activityLog.entityType, "sponsorship")))
     .orderBy(desc(activityLog.createdAt))
     .limit(limit);
   return rows.map((r) => ({ ...r, projectTitle: null, projectSlug: null }));
@@ -48,6 +48,8 @@ export async function listRecentActivity(limit = 10): Promise<ActivityItem[]> {
     .from(activityLog)
     .leftJoin(user, eq(user.id, activityLog.actorId))
     .leftJoin(projects, eq(projects.id, activityLog.projectId))
+    // Sponsorship finance history stays on its manager-only module screens.
+    .where(ne(activityLog.entityType, "sponsorship"))
     .orderBy(desc(activityLog.createdAt))
     .limit(limit);
 }

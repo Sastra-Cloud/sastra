@@ -250,6 +250,14 @@ Table and enum exports parsed from `lib/db/schema/`.
 
 - `projectSnapshots` (pgTable)
 
+## `lib/db/schema/sponsorships.ts`
+
+- `sponsorshipFundUses` (pgTable)
+- `sponsorshipLines` (pgTable)
+- `sponsorshipReceiptAllocations` (pgTable)
+- `sponsorshipReceipts` (pgTable)
+- `sponsorships` (pgTable)
+
 ## `lib/db/schema/standup.ts`
 
 - `standupAnswers` (pgTable)

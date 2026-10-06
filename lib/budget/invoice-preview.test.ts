@@ -1,7 +1,8 @@
 import { beforeEach, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ limit: vi.fn(), access: vi.fn(), session: vi.fn(), getObject: vi.fn(), presign: vi.fn() }));
+const mocks = vi.hoisted(() => ({ limit: vi.fn(), access: vi.fn(), session: vi.fn(), getObject: vi.fn(), presign: vi.fn(), user: vi.fn(), workspace: vi.fn() }));
 vi.mock("@/lib/db", () => ({ db: { select: () => ({ from: () => ({ innerJoin: () => ({ where: () => ({ limit: mocks.limit }) }), where: () => ({ limit: mocks.limit }) }) }) } }));
-vi.mock("@/lib/auth/guards", () => ({ requireUser: vi.fn(), getSession: mocks.session }));
+vi.mock("@/lib/auth/guards", () => ({ requireUser: mocks.user, getSession: mocks.session }));
+vi.mock("@/lib/workspace/queries", () => ({ getWorkspaceSettings: mocks.workspace }));
 vi.mock("@/lib/chat/access", () => ({ canAccessFile: mocks.access }));
 vi.mock("@/lib/auth/assurance", () => ({ isAdminAssured: vi.fn().mockResolvedValue(true) }));
 vi.mock("@/lib/ai/usage", () => ({ recordR2Operation: vi.fn().mockResolvedValue(undefined) }));
@@ -12,6 +13,8 @@ beforeEach(() => {
  vi.clearAllMocks();
  mocks.session.mockResolvedValue({ user: { id: "user", isActive: true } });
  mocks.access.mockResolvedValue(true);
+ mocks.user.mockResolvedValue({ user: { id: "manager", role: "manager" } });
+ mocks.workspace.mockResolvedValue({ enabledModules: ["sponsorships"] });
  mocks.getObject.mockResolvedValue(Buffer.from("%PDF-test"));
  mocks.presign.mockResolvedValue("https://storage.example/file");
 });
@@ -46,4 +49,24 @@ it("preserves ordinary attachment downloads", async () => {
  expect(response.headers.get("location")).toBe("https://storage.example/file");
  expect(mocks.presign).toHaveBeenCalledWith("private/pdf", "invoice.pdf");
  expect(mocks.getObject).not.toHaveBeenCalled();
+});
+
+it("blocks sponsorship invoice access for members even when enabled", async () => {
+ mocks.user.mockResolvedValue({ user: { id: "member", role: "member" } });
+ mocks.limit.mockResolvedValue([{ sponsorshipId: "sponsorship", renderedFileId: "private-file" }]);
+ const response = await invoice(new Request("https://sastra.example/api/invoices/invoice"), { params: Promise.resolve({ invoiceId: "invoice" }) });
+ expect(response.status).toBe(404);
+ expect(response.headers.get("location")).toBeNull();
+});
+it("blocks direct sponsorship invoice URLs when disabled", async () => {
+ mocks.workspace.mockResolvedValue({ enabledModules: [] });
+ mocks.limit.mockResolvedValue([{ sponsorshipId: "sponsorship", renderedFileId: "private-file" }]);
+ const response = await invoice(new Request("https://sastra.example/api/invoices/invoice"), { params: Promise.resolve({ invoiceId: "invoice" }) });
+ expect(response.status).toBe(404);
+});
+it("lets managers preview sponsorship invoices when enabled", async () => {
+ mocks.limit.mockResolvedValue([{ sponsorshipId: "sponsorship", renderedFileId: "private-file" }]);
+ const response = await invoice(new Request("https://sastra.example/api/invoices/invoice?inline=1"), { params: Promise.resolve({ invoiceId: "invoice" }) });
+ expect(response.status).toBe(307);
+ expect(response.headers.get("location")).toBe("/api/files/private-file/download?inline=1");
 });

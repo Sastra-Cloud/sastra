@@ -34,3 +34,4 @@ export * from "./wiki";
 export * from "./agreement-chat";
 export * from "./donations";
 export * from "./hosted";
+export * from "./sponsorships";

@@ -2,7 +2,7 @@
 title: "Projects & stages"
 category: "Work"
 roles: [member, manager, admin]
-keywords: [publishing, current work, project details, stages and team, create project, shared draft, guided setup, project actions, project, project name, rename project, edit project name, phase, proposal stage, proposed project, project status, planning, active, on hold, book, ebook, ebook only, ebook for now, print, print plan, book format, format plan not set, article, podcast, video series, videos, create project, new project, guided setup, guided project, step by step, one page form, overview, portfolio, filter, sort, print funding, print covered, print funding not assigned, funding assigned, no funding, seeking funding, partially funded, funded, no printing planned yet, due date, start date, schedule, estimated duration, planned finish, timeline, gantt, drive, file note, attachment note, delete project, completed project, project archive, archived project, reprint, status update, recent correspondence, project email, linked email, AI recommendation, daily review, mention, note, shared mou, shared agreement, project type, change project type, set project type, work path, wrong path]
+keywords: [sponsorship funds, funds used, available sponsorship funds, publishing, current work, project details, stages and team, create project, shared draft, guided setup, project actions, project, project name, rename project, edit project name, phase, proposal stage, proposed project, project status, planning, active, on hold, book, ebook, ebook only, ebook for now, print, print plan, book format, format plan not set, article, podcast, video series, videos, create project, new project, guided setup, guided project, step by step, one page form, overview, portfolio, filter, sort, print funding, print covered, print funding not assigned, funding assigned, no funding, seeking funding, partially funded, funded, no printing planned yet, due date, start date, schedule, estimated duration, planned finish, timeline, gantt, drive, file note, attachment note, delete project, completed project, project archive, archived project, reprint, status update, recent correspondence, project email, linked email, AI recommendation, daily review, mention, note, shared mou, shared agreement, project type, change project type, set project type, work path, wrong path]
 order: 20
 summary: "Create and manage publishing projects, preserve creation drafts, and find project settings and actions."
 ---
@@ -49,6 +49,15 @@ Managers also have a **Shared MoUs** entry for agreements whose payment depends
 on several projects completing. A covered project shows a manager-only banner
 linking to the agreement; members cannot see the group, its project
 relationships, or its financial allocations.
+
+When an admin enables **Sponsorships** in **Settings → Modules**, managers can
+see a book's **Sponsorship funds** on its overview. Each sponsorship shows funds
+received, used, and available in its own currency. Open the sponsorship to record
+partial uses or review its payment history. These balances are separate from the
+project budget, funding receipts, expenses, and print funding decisions. Books
+with sponsorship history cannot be deleted; keep the project to preserve its
+invoices and funding records. See
+*Sponsorships* for the invoice and funds workflow.
 
 Choose a **project type** when creating manually. Books contain chapters,
 article collections contain articles, podcasts contain episodes, and video

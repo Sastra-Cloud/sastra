@@ -112,6 +112,7 @@ export const fileStatus = pgEnum("file_status", ["pending", "ready", "failed"]);
 export const filePurpose = pgEnum("file_purpose", [
   "workspace_attachment",
   "donation_import",
+  "sponsorship_invoice",
   "system_generated",
   "email_ingest",
 ]);

@@ -22,7 +22,6 @@ import {
   emailThreadProjects,
   invoiceDeliveries,
   invoices,
-  invoiceSequences,
   mouPaymentProjects,
   mouPayments,
   printQuotes,
@@ -34,6 +33,7 @@ import {
   sharedMouMemberships,
   sharedMouReceiptAllocations,
   sharedMouReceipts,
+  sponsorships,
   tasks,
 } from "@/lib/db/schema";
 import { ensureRoyaltyPaymentForProject } from "@/lib/budget/royalty-recurring";
@@ -79,6 +79,8 @@ import {
 } from "@/lib/workspace/queries";
 import { syncAcceptedQuoteToRunBudget } from "@/lib/print/budget-sync";
 import { getMouInvoiceDetails } from "@/lib/budget/invoice-details";
+import { nextInvoiceNumber } from "@/lib/budget/invoice-number";
+import { requireWorkspaceModule } from "@/lib/workspace/module-guard";
 import { buildInvoicePdf } from "@/lib/budget/pdf";
 import { buildKey, putObject } from "@/lib/r2";
 import { getObjectBuffer } from "@/lib/r2";
@@ -185,38 +187,6 @@ function mouInvoiceTaskCopy(
     .filter(Boolean)
     .join("\n");
   return { title, description, triggerLabel };
-}
-
-type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-async function nextInvoiceNumber(tx: Tx): Promise<string> {
-  const configuredStart = Number.parseInt(
-    process.env.INVOICE_NUMBER_START ?? "344",
-    10
-  );
-  const start = Number.isFinite(configuredStart) && configuredStart > 0 ? configuredStart : 1;
-
-  await tx
-    .insert(invoiceSequences)
-    .values({ id: "default", nextNumber: start, padding: 5, prefix: "" })
-    .onConflictDoNothing();
-
-  const [row] = await tx
-    .update(invoiceSequences)
-    .set({
-      nextNumber: sql`${invoiceSequences.nextNumber} + 1`,
-      updatedAt: new Date(),
-    })
-    .where(eq(invoiceSequences.id, "default"))
-    .returning({
-      issuedNumber: sql<number>`${invoiceSequences.nextNumber} - 1`,
-      padding: invoiceSequences.padding,
-      prefix: invoiceSequences.prefix,
-    });
-
-  const issued = Number(row?.issuedNumber ?? start);
-  const padding = Math.max(1, Number(row?.padding ?? 5));
-  return `${row?.prefix ?? ""}${String(issued).padStart(padding, "0")}`;
 }
 
 const money = z.coerce.number().min(0).finite();
@@ -1400,7 +1370,7 @@ export async function voidMouInvoice(
       voidedAt: new Date(),
       voidedBy: user.id,
     })
-    .where(and(eq(invoices.id, invoiceId), inArray(invoices.status, ["issued", "sent"])))
+    .where(and(eq(invoices.id, invoiceId), isNull(invoices.sponsorshipId), inArray(invoices.status, ["issued", "sent"])))
     .returning({ projectId: invoices.projectId, groupId: invoices.sharedMouGroupId });
   if (!invoice) return { error: "Active invoice not found." };
   if (invoice.groupId) { await reevaluateSharedMouPayments({ groupId: invoice.groupId, actorId: user.id }); revalidatePath(`/agreements/${invoice.groupId}`); }
@@ -1430,6 +1400,7 @@ export async function sendInvoiceEmail(
       id: invoices.id,
       paymentId: invoices.mouPaymentId,
       groupId: invoices.sharedMouGroupId,
+      sponsorshipId: invoices.sponsorshipId,
       projectId: invoices.projectId,
       invoiceNumber: invoices.invoiceNumber,
       status: invoices.status,
@@ -1443,7 +1414,8 @@ export async function sendInvoiceEmail(
   if (!invoice || !attachmentFileId) {
     return { error: "Invoice PDF not found." };
   }
-  if (invoice.groupId && data.reviewedFileId !== attachmentFileId) return { error: "The invoice PDF changed. Refresh and review it before sending." };
+  if (invoice.sponsorshipId) await requireWorkspaceModule("sponsorships");
+  if ((invoice.groupId || invoice.sponsorshipId) && data.reviewedFileId !== attachmentFileId) return { error: "The invoice PDF changed. Refresh and review it before sending." };
   if (invoice.status === "void") return { error: "A void invoice cannot be sent." };
   if (invoice.status !== "issued") return { error: "This invoice was already sent or delivery is unresolved. Check correspondence before sending again." };
   if (invoice.groupId && invoice.paymentId) {
@@ -1478,6 +1450,11 @@ export async function sendInvoiceEmail(
     filename: file.originalName, content: await getObjectBuffer(file.r2Key), contentType: file.mimeType,
   })));
   const claim = await db.transaction(async (tx) => {
+    if (invoice.sponsorshipId) {
+      const [record] = await tx.select({ status: sponsorships.status }).from(sponsorships)
+        .where(eq(sponsorships.id, invoice.sponsorshipId)).for("update");
+      if (!record || record.status !== "invoiced") return { error: "The sponsorship changed. Refresh and review the invoice before sending." };
+    }
     if (invoice.groupId && invoice.paymentId) {
       await tx.select({ id: sharedMouGroups.id }).from(sharedMouGroups)
         .where(eq(sharedMouGroups.id, invoice.groupId)).for("update");
@@ -1533,6 +1510,11 @@ export async function sendInvoiceEmail(
       .where(and(eq(sharedMouMemberships.groupId, invoice.groupId), eq(sharedMouMemberships.active, true)));
     if (members.length) await db.insert(emailThreadProjects).values(members.map((member) => ({ threadId: thread.id, projectId: member.projectId }))).onConflictDoNothing();
   }
+  if (thread && invoice.sponsorshipId) {
+    const invoiceRows = await db.select({ lineItems: invoices.lineItems }).from(invoices).where(eq(invoices.id, invoiceId)).limit(1);
+    const projectIds = [...new Set((invoiceRows[0]?.lineItems ?? []).map(line => line.projectId))];
+    if (projectIds.length) await db.insert(emailThreadProjects).values(projectIds.map(projectId => ({ threadId: thread.id, projectId }))).onConflictDoNothing();
+  }
   await db.insert(invoiceDeliveries).values({
     evidence,
     invoiceId,
@@ -1561,7 +1543,12 @@ export async function sendInvoiceEmail(
     revalidatePath(`/agreements/${invoice.groupId}`);
   }
   await removeEmailDraftForUser(user.id, "mou_invoice", invoiceId);
-  await revalidate(invoice.projectId);
+  if (invoice.sponsorshipId) {
+    revalidatePath("/sponsorships");
+    revalidatePath(`/sponsorships/${invoice.sponsorshipId}`);
+  } else {
+    await revalidate(invoice.projectId);
+  }
   return {};
 }
 

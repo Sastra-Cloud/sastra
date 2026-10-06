@@ -12,6 +12,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `app/(app)/settings/document-learning/page.tsx`
 - `app/(app)/settings/email/page.tsx`
 - `app/(app)/settings/layout.tsx`
+- `app/(app)/settings/modules/page.tsx`
 - `app/(app)/settings/notifications/page.tsx`
 - `app/(app)/settings/page.tsx`
 - `app/(app)/settings/partners/page.tsx`
@@ -59,6 +60,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/settings/guidance-toggle.tsx`
 - `components/settings/hosted-plan-card.tsx`
 - `components/settings/invoice-sequence-card.tsx`
+- `components/settings/modules-settings.tsx`
 - `components/settings/notification-prefs.tsx`
 - `components/settings/partners-manager.tsx`
 - `components/settings/profile-form.tsx`
@@ -81,6 +83,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/settings/timezone-control.tsx`
 - `components/settings/typesafe-toggle.tsx`
 - `components/settings/workspace-branding-card.tsx`
+- `components/settings/workspace-modules-provider.tsx`
 - `components/settings/workspace-settings-form.tsx`
 - `components/settings/workspace-setup-form.tsx`
 - `lib/auth/assurance-actions.ts`
@@ -93,7 +96,4 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/auth/policy.test.ts`
 - `lib/auth/policy.ts`
 - `lib/auth/provisioning.test.ts`
-- `lib/auth/provisioning.ts`
-- `lib/db/schema/auth.ts`
-- `lib/team/actions.ts`
-... 6 more
+... 9 more

@@ -23,6 +23,10 @@ import {
   projectPrintSettings,
   rightsItems,
   sharedMouMemberships,
+  sponsorshipLines,
+  sponsorshipReceiptAllocations,
+  sponsorshipFundUses,
+  invoices,
   taskDependencies,
   tasks,
   units,
@@ -657,6 +661,16 @@ export async function deleteProject(
       error:
         "Remove or replace this project on its Shared MoU before deleting it.",
     };
+  }
+
+  const [sponsorshipHistory] = await db.select({
+    exists: sql<boolean>`exists(select 1 from ${sponsorshipLines} where ${sponsorshipLines.projectId} = ${project.id})
+      or exists(select 1 from ${sponsorshipReceiptAllocations} where ${sponsorshipReceiptAllocations.projectId} = ${project.id})
+      or exists(select 1 from ${sponsorshipFundUses} where ${sponsorshipFundUses.projectId} = ${project.id})
+      or exists(select 1 from ${invoices} where ${invoices.projectId} = ${project.id} and ${invoices.sponsorshipId} is not null)`,
+  }).from(projects).where(eq(projects.id, project.id)).limit(1);
+  if (sponsorshipHistory?.exists) {
+    return { error: "This book has sponsorship history. Keep the project to preserve its invoices and funding records." };
   }
 
   if (parsed.data.confirmTitle !== project.title) {

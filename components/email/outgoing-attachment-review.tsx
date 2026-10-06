@@ -61,8 +61,12 @@ function canPreviewInline(mimeType: string) {
 
 export function OutgoingAttachmentReview({
   attachments,
+  helperText = "These exact files will be sent with this email.",
+  ariaLabel = "Email attachments",
 }: {
   attachments: OutgoingEmailAttachment[];
+  helperText?: string;
+  ariaLabel?: string;
 }) {
   const [selected, setSelected] = useState<OutgoingEmailAttachment | null>(null);
 
@@ -73,7 +77,7 @@ export function OutgoingAttachmentReview({
   return (
     <>
       <section
-        aria-label="Email attachments"
+        aria-label={ariaLabel}
         className="overflow-hidden rounded-lg border bg-background"
       >
         <div className="flex items-start gap-2 border-b bg-muted/30 px-3 py-2.5">
@@ -88,7 +92,7 @@ export function OutgoingAttachmentReview({
                 : `${attachments.length} attachments`}
             </p>
             <p className="text-xs text-muted-foreground">
-              These exact files will be sent with this email.
+              {helperText}
             </p>
           </div>
         </div>

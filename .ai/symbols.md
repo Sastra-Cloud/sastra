@@ -152,6 +152,10 @@
 
 - dynamic, metadata
 
+## `app/(app)/settings/modules/page.tsx`
+
+- metadata
+
 ## `app/(app)/settings/notifications/page.tsx`
 
 - dynamic, metadata
@@ -201,6 +205,18 @@
 - dynamic, metadata
 
 ## `app/(app)/settings/workspace/page.tsx`
+
+- dynamic, metadata
+
+## `app/(app)/sponsorships/[id]/page.tsx`
+
+- dynamic, metadata
+
+## `app/(app)/sponsorships/new/page.tsx`
+
+- dynamic, metadata
+
+## `app/(app)/sponsorships/page.tsx`
 
 - dynamic, metadata
 
@@ -1132,6 +1148,10 @@
 
 - InvoiceSequenceCard
 
+## `components/settings/modules-settings.tsx`
+
+- ModulesSettings
+
 ## `components/settings/notification-prefs.tsx`
 
 - NotificationPrefs
@@ -1216,6 +1236,10 @@
 
 - WorkspaceBrandingCard
 
+## `components/settings/workspace-modules-provider.tsx`
+
+- WorkspaceModulesProvider, useWorkspaceModules
+
 ## `components/settings/workspace-settings-form.tsx`
 
 - WorkspaceSettingsForm
@@ -1227,6 +1251,34 @@
 ## `components/source-link.tsx`
 
 - SourceLink
+
+## `components/sponsorships/create-sponsorship.tsx`
+
+- CreateSponsorship
+
+## `components/sponsorships/project-sponsorship-funds.tsx`
+
+- ProjectSponsorshipFunds
+
+## `components/sponsorships/sponsorship-detail.tsx`
+
+- SponsorshipDetail
+
+## `components/sponsorships/sponsorship-email.tsx`
+
+- SponsorshipEmail
+
+## `components/sponsorships/sponsorship-form.tsx`
+
+- SponsorshipForm, SponsorshipOptions, sponsorshipSelectClass
+
+## `components/sponsorships/sponsorship-funding.tsx`
+
+- SponsorshipFunding
+
+## `components/sponsorships/sponsorship-list.tsx`
+
+- SponsorshipList
 
 ## `components/tasks/create-task-dialog.tsx`
 
@@ -1752,6 +1804,10 @@
 
 - getMouInvoiceDetails
 
+## `lib/budget/invoice-number.ts`
+
+- nextInvoiceNumber
+
 ## `lib/budget/mou-payments.ts`
 
 - allCoveredProjectsComplete
@@ -2011,6 +2067,10 @@
 ## `lib/db/schema/snapshots.ts`
 
 - projectSnapshots
+
+## `lib/db/schema/sponsorships.ts`
+
+- sponsorshipFundUses, sponsorshipLines, sponsorshipReceiptAllocations, sponsorshipReceipts, sponsorships
 
 ## `lib/db/schema/standup.ts`
 
@@ -2984,6 +3044,22 @@
 
 - slugify, uniqueProjectSlug
 
+## `lib/sponsorships/actions.ts`
+
+- cancelSponsorship, createSponsorship, generateSponsorshipInvoice, recordSponsorshipFundUse, recordSponsorshipReceipt, reverseSponsorshipFundUse, reverseSponsorshipReceipt, updateSponsorship, voidSponsorshipInvoice
+
+## `lib/sponsorships/compute.ts`
+
+- MAX_SPONSORSHIP_CENTS, SponsorshipFundUseInput, SponsorshipInput, SponsorshipReceiptInput, allocateSponsorshipCents, calendarDate, decimalAmount, fundUseInputSchema, moneyCents, receiptInputSchema, sponsorshipInputSchema, sponsorshipProjectShares, sponsorshipTotalCents
+
+## `lib/sponsorships/format.ts`
+
+- sponsorshipMoney, sponsorshipStatus
+
+## `lib/sponsorships/queries.ts`
+
+- SponsorshipDetail, SponsorshipListItem, getSponsorship, listProjectSponsorshipFunds, listSponsorshipBooks, listSponsorships
+
 ## `lib/standup/config-actions.ts`
 
 - StandupState, addParticipant, addQuestion, createStandup, deleteStandup, generateReportsNow, removeParticipant, removeQuestion, reorderQuestions, startNow, updateStandup
@@ -3150,7 +3226,15 @@
 
 ## `lib/workspace/actions.ts`
 
-- WorkspaceSettingsInput, completeWorkspaceSetup, removeWorkspaceLogo, setWorkspaceLogo, updateInvoiceSequence, updateWorkspaceBranding, updateWorkspaceSettings
+- WorkspaceSettingsInput, completeWorkspaceSetup, removeWorkspaceLogo, setWorkspaceLogo, setWorkspaceModule, updateInvoiceSequence, updateWorkspaceBranding, updateWorkspaceSettings
+
+## `lib/workspace/module-guard.ts`
+
+- requireWorkspaceModule
+
+## `lib/workspace/modules.ts`
+
+- WORKSPACE_MODULES, WorkspaceModule, moduleEnabled
 
 ## `lib/workspace/queries.ts`
 

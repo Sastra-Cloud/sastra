@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { isValidTimeZone } from "@/lib/timezone";
 
@@ -13,6 +13,24 @@ import { getWorkspaceSettings } from "@/lib/workspace/queries";
 import { logActivity } from "@/lib/activity/log";
 import { capacityGroupsSchema, normalizeGroups } from "@/lib/planning/groups";
 import { requestScheduledTick } from "@/lib/hosted/tick-request";
+import type { WorkspaceModule } from "@/lib/workspace/modules";
+
+export async function setWorkspaceModule(input: { module: WorkspaceModule; enabled: boolean }): Promise<{ error?: string; enabledModules?: string[] }> {
+  const { user } = await requireRole("admin");
+  const parsed = z.object({ module: z.enum(["sponsorships"]), enabled: z.boolean() }).safeParse(input);
+  if (!parsed.success) return { error: "Choose a valid module setting." };
+  await getWorkspaceSettings();
+  const { module, enabled } = parsed.data;
+  const [row] = await db.update(workspaceSettings).set({
+    enabledModules: enabled
+      ? sql`array(select distinct unnest(array_append(${workspaceSettings.enabledModules}, ${module}::text)))`
+      : sql`array_remove(${workspaceSettings.enabledModules}, ${module}::text)`,
+    updatedBy: user.id, updatedAt: new Date(),
+  }).where(eq(workspaceSettings.id, "workspace")).returning({ enabledModules: workspaceSettings.enabledModules });
+  await logActivity({ actorId: user.id, entityType: "workspace_settings", entityId: "workspace", action: "update", summary: `${enabled ? "Enabled" : "Disabled"} ${module} module` });
+  revalidatePath("/", "layout");
+  return { enabledModules: row.enabledModules };
+}
 
 const nullableText = (max: number) =>
   z.string().trim().max(max).optional();

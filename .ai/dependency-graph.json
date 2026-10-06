@@ -419,7 +419,11 @@
     "@/lib/email/follow-ups",
     "@/lib/email/queries",
     "@/components/correspondence/external-follow-up-card",
-    "@/components/correspondence/project-correspondence-preview"
+    "@/components/correspondence/project-correspondence-preview",
+    "@/lib/workspace/queries",
+    "@/lib/workspace/modules",
+    "@/lib/sponsorships/queries",
+    "@/components/sponsorships/project-sponsorship-funds"
   ],
   "app/(app)/projects/[slug]/print/loading.tsx": [
     "@/components/page-skeleton"
@@ -672,6 +676,10 @@
     "@/components/settings/settings-nav",
     "@/lib/auth/policy"
   ],
+  "app/(app)/settings/modules/page.tsx": [
+    "@/lib/auth/guards",
+    "@/components/settings/modules-settings"
+  ],
   "app/(app)/settings/notifications/page.tsx": [
     "@/lib/auth/guards",
     "@/lib/notifications/queries",
@@ -784,6 +792,47 @@
     "@/lib/hosted/mode",
     "@/lib/hosted/storage-usage",
     "@/lib/workspace/queries"
+  ],
+  "app/(app)/sponsorships/[id]/page.tsx": [
+    "next/navigation",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/workspace/queries",
+    "@/lib/workspace/modules",
+    "@/lib/sponsorships/queries",
+    "@/lib/partners/queries",
+    "@/components/cockpit",
+    "@/components/sponsorships/sponsorship-detail"
+  ],
+  "app/(app)/sponsorships/layout.tsx": [
+    "next/link",
+    "@/lib/auth/guards",
+    "@/lib/workspace/queries",
+    "@/lib/workspace/modules",
+    "@/lib/auth/policy",
+    "@/components/cockpit",
+    "@/components/ui/button"
+  ],
+  "app/(app)/sponsorships/new/page.tsx": [
+    "next/link",
+    "@/lib/auth/guards",
+    "@/lib/workspace/queries",
+    "@/lib/workspace/modules",
+    "@/lib/sponsorships/queries",
+    "@/lib/partners/queries",
+    "@/components/cockpit",
+    "@/components/sponsorships/create-sponsorship"
+  ],
+  "app/(app)/sponsorships/page.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/workspace/queries",
+    "@/lib/workspace/modules",
+    "@/lib/sponsorships/queries",
+    "@/components/cockpit",
+    "@/components/ui/button",
+    "@/components/sponsorships/sponsorship-list"
   ],
   "app/(app)/standups/loading.tsx": [
     "@/components/page-skeleton"
@@ -1097,7 +1146,10 @@
     "drizzle-orm",
     "@/lib/auth/guards",
     "@/lib/db",
-    "@/lib/db/schema"
+    "@/lib/db/schema",
+    "@/lib/auth/policy",
+    "@/lib/workspace/queries",
+    "@/lib/workspace/modules"
   ],
   "app/api/notifications/recent/route.ts": [
     "next/server",
@@ -1381,7 +1433,8 @@
     "@/components/ui/tooltip",
     "@/lib/utils",
     "@/lib/navigation",
-    "@/components/navigation-icons"
+    "@/components/navigation-icons",
+    "@/components/settings/workspace-modules-provider"
   ],
   "components/app-shell.tsx": [
     "react",
@@ -1401,7 +1454,8 @@
     "@/lib/utils",
     "@/components/time/active-timer-provider",
     "@/components/cockpit",
-    "@/lib/auth/policy"
+    "@/lib/auth/policy",
+    "@/components/settings/workspace-modules-provider"
   ],
   "components/assistant/assistant-message-content.test.tsx": [
     "vitest",
@@ -3036,6 +3090,12 @@
     "@/components/ui/label",
     "@/lib/workspace/actions"
   ],
+  "components/settings/modules-settings.tsx": [
+    "next/link",
+    "@/components/ui/label",
+    "./workspace-modules-provider",
+    "@/lib/workspace/modules"
+  ],
   "components/settings/notification-prefs.tsx": [
     "lucide-react",
     "react",
@@ -3287,6 +3347,13 @@
     "@/lib/workspace/actions",
     "@/hooks/use-prop-state"
   ],
+  "components/settings/workspace-modules-provider.tsx": [
+    "react",
+    "next/navigation",
+    "@/hooks/use-optimistic-action",
+    "@/lib/workspace/actions",
+    "@/lib/workspace/modules"
+  ],
   "components/settings/workspace-settings-form.tsx": [
     "@/lib/files/upload-client",
     "./field-errors",
@@ -3319,6 +3386,90 @@
   "components/source-link.tsx": [
     "lucide-react",
     "@/lib/utils"
+  ],
+  "components/sponsorships/create-sponsorship.tsx": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "@/lib/sponsorships/actions",
+    "./sponsorship-form",
+    "@/lib/sponsorships/compute"
+  ],
+  "components/sponsorships/project-sponsorship-funds.tsx": [
+    "next/link",
+    "@/lib/sponsorships/format",
+    "@/lib/sponsorships/queries"
+  ],
+  "components/sponsorships/sponsorship-detail.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "sonner",
+    "@/components/cockpit",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/email/outgoing-attachment-review",
+    "@/hooks/use-optimistic-action",
+    "@/lib/dialog-requests",
+    "@/lib/sponsorships/actions",
+    "@/lib/sponsorships/queries",
+    "@/lib/sponsorships/compute",
+    "@/lib/sponsorships/format",
+    "@/lib/format",
+    "./sponsorship-form",
+    "./sponsorship-funding",
+    "./sponsorship-email"
+  ],
+  "components/sponsorships/sponsorship-email.tsx": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "@/lib/dialog-requests",
+    "@/lib/budget/actions",
+    "@/lib/email/draft-actions",
+    "@/lib/sponsorships/queries",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/components/email/outgoing-attachment-review"
+  ],
+  "components/sponsorships/sponsorship-form.tsx": [
+    "react",
+    "next/link",
+    "lucide-react",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/lib/sponsorships/compute",
+    "@/lib/sponsorships/format"
+  ],
+  "components/sponsorships/sponsorship-funding.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "sonner",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/lib/sponsorships/actions",
+    "@/lib/sponsorships/compute",
+    "@/lib/sponsorships/queries",
+    "@/lib/sponsorships/format",
+    "@/lib/format"
+  ],
+  "components/sponsorships/sponsorship-list.tsx": [
+    "react",
+    "next/link",
+    "lucide-react",
+    "@/components/cockpit",
+    "@/components/ui/input",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/lib/sponsorships/queries",
+    "@/lib/sponsorships/format"
   ],
   "components/tasks/create-task-dialog.tsx": [
     "react",
@@ -4639,6 +4790,8 @@
     "@/lib/workspace/queries",
     "@/lib/print/budget-sync",
     "@/lib/budget/invoice-details",
+    "@/lib/budget/invoice-number",
+    "@/lib/workspace/module-guard",
     "@/lib/budget/pdf",
     "@/lib/r2",
     "@/lib/r2",
@@ -4731,6 +4884,11 @@
     "@/lib/db/schema",
     "./invoice-description"
   ],
+  "lib/budget/invoice-number.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
   "lib/budget/invoice-preview.test.ts": [
     "vitest",
     "@/app/api/invoices/[invoiceId]/route",
@@ -4817,7 +4975,9 @@
     "@/lib/chat/channel-members",
     "@/lib/db",
     "@/lib/db/schema",
-    "@/lib/auth/policy"
+    "@/lib/auth/policy",
+    "@/lib/workspace/queries",
+    "@/lib/workspace/modules"
   ],
   "lib/chat/actions.ts": [
     "next/cache",
@@ -5069,7 +5229,8 @@
     "./email",
     "./partners",
     "./enums",
-    "./agreements"
+    "./agreements",
+    "./sponsorships"
   ],
   "lib/db/schema/chat.ts": [
     "drizzle-orm",
@@ -5172,7 +5333,8 @@
     "./wiki",
     "./agreement-chat",
     "./donations",
-    "./hosted"
+    "./hosted",
+    "./sponsorships"
   ],
   "lib/db/schema/notifications.ts": [
     "drizzle-orm/pg-core",
@@ -5237,6 +5399,14 @@
   "lib/db/schema/snapshots.ts": [
     "drizzle-orm/pg-core",
     "./projects"
+  ],
+  "lib/db/schema/sponsorships.ts": [
+    "drizzle-orm",
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./partners",
+    "./projects",
+    "./budget"
   ],
   "lib/db/schema/standup.ts": [
     "drizzle-orm/pg-core",
@@ -5470,6 +5640,10 @@
   "lib/email/draft-actions.ts": [
     "zod",
     "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "drizzle-orm",
+    "@/lib/workspace/module-guard",
     "@/lib/email/draft-types",
     "@/lib/email/draft-store"
   ],
@@ -6251,7 +6425,8 @@
     "./navigation"
   ],
   "lib/navigation.ts": [
-    "@/lib/projects/kinds"
+    "@/lib/projects/kinds",
+    "@/lib/workspace/modules"
   ],
   "lib/notifications/actions.ts": [
     "next/navigation",
@@ -7150,6 +7325,67 @@
     "@/lib/db",
     "@/lib/db/schema"
   ],
+  "lib/sponsorships/actions.test.ts": [
+    "vitest",
+    "drizzle-orm",
+    "./actions"
+  ],
+  "lib/sponsorships/actions.ts": [
+    "node:crypto",
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/workspace/module-guard",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./compute",
+    "@/lib/workspace/queries",
+    "@/lib/budget/invoice-number",
+    "@/lib/budget/pdf",
+    "@/lib/r2"
+  ],
+  "lib/sponsorships/budget-separation.test.ts": [
+    "vitest",
+    "drizzle-orm/pg-proxy",
+    "@/lib/activity/queries",
+    "@/lib/budget/queries"
+  ],
+  "lib/sponsorships/compute.test.ts": [
+    "vitest",
+    "./compute"
+  ],
+  "lib/sponsorships/compute.ts": [
+    "zod"
+  ],
+  "lib/sponsorships/delivery.test.ts": [
+    "node:fs",
+    "typescript",
+    "zod",
+    "vitest"
+  ],
+  "lib/sponsorships/file-access.test.ts": [
+    "vitest",
+    "@/lib/chat/access"
+  ],
+  "lib/sponsorships/format.test.ts": [
+    "vitest",
+    "./format"
+  ],
+  "lib/sponsorships/format.ts": [],
+  "lib/sponsorships/queries.test.ts": [
+    "vitest",
+    "drizzle-orm/pg-proxy",
+    "./queries"
+  ],
+  "lib/sponsorships/queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/auth/guards",
+    "@/lib/workspace/module-guard",
+    "@/lib/db/schema",
+    "@/lib/email/draft-store"
+  ],
   "lib/standup/config-actions.ts": [
     "next/navigation",
     "next/cache",
@@ -7493,12 +7729,18 @@
     "@/lib/workspace/queries",
     "@/lib/activity/log",
     "@/lib/planning/groups",
-    "@/lib/hosted/tick-request"
+    "@/lib/hosted/tick-request",
+    "@/lib/workspace/modules"
   ],
   "lib/workspace/invoice-issuer.test.ts": [
     "vitest",
     "./queries"
   ],
+  "lib/workspace/module-guard.ts": [
+    "./queries",
+    "./modules"
+  ],
+  "lib/workspace/modules.ts": [],
   "lib/workspace/queries.ts": [
     "drizzle-orm",
     "@/lib/db",

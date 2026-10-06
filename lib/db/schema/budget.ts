@@ -23,6 +23,7 @@ import { emailThreads } from "./email";
 import { partnerContacts, partners } from "./partners";
 import { budgetCategory, budgetGroup, budgetUnit } from "./enums";
 import { sharedMouGroups, sharedMouMemberships } from "./agreements";
+import { sponsorships } from "./sponsorships";
 
 /** Itemized quotation line (QTY × unit price = amount), grouped + funded. */
 export const budgetItems = pgTable(
@@ -562,6 +563,8 @@ export const invoices = pgTable(
   "invoices",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    sponsorshipId: uuid("sponsorship_id").references(() => sponsorships.id, { onDelete: "restrict" }),
+    lineItems: jsonb("line_items").$type<Array<{ projectId: string; description: string; quantity: number; unitPrice: string; amount: string }>>(),
     projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
@@ -619,6 +622,7 @@ export const invoices = pgTable(
   },
   (t) => [
     uniqueIndex("invoices_number_uq").on(t.invoiceNumber),
+    uniqueIndex("invoices_active_sponsorship_uq").on(t.sponsorshipId).where(sql`${t.status} <> 'void'`),
     uniqueIndex("invoices_active_mou_payment_uq")
       .on(t.mouPaymentId)
       .where(sql`${t.mouPaymentId} is not null and ${t.status} <> 'void'`),

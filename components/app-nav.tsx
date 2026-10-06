@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { appNavigation, navigationItemActive, type NavigationItem } from "@/lib/navigation";
 import { navigationIcons } from "@/components/navigation-icons";
+import { useWorkspaceModules } from "@/components/settings/workspace-modules-provider";
 
 export function AppNav({
   onNavigate,
@@ -33,11 +34,12 @@ export function AppNav({
   layoutScope?: string;
 }) {
   const mobile = layoutScope === "mobile";
+  const { enabledModules } = useWorkspaceModules();
 
   return (
     <TooltipProvider delay={250}>
       <nav className={cn("grid gap-5", collapsed && "gap-4")}>
-        {appNavigation({ canManage, isAdmin }).map(group => (
+        {appNavigation({ canManage, isAdmin, enabledModules }).map(group => (
           <div key={group.label} className={cn("grid gap-1", collapsed && "justify-items-center")}>
             <NavLabel collapsed={collapsed} mobile={mobile}>{group.label}</NavLabel>
             {group.items.map(item => (

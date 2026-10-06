@@ -49,6 +49,10 @@ import { listProjectExternalFollowUps } from "@/lib/email/follow-ups";
 import { listProjectThreadPreviews } from "@/lib/email/queries";
 import { ExternalFollowUpCard } from "@/components/correspondence/external-follow-up-card";
 import { ProjectCorrespondencePreview } from "@/components/correspondence/project-correspondence-preview";
+import { getWorkspaceSettings } from "@/lib/workspace/queries";
+import { moduleEnabled } from "@/lib/workspace/modules";
+import { listProjectSponsorshipFunds } from "@/lib/sponsorships/queries";
+import { ProjectSponsorshipFunds } from "@/components/sponsorships/project-sponsorship-funds";
 
 const ATTENTION_PREVIEW_LIMIT = 3;
 
@@ -179,6 +183,9 @@ export default async function ProjectOverviewPage({
   const session = await getSession();
   const isManager =
     can(session?.user ?? null, "project.edit");
+  const sponsorshipFunds = isManager && project.kind === "book" &&
+    moduleEnabled((await getWorkspaceSettings()).enabledModules, "sponsorships")
+    ? await listProjectSponsorshipFunds(project.id) : [];
   const canViewCorrespondence = can(
     session?.user ?? null,
     "correspondence.view"
@@ -371,6 +378,8 @@ export default async function ProjectOverviewPage({
       </div>
 
       {created === "1" && isManager ? <div className="rounded-xl border border-success/30 bg-success/5 px-4 py-3 text-sm" role="status"><p className="font-medium">Project created</p><p className="mt-1 text-muted-foreground">{tasks.length ? `${tasks.length} tasks saved. Assign owners so work can start.` : "Add the first task or set up a task plan."}</p><Link href={`/projects/${project.slug}/${tasks.length ? "members" : "tasks"}`} className="inline-flex min-h-11 items-center gap-1 font-medium text-primary">{tasks.length ? "Assign project roles" : "Set up tasks"}<ArrowRight className="size-4" /></Link></div> : null}
+
+      <ProjectSponsorshipFunds funds={sponsorshipFunds} />
 
       <section className="space-y-3" aria-labelledby="current-work-heading">
         <div className="flex flex-wrap items-baseline justify-between gap-2">

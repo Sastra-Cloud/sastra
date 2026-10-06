@@ -16,6 +16,8 @@ import {
   user,
 } from "@/lib/db/schema";
 import { isAdminRole } from "@/lib/auth/policy";
+import { getWorkspaceSettings } from "@/lib/workspace/queries";
+import { moduleEnabled } from "@/lib/workspace/modules";
 
 export async function canAccessChannel(channelId: string, userId: string) {
   const [channel] = await db
@@ -95,6 +97,10 @@ export async function canAccessFile(fileId: string, userId: string) {
   if (!file) return false;
   if (file.purpose === "donation_import") {
     return file.isActive === true && isAdminRole(file.role);
+  }
+  if (file.purpose === "sponsorship_invoice") {
+    return file.isActive === true && (file.role === "manager" || isAdminRole(file.role)) &&
+      moduleEnabled((await getWorkspaceSettings()).enabledModules, "sponsorships");
   }
 
   const attachments = await db

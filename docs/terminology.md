@@ -43,6 +43,9 @@ a component.
 | Author/rights payment tied to sales | **royalty** | cut, share | |
 | Signed funding agreement with a partner | **MoU** | agreement (when it's specifically the MoU) | spell out once: "MoU (a funding agreement)" |
 | Fee the organization keeps from a donation | **organization donation fee** | admin fee, overhead | matches Settings copy |
+| Partner support priced by book and sponsored copies | **sponsorship** | book sale | separate from production MoUs |
+| Received book sponsorship money held for later use | **sponsorship funds** | budget funding | has its own received, used, and available balance |
+| Optional workspace feature | **module** | plugin (for workspace features) | admins enable modules in Settings |
 
 ## Print
 

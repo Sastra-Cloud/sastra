@@ -62,6 +62,15 @@ const DOMAINS = [
       p.includes("lib/db/schema/blockers.ts"),
   },
   {
+    slug: "sponsorships",
+    summary: "Optional book sponsorships, partner invoices, separate received funds, and partial fund use.",
+    match: (p) =>
+      p.includes("lib/sponsorships/") ||
+      p.includes("components/sponsorships/") ||
+      p.includes("app/(app)/sponsorships/") ||
+      p.includes("lib/db/schema/sponsorships.ts"),
+  },
+  {
     slug: "chat-standups",
     summary: "Project chat, live chat streams, standups, AI digesting, and cron jobs.",
     match: (p) =>

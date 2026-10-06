@@ -58,6 +58,18 @@ function clientActionImports() {
 }
 
 describe("client action interaction policy", () => {
+  it("keeps sponsorship finances reviewed and drafts immediate", () => {
+    expect(interactionModeFor("setWorkspaceModule")).toBe("optimistic");
+    expect(interactionModeFor("createSponsorship")).toBe("navigation");
+    expect(interactionModeFor("updateSponsorship")).toBe("optimistic");
+    expect(interactionModeFor("generateSponsorshipInvoice")).toBe("progress");
+    expect(interactionModeFor("recordSponsorshipReceipt")).toBe("progress");
+    expect(interactionModeFor("recordSponsorshipFundUse")).toBe("progress");
+    expect(interactionModeFor("reverseSponsorshipReceipt")).toBe("progress");
+    expect(interactionModeFor("reverseSponsorshipFundUse")).toBe("progress");
+    expect(interactionModeFor("cancelSponsorship")).toBe("confirmed-destructive");
+    expect(interactionModeFor("voidSponsorshipInvoice")).toBe("confirmed-destructive");
+  });
   it("classifies every client-invoked action", () => {
     const unclassified = clientActionImports().filter(
       (action) => interactionModeFor(action) === "unclassified"
