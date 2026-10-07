@@ -2,7 +2,7 @@
 title: "Support and feature requests"
 category: "Getting started"
 roles: [member, manager, admin]
-keywords: [support, help, ticket, problem, bug, feature request, my requests, human only, email replies, community, diagnostics]
+keywords: [support, help, ticket, problem, bug, feature request, my requests, email replies, community, diagnostics]
 order: 115
 summary: "Private requests for connected installations, community help for self-hosters, and support conversation privacy."
 ---
@@ -17,7 +17,7 @@ Submission and uploads show progress. Receipt is confirmed after saving. If a re
 
 Read and reply in **My requests**. Approved support replies can also arrive by email. Replying to that email continues the existing conversation; sending a new email does not open a request. You can **Mute email replies** and continue in the app. If saving this preference fails, the previous preference returns with an error.
 
-Support may use AI to classify a request or draft an answer. Choose **Have a person handle this without AI triage** for human-only handling. A person approves support replies and engineering work. A feature request does not guarantee a delivery date; priority support has no guaranteed response time.
+Support may use AI to classify a request or draft an answer. AI providers receive only the required redacted text. A person approves support replies and engineering work. A feature request does not guarantee a delivery date; priority support has no guaranteed response time.
 
 Cloud account owners can use the same workflow at **account.sastra.cloud/support** during a workspace outage, login problem, or billing/provisioning failure.
 

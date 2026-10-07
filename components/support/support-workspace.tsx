@@ -47,7 +47,6 @@ export function SupportWorkspace({
     [subject, setSubject] = useState(""),
     [body, setBody] = useState(""),
     [reply, setReply] = useState(""),
-    [humanOnly, setHumanOnly] = useState(false),
     [pending, setPending] = useState<string | null>(
       connected ? "Loading requests…" : null,
     ),
@@ -123,7 +122,6 @@ export function SupportWorkspace({
           category,
           subject,
           body,
-          humanOnly,
           diagnostics: { route, browser },
         });
         id = x.ticket.id;
@@ -447,15 +445,6 @@ export function SupportWorkspace({
             </summary>
             <pre className="mt-3 overflow-auto text-xs">{diagnostics}</pre>
           </details>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={humanOnly}
-              disabled={!!createdId}
-              onChange={(e) => setHumanOnly(e.target.checked)}
-            />
-            Have a person handle this without AI triage
-          </label>
           <p className="text-xs text-muted-foreground">
             Support may use AI to classify your request and draft an answer. A
             person reviews replies and engineering work.

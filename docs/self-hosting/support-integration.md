@@ -19,7 +19,7 @@ The server derives `actor: {id,email,admin}` from the active authenticated sessi
 from browser claims. The service enforces enrollment scope and reporter/admin access.
 Operations: create, list, get, reply, preferences, upload, download. Creation and replies
 carry a UUID `requestKey` retained across retries. Create includes support/bug/feature
-category, subject, body, humanOnly and diagnostics. Requests and attachment metadata
+category, subject, body and diagnostics. Requests and attachment metadata
 are durably acknowledged; uploads are explicit base64 files checked by type and size.
 Customer get responses contain only customer/operator messages, never notes or drafts.
 
