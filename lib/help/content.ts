@@ -76,10 +76,10 @@ function loadAll(): HelpDoc[] {
   const docs: HelpDoc[] = files.map((file) => {
     const slug = file.replace(/\.md$/, "");
     const { data, body } = parseFrontmatter(
-      readFileSync(path.join(HELP_DIR, file), "utf8")
+      readFileSync(path.join(HELP_DIR, file), "utf8"),
     );
     const roles = (data.roles ? parseList(data.roles) : []).filter(
-      (role): role is HelpRole => (HELP_ROLES as string[]).includes(role)
+      (role): role is HelpRole => (HELP_ROLES as string[]).includes(role),
     );
     const orderValue = Number(data.order);
     return {
@@ -102,6 +102,29 @@ function loadAll(): HelpDoc[] {
 /** All help docs, ordered. Used to render the Help page. */
 export function getHelpDocs(): HelpDoc[] {
   return loadAll();
+}
+
+export type HelpTopic = Pick<
+  HelpDoc,
+  "slug" | "title" | "category" | "roles" | "summary"
+> & { searchText: string };
+
+/** Small searchable index; markdown rendering belongs to each guide's server page. */
+export function getHelpTopics(): HelpTopic[] {
+  return loadAll().map((doc) => ({
+    slug: doc.slug,
+    title: doc.title,
+    category: doc.category,
+    roles: doc.roles,
+    summary: doc.summary,
+    searchText: [
+      ...new Set(
+        `${doc.title} ${doc.summary} ${doc.category} ${doc.keywords.join(" ")} ${doc.body}`
+          .toLowerCase()
+          .split(/\s+/),
+      ),
+    ].join(" "),
+  }));
 }
 
 /** One help doc by slug, or null. */
@@ -153,7 +176,8 @@ export function getHelpTopicsIndex(): string {
   if (indexCache != null) return indexCache;
   indexCache = loadAll()
     .map(
-      (doc) => `- ${doc.title} (${doc.slug})${doc.summary ? ` — ${doc.summary}` : ""}`
+      (doc) =>
+        `- ${doc.title} (${doc.slug})${doc.summary ? ` — ${doc.summary}` : ""}`,
     )
     .join("\n");
   return indexCache;

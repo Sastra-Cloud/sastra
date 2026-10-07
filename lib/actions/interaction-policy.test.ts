@@ -59,6 +59,8 @@ function clientActionImports() {
 
 describe("client action interaction policy", () => {
   it('keeps support submissions and attachments progress-based', () => {
+    expect(interactionModeFor("downloadSupportAttachment")).toBe("progress");
+    expect(interactionModeFor("updateSupportEmailPreference")).toBe("optimistic");
     expect(interactionModeFor('submitSupportRequest')).toBe('progress');
     expect(interactionModeFor('sendSupportReply')).toBe('progress');
     expect(interactionModeFor('uploadSupportAttachment')).toBe('progress');

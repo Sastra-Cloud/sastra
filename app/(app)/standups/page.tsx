@@ -132,7 +132,7 @@ export default async function StandupsPage() {
                 </Link>
               ) : null}
               <Link
-                href="/help#standups"
+                href="/help/standups"
                 className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
               >
                 Learn about standups

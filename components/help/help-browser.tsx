@@ -1,375 +1,163 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useMemo, useState } from "react";
-import {
-  ArrowUp,
-  ArrowUpRight,
-  BookOpen,
-  Bot,
-  Compass,
-  List,
-  ListChecks,
-  type LucideIcon,
-  MessagesSquare,
-  Search,
-  Settings2,
-} from "lucide-react";
-import ReactMarkdown, { type Components } from "react-markdown";
-import remarkGfm from "remark-gfm";
-
+import { useEffect, useId, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowRight, BookOpen, Search, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/cockpit";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import type { HelpDoc, HelpRole } from "@/lib/help/search";
-import { can } from "@/lib/auth/policy";
-import { cn } from "@/lib/utils";
+import type { HelpTopic } from "@/lib/help/content";
+import { usePropState } from "@/hooks/use-prop-state";
 
-const CATEGORY_ICONS: Record<string, LucideIcon> = {
-  "Getting started": Compass,
-  Work: ListChecks,
-  Publishing: BookOpen,
-  Communication: MessagesSquare,
-  "AI & assistant": Bot,
-  Settings: Settings2,
-};
-
-// Topics with a stable, non-project-scoped route get an "Open in app" link.
-const TOPIC_ROUTES: Record<string, { href: string; label: string }> = {
-  projects: { href: "/projects", label: "Open Projects" },
-  tasks: { href: "/tasks", label: "Open My Work" },
-  agenda: { href: "/tasks?view=agenda", label: "Open Agenda" },
-  overview: { href: "/overview", label: "Open Overview" },
-  workload: { href: "/workload", label: "Open Workload" },
-  chat: { href: "/chat", label: "Open Chat" },
-  standups: { href: "/standups", label: "Open Standups" },
-  correspondence: { href: "/correspondence", label: "Open Correspondence" },
-  assistant: { href: "/assistant", label: "Open Assistant" },
-  notifications: { href: "/notifications", label: "Open Notifications" },
-  settings: { href: "/settings", label: "Open Settings" },
-};
-
-function roleLabel(roles: HelpRole[]): string | null {
-  if (roles.includes("member")) return null;
-  if (roles.includes("manager")) return "Managers";
-  return "Admins only";
-}
-
-function matches(doc: HelpDoc, query: string): boolean {
-  const haystack = `${doc.title} ${doc.summary} ${doc.category} ${doc.keywords.join(
-    " "
-  )} ${doc.body}`.toLowerCase();
-  return query
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean)
-    .every((term) => haystack.includes(term));
-}
-
-// Downshift body headings so the hierarchy stays PageHero h1 → title h2 → h3/h4.
-// Forward only children so react-markdown's `node` extra-prop never reaches the DOM.
-const MARKDOWN_COMPONENTS: Components = {
-  h1: ({ children }) => <h3>{children}</h3>,
-  h2: ({ children }) => <h3>{children}</h3>,
-  h3: ({ children }) => <h4>{children}</h4>,
-  h4: ({ children }) => <h5>{children}</h5>,
-};
-
-const PROSE_CLASS =
-  "prose prose-sm max-w-[76ch] dark:prose-invert " +
-  "prose-headings:font-heading prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-foreground " +
-  "prose-p:text-muted-foreground prose-p:leading-relaxed " +
-  "prose-li:text-muted-foreground prose-li:leading-relaxed " +
-  "prose-strong:text-foreground prose-strong:font-semibold " +
-  "prose-em:text-foreground " +
-  "prose-a:text-foreground prose-a:font-medium " +
-  "prose-code:rounded prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:text-xs prose-code:text-foreground prose-code:before:content-none prose-code:after:content-none " +
-  "prose-table:text-sm prose-th:text-foreground prose-td:text-muted-foreground";
-
-export function HelpBrowser({ docs, role }: { docs: HelpDoc[]; role: string }) {
-  const searchId = useId();
-  const [query, setQuery] = useState("");
-  const [activeSlug, setActiveSlug] = useState(docs[0]?.slug ?? "");
-  const [topicsOpen, setTopicsOpen] = useState(false);
-
-  const trimmed = query.trim();
-  const filtered = useMemo(
-    () => (trimmed ? docs.filter((doc) => matches(doc, trimmed)) : docs),
-    [docs, trimmed]
-  );
-
-  // Preserve category order by first appearance (docs arrive pre-sorted).
-  const grouped = useMemo(() => {
-    const map = new Map<string, HelpDoc[]>();
-    for (const doc of filtered) {
-      const list = map.get(doc.category);
-      if (list) list.push(doc);
-      else map.set(doc.category, [doc]);
-    }
-    return Array.from(map, ([category, items]) => ({ category, items }));
-  }, [filtered]);
-
-  const activeDoc =
-    filtered.find((doc) => doc.slug === activeSlug) ?? filtered[0] ?? null;
-
-  useEffect(() => {
-    const sections = filtered
-      .map((doc) => document.getElementById(doc.slug))
-      .filter((section): section is HTMLElement => section != null);
-
-    if (sections.length === 0) return;
-
-    let frame = 0;
-    const updateActiveTopic = () => {
-      frame = 0;
-      const readingLine = Math.min(180, window.innerHeight * 0.24);
-      let current = sections[0];
-
-      for (const section of sections) {
-        if (section.getBoundingClientRect().top <= readingLine) current = section;
-        else break;
-      }
-
-      setActiveSlug(current.id);
-    };
-    const scheduleUpdate = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(updateActiveTopic);
-    };
-
-    updateActiveTopic();
-    window.addEventListener("scroll", scheduleUpdate, { passive: true });
-    window.addEventListener("resize", scheduleUpdate);
-
-    return () => {
-      window.removeEventListener("scroll", scheduleUpdate);
-      window.removeEventListener("resize", scheduleUpdate);
-      if (frame) window.cancelAnimationFrame(frame);
-    };
-  }, [filtered]);
-
-  useEffect(() => {
-    const activeLink = document.querySelector<HTMLElement>(
-      `[data-help-topic="${activeSlug}"]`
+export function HelpBrowser({ topics }: { topics: HelpTopic[] }) {
+  const params = useSearchParams();
+  const [query, setLocalQuery] = usePropState(params.get("q") ?? "");
+  function setQuery(value: string) {
+    setLocalQuery(value);
+    const next = new URLSearchParams(window.location.search);
+    if (value) next.set("q", value);
+    else next.delete("q");
+    window.history.replaceState(
+      null,
+      "",
+      `/help${next.size ? `?${next}` : ""}`,
     );
-    activeLink?.scrollIntoView({ block: "nearest" });
-  }, [activeSlug]);
+  }
+  const searchId = useId();
+  const router = useRouter();
+  const filtered = useMemo(() => {
+    const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    return topics.filter((topic) =>
+      terms.every((term) => topic.searchText.includes(term)),
+    );
+  }, [query, topics]);
+  const grouped = useMemo(() => {
+    const categories = new Map<string, HelpTopic[]>();
+    for (const topic of filtered) {
+      const group = categories.get(topic.category) ?? [];
+      group.push(topic);
+      categories.set(topic.category, group);
+    }
+    return Array.from(categories);
+  }, [filtered]);
+
+  // Keep bookmarked links from the former all-in-one guide working.
+  useEffect(() => {
+    function followLegacyTopic() {
+      const slug = window.location.hash.slice(1);
+      if (topics.some((topic) => topic.slug === slug))
+        router.replace(`/help/${slug}`);
+    }
+    followLegacyTopic();
+    window.addEventListener("hashchange", followLegacyTopic);
+    return () => window.removeEventListener("hashchange", followLegacyTopic);
+  }, [router, topics]);
 
   return (
-    <div className="space-y-4">
-      <div className="sticky top-20 z-10 flex gap-2 rounded-xl border bg-background/95 p-1.5 shadow-sm supports-backdrop-filter:backdrop-blur-md">
-        <div className="relative min-w-0 flex-1">
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden="true"
-          />
-          <label htmlFor={searchId} className="sr-only">
-            Search help topics
+    <section className="space-y-6" aria-label="Help guides">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="w-full space-y-2 sm:max-w-xl">
+          <label htmlFor={searchId} className="text-sm font-medium">
+            Find a guide
           </label>
-          <input
-            id={searchId}
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search help (e.g. print run, standup, budget)…"
-            className="h-10 w-full rounded-lg border bg-card pl-10 pr-4 text-sm text-foreground outline-none ring-primary/20 transition-[box-shadow,border-color] placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-4"
-          />
-        </div>
-
-        <Sheet open={topicsOpen} onOpenChange={setTopicsOpen}>
-          <SheetTrigger
-            render={
+          <div className="relative">
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              id={searchId}
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search topics, questions, or keywords"
+              className="h-11 pl-10 pr-11"
+            />
+            {query && (
               <Button
-                variant="outline"
-                className="gap-2 lg:hidden"
-                aria-label="Browse help topics"
-              />
-            }
-          >
-            <List className="size-4" aria-hidden="true" />
-            Topics
-          </SheetTrigger>
-          <SheetContent side="bottom" className="max-h-[82dvh] gap-0 rounded-t-xl p-0">
-            <SheetHeader className="border-b pr-14">
-              <SheetTitle>Browse help topics</SheetTitle>
-              <SheetDescription>
-                {activeDoc ? `Currently reading: ${activeDoc.title}` : "Choose a topic"}
-              </SheetDescription>
-            </SheetHeader>
-            <div className="overflow-y-auto overscroll-contain p-3">
-              <a
-                href="#help-top"
-                onClick={() => setTopicsOpen(false)}
-                className="mb-3 flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                type="button"
+                variant="ghost"
+                size="icon-lg"
+                className="absolute right-0 top-0"
+                aria-label="Clear help search"
+                onClick={() => {
+                  setQuery("");
+                  document.getElementById(searchId)?.focus();
+                }}
               >
-                <ArrowUp className="size-4" aria-hidden="true" />
-                Back to top
-              </a>
-              <div className="space-y-4">
-                {grouped.map(({ category, items }) => (
-                  <div key={category}>
-                    <p className="px-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      {category}
-                    </p>
-                    <nav aria-label={category} className="mt-1 grid gap-0.5">
-                      {items.map((doc) => {
-                        const isActive = doc.slug === activeDoc?.slug;
-                        return (
-                          <a
-                            key={doc.slug}
-                            href={`#${doc.slug}`}
-                            aria-current={isActive ? "location" : undefined}
-                            onClick={() => setTopicsOpen(false)}
-                            className={cn(
-                              "flex min-h-11 items-center rounded-lg px-3 text-sm font-medium transition-colors",
-                              isActive
-                                ? "bg-primary text-primary-foreground"
-                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                            )}
-                          >
-                            {doc.title}
-                          </a>
-                        );
-                      })}
-                    </nav>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
+                <X aria-hidden="true" />
+              </Button>
+            )}
+          </div>
+        </div>
+        <p role="status" className="text-sm text-muted-foreground">
+          {filtered.length} {filtered.length === 1 ? "guide" : "guides"}
+          {query.trim() ? " found" : " to explore"}
+        </p>
       </div>
-
-      <p aria-live="polite" className="sr-only">
-        {filtered.length} help {filtered.length === 1 ? "topic" : "topics"}
-        {trimmed ? ` matching “${trimmed}”` : ""}
-      </p>
-
       {filtered.length === 0 ? (
         <EmptyState
           icon={<Search className="size-5" />}
-          title="No matching help topics"
-          description={
-            <>
-              Nothing matches “{trimmed}”. Try a different word, or ask the Sastra
-              Assistant — it can point you to the right place.
-            </>
+          title="No guides found"
+          description="Try a broader phrase, such as tasks, printing, or notifications."
+          action={
+            <Button variant="outline" size="lg" onClick={() => setQuery("")}>
+              Clear search
+            </Button>
           }
         />
       ) : (
-        <div className="grid gap-5 lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-start">
-          <aside className="hidden lg:sticky lg:top-40 lg:block lg:self-start">
-            <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-              <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
-                <div>
-                  <p className="font-heading font-semibold">Help topics</p>
-                  <p className="text-xs text-muted-foreground">
-                    {filtered.length} {filtered.length === 1 ? "guide" : "guides"}
-                  </p>
-                </div>
-                <a
-                  href="#help-top"
-                  className="inline-flex size-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  aria-label="Back to top"
-                  title="Back to top"
-                >
-                  <ArrowUp className="size-4" aria-hidden="true" />
-                </a>
+        <div className="grid items-start gap-6 xl:grid-cols-2">
+          {grouped.map(([category, docs]) => (
+            <section
+              key={category}
+              className="min-w-0 rounded-xl border bg-card"
+            >
+              <div className="flex items-center gap-3 border-b px-5 py-4">
+                <BookOpen aria-hidden="true" className="size-5 text-primary" />
+                <h2 className="font-heading text-lg font-semibold">
+                  {category}
+                </h2>
+                <span className="ml-auto text-sm text-muted-foreground">
+                  {docs.length}
+                </span>
               </div>
-              <div className="max-h-[calc(100dvh-12rem)] space-y-4 overflow-y-auto overscroll-contain p-3">
-                {grouped.map(({ category, items }) => (
-                  <div key={category}>
-                    <p className="px-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      {category}
-                    </p>
-                    <nav aria-label={category} className="mt-1 grid gap-0.5">
-                      {items.map((doc) => {
-                        const isActive = doc.slug === activeDoc?.slug;
-                        return (
-                          <a
-                            key={doc.slug}
-                            href={`#${doc.slug}`}
-                            data-help-topic={doc.slug}
-                            aria-current={isActive ? "location" : undefined}
-                            className={cn(
-                              "inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-medium transition-[background-color,color,box-shadow]",
-                              isActive
-                                ? "bg-primary text-primary-foreground shadow-sm"
-                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                            )}
-                          >
-                            {doc.title}
-                          </a>
-                        );
-                      })}
-                    </nav>
-                  </div>
+              <ul className="divide-y">
+                {docs.map((doc) => (
+                  <li key={doc.slug}>
+                    <Link
+                      href={`/help/${doc.slug}`}
+                      className="group flex min-h-16 items-start gap-4 px-5 py-4 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                    >
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-sm font-semibold">{doc.title}</h3>
+                          {!doc.roles.includes("member") && (
+                            <Badge variant="secondary">
+                              {doc.roles.includes("manager")
+                                ? "Managers"
+                                : "Admins"}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                          {doc.summary}
+                        </p>
+                      </div>
+                      <ArrowRight
+                        aria-hidden="true"
+                        className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform motion-safe:group-hover:translate-x-1"
+                      />
+                    </Link>
+                  </li>
                 ))}
-              </div>
-            </div>
-          </aside>
-
-          <div className="min-w-0 space-y-5">
-            {filtered.map((doc) => {
-              const Icon = CATEGORY_ICONS[doc.category] ?? BookOpen;
-              const badge = roleLabel(doc.roles);
-              const restricted = ["overview", "workload", "correspondence"].includes(doc.slug);
-              const route = restricted && !can(role, "workspace.manage") ? undefined : TOPIC_ROUTES[doc.slug];
-              return (
-                <Card
-                  key={doc.slug}
-                  id={doc.slug}
-                  className="surface-shadow scroll-mt-40"
-                >
-                  <CardContent className="py-5 sm:px-6 sm:py-6">
-                    <div className="mb-4 flex items-start justify-between gap-3">
-                      <h2 className="flex min-w-0 items-center gap-3 font-heading text-lg font-semibold tracking-tight">
-                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                          <Icon className="size-4" aria-hidden="true" />
-                        </span>
-                        <span className="min-w-0">{doc.title}</span>
-                      </h2>
-                      {badge ? (
-                        <Badge variant="secondary" className="shrink-0">
-                          {badge}
-                        </Badge>
-                      ) : null}
-                    </div>
-
-                    <div className={PROSE_CLASS}>
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={MARKDOWN_COMPONENTS}
-                      >
-                        {doc.body}
-                      </ReactMarkdown>
-                    </div>
-
-                    {route ? (
-                      <Link
-                        href={route.href}
-                        className="mt-5 inline-flex min-h-10 items-center gap-1 text-sm font-medium text-primary hover:underline"
-                      >
-                        {route.label}
-                        <ArrowUpRight className="size-4" aria-hidden="true" />
-                      </Link>
-                    ) : null}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+              </ul>
+            </section>
+          ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }

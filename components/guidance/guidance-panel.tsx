@@ -62,7 +62,7 @@ export function GuidancePanel({
         <div className={COACH_PROSE}>
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={COACH_MARKDOWN}>{body}</ReactMarkdown>
         </div>
-        <div className="mt-2 flex flex-wrap items-center gap-3">{action}<Link href={`/help#${slug}`} className="inline-flex min-h-11 items-center font-medium text-primary hover:underline">Learn more</Link></div>
+        <div className="mt-2 flex flex-wrap items-center gap-3">{action}<Link href={`/help/${slug}`} className="inline-flex min-h-11 items-center font-medium text-primary hover:underline">Learn more</Link></div>
       </details>
     </CoachCard>
   );

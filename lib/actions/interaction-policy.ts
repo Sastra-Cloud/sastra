@@ -15,6 +15,7 @@ const PROGRESS_ACTIONS = new Set([
   "submitSupportRequest",
   "sendSupportReply",
   "uploadSupportAttachment",
+  "downloadSupportAttachment",
   "connectCorrespondenceMailbox",
   "updateWorkspaceSettings",
   "updateStandup",

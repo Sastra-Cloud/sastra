@@ -6,7 +6,7 @@ export type HelpRole = "member" | "manager" | "admin";
 export const HELP_ROLES: HelpRole[] = ["member", "manager", "admin"];
 
 export type HelpDoc = {
-  /** Filename without `.md`; also the anchor id on the Help page. */
+  /** Filename without `.md`; the guide route is `/help/<slug>`. */
   slug: string;
   title: string;
   category: string;
@@ -22,7 +22,7 @@ export type HelpDoc = {
 };
 
 export type HelpSearchHit = {
-  /** Help page anchor for the source topic. */
+  /** Slug of the source guide. */
   slug: string;
   /** "Topic title — Section heading" when a specific section matched. */
   title: string;
@@ -58,15 +58,15 @@ const EXCERPT_LIMIT = 700;
 export function rankHelpDocs(
   docs: HelpDoc[],
   query: string,
-  limit = 4
+  limit = 4,
 ): HelpSearchHit[] {
   const terms = Array.from(
     new Set(
       query
         .toLowerCase()
         .split(/[^a-z0-9]+/)
-        .filter((term) => term.length > 2)
-    )
+        .filter((term) => term.length > 2),
+    ),
   );
   if (terms.length === 0) return [];
 

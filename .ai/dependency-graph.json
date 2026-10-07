@@ -179,13 +179,31 @@
     "@/components/ui/button",
     "@/components/cockpit"
   ],
+  "app/(app)/help/[slug]/loading.tsx": [
+    "@/components/cockpit",
+    "@/components/ui/skeleton"
+  ],
+  "app/(app)/help/[slug]/page.tsx": [
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "react-markdown",
+    "remark-gfm",
+    "@/components/cockpit",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/help/content"
+  ],
   "app/(app)/help/page.tsx": [
     "@/lib/auth/guards",
     "lucide-react",
     "@/components/cockpit",
     "@/components/help/help-browser",
     "@/lib/help/content",
-    "next/link"
+    "@/components/help/support-actions",
+    "@/lib/support/config"
   ],
   "app/(app)/layout.tsx": [
     "next/headers",
@@ -852,6 +870,8 @@
   ],
   "app/(app)/support/page.tsx": [
     "lucide-react",
+    "next/link",
+    "@/components/ui/button",
     "@/components/cockpit",
     "@/lib/auth/guards",
     "@/lib/support/config",
@@ -1242,7 +1262,8 @@
     "@/lib/support/config",
     "@/lib/support/service",
     "@/lib/ops/version",
-    "zod"
+    "zod",
+    "@/lib/security/request-origin"
   ],
   "app/api/unsubscribe/route.ts": [
     "next/server",
@@ -2245,17 +2266,19 @@
   "components/help/help-browser.tsx": [
     "next/link",
     "react",
+    "next/navigation",
     "lucide-react",
-    "react-markdown",
-    "remark-gfm",
+    "@/components/ui/button",
+    "@/components/ui/input",
     "@/components/cockpit",
     "@/components/ui/badge",
-    "@/components/ui/button",
-    "@/components/ui/card",
-    "@/components/ui/sheet",
-    "@/lib/help/search",
-    "@/lib/auth/policy",
-    "@/lib/utils"
+    "@/lib/help/content",
+    "@/hooks/use-prop-state"
+  ],
+  "components/help/support-actions.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/components/ui/button"
   ],
   "components/imports/discard-import-button.tsx": [
     "@/lib/dialog-requests",
@@ -3490,13 +3513,20 @@
     "@/lib/sponsorships/format"
   ],
   "components/support/support-workspace.tsx": [
+    "next/link",
     "react",
     "next/navigation",
+    "lucide-react",
     "@/components/ui/button",
     "@/components/ui/input",
     "@/components/ui/textarea",
     "@/components/ui/label",
-    "@/lib/support/config"
+    "@/components/ui/badge",
+    "@/components/ui/skeleton",
+    "@/components/ui/tabs",
+    "@/lib/support/config",
+    "@/lib/utils",
+    "@/hooks/use-prop-state"
   ],
   "components/tasks/create-task-dialog.tsx": [
     "react",
@@ -7477,6 +7507,13 @@
     "../hosted/mode"
   ],
   "lib/support/config.ts": [],
+  "lib/support/route.test.ts": [
+    "vitest",
+    "next/server",
+    "@/lib/auth/guards",
+    "@/lib/support/service",
+    "@/app/api/support/route"
+  ],
   "lib/support/service.test.ts": [
     "vitest",
     "./service"

@@ -1,16 +1,16 @@
 import { requireUser } from "@/lib/auth/guards";
 import { CircleHelp } from "lucide-react";
 
-import { ContentColumn, PageHero, PageShell } from "@/components/cockpit";
+import { PageHero, PageShell } from "@/components/cockpit";
 import { HelpBrowser } from "@/components/help/help-browser";
-import { getHelpDocs } from "@/lib/help/content";
-import Link from 'next/link';
+import { getHelpTopics } from "@/lib/help/content";
+import { HelpSupportActions } from "@/components/help/support-actions";
+import { supportConfiguration } from "@/lib/support/config";
 
 export const metadata = { title: "Help" };
 
 export default async function HelpPage() {
-  const { user } = await requireUser();
-  const docs = getHelpDocs();
+  await requireUser();
 
   return (
     <PageShell>
@@ -21,20 +21,15 @@ export default async function HelpPage() {
           title="Help & user guide"
           description={
             <>
-              How each part of Sastra works. Search below, or ask the Sastra
-              Assistant a question — it answers from this same documentation. Look
-              for the{" "}
-              <CircleHelp className="inline size-4 align-text-bottom" /> icons
-              around the app for in-context tips.
+              Find a guide for the task at hand. You can also ask the Sastra
+              Assistant — it uses the same documentation.
             </>
           }
         />
       </div>
 
-      <ContentColumn width="reading">
-        <p className="mb-5 text-sm"><Link href="/support" className="font-medium text-primary underline underline-offset-4">Get support or request a feature</Link></p>
-        <HelpBrowser docs={docs} role={user.role ?? "member"} />
-      </ContentColumn>
+      <HelpSupportActions connected={!!supportConfiguration()} />
+      <HelpBrowser topics={getHelpTopics()} />
     </PageShell>
   );
 }

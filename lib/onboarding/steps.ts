@@ -34,7 +34,7 @@ export function onboardingSteps(role: string, signals: OnboardingSignals): Onboa
     if (signals.budgetProjectSlug) steps.push({ key: "budget", label: "Open a project's budget", href: `/projects/${signals.budgetProjectSlug}/budget`, type: "visit" });
     steps.push({ key: "schedule", label: "Review the schedule", href: "/schedule", type: "visit" });
   }
-  steps.push({ key: "guide", label: "Read Getting started", href: "/help#getting-started", type: "visit" });
+  steps.push({ key: "guide", label: "Read Getting started", href: "/help/getting-started", type: "visit" });
   return steps;
 }
 

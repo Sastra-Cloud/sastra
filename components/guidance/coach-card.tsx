@@ -30,7 +30,7 @@ export function CoachCard({
   title: React.ReactNode;
   children?: React.ReactNode;
   icon?: React.ReactNode;
-  /** Slug of a help doc to link into (`/help#<slug>`). */
+  /** Slug of a help doc to link into (`/help/<slug>`). */
   helpSlug?: string;
   helpLabel?: string;
   /** Optional call-to-action (e.g. a jump button). */
@@ -73,7 +73,7 @@ export function CoachCard({
             {action}
             {helpSlug ? (
               <Link
-                href={`/help#${helpSlug}`}
+                href={`/help/${helpSlug}`}
                 className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
               >
                 {helpLabel}

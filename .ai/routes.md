@@ -14,6 +14,7 @@
 - `/correspondence` -> `app/(app)/correspondence/page.tsx`
 - `/dashboard` -> `app/(app)/dashboard/page.tsx`
 - `/donations` -> `app/(app)/donations/page.tsx`
+- `/help/[slug]` -> `app/(app)/help/[slug]/page.tsx`
 - `/help` -> `app/(app)/help/page.tsx`
 - `/notifications` -> `app/(app)/notifications/page.tsx`
 - `/overview/due-dates` -> `app/(app)/overview/due-dates/page.tsx`

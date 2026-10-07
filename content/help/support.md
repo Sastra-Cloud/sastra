@@ -7,7 +7,7 @@ order: 115
 summary: "Private requests for connected installations, community help for self-hosters, and support conversation privacy."
 ---
 
-Open **Help → Support and feature requests**. Connected Sastra Cloud and explicitly enrolled installations offer **Contact support**, **Report a problem**, **Request a feature**, and **My requests**. Other installations offer community Discussions, public GitHub issues, and a copyable diagnostic summary.
+Open **Help** and choose **Contact support**, **Report a problem**, or **Request a feature**. Connected Sastra Cloud and explicitly enrolled installations offer private requests. Use **New request** to write one and **My requests** to follow conversations. Other installations offer community Discussions, public GitHub issues, and a copyable diagnostic summary.
 
 Describe the problem or requested improvement. Review the diagnostic summary before submitting: application version, revision, browser information, and a route without query parameters or record identifiers. Select attachments yourself; Sastra does not capture documents, correspondence, financial records, or browsing history. Select up to ten PNG, JPEG, WebP, or PDF files, each up to 5 MB.
 

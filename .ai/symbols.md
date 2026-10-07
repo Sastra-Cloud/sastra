@@ -44,6 +44,10 @@
 
 - dynamic, metadata
 
+## `app/(app)/help/[slug]/page.tsx`
+
+- generateMetadata
+
 ## `app/(app)/help/page.tsx`
 
 - metadata
@@ -811,6 +815,10 @@
 ## `components/help/help-browser.tsx`
 
 - HelpBrowser
+
+## `components/help/support-actions.tsx`
+
+- HelpSupportActions
 
 ## `components/imports/discard-import-button.tsx`
 
@@ -2490,7 +2498,7 @@
 
 ## `lib/help/content.ts`
 
-- getHelpDoc, getHelpDocs, getHelpSection, getHelpTopicsIndex, searchHelpDocs
+- HelpTopic, getHelpDoc, getHelpDocs, getHelpSection, getHelpTopics, getHelpTopicsIndex, searchHelpDocs
 
 ## `lib/help/search.ts`
 

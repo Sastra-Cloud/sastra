@@ -7,6 +7,7 @@ import {
 import { supportRequest } from "@/lib/support/service";
 import { runningVersion } from "@/lib/ops/version";
 import { z } from "zod";
+import { hasTrustedRequestOrigin } from "@/lib/security/request-origin";
 
 export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
@@ -15,7 +16,7 @@ export async function POST(req: NextRequest) {
       { error: "Community support is available from Help." },
       { status: 404 },
     );
-  if (req.headers.get("origin") !== req.nextUrl.origin)
+  if (!req.headers.get("origin") || !hasTrustedRequestOrigin(req))
     return Response.json({ error: "Invalid origin" }, { status: 403 });
   const session = await getSession();
   if (!session?.user.isActive)
