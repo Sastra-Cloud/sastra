@@ -32,11 +32,12 @@ export function formatDate(value: string | null | undefined): string {
 }
 
 /** Days from today to the given date (negative = overdue). null if no date. */
-export function daysUntil(value: string | null | undefined): number | null {
+export function daysUntil(value: string | null | undefined, todayIso?: string): number | null {
   if (!value) return null;
   const d = parseYmd(value);
   if (!d) return null;
-  const today = new Date();
+  const today = todayIso ? parseYmd(todayIso) : new Date();
+  if (!today) return null;
   const a = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
   const b = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
   return Math.round((b - a) / 86_400_000);
@@ -57,11 +58,11 @@ export function timeAgo(value: Date | string): string {
 }
 
 /** Human due label: "Overdue 3d", "Due today", "Due in 5d", or a date. */
-export function dueLabel(value: string | null | undefined): {
+export function dueLabel(value: string | null | undefined, todayIso?: string): {
   text: string;
   tone: "overdue" | "soon" | "normal" | "none";
 } {
-  const n = daysUntil(value);
+  const n = daysUntil(value, todayIso);
   if (n === null) return { text: "No due date", tone: "none" };
   if (n < 0) return { text: `Overdue ${Math.abs(n)}d`, tone: "overdue" };
   if (n === 0) return { text: "Due today", tone: "soon" };

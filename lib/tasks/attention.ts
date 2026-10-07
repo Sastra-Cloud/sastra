@@ -71,12 +71,14 @@ export function splitTasksByAttention<
 
 export function selectPersonalWork<T extends Pick<MyTaskRow, "dueDate" | "status"> & PaymentTaskTiming>(tasks: T[], todayIso: string, timeZone = "UTC") {
   const open = tasks.filter(task => task.status !== "done");
+  const dueToday: T[] = [];
   const waiting: T[] = [];
   const followUpDue: T[] = [];
   const ordinary: T[] = [];
   for (const task of open) {
     const followUp = printPaymentFollowUp(task, todayIso, timeZone);
     if (followUp?.state === "waiting") waiting.push(task);
+    else if ((followUp?.date ?? task.dueDate) === todayIso) dueToday.push(task);
     else if (followUp?.state === "due") followUpDue.push(task);
     else ordinary.push(task);
   }
@@ -89,5 +91,7 @@ export function selectPersonalWork<T extends Pick<MyTaskRow, "dueDate" | "status
   const working = ordinary.filter(task => task.status === "in_progress" || task.status === "review");
   const unstarted = ordinary.filter(task => task.status !== "in_progress" && task.status !== "review");
   const { attention, later } = splitTasksByAttention(unstarted, todayIso);
-  return { working, waiting, followUpDue, attention: [...followUpDue, ...attention], later, ordered: [...working, ...followUpDue, ...attention] };
+  // Today's deadlines have their own uncapped section. Keep the existing order
+  // within every group, and never duplicate a task between sections.
+  return { dueToday, working, waiting, followUpDue, attention: [...followUpDue, ...attention], later, ordered: [...dueToday, ...working, ...followUpDue, ...attention] };
 }

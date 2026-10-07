@@ -4,6 +4,7 @@ import { CircleHelp } from "lucide-react";
 import { ContentColumn, PageHero, PageShell } from "@/components/cockpit";
 import { HelpBrowser } from "@/components/help/help-browser";
 import { getHelpDocs } from "@/lib/help/content";
+import Link from 'next/link';
 
 export const metadata = { title: "Help" };
 
@@ -31,6 +32,7 @@ export default async function HelpPage() {
       </div>
 
       <ContentColumn width="reading">
+        <p className="mb-5 text-sm"><Link href="/support" className="font-medium text-primary underline underline-offset-4">Get support or request a feature</Link></p>
         <HelpBrowser docs={docs} role={user.role ?? "member"} />
       </ContentColumn>
     </PageShell>

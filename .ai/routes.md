@@ -59,6 +59,7 @@
 - `/sponsorships/new` -> `app/(app)/sponsorships/new/page.tsx`
 - `/sponsorships` -> `app/(app)/sponsorships/page.tsx`
 - `/standups` -> `app/(app)/standups/page.tsx`
+- `/support` -> `app/(app)/support/page.tsx`
 - `/tasks` -> `app/(app)/tasks/page.tsx`
 - `/wiki/[subjectSlug]/[pageSlug]/edit` -> `app/(app)/wiki/[subjectSlug]/[pageSlug]/edit/page.tsx`
 - `/wiki/[subjectSlug]/[pageSlug]` -> `app/(app)/wiki/[subjectSlug]/[pageSlug]/page.tsx`
@@ -117,6 +118,7 @@
 - `GET` `/api/reports/rights` -> `app/api/reports/rights/route.ts`
 - `GET` `/api/reports/time` -> `app/api/reports/time/route.ts`
 - `POST` `/api/security/dependency-status` -> `app/api/security/dependency-status/route.ts`
+- `POST` `/api/support` -> `app/api/support/route.ts`
 - `POST` `/api/unsubscribe` -> `app/api/unsubscribe/route.ts`
 - `GET` `/api/users/[id]/avatar` -> `app/api/users/[id]/avatar/route.ts`
 - `GET` `/api/version` -> `app/api/version/route.ts`

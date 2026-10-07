@@ -2,9 +2,9 @@
 title: "Tasks & the board"
 category: "Work"
 roles: [member, manager, admin]
-keywords: [your next tasks, suggestions to review, next task, handoff, more options, task, kanban, board, column, to do, in progress, review, done, drag, move, assign, priority, due date, earliest due first, task order, reschedule, edit task, move task to project, milestone, recurring, recurring schedule, google drive, task attachment, upload file, attach file, working folder, license obligation, printer payment, printing coordinator, proof review, approve proof, reply to printer, budget approval, approve, request changes, wip, time tracking, comment, mention, email task, forwarded email, meeting reminder, booking link, email assistant, task suggestion, learn from email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice, waiting for payment, follow up due, source linked task]
+keywords: [due today, today tasks, overdue tasks, your next tasks, suggestions to review, next task, handoff, more options, task, kanban, board, column, to do, in progress, review, done, drag, move, assign, priority, due date, earliest due first, task order, reschedule, edit task, move task to project, milestone, recurring, recurring schedule, google drive, task attachment, upload file, attach file, working folder, license obligation, printer payment, printing coordinator, proof review, approve proof, reply to printer, budget approval, approve, request changes, wip, time tracking, comment, mention, email task, forwarded email, meeting reminder, booking link, email assistant, task suggestion, learn from email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice, waiting for payment, follow up due, source linked task]
 order: 30
-summary: "Find your next assigned work, review email suggestions, use Board and Agenda, and follow task handoffs."
+summary: "See every task due today, find your next assigned work, review email suggestions, use Board and Agenda, and follow task handoffs."
 ---
 
 Tasks are the unit of work. **My Work** brings your personal tasks and dated
@@ -13,11 +13,14 @@ project also keeps its own task board.
 
 ## My Work
 
-- **Focus** is the daily workspace. It shows work already in progress, what
-  needs attention next (the next five, with **Show all** for the full queue),
-  and collapsed **Waiting on confirmation**, **Later**, and **Completed today**
-  sections with counts. All started and review tasks remain visible. The summary reports open work, today's completions, and today's tracked
-  time.
+- **Focus** is the daily workspace. **Due today** comes first and shows every
+  task due today, including work in progress or review and payment follow-ups
+  due today. Its count and dates use the workspace timezone. Below it, **Working
+  now** shows other started work. **Needs attention** shows the next five
+  remaining tasks, with **Show all** for the full queue. **Waiting on
+  confirmation**, **Later**, and **Completed today** are collapsed sections with
+  counts. All started and review tasks remain visible. The summary reports open
+  work, tasks due today, today's completions, and today's tracked time.
 - **Board** shows all tasks assigned to you as **To do**, **In progress**,
   **Review**, and recent **Done** columns. Drag cards or use their status menu;
   filter by project or priority when the board is busy.
@@ -193,10 +196,13 @@ to compare every article across those stages.
 
 ## Your personal queue
 
-The **Your next tasks** section on **Home** shows up to three assigned tasks, with tasks
-you have already started first. Select a task title to edit it without leaving Home.
-The row reflects a changed due date immediately while it saves. Managers set
-the queue order for you from **Workload**.
+**Due today** on **Home** shows every assigned task due today above **Your next
+tasks**, so overdue work cannot hide today's deadlines. **Your next tasks**
+shows up to three other assigned tasks, with started work first. Each task appears
+in only one section. Select a task title to edit it without leaving Home.
+Completing or rescheduling a task updates its section and count immediately while
+saving. A failed save restores the prior task. Managers set the order within
+these groups from **Workload**.
 
 The active queue includes overdue and undated work, anything due in the next 30
 days, and tasks already **In progress** or **In review**. Tasks due farther away
@@ -243,4 +249,4 @@ required before invoicing. Generating a PDF or checking a task complete cannot
 stand in for sending. Successful invoice sending completes the task and clears
 overdue reminders. Paused invoice tasks do not generate overdue prompts.
 
-Home and My Work use the same personal queue: started work first, then overdue, undated, and work due within 30 days. Manual ordering is retained within each group. The queue does not independently sort by priority.
+Home and My Work use the same personal queue: today's work first, then other started work, followed by remaining work needing attention. Overdue tasks stay available below today's work. Manual ordering is retained within each group. The queue does not independently sort by priority.

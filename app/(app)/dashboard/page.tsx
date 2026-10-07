@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { formatInTimeZone } from "date-fns-tz";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 import { requireUser } from "@/lib/auth/guards";
 import { getMyTasks } from "@/lib/tasks/queries";
 import { listAssignableUsers, listProjects } from "@/lib/projects/queries";
-import { daysUntil, timeAgo } from "@/lib/format";
+import { timeAgo } from "@/lib/format";
 import { HealthDot } from "@/components/badges";
 import { MyTasksList } from "@/components/tasks/my-tasks-list";
 import { CreateTaskDialog } from "@/components/tasks/create-task-dialog";
@@ -18,7 +18,6 @@ import {
   getOnboardingSignals,
   type OnboardingSignals,
 } from "@/lib/onboarding/queries";
-import { selectPersonalWork } from "@/lib/tasks/attention";
 
 import { can, canManage } from "@/lib/auth/policy";
 import { projectOptionLabel } from "@/lib/projects/visibility";
@@ -46,18 +45,7 @@ export default async function DashboardPage() {
   const reviewItems = canReviewCorrespondence
     ? await getManagerAttention(projects, users.length) : [];
 
-  const overdue = myTasks
-    .filter((t) => {
-      const d = daysUntil(t.dueDate);
-      return d !== null && d < 0;
-    })
-    .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""));
   const todayIso = formatInTimeZone(new Date(), workspace.timezone, "yyyy-MM-dd");
-  const { ordered, later, waiting } = selectPersonalWork(myTasks, todayIso, workspace.timezone);
-  const dueThisWeek = myTasks.filter((t) => {
-    const d = daysUntil(t.dueDate);
-    return d !== null && d >= 0 && d <= 7;
-  }).length;
 
   const allActiveProjects = projects.filter(
     (p) => p.status === "active" || p.status === "planning"
@@ -65,11 +53,6 @@ export default async function DashboardPage() {
   const activeProjects = orderProjectsByDashboardActivity(allActiveProjects).slice(
     0,
     6
-  );
-  const focusTasks = ordered.slice(0, 3);
-  const remainingAttention = Math.max(
-    0,
-    ordered.length - focusTasks.length
   );
   const projectOptions = projects.map((project) => ({
     id: project.id,
@@ -104,62 +87,20 @@ export default async function DashboardPage() {
         />
       ) : null}
 
-      <section className="space-y-2" aria-labelledby="dashboard-order-heading">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 id="dashboard-order-heading" className="text-lg font-semibold">
-            Your next tasks
-          </h2>
-          <span className="text-xs text-muted-foreground">
-            Continue tasks you&apos;ve started
-          </span>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          {myTasks.length} open · {overdue.length} overdue · <Link href="/tasks?view=agenda" className="underline underline-offset-4">{dueThisWeek} due in the next 7 days</Link>
-        </p>
-        {focusTasks.length > 0 ? (
-          <>
-            <MyTasksList
-              tasks={focusTasks}
-              todayIso={todayIso}
-              timeZone={workspace.timezone}
-              editor={{
-                assignees: users.map((item) => ({ id: item.id, name: item.name })),
-                projects: projectOptions,
-                currentUserId: user.id,
-                canManage: can(user, "tasks.manage"),
-              }}
-            />
-            <Link
-              href="/tasks"
-              className="inline-flex min-h-10 items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground hover:underline"
-            >
-              {remainingAttention > 0
-                ? `${remainingAttention} more needing attention — view all work`
-                : later.length > 0
-                  ? `${later.length} planned for later — view all work`
-                  : "Open My Work"}
-              <ArrowRight className="size-3.5" />
-            </Link>
-          </>
-        ) : (
-          <div className="flex items-start gap-3 rounded-xl border bg-card px-4 py-3 text-sm">
-            <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success" />
-            <div>
-              <p className="font-medium">You&apos;re caught up</p>
-              <p className="text-muted-foreground">
-                {later.length > 0
-                  ? "Future work is planned and will appear here as it approaches."
-                  : "New work assigned to you will appear here."}
-              </p>
-            </div>
-          </div>
-        )}
-        {waiting.length > 0 ? (
-          <Link href="/tasks#waiting" className="inline-flex min-h-10 items-center text-sm text-muted-foreground hover:underline">
-            {waiting.length} awaiting payment confirmation · View waiting work
-          </Link>
-        ) : null}
-      </section>
+      <div className="space-y-5">
+        <MyTasksList
+          tasks={myTasks}
+          homePreview
+          todayIso={todayIso}
+          timeZone={workspace.timezone}
+          editor={{
+            assignees: users.map((item) => ({ id: item.id, name: item.name })),
+            projects: projectOptions,
+            currentUserId: user.id,
+            canManage: can(user, "tasks.manage"),
+          }}
+        />
+      </div>
 
       <ManagerReviewQueue items={reviewItems} limit={3} />
 

@@ -459,12 +459,13 @@ function FocusView({
   const [showAllAttention, setShowAllAttention] = useState(false);
   const runningSeconds = useLiveElapsed(activeTimer?.startedAt ?? null);
   const open = tasks.filter((task) => task.status !== "done");
-  const { working, waiting, attention, later } = selectPersonalWork(open, todayIso, timeZone);
+  const { dueToday, working, waiting, attention, later } = selectPersonalWork(open, todayIso, timeZone);
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-xl border bg-card px-4 py-3">
         <FocusStat label="Open" value={open.length} icon={ListChecks} />
+        <FocusStat label="Due today" value={dueToday.length} icon={CalendarDays} />
         <FocusStat label="Completed today" value={completedToday.length} icon={CheckCircle2} />
         <FocusStat label="Tracked today" value={formatDuration(trackedTodaySeconds)} icon={Clock3} />
       </div>
@@ -496,6 +497,21 @@ function FocusView({
         </div>
       ) : null}
 
+      <FocusSection
+        id="due-today"
+        title="Due today"
+        description="Today's deadlines and payment follow-ups"
+        tasks={dueToday}
+        todayIso={todayIso}
+        timeZone={timeZone}
+        pending={pending}
+        activeTimerTaskId={activeTimer?.taskId ?? null}
+        onOpen={onOpen}
+        onStatus={onStatus}
+        onTimer={onTimer}
+        emptyTitle="No tasks due today"
+      />
+
       {working.length > 0 ? (
         <FocusSection
           title="Working now"
@@ -513,7 +529,7 @@ function FocusView({
 
       <FocusSection
         title="Needs attention"
-        description="Follow-ups due, overdue, due within 30 days, and undated work"
+        description="Overdue work, earlier follow-ups, upcoming tasks, and undated work"
         tasks={showAllAttention ? attention : attention.slice(0, 5)}
         totalCount={attention.length}
         todayIso={todayIso}
@@ -693,7 +709,7 @@ function FocusTaskList({
         const followUp = printPaymentFollowUp(task, todayIso, timeZone);
         const due = followUp
           ? { text: `${followUp.state === "due" ? "Follow up due" : "Follow up"} ${followUp.date}`, tone: followUp.state === "due" ? "soon" : "normal" }
-          : dueLabel(task.dueDate);
+          : dueLabel(task.dueDate, todayIso);
         const done = task.status === "done";
         const timerRunning = activeTimerTaskId === task.id;
         const controlled = isSourceControlledTask(task);

@@ -159,7 +159,6 @@
     "@/components/pwa/push-nudge",
     "@/components/dashboard/onboarding-checklist",
     "@/lib/onboarding/queries",
-    "@/lib/tasks/attention",
     "@/lib/auth/policy",
     "@/lib/projects/visibility",
     "@/lib/projects/dashboard-order",
@@ -185,7 +184,8 @@
     "lucide-react",
     "@/components/cockpit",
     "@/components/help/help-browser",
-    "@/lib/help/content"
+    "@/lib/help/content",
+    "next/link"
   ],
   "app/(app)/layout.tsx": [
     "next/headers",
@@ -850,6 +850,14 @@
     "@/components/ui/card",
     "@/lib/utils"
   ],
+  "app/(app)/support/page.tsx": [
+    "lucide-react",
+    "@/components/cockpit",
+    "@/lib/auth/guards",
+    "@/lib/support/config",
+    "@/lib/ops/version",
+    "@/components/support/support-workspace"
+  ],
   "app/(app)/tasks/page.tsx": [
     "lucide-react",
     "date-fns-tz",
@@ -1227,6 +1235,14 @@
     "next/server",
     "zod",
     "@/lib/security/dependency-monitor"
+  ],
+  "app/api/support/route.ts": [
+    "next/server",
+    "@/lib/auth/guards",
+    "@/lib/support/config",
+    "@/lib/support/service",
+    "@/lib/ops/version",
+    "zod"
   ],
   "app/api/unsubscribe/route.ts": [
     "next/server",
@@ -3473,6 +3489,15 @@
     "@/lib/sponsorships/queries",
     "@/lib/sponsorships/format"
   ],
+  "components/support/support-workspace.tsx": [
+    "react",
+    "next/navigation",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/textarea",
+    "@/components/ui/label",
+    "@/lib/support/config"
+  ],
   "components/tasks/create-task-dialog.tsx": [
     "react",
     "next/navigation",
@@ -3532,6 +3557,12 @@
   "components/tasks/learn-terms.ts": [
     "sonner",
     "@/lib/dictionary/actions"
+  ],
+  "components/tasks/my-tasks-list.test.tsx": [
+    "react-dom/server",
+    "vitest",
+    "@/lib/tasks/queries",
+    "./my-tasks-list"
   ],
   "components/tasks/my-tasks-list.tsx": [
     "@/lib/dialog-requests",
@@ -7439,6 +7470,20 @@
     "date-fns-tz",
     "@/lib/db",
     "@/lib/db/schema"
+  ],
+  "lib/support/config.test.ts": [
+    "vitest",
+    "./config",
+    "../hosted/mode"
+  ],
+  "lib/support/config.ts": [],
+  "lib/support/service.test.ts": [
+    "vitest",
+    "./service"
+  ],
+  "lib/support/service.ts": [
+    "node:crypto",
+    "./config"
   ],
   "lib/tasks/actions.ts": [
     "next/cache",

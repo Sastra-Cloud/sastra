@@ -107,8 +107,9 @@ The left sidebar is grouped by the kind of work you are doing:
 - **Workspace** — Wiki, Assistant, Settings, and Help.
 
 **Team planning** opens Overview; its **Schedule** and **Workload** views remain one
-click away. Home previews your next three tasks under **Your next tasks**, up to three manager attention
-items, and six active projects. The setup card shows only the next step and a
+click away. Home shows every task **Due today**, then previews three other tasks
+under **Your next tasks**, up to three manager attention items, and six active
+projects. The setup card shows only the next step and a
 completion count; **Show all steps** reveals the rest.
 
 At compact desktop widths the sidebar becomes an icon rail; pause over an icon

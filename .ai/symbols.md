@@ -224,6 +224,10 @@
 
 - dynamic, metadata
 
+## `app/(app)/support/page.tsx`
+
+- metadata
+
 ## `app/(app)/tasks/page.tsx`
 
 - dynamic, metadata
@@ -427,6 +431,10 @@
 ## `app/api/security/dependency-status/route.ts`
 
 - POST, dynamic, runtime
+
+## `app/api/support/route.ts`
+
+- POST, dynamic
 
 ## `app/api/unsubscribe/route.ts`
 
@@ -1279,6 +1287,10 @@
 ## `components/sponsorships/sponsorship-list.tsx`
 
 - SponsorshipList
+
+## `components/support/support-workspace.tsx`
+
+- SupportWorkspace
 
 ## `components/tasks/create-task-dialog.tsx`
 
@@ -3083,6 +3095,14 @@
 ## `lib/standup/view-queries.ts`
 
 - ReportPerson, StandupViewItem, getMyOpenStandup, getStandupView
+
+## `lib/support/config.ts`
+
+- SupportConfiguration, supportConfiguration, supportRouteSummary
+
+## `lib/support/service.ts`
+
+- supportRequest
 
 ## `lib/tasks/actions.ts`
 

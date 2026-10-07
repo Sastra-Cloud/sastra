@@ -69,6 +69,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/tasks/email-task-learning-rules.tsx`
 - `components/tasks/email-task-suggestions.tsx`
 - `components/tasks/learn-terms.ts`
+- `components/tasks/my-tasks-list.test.tsx`
 - `components/tasks/my-tasks-list.tsx`
 - `components/tasks/my-work-hub.tsx`
 - `components/tasks/personal-task-board.tsx`
@@ -95,5 +96,4 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/projects/current-work.test.ts`
 - `lib/projects/current-work.ts`
 - `lib/projects/dashboard-order.test.ts`
-- `lib/projects/dashboard-order.ts`
-... 59 more
+... 60 more

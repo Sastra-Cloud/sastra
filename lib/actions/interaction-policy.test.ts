@@ -58,6 +58,12 @@ function clientActionImports() {
 }
 
 describe("client action interaction policy", () => {
+  it('keeps support submissions and attachments progress-based', () => {
+    expect(interactionModeFor('submitSupportRequest')).toBe('progress');
+    expect(interactionModeFor('sendSupportReply')).toBe('progress');
+    expect(interactionModeFor('uploadSupportAttachment')).toBe('progress');
+    expect(interactionModeFor('setSupportEmailPreference')).toBe('optimistic');
+  });
   it("keeps sponsorship finances reviewed and drafts immediate", () => {
     expect(interactionModeFor("setWorkspaceModule")).toBe("optimistic");
     expect(interactionModeFor("createSponsorship")).toBe("navigation");

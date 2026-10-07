@@ -12,6 +12,9 @@ const READ = /^(reviewPrintWirePayment|get|list|load|current|is[A-Z]|sync|pushSu
 const DESTRUCTIVE = /^(delete|remove|revoke|clear|discard|trash)/;
 const PROGRESS = /^(send|submit|draft|generate|publish|refresh|reprocess|repair|retry|upload|extract|startParse|startNow|startReprint|resume|applyImport|commitImport|attachAgreement|createImport|createProjectsFrom|enablePush|disablePush|runAssistant|request|invite|learn|seed)/;
 const PROGRESS_ACTIONS = new Set([
+  "submitSupportRequest",
+  "sendSupportReply",
+  "uploadSupportAttachment",
   "connectCorrespondenceMailbox",
   "updateWorkspaceSettings",
   "updateStandup",

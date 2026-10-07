@@ -34,6 +34,11 @@ describe("dueLabel tone", () => {
   it("has a readable overdue label", () => {
     expect(dueLabel(ymd(-3)).text).toBe("Overdue 3d");
   });
+  it("uses the workspace calendar day instead of the machine's day when supplied", () => {
+    expect(dueLabel("2026-10-06", "2026-10-06")).toEqual({ text: "Due today", tone: "soon" });
+    expect(dueLabel("2026-10-05", "2026-10-06")).toEqual({ text: "Overdue 1d", tone: "overdue" });
+    expect(daysUntil("2026-10-07", "2026-10-06")).toBe(1);
+  });
 });
 
 describe("formatDate / formatBytes", () => {

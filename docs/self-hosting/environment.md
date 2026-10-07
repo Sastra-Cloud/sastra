@@ -48,3 +48,13 @@ Additional settings:
 | `INITIAL_ADMIN_EMAIL` / `INITIAL_ADMIN_TOKEN` | ✅ (first run, production) | the only email allowed to create the first admin, and the one-time token typed on that screen; remove both after the first account exists |
 | `PORT` | ➖ | listening port, default `3000` |
 | `SASTRA_CLOUD_INSTANCE_ID` / `SASTRA_CLOUD_MANAGEMENT_SECRET` / `SASTRA_CLOUD_ACCOUNT_URL` | never for self-hosting | set only by the Sastra Cloud control plane; leave unset |
+
+## Optional private support enrollment
+
+By default, Help links to community Discussions and GitHub issues. No support service calls, installation registration, or diagnostic uploads occur.
+
+An explicitly enrolled installation can configure `SASTRA_SUPPORT_URL`, `SASTRA_SUPPORT_INSTANCE_ID`, and `SASTRA_SUPPORT_SECRET`. All three are required. Use an HTTPS service URL and a dedicated revocable credential supplied by the operator. These are server-only variables; never expose the secret in client bundles or a public repository. The integration signs each request and uses the documented `/support/v1/instance` ticket API.
+
+Enrollment is independent of hosted billing. Setting these variables does not enable subscription mode, seat limits, AI credit caps, or hosted scheduling. The internal Coolify pilot can therefore use private support while preserving its existing behavior. Revoke or remove enrollment to return to community links.
+
+Requests are visible to their reporter, workspace admins, the cloud account owner, and support operators. Diagnostics are reviewed before submission and attachments are explicitly selected. Security reports still follow `SECURITY.md`.
