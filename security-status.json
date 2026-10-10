@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "repository": "Sastra-Cloud/sastra",
+  "checkedAt": "2026-10-10T11:35:22.888Z",
+  "refs": {
+    "main": {
+      "status": "failed",
+      "checkedAt": "2026-10-10T11:35:16Z",
+      "commit": "e91e4a3a5a2540061fadfb2a28b779f9692eb97a"
+    },
+    "v0.2.3": {
+      "status": "failed",
+      "checkedAt": "2026-10-10T11:35:18Z",
+      "commit": "e91e4a3a5a2540061fadfb2a28b779f9692eb97a"
+    },
+    "v0.2.2": {
+      "status": "failed",
+      "checkedAt": "2026-10-10T11:35:20Z",
+      "commit": "afdd7fb4053eb8a20c68ab239655c79e64c7f742"
+    },
+    "v0.2.1": {
+      "status": "failed",
+      "checkedAt": "2026-10-10T11:35:22Z",
+      "commit": "2d7a44273cd1f865bbee649a08f13533377e7e02"
+    }
+  },
+  "latestRelease": "v0.2.3"
+}
