@@ -67,7 +67,7 @@
     "mailparser": "^3.9.28",
     "mammoth": "^1.12.3",
     "motion": "^12.42.0",
-    "next": "16.3.6",
+    "next": "16.3.8",
     "next-themes": "^0.4.6",
     "nodemailer": "^9.1.0",
     "openai": "^6.45.0",
