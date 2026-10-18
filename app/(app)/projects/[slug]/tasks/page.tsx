@@ -116,6 +116,7 @@ export default async function ProjectTasksPage({
                 </Link>
               ) : null}
               <CreateTaskDialog
+                canManage={isManager}
                 projectId={data.project.id}
                 printRunId={selectedRunId ?? null}
                 projectDriveFolderId={data.project.driveFolderId}

@@ -17,12 +17,14 @@ export function WorkloadView({
   tasks,
   assignees,
   currentUserId,
+  todayIso,
 }: {
   people: WorkloadPerson[];
   /** Full task rows so a clicked queue item can open the detail editor. */
   tasks: MyTaskRow[];
   assignees: Option[];
   currentUserId: string;
+  todayIso: string;
 }) {
   const [detailTask, setDetailTask] = useState<MyTaskRow | null>(null);
   const byId = useMemo(() => {
@@ -34,6 +36,7 @@ export function WorkloadView({
   return (
     <>
       <WorkloadBoard
+        todayIso={todayIso}
         people={people}
         onOpen={(id) => {
           const t = byId.get(id);

@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { and, desc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { requireRole } from "@/lib/auth/guards";
 import { requireWorkspaceModule } from "@/lib/workspace/module-guard";
@@ -30,7 +30,7 @@ async function invalidate(id: string, projectIds: string[] = []) {
 
 async function validateLinks(tx: Tx, input: SponsorshipInput) {
   const ids = [...new Set(input.lines.map(line => line.projectId))];
-  const books = await tx.select({ id: projects.id }).from(projects).where(and(inArray(projects.id, ids), eq(projects.kind, "book")));
+  const books = await tx.select({ id: projects.id }).from(projects).where(and(inArray(projects.id, ids), or(eq(projects.kind, "book"), isNull(projects.kind))));
   if (books.length !== ids.length) return "Select an existing book for every line.";
   if (input.partnerId) {
     const [partner] = await tx.select({ id: partners.id }).from(partners).where(eq(partners.id, input.partnerId));

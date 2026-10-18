@@ -104,3 +104,43 @@ it("uses an earlier payment due date and treats an unknown send time as due", ()
   expect(printPaymentFollowUp(payment, "2026-09-27", "America/Los_Angeles")).toEqual({ state: "waiting", date: "2026-09-28" });
   expect(printPaymentFollowUp({ ...payment, printWireRequestedAt: null }, "2026-09-27")).toEqual({ state: "due", date: "2026-09-27" });
 });
+
+describe("Shared Next up", () => {
+  it("keeps manager order ahead of dated and started work, including far-future selections", () => {
+    const first = { ...task("undated", null), isNextUp: true, rank: 1 };
+    const second = { ...task("future", "2027-01-01"), isNextUp: true, rank: 2 };
+    const result = selectPersonalWork([
+      task("today", "2026-07-10"), second, task("started", null, "in_progress"), first,
+      ...Array.from({ length: 15 }, (_, index) => task(`dated-${index}`, "2026-07-01")),
+    ], "2026-07-10");
+    expect(result.nextUp.map(row => row.id)).toEqual(["undated", "future"]);
+    expect(result.ordered.slice(0, 3).map(row => row.id)).toEqual(["undated", "future", "today"]);
+    expect(result.later).toEqual([]);
+    expect(new Set(result.ordered.map(row => row.id)).size).toBe(result.ordered.length);
+  });
+  it("keeps all today's deadlines represented once when one is selected", () => {
+    const selected = { ...task("next-today", "2026-07-10"), isNextUp: true };
+    const result = selectPersonalWork([selected, task("today", "2026-07-10")], "2026-07-10");
+    expect(result.dueToday.map(row => row.id)).toEqual(["next-today", "today"]);
+    expect(result.remainingDueToday.map(row => row.id)).toEqual(["today"]);
+    expect(result.ordered.map(row => row.id)).toEqual(["next-today", "today"]);
+  });
+  it("skips a blocked first choice and retains payment confirmation timing", () => {
+    const blocked = { ...task("blocked", null), isNextUp: true, blockedByTitle: "Predecessor" };
+    const waiting = { ...task("waiting", null, "review"), isNextUp: true, printPaymentStatus: "requested", printWireRequestedAt: "2026-07-10T12:00:00Z" };
+    const ready = { ...task("ready", null), isNextUp: true };
+    const result = selectPersonalWork([blocked, waiting, ready], "2026-07-10");
+    expect(result.nextUp).toEqual([ready]);
+    expect(result.blockedNextUp).toEqual([blocked]);
+    expect(result.waiting).toEqual([waiting]);
+    expect(result.attention).toEqual([]);
+  });
+  it("caps only the preview and restores the exact selection after a failed completion", () => {
+    const rows = Array.from({ length: 5 }, (_, index) => ({ ...task(`next-${index}`, null), isNextUp: true, rank: index }));
+    expect(selectPersonalWork(rows, "2026-07-10", "UTC", 3).nextUp.map(row => row.id)).toEqual(["next-0", "next-1", "next-2"]);
+    expect(selectPersonalWork(rows, "2026-07-10", "UTC", 3).nextUpCount).toBe(5);
+    const completed = rows.map(row => row.id === "next-0" ? { ...row, status: "done", isNextUp: false } : row);
+    expect(selectPersonalWork(completed, "2026-07-10", "UTC", 3).nextUp[0].id).toBe("next-1");
+    expect(selectPersonalWork(rows, "2026-07-10", "UTC", 3).nextUp[0].id).toBe("next-0");
+  });
+});

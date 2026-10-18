@@ -955,6 +955,8 @@
     "@/lib/projects/queries",
     "@/lib/standup/view-queries",
     "@/components/workload/workload-view",
+    "@/lib/workspace/queries",
+    "@/lib/agenda/queries",
     "@/components/workload/workload-board"
   ],
   "app/(auth)/forgot-password/page.tsx": [
@@ -3763,7 +3765,8 @@
     "@/lib/utils",
     "@/lib/notifications/client-events",
     "@/lib/email/task-suggestion-actions",
-    "@/lib/tasks/task-source"
+    "@/lib/tasks/task-source",
+    "@/hooks/use-prop-state"
   ],
   "components/tasks/task-time-section.tsx": [
     "@/lib/dialog-requests",
@@ -6006,6 +6009,11 @@
     "@/lib/db/schema",
     "@/lib/email/project-signal-policy"
   ],
+  "lib/email/smtp-compatibility.test.ts": [
+    "vitest",
+    "nodemailer",
+    "mailparser"
+  ],
   "lib/email/task-reflection.ts": [
     "drizzle-orm",
     "@/lib/db",
@@ -6259,6 +6267,8 @@
   "lib/gmail/types.ts": [],
   "lib/gmail/verify.test.ts": [
     "vitest",
+    "./imap",
+    "./send",
     "./verify"
   ],
   "lib/gmail/verify.ts": [
@@ -7395,6 +7405,7 @@
   "lib/sponsorships/actions.test.ts": [
     "vitest",
     "drizzle-orm",
+    "drizzle-orm/pg-core",
     "./actions"
   ],
   "lib/sponsorships/actions.ts": [
@@ -7529,6 +7540,8 @@
     "@/lib/auth/guards",
     "@/lib/db",
     "@/lib/db/schema",
+    "./queue",
+    "./queue-service",
     "@/lib/projects/pipeline",
     "@/lib/notifications",
     "@/lib/activity/log",
@@ -7581,7 +7594,8 @@
     "@/lib/notifications",
     "@/lib/activity/log",
     "@/lib/format",
-    "@/lib/episodes/workflow"
+    "@/lib/episodes/workflow",
+    "./queue-service"
   ],
   "lib/tasks/drive-actions.ts": [
     "next/headers",
@@ -7629,6 +7643,20 @@
     "@/lib/format",
     "./time-queries"
   ],
+  "lib/tasks/queue-actions.test.ts": [
+    "vitest",
+    "./actions"
+  ],
+  "lib/tasks/queue-service.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/tasks/queue.test.ts": [
+    "vitest",
+    "./queue"
+  ],
+  "lib/tasks/queue.ts": [],
   "lib/tasks/recurring-actions.ts": [
     "next/cache",
     "drizzle-orm",

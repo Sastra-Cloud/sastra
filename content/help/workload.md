@@ -2,9 +2,9 @@
 title: "Workload"
 category: "Work"
 roles: [manager, admin]
-keywords: [workload, managers, capacity, reassign, reorder, queue, balance, hours, time report]
+keywords: [workload, managers, next up, shared queue, no due date, undated task, priority order, capacity, reassign, reorder, queue, balance, hours, time report]
 order: 44
-summary: "Balance and order everyone's tasks, and reassign work by dragging."
+summary: "Choose and order each person's shared Next up tasks without dates, balance load, and reassign work."
 ---
 
 **Workload** is a manager view of every teammate's open tasks side by side. Use
@@ -21,10 +21,27 @@ position.
 
 ## Ordering and reassigning
 
-- **Drag a task** (or use the up/down arrows) within a person's list to set the
-  order they work through them. The **top item is what they see next** on their
-  Home.
-- **Drop a task onto another person** to reassign it.
+- Choose **Add to Next up** on the tasks a person should tackle next. These move
+  into **Next up · manager order**, above **Other assigned work**. You can also
+  choose Next up when creating a one-off task or from task details.
+- **Drag a task** (or use the up/down arrows) within its group to order it. The
+  assignee sees the same selected order on **Home** and **My Work ▸ Focus**, even
+  for tasks without due dates. Home previews three; My Work shows the full
+  selection. Choose a small set so the next action stays clear.
+- **Remove from Next up** returns a task to the standard queue. It stays assigned
+  and open. Due dates and priority labels are separate: neither silently changes
+  your selected sequence. Real deadline counts remain prominent for the assignee.
+- **Drop a task onto another person** to reassign it to the end of that person's
+  standard queue. Its previous Next up selection is cleared; choose Add to Next
+  up for the new owner when appropriate. Source-managed tasks keep their usual
+  reassignment restrictions.
+
+There is one shared order per assignee, editable by managers and admins across
+projects. The column shows who last changed the queue. If another manager changes
+it while you are editing, Sastra restores the confirmed state, loads the latest
+queue, and asks you to try again. Saving affects only that person's controls;
+other teammates' queues remain available. Reordering does not reset task activity
+or make an old review look new.
 
 ## Time report
 

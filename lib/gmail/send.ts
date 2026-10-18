@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
-import nodemailer from "nodemailer";
+import nodemailer, { type Transporter } from "nodemailer";
 import { eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
@@ -41,9 +41,9 @@ export type SendEmailInput = {
 
 export type SendEmailResult = { messageId: string; threadKey: string };
 
-let cachedGmailTransport: { key: string; transport: nodemailer.Transporter } | null = null;
+let cachedGmailTransport: { key: string; transport: Transporter } | null = null;
 
-export function smtpTransportFor(config: Pick<MailboxConfig, "mailbox" | "appPassword" | "smtpHost" | "smtpPort">): nodemailer.Transporter {
+export function smtpTransportFor(config: Pick<MailboxConfig, "mailbox" | "appPassword" | "smtpHost" | "smtpPort">): Transporter {
   return nodemailer.createTransport({
     host: config.smtpHost,
     port: config.smtpPort,
@@ -56,7 +56,7 @@ export function smtpTransportFor(config: Pick<MailboxConfig, "mailbox" | "appPas
 }
 
 /** The Gmail mailbox's own SMTP, used when capture runs through Gmail. Rebuilt when the mailbox changes. */
-function gmailTransport(config: MailboxConfig): nodemailer.Transporter {
+function gmailTransport(config: MailboxConfig): Transporter {
   const key = `${config.mailbox}:${createHash("sha256").update(config.appPassword).digest("hex")}`;
   if (cachedGmailTransport?.key === key) return cachedGmailTransport.transport;
   cachedGmailTransport = { key, transport: smtpTransportFor(config) };

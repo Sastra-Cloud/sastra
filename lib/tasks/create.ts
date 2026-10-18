@@ -10,6 +10,7 @@ import { notify } from "@/lib/notifications";
 import { logActivity } from "@/lib/activity/log";
 import { formatDate } from "@/lib/format";
 import type { PodcastStage } from "@/lib/episodes/workflow";
+import { lockTaskQueues, nextTaskRank, touchTaskQueue } from "./queue-service";
 
 /** Notify a newly-assigned user (skips self-assignment). */
 export async function notifyAssignment(
@@ -77,6 +78,7 @@ export type InsertTaskValues = {
   dueDate?: string | null;
   dueDateIsManual?: boolean;
   isMilestone?: boolean;
+  isNextUp?: boolean;
   estimateHours?: string | null;
   driveFolderId?: string | null;
   driveFolderName?: string | null;
@@ -102,32 +104,40 @@ export async function insertTaskRow(
   }
 ): Promise<string> {
   const status = values.status ?? "todo";
-  const [created] = await db
-    .insert(tasks)
-    .values({
-      projectId: values.projectId ?? null,
-      printRunId: values.printRunId ?? null,
-      printPaymentId: values.printPaymentId ?? null,
-      phaseId: values.phaseId ?? null,
-      unitId: values.unitId ?? null,
-      podcastStage: values.podcastStage ?? null,
-      title: values.title,
-      description: values.description ?? undefined,
-      status,
-      priority: values.priority ?? "medium",
-      assignedTo: values.assignedTo ?? null,
-      dueDate: values.dueDate || null,
-      dueDateIsManual: values.dueDateIsManual ?? false,
-      isMilestone: values.isMilestone ?? false,
-      estimateHours: values.estimateHours ?? null,
-      driveFolderId: values.driveFolderId ?? null,
-      driveFolderName: values.driveFolderName ?? null,
-      driveFolderUrl: values.driveFolderUrl ?? null,
-      completedAt: status === "done" ? new Date() : null,
-      createdBy: opts.actorId,
-      sourceRecurringTaskId: values.sourceRecurringTaskId ?? null,
-    })
-    .returning({ id: tasks.id });
+  const created = await db.transaction(async (tx) => {
+    await lockTaskQueues(tx, [values.assignedTo ?? null]);
+    const rank = await nextTaskRank(tx, values.assignedTo ?? null);
+    const [row] = await tx
+      .insert(tasks)
+      .values({
+        projectId: values.projectId ?? null,
+        printRunId: values.printRunId ?? null,
+        printPaymentId: values.printPaymentId ?? null,
+        phaseId: values.phaseId ?? null,
+        unitId: values.unitId ?? null,
+        podcastStage: values.podcastStage ?? null,
+        title: values.title,
+        description: values.description ?? undefined,
+        status,
+        rank,
+        isNextUp: Boolean(values.isNextUp && values.assignedTo && status !== "done"),
+        priority: values.priority ?? "medium",
+        assignedTo: values.assignedTo ?? null,
+        dueDate: values.dueDate || null,
+        dueDateIsManual: values.dueDateIsManual ?? false,
+        isMilestone: values.isMilestone ?? false,
+        estimateHours: values.estimateHours ?? null,
+        driveFolderId: values.driveFolderId ?? null,
+        driveFolderName: values.driveFolderName ?? null,
+        driveFolderUrl: values.driveFolderUrl ?? null,
+        completedAt: status === "done" ? new Date() : null,
+        createdBy: opts.actorId,
+        sourceRecurringTaskId: values.sourceRecurringTaskId ?? null,
+      })
+      .returning({ id: tasks.id });
+    await touchTaskQueue(tx, values.assignedTo ?? null, opts.actorId);
+    return row;
+  });
 
   const id = created.id;
   if (opts.notifyAssignment !== false) {

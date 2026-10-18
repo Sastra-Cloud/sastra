@@ -57,6 +57,7 @@ export const tasks = pgTable(
     orderIndex: integer("order_index").notNull().default(0),
     // PM-controlled importance order within an assignee's queue ("do this first").
     rank: doublePrecision("rank").notNull().default(0),
+    isNextUp: boolean("is_next_up").notNull().default(false),
     isMilestone: boolean("is_milestone").notNull().default(false),
     estimateHours: numeric("estimate_hours", { precision: 6, scale: 2 }),
     // Google Drive: this task's default working sub-folder (usually inside the
@@ -80,6 +81,14 @@ export const tasks = pgTable(
       .where(sql`${t.podcastStage} is not null`),
   ]
 );
+
+/** One shared ordering revision per assignee, independent of task activity. */
+export const taskQueues = pgTable("task_queues", {
+  userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
+  revision: integer("revision").notNull().default(0),
+  updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
 export const taskDependencies = pgTable(
   "task_dependencies",

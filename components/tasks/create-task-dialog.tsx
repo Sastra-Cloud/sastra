@@ -60,6 +60,7 @@ export function CreateTaskDialog({
   defaultDescription = "",
   defaultPriority = "medium",
   triggerLabel = "Add task",
+  canManage = false,
   onOptimisticCreate,
 }: {
   projectId?: string;
@@ -76,6 +77,7 @@ export function CreateTaskDialog({
   defaultDescription?: string;
   defaultPriority?: "low" | "medium" | "high" | "urgent";
   triggerLabel?: string;
+  canManage?: boolean;
   /** Lets an owning task surface show a temporary task while the save settles. */
   onOptimisticCreate?: (request: OptimisticTaskCreateRequest) => void;
 }) {
@@ -131,7 +133,9 @@ export function CreateTaskDialog({
         priority: String(fd.get("priority") ?? "medium"),
         dueDate: anchorDate || null,
         isMilestone: fd.get("isMilestone") === "on",
-        rank: 0,
+        rank: Number.MAX_SAFE_INTEGER,
+        isNextUp: canManage && fd.get("isNextUp") === "true" && Boolean(assignedTo),
+        blockedByTitle: null,
         estimateHours: estimateHours || null,
         updatedAt: new Date(),
         assignedTo,
@@ -333,6 +337,16 @@ export function CreateTaskDialog({
               />
             </div>
           </div>
+          {canManage && !recurring ? (
+            <div className="grid gap-2">
+              <Label htmlFor="t-next-up">Placement</Label>
+              <select id="t-next-up" name="isNextUp" className={selectClass} defaultValue="false">
+                <option value="false">Standard queue</option>
+                <option value="true">Next up</option>
+              </select>
+              <p className="text-xs text-muted-foreground">Next up puts this in the assignee&apos;s shared work order. No due date needed.</p>
+            </div>
+          ) : null}
           {!projectId && projects.length > 0 ? (
             <div className="grid gap-2">
               <Label htmlFor="t-project">Project</Label>

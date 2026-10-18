@@ -48,6 +48,7 @@ export function TasksHub({
     <div className="space-y-4">
       <div className="flex justify-end">
         <CreateTaskDialog
+          canManage={canManage}
           assignees={assignees}
           projects={projects}
           defaultAssignee={currentUserId}

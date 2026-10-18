@@ -86,6 +86,7 @@ function applyTaskMutation(current: MyWorkTaskRow[], mutation: TaskMutation) {
     return {
       ...task,
       status: mutation.status,
+      ...(mutation.status === "done" ? { isNextUp: false } : {}),
       completedAt: mutation.completedAt,
       updatedAt: new Date(),
     };
@@ -287,6 +288,7 @@ export function MyWorkHub({
           })}
         </nav>
         <CreateTaskDialog
+          canManage={canManage}
           assignees={assignees}
           projects={projects}
           defaultAssignee={currentUserId}
@@ -459,13 +461,14 @@ function FocusView({
   const [showAllAttention, setShowAllAttention] = useState(false);
   const runningSeconds = useLiveElapsed(activeTimer?.startedAt ?? null);
   const open = tasks.filter((task) => task.status !== "done");
-  const { dueToday, working, waiting, attention, later } = selectPersonalWork(open, todayIso, timeZone);
+  const { dueToday, remainingDueToday, nextUp, selectedCount, blockedNextUp, working, waiting, attention, later } = selectPersonalWork(open, todayIso, timeZone);
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-xl border bg-card px-4 py-3">
         <FocusStat label="Open" value={open.length} icon={ListChecks} />
         <FocusStat label="Due today" value={dueToday.length} icon={CalendarDays} />
+        <FocusStat label="Overdue" value={open.filter(task => task.dueDate && task.dueDate < todayIso).length} icon={CalendarDays} />
         <FocusStat label="Completed today" value={completedToday.length} icon={CheckCircle2} />
         <FocusStat label="Tracked today" value={formatDuration(trackedTodaySeconds)} icon={Clock3} />
       </div>
@@ -498,10 +501,10 @@ function FocusView({
       ) : null}
 
       <FocusSection
-        id="due-today"
-        title="Due today"
-        description="Today's deadlines and payment follow-ups"
-        tasks={dueToday}
+        id="next-up"
+        title="Next up"
+        description="Manager order across your projects · No due date needed"
+        tasks={nextUp}
         todayIso={todayIso}
         timeZone={timeZone}
         pending={pending}
@@ -509,7 +512,35 @@ function FocusView({
         onOpen={onOpen}
         onStatus={onStatus}
         onTimer={onTimer}
-        emptyTitle="No tasks due today"
+        emptyTitle={selectedCount > 0 ? "Your selected tasks are waiting below; other ready work is still available." : "No next tasks chosen yet. Your other assigned work is below."}
+      />
+      {blockedNextUp.length > 0 ? <FocusSection
+        title="Next up · blocked"
+        description="Selected work waiting on a dependency"
+        tasks={blockedNextUp}
+        todayIso={todayIso}
+        timeZone={timeZone}
+        pending={pending}
+        activeTimerTaskId={activeTimer?.taskId ?? null}
+        onOpen={onOpen}
+        onStatus={onStatus}
+        onTimer={onTimer}
+      /> : null}
+
+      <FocusSection
+        id="due-today"
+        title="Due today"
+        description={dueToday.length !== remainingDueToday.length ? `${dueToday.length - remainingDueToday.length} of today's tasks shown in Next up above` : "Today's deadlines and payment follow-ups"}
+        tasks={remainingDueToday}
+        totalCount={dueToday.length}
+        todayIso={todayIso}
+        timeZone={timeZone}
+        pending={pending}
+        activeTimerTaskId={activeTimer?.taskId ?? null}
+        onOpen={onOpen}
+        onStatus={onStatus}
+        onTimer={onTimer}
+        emptyTitle={dueToday.length > 0 ? "Today's selected tasks are shown above in Next up" : "No tasks due today"}
       />
 
       {working.length > 0 ? (
@@ -675,7 +706,7 @@ function FocusSection({
         />
       ) : (
         <div className="rounded-xl border bg-card py-10 text-center text-sm text-muted-foreground">
-          <Check className="mx-auto mb-2 size-5 text-success" />
+          {id === "next-up" ? <ListChecks className="mx-auto mb-2 size-5" /> : <Check className="mx-auto mb-2 size-5 text-success" />}
           {emptyTitle ?? "Nothing here"}
         </div>
       )}
@@ -716,6 +747,7 @@ function FocusTaskList({
         const sourceLink = taskSourceLink(task, task.projectSlug);
         return (
           <motion.li
+            data-task-id={task.id}
             key={task.id}
             layout
             initial={{ opacity: 0, y: 6 }}
@@ -766,8 +798,10 @@ function FocusTaskList({
                 ) : null}
               </div>
               <TaskAttachmentShortcut task={task} />
+              {task.blockedByTitle ? <p className="mt-1 text-xs text-warning-text">Blocked by {task.blockedByTitle}</p> : null}
+              {task.isNextUp ? <span className="mt-1 inline-block text-xs font-medium text-primary">Next up</span> : null}
               {sourceLink ? <Link href={sourceLink.href} className="text-xs text-primary hover:underline">{sourceLink.label}</Link> : null}
-              {followUp ? <p className={cn("mt-1 text-xs lg:hidden", followUp.state === "due" ? "font-medium text-warning-text" : "text-muted-foreground")}>{due.text}</p> : null}
+              <p className={cn("mt-1 text-xs lg:hidden", due.tone === "overdue" ? "font-medium text-destructive" : due.tone === "soon" ? "font-medium text-warning-text" : "text-muted-foreground")}>{due.tone === "none" ? "No due date" : due.text}</p>
             </div>
             <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
               <div className="hidden items-center gap-2 lg:flex">
@@ -779,7 +813,7 @@ function FocusTaskList({
                     (due.tone === "normal" || due.tone === "none") && "text-muted-foreground"
                   )}
                 >
-                  {due.text}
+                  {due.tone === "none" ? "No due date" : due.text}
                 </span>
                 <PriorityBadge priority={task.priority} />
               </div>

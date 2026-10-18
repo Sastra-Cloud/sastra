@@ -66,8 +66,8 @@ export function MyTasksList({
   const detailTask = detailTaskId
     ? visibleTasks.find((task) => task.id === detailTaskId) ?? null
     : null;
-  const { dueToday, ordered, later, waiting } = selectPersonalWork(
-    visibleTasks, todayIso, timeZone
+  const { dueToday, remainingDueToday, nextUp, nextUpCount, selectedCount, blockedNextUp, working, attention, later, waiting } = selectPersonalWork(
+    visibleTasks, todayIso, timeZone, homePreview ? 3 : Infinity
   );
   const openTasks = visibleTasks.filter(task => task.status !== "done");
   const overdueCount = openTasks.filter(task => (daysUntil(task.dueDate, todayIso) ?? 0) < 0).length;
@@ -75,15 +75,23 @@ export function MyTasksList({
     const days = daysUntil(task.dueDate, todayIso);
     return days !== null && days >= 0 && days <= 7;
   }).length;
-  const nextTasks = ordered.slice(dueToday.length, dueToday.length + 3);
-  const remaining = ordered.length - dueToday.length - nextTasks.length;
+  const otherTasks = [...working, ...attention];
+  const nextTasks = otherTasks.slice(0, 3);
+  const remaining = otherTasks.length - nextTasks.length;
   const groups = homePreview
     ? [
+        ...(nextUp.length > 0 ? [{
+          id: "home-next-up",
+          title: "Next up",
+          description: `Manager order · ${nextUpCount} ready${nextUpCount > 3 ? " · First 3 shown" : ""}`,
+          rows: nextUp,
+        }] : []),
+        ...(blockedNextUp.length > 0 ? [{ id: "home-blocked-next-up", title: "Next up · blocked", description: "Selected work waiting on a dependency", rows: blockedNextUp }] : []),
         {
           id: "home-due-today",
           title: "Due today",
-          description: "Today's deadlines and payment follow-ups",
-          rows: dueToday,
+          description: dueToday.length !== remainingDueToday.length ? `${dueToday.length - remainingDueToday.length} of today's tasks shown in Next up above` : "Today's deadlines and payment follow-ups",
+          rows: remainingDueToday,
         },
         {
           id: "home-next-tasks",
@@ -171,12 +179,13 @@ export function MyTasksList({
     <>
       {homePreview ? (
         <p className="text-xs text-muted-foreground">
-          {openTasks.length} open · {overdueCount} overdue · {" "}
+          {openTasks.length} open · {dueToday.length} due today · {overdueCount} overdue · {" "}
           <Link href="/tasks?view=agenda" className="underline underline-offset-4">
             {dueThisWeek} due in the next 7 days
           </Link>
         </p>
       ) : null}
+      {homePreview && nextUpCount === 0 && blockedNextUp.length === 0 ? <p className="text-xs text-muted-foreground">{selectedCount > 0 ? "Your selected Next up tasks are awaiting payment confirmation in My Work." : "No next tasks chosen yet. Your assigned work is below."}</p> : null}
       {groups.map((group) => (
         <section
           key={group.id}
@@ -189,17 +198,17 @@ export function MyTasksList({
                 <h2 id={`${group.id}-heading`} className="text-lg font-semibold">
                   {group.title}{" "}
                   <span className="ml-2 text-sm font-normal tabular-nums text-muted-foreground">
-                    {group.rows.length}
+                    {group.id === "home-due-today" ? dueToday.length : group.id === "home-next-up" ? nextUpCount : group.rows.length}
                   </span>
                 </h2>
                 <p className="text-xs text-muted-foreground">{group.description}</p>
               </div>
-              {group.id === "home-due-today" ? (
+              {group.id === "home-due-today" || group.id === "home-next-up" ? (
                 <Link
-                  href="/tasks?view=focus#due-today"
+                  href={group.id === "home-next-up" ? "/tasks?view=focus#next-up" : "/tasks?view=focus#due-today"}
                   className="inline-flex min-h-10 items-center gap-1 text-sm text-muted-foreground hover:underline"
                 >
-                  Open My Work <ArrowRight className="size-3.5" />
+                  {group.id === "home-next-up" ? "View all Next up" : "Open My Work"} <ArrowRight className="size-3.5" />
                 </Link>
               ) : null}
             </div>
@@ -216,6 +225,7 @@ export function MyTasksList({
                   const sourceLink = taskSourceLink(t, t.projectSlug);
                   return (
                     <motion.li
+                      data-task-id={t.id}
                       key={t.id}
                       layout
                       initial={{ opacity: 0, y: 6 }}
@@ -301,6 +311,7 @@ export function MyTasksList({
                           ) : null}
                         </div>
                         <TaskAttachmentShortcut task={t} />
+                        {t.blockedByTitle ? <p className="mt-1 text-xs text-warning-text">Blocked by {t.blockedByTitle}</p> : null}
                         {sourceLink ? <Link href={sourceLink.href} className="mt-1 block text-xs text-primary hover:underline">{sourceLink.label}</Link> : null}
                       </div>
                       <div className="col-start-2 flex min-w-0 flex-wrap items-center gap-2 sm:ml-auto sm:shrink-0 sm:flex-nowrap">
@@ -313,7 +324,7 @@ export function MyTasksList({
                             due.tone === "none" && "text-muted-foreground"
                           )}
                         >
-                          {due.text}
+                          {due.tone === "none" ? "No due date" : due.text}
                         </span>
                         <PriorityBadge priority={t.priority} />
                         <TaskStatusBadge status={t.status} />
@@ -339,7 +350,7 @@ export function MyTasksList({
           ) : (
             <p className="rounded-lg border bg-card px-4 py-3 text-sm text-muted-foreground">
               {group.id === "home-due-today"
-                ? "No tasks due today"
+                ? dueToday.length > 0 ? "Today's selected tasks are shown above in Next up" : "No tasks due today"
                 : "No other tasks need attention right now"}
             </p>
           )}

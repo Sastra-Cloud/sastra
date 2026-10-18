@@ -93,6 +93,7 @@ function applyTaskMutation(current: TaskRow[], mutation: TaskMutation) {
     return {
       ...task,
       status: mutation.status,
+      ...(mutation.status === "done" ? { isNextUp: false } : {}),
       updatedAt: mutation.updatedAt,
     };
   });
@@ -265,6 +266,7 @@ export function TaskBoard({
           </HelpTip>
         </p>
         <CreateTaskDialog
+          canManage={canManage}
           projectId={projectId}
           printRunId={printRunId}
           projectDriveFolderId={projectDriveFolderId}

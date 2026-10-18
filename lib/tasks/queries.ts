@@ -25,6 +25,7 @@ import {
   taskDriveFiles,
   timeEntries,
   tasks,
+  taskQueues,
   units,
   user,
   budgetApprovalAssignments,
@@ -103,6 +104,8 @@ export type TaskRow = {
   dueDate: string | null;
   isMilestone: boolean;
   rank: number;
+  isNextUp: boolean;
+  blockedByTitle: string | null;
   estimateHours: string | null;
   updatedAt: Date;
   assignedTo: string | null;
@@ -160,6 +163,8 @@ const baseSelect = {
   dueDate: tasks.dueDate,
   isMilestone: tasks.isMilestone,
   rank: tasks.rank,
+  isNextUp: tasks.isNextUp,
+  blockedByTitle: sql<string | null>`(select predecessor.title from task_dependencies dependency join tasks predecessor on predecessor.id = dependency.depends_on_task_id where dependency.task_id = ${tasks.id} and predecessor.status <> 'done' order by predecessor.id limit 1)`,
   estimateHours: tasks.estimateHours,
   updatedAt: tasks.updatedAt,
   assignedTo: tasks.assignedTo,
@@ -345,6 +350,15 @@ export type MyWorkTaskRow = MyTaskRow & {
   trackedSeconds: number;
 };
 
+export async function getTaskQueueStates() {
+  return db.select({
+    userId: taskQueues.userId,
+    revision: taskQueues.revision,
+    updatedAt: taskQueues.updatedAt,
+    updatedByName: user.name,
+  }).from(taskQueues).leftJoin(user, eq(user.id, taskQueues.updatedBy));
+}
+
 /** A user's open tasks (not done) across all projects + standalone, rank-ordered. */
 export async function getMyTasks(userId: string): Promise<MyTaskRow[]> {
   return db
@@ -360,7 +374,7 @@ export async function getMyTasks(userId: string): Promise<MyTaskRow[]> {
     .leftJoin(units, eq(units.id, tasks.unitId))
     .leftJoin(projects, eq(projects.id, tasks.projectId))
     .where(and(eq(tasks.assignedTo, userId), sql`${tasks.status} <> 'done'`))
-    .orderBy(asc(tasks.rank), asc(tasks.dueDate));
+    .orderBy(asc(tasks.rank), asc(tasks.dueDate), asc(tasks.id));
 }
 
 /**
@@ -398,7 +412,7 @@ export async function getMyWorkTasks(
         )
       )
     )
-    .orderBy(asc(tasks.rank), asc(tasks.dueDate));
+    .orderBy(asc(tasks.rank), asc(tasks.dueDate), asc(tasks.id));
 }
 
 /** All open (not-done) assigned tasks across the team, for the workload view. */
@@ -416,7 +430,7 @@ export async function getOpenAssignedTasks(): Promise<MyTaskRow[]> {
     .leftJoin(units, eq(units.id, tasks.unitId))
     .leftJoin(projects, eq(projects.id, tasks.projectId))
     .where(and(sql`${tasks.assignedTo} is not null`, sql`${tasks.status} <> 'done'`))
-    .orderBy(asc(tasks.rank), asc(tasks.dueDate));
+    .orderBy(asc(tasks.rank), asc(tasks.dueDate), asc(tasks.id));
 }
 
 export type TaskComment = {
@@ -457,7 +471,7 @@ export async function getStandaloneTasks(userId: string): Promise<TaskRow[]> {
     .leftJoin(phases, eq(phases.id, tasks.phaseId))
     .leftJoin(units, eq(units.id, tasks.unitId))
     .where(and(isNull(tasks.projectId), eq(tasks.assignedTo, userId)))
-    .orderBy(asc(tasks.rank), asc(tasks.dueDate));
+    .orderBy(asc(tasks.rank), asc(tasks.dueDate), asc(tasks.id));
 }
 
 export type WeeklyCount = { week: string; count: number };

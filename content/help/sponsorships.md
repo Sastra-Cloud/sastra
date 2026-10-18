@@ -2,7 +2,7 @@
 title: "Sponsorships"
 category: "Publishing"
 roles: [manager, admin]
-keywords: [sponsorship, sponsored books, search books, book picker, sponsor, partner invoice, individual partner, module, modules, enable sponsorships, disable sponsorships, sponsorship funds, reserve, reprint reserve, funds available, funds used, partial payment, partial use, invoice, payment correction]
+keywords: [sponsorship, sponsored books, search books, book picker, untyped projects, sponsor, partner invoice, individual partner, module, modules, enable sponsorships, disable sponsorships, sponsorship funds, reserve, reprint reserve, funds available, funds used, partial payment, partial use, invoice, payment correction]
 order: 66
 summary: "Enable book sponsorships, invoice partners, and track separate book funds with partial uses and a correction history."
 ---
@@ -29,6 +29,9 @@ Enter to choose a book. Add the number of sponsored copies and agreed price per
 copy. Review the invoice description for each book. One invoice can cover several
 books. Prices are sponsorship prices; enter the amount agreed with the partner.
 Sponsored quantities do not record copies distributed or change print quantities.
+
+Projects without a type set are treated as books and appear in the search too.
+Projects assigned another type, such as a podcast or video series, are excluded.
 
 Add an optional payment due date and invoice note. The note appears on the invoice.
 New sponsorships use the workspace currency and snapshot its organization donation

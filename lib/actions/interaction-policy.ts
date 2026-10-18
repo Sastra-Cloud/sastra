@@ -68,6 +68,7 @@ const CONFIRMED_DESTRUCTIVE_ACTIONS = new Set([
   "cancelSponsorship",
 ]);
 const OPTIMISTIC_ACTIONS = new Set([
+  "setTaskNextUp", // shared task selection: immediate state with rollback
   // Chat message pins: predictable, reversible, and rolled back on failure.
   "pinMessage",
   "unpinMessage",

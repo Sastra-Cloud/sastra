@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -25,7 +25,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { ArrowDown, ArrowUp, GripVertical, Lock } from "lucide-react";
 
-import { assignTask, reorderUserTasks } from "@/lib/tasks/actions";
+import { assignTask, reorderUserTasks, setTaskNextUp } from "@/lib/tasks/actions";
 import { PriorityBadge } from "@/components/badges";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,7 @@ export type WorkloadTask = {
   dueDate: string | null;
   priority: string;
   status: string;
+  isNextUp: boolean;
   updatedAt: Date | string;
   estimateHours: string | null;
   driveFileCount: number;
@@ -59,6 +60,8 @@ export type WorkloadTask = {
 export type WorkloadPerson = {
   userId: string;
   userName: string;
+  queueRevision: number;
+  queueUpdatedBy: string | null;
   tasks: WorkloadTask[];
   /** Weekly capacity in hours (0 if unset). */
   weeklyHours: number;
@@ -89,12 +92,15 @@ const withTasks = (
 export function WorkloadBoard({
   people: initial,
   onOpen,
+  todayIso,
 }: {
   people: WorkloadPerson[];
+  todayIso: string;
   onOpen?: (taskId: string) => void;
 }) {
   const router = useRouter();
-  const [pending, start] = useTransition();
+  const inFlight = useRef(new Set<string>());
+  const [pendingPeople, setPendingPeople] = useState(new Set<string>());
   const [people, setPeople] = usePropState(initial);
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -103,29 +109,57 @@ export function WorkloadBoard({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const commit = (next: WorkloadPerson[], action: () => Promise<void>) => {
+  const commit = (next: WorkloadPerson[], affected: string[], action: () => Promise<Record<string, number> | void>) => {
+    if (affected.some(id => inFlight.current.has(id))) return;
     const previous = people;
+    affected.forEach(id => inFlight.current.add(id));
+    setPendingPeople(new Set(inFlight.current));
     setPeople(next);
-    start(async () => {
+    void (async () => {
       try {
-        await action();
-        router.refresh();
+        const revisions = await action();
+        if (revisions) setPeople(current => current.map(person => revisions[person.userId] === undefined ? person : { ...person, queueRevision: revisions[person.userId] }));
       } catch (error) {
-        setPeople(previous);
+        setPeople(current => current.map(person => affected.includes(person.userId) ? previous.find(old => old.userId === person.userId)! : person));
         toast.error(
           error instanceof Error ? error.message : "Could not save the workload change."
         );
+      } finally {
+        affected.forEach(id => inFlight.current.delete(id));
+        setPendingPeople(new Set(inFlight.current));
+        if (inFlight.current.size === 0) router.refresh();
       }
+    })();
+  };
+
+  const saveOrder = (personIdx: number, next: WorkloadTask[]) => {
+    const person = people[personIdx];
+    commit(withTasks(people, personIdx, next), [person.userId], async () => {
+      const queue = await reorderUserTasks(person.userId, next.map(task => task.id), person.queueRevision);
+      return { [person.userId]: queue!.revision };
+    });
+  };
+
+  const toggleNextUp = (personIdx: number, taskIndex: number) => {
+    const person = people[personIdx];
+    const task = person.tasks[taskIndex];
+    const changed = { ...task, isNextUp: !task.isNextUp };
+    const rest = person.tasks.filter(item => item.id !== task.id);
+    const next = changed.isNextUp
+      ? [...rest.filter(item => item.isNextUp), changed, ...rest.filter(item => !item.isNextUp)]
+      : [...rest, changed];
+    commit(withTasks(people, personIdx, next), [person.userId], async () => {
+      const result = await setTaskNextUp(task.id, changed.isNextUp, person.queueRevision);
+      return { [person.userId]: result.queue!.revision };
     });
   };
 
   const reorderWithin = (personIdx: number, from: number, to: number) => {
     const list = people[personIdx].tasks;
     if (to < 0 || to >= list.length || from === to) return;
+    if (list[from].isNextUp !== list[to].isNextUp) return;
     const next = arrayMove(list, from, to);
-    commit(withTasks(people, personIdx, next), async () => {
-      await reorderUserTasks(next.map((t) => t.id));
-    });
+    saveOrder(personIdx, next);
   };
 
   const onDragStart = (e: DragStartEvent) => setActiveId(String(e.active.id));
@@ -139,6 +173,7 @@ export function WorkloadBoard({
     const from = containerOf(people, activeTaskId);
     const to = containerOf(people, overId);
     if (!from || !to) return;
+    if (inFlight.current.has(from) || inFlight.current.has(to)) return;
     const fromIdx = people.findIndex((p) => p.userId === from);
     const toIdx = people.findIndex((p) => p.userId === to);
 
@@ -148,10 +183,9 @@ export function WorkloadBoard({
       const newIndex =
         overId === to ? list.length - 1 : list.findIndex((t) => t.id === overId);
       if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return;
+      if (list[oldIndex].isNextUp !== list[newIndex].isNextUp) return;
       const next = arrayMove(list, oldIndex, newIndex);
-      commit(withTasks(people, fromIdx, next), async () => {
-        await reorderUserTasks(next.map((t) => t.id));
-      });
+      saveOrder(fromIdx, next);
       return;
     }
 
@@ -160,23 +194,12 @@ export function WorkloadBoard({
     if (!task) return;
     const sourceTasks = people[fromIdx].tasks.filter((t) => t.id !== activeTaskId);
     const targetList = people[toIdx].tasks;
-    let insertAt = targetList.length;
-    if (overId !== to) {
-      const overIndex = targetList.findIndex((t) => t.id === overId);
-      if (overIndex >= 0) insertAt = overIndex;
-    }
-    const targetTasks = [
-      ...targetList.slice(0, insertAt),
-      task,
-      ...targetList.slice(insertAt),
-    ];
+    const targetTasks = [...targetList, { ...task, isNextUp: false }];
     let next = withTasks(people, fromIdx, sourceTasks);
     next = withTasks(next, toIdx, targetTasks);
     const targetUserId = people[toIdx].userId;
-    commit(next, async () => {
-      await assignTask(activeTaskId, targetUserId);
-      await reorderUserTasks(targetTasks.map((t) => t.id));
-      if (sourceTasks.length) await reorderUserTasks(sourceTasks.map((t) => t.id));
+    commit(next, [from, to], async () => {
+      return assignTask(activeTaskId, targetUserId);
     });
   };
 
@@ -192,21 +215,24 @@ export function WorkloadBoard({
 
   return (
     <DndContext
+      id="workload"
       sensors={sensors}
       collisionDetection={closestCorners}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onDragCancel={() => setActiveId(null)}
     >
-      <div className={cn("grid gap-4 lg:grid-cols-2", pending && "opacity-80")}>
+      <div className="grid gap-4 lg:grid-cols-2">
         {people.map((person, pi) => (
           <PersonCard
             key={person.userId}
             person={person}
-            pending={pending}
+            todayIso={todayIso}
+            pending={pendingPeople.has(person.userId)}
             onOpen={onOpen}
             onUp={(ti) => reorderWithin(pi, ti, ti - 1)}
             onDown={(ti) => reorderWithin(pi, ti, ti + 1)}
+            onNextUp={(ti) => toggleNextUp(pi, ti)}
           />
         ))}
       </div>
@@ -224,19 +250,24 @@ export function WorkloadBoard({
 
 function PersonCard({
   person,
+  todayIso,
   pending,
   onOpen,
   onUp,
   onDown,
+  onNextUp,
 }: {
   person: WorkloadPerson;
+  todayIso: string;
   pending: boolean;
   onOpen?: (taskId: string) => void;
   onUp: (taskIndex: number) => void;
   onDown: (taskIndex: number) => void;
+  onNextUp: (taskIndex: number) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: person.userId });
   const ids = person.tasks.map((t) => t.id);
+  const nextUpCount = person.tasks.filter(task => task.isNextUp).length;
 
   // Derive live stats from the (optimistic) task list so a drag updates them.
   const open = person.tasks.length;
@@ -245,7 +276,7 @@ function PersonCard({
     0
   );
   const overdue = person.tasks.filter((t) => {
-    const d = daysUntil(t.dueDate);
+    const d = daysUntil(t.dueDate, todayIso);
     return d !== null && d < 0;
   }).length;
   const inProgress = person.tasks.filter((t) => t.status === "in_progress").length;
@@ -278,8 +309,8 @@ function PersonCard({
           <CardTitle className="flex items-center gap-1.5 text-base">
             {person.userName}
             <HelpTip side="bottom" align="start" title="Balance & sequence">
-              Drag tasks to reorder a queue (top = do first), or drag a task onto
-              another person to reassign it. Saved automatically.
+              Choose Next up, then order those tasks without setting dates.
+              Drag within a group to reorder. Drop onto another person to add to their standard queue.
             </HelpTip>
           </CardTitle>
           <div className="flex flex-wrap items-center justify-end gap-1.5 text-xs">
@@ -332,6 +363,9 @@ function PersonCard({
         </div>
       </CardHeader>
       <CardContent>
+        <p className="mb-3 text-xs text-muted-foreground" role="status">
+          {pending ? "Saving queue…" : person.queueUpdatedBy ? `Queue last changed by ${person.queueUpdatedBy}` : "Choose the next few tasks for this teammate."}
+        </p>
         <div
           ref={setNodeRef}
           className={cn(
@@ -348,16 +382,23 @@ function PersonCard({
               </p>
             ) : (
               person.tasks.map((t, ti) => (
+                <div key={t.id}>
+                {(ti === 0 || person.tasks[ti - 1].isNextUp !== t.isNextUp) ? (
+                  <h3 className="pb-2 pt-3 text-sm font-semibold">{t.isNextUp ? "Next up · manager order" : "Other assigned work"}</h3>
+                ) : null}
                 <SortableRow
                   key={t.id}
                   task={t}
-                  index={ti}
-                  count={person.tasks.length}
+                  todayIso={todayIso}
+                  index={t.isNextUp ? ti : ti - nextUpCount}
+                  count={t.isNextUp ? nextUpCount : person.tasks.length - nextUpCount}
                   pending={pending}
                   onOpen={onOpen}
                   onUp={() => onUp(ti)}
                   onDown={() => onDown(ti)}
+                  onNextUp={() => onNextUp(ti)}
                 />
+                </div>
               ))
             )}
           </SortableContext>
@@ -369,28 +410,31 @@ function PersonCard({
 
 function SortableRow({
   task: t,
+  todayIso,
   index,
   count,
   pending,
   onOpen,
   onUp,
   onDown,
+  onNextUp,
 }: {
   task: WorkloadTask;
+  todayIso: string;
   index: number;
   count: number;
   pending: boolean;
   onOpen?: (taskId: string) => void;
   onUp: () => void;
   onDown: () => void;
+  onNextUp: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: t.id });
-  const due = dueLabel(t.dueDate);
+    useSortable({ id: t.id, disabled: pending });
+  const due = dueLabel(t.dueDate, todayIso);
   const reviewAge = reviewAgeDays(t.status, t.updatedAt);
   const staleReview = reviewAge !== null && reviewAge >= REVIEW_SLA_DAYS;
   const inProgress = t.status === "in_progress";
-  const inReview = t.status === "review";
   const hours = Number(t.estimateHours ?? 0);
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -398,19 +442,19 @@ function SortableRow({
   };
   return (
     <div
+      data-task-id={t.id}
       ref={setNodeRef}
       style={style}
       className={cn(
         "flex items-center gap-2 rounded-md border bg-card px-2 py-1.5",
-        inProgress && "border-l-2 border-l-info",
-        inReview && "border-l-2 border-l-warning",
+        t.isNextUp && "border-primary/30 bg-primary/5",
         isDragging && "z-10 opacity-50"
       )}
     >
       <button
         type="button"
         aria-label="Drag to reorder or reassign"
-        className="-ml-1 flex size-8 cursor-grab touch-none items-center justify-center rounded text-muted-foreground/60 hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 active:cursor-grabbing"
+        className="-ml-1 flex size-8 shrink-0 cursor-grab touch-none items-center justify-center rounded text-muted-foreground/60 hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 active:cursor-grabbing pointer-coarse:size-11"
         {...attributes}
         {...listeners}
       >
@@ -424,14 +468,15 @@ function SortableRow({
           <button
             type="button"
             onClick={() => onOpen(t.id)}
-            className="block max-w-full cursor-pointer truncate text-left text-sm font-medium hover:underline"
+            className="line-clamp-2 max-w-full cursor-pointer text-left text-sm font-medium hover:underline sm:block sm:truncate"
           >
             {t.title}
           </button>
         ) : (
           <p className="truncate text-sm font-medium">{t.title}</p>
         )}
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <PriorityBadge priority={t.priority} />
           {inProgress ? (
             <span className="shrink-0 rounded bg-info/15 px-1.5 py-0.5 text-[11px] font-medium text-info">
               In progress
@@ -455,7 +500,7 @@ function SortableRow({
               due.tone === "soon" && "text-warning"
             )}
           >
-            {due.tone !== "none" ? `· ${due.text}` : ""}
+            {due.tone !== "none" ? `· ${due.text}` : "· No due date"}
           </span>
           {hours > 0 ? (
             <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
@@ -474,13 +519,16 @@ function SortableRow({
           ) : null}
         </div>
         <TaskAttachmentShortcut task={t} className="mt-1.5" />
+        <Button type="button" variant="ghost" size="sm" className="mt-1 min-h-11 px-1 text-xs" disabled={pending} onClick={onNextUp} aria-label={`${t.isNextUp ? "Remove" : "Add"} ${t.title} ${t.isNextUp ? "from" : "to"} Next up`}>
+          {t.isNextUp ? "Remove from Next up" : "Add to Next up"}
+        </Button>
       </div>
-      <PriorityBadge priority={t.priority} />
       <div className="flex flex-col">
         <Button
           variant="ghost"
           size="icon-xs"
-          aria-label="Move up"
+          className="size-8 pointer-coarse:size-11"
+          aria-label={`Move ${t.title} up`}
           disabled={pending || index === 0}
           onClick={onUp}
         >
@@ -489,7 +537,8 @@ function SortableRow({
         <Button
           variant="ghost"
           size="icon-xs"
-          aria-label="Move down"
+          className="size-8 pointer-coarse:size-11"
+          aria-label={`Move ${t.title} down`}
           disabled={pending || index === count - 1}
           onClick={onDown}
         >

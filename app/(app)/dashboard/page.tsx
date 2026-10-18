@@ -73,6 +73,7 @@ export default async function DashboardPage() {
           </div>
         </div>
         <CreateTaskDialog
+          canManage={can(user, "tasks.manage")}
           assignees={users.map((u) => ({ id: u.id, name: u.name }))}
           projects={projectOptions}
           defaultAssignee={user.id}

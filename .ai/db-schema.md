@@ -272,6 +272,7 @@ Table and enum exports parsed from `lib/db/schema/`.
 - `taskComments` (pgTable)
 - `taskDependencies` (pgTable)
 - `taskDriveFiles` (pgTable)
+- `taskQueues` (pgTable)
 - `tasks` (pgTable)
 
 ## `lib/db/schema/templates.ts`

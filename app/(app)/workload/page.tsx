@@ -3,11 +3,14 @@ import {
   getOpenAssignedTasks,
   getOpenTaskBlockers,
   getTeamLoad,
+  getTaskQueueStates,
   type MyTaskRow,
 } from "@/lib/tasks/queries";
 import { listAssignableUsers } from "@/lib/projects/queries";
 import { getStandupView } from "@/lib/standup/view-queries";
 import { WorkloadView } from "@/components/workload/workload-view";
+import { getWorkspaceSettings } from "@/lib/workspace/queries";
+import { agendaToday } from "@/lib/agenda/queries";
 import type {
   WorkloadPerson,
   WorkloadTask,
@@ -20,12 +23,14 @@ const RISK_RANK: Record<string, number> = { low: 0, medium: 1, high: 2 };
 
 export default async function WorkloadPage() {
   const { user } = await requireRole("manager");
-  const [tasks, users, teamLoad, blockers, standupView] = await Promise.all([
+  const [tasks, users, teamLoad, blockers, standupView, queueStates, workspace] = await Promise.all([
     getOpenAssignedTasks(),
     listAssignableUsers(),
     getTeamLoad(),
     getOpenTaskBlockers(),
     getStandupView(),
+    getTaskQueueStates(),
+    getWorkspaceSettings(),
   ]);
 
   // Highest standup stuck-risk per person (name-keyed, like Overview's People-at-risk).
@@ -56,6 +61,7 @@ export default async function WorkloadPage() {
       dueDate: t.dueDate,
       priority: t.priority,
       status: t.status,
+      isNextUp: t.isNextUp,
       updatedAt: t.updatedAt,
       estimateHours: t.estimateHours,
       driveFileCount: t.driveFileCount,
@@ -72,10 +78,13 @@ export default async function WorkloadPage() {
   const people: WorkloadPerson[] = teamLoad
     .map((p) => {
       const risk = riskByName.get(p.name);
+      const queue = queueStates.find(queue => queue.userId === p.userId);
       return {
         userId: p.userId,
         userName: p.name,
-        tasks: tasksByUser.get(p.userId) ?? [],
+        queueRevision: queue?.revision ?? 0,
+        queueUpdatedBy: queue?.updatedByName ?? null,
+        tasks: (tasksByUser.get(p.userId) ?? []).sort((a, b) => Number(b.isNextUp) - Number(a.isNextUp)),
         weeklyHours: p.weeklyHours,
         estHours: p.estHours,
         open: p.open,
@@ -110,6 +119,7 @@ export default async function WorkloadPage() {
         </a>
       </div>
       <WorkloadView
+        todayIso={agendaToday(new Date(), workspace.timezone)}
         people={people}
         tasks={tasks as MyTaskRow[]}
         assignees={users.map((u) => ({ id: u.id, name: u.name }))}

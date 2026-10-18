@@ -2040,7 +2040,7 @@ export async function reviewPrintWirePayment(paymentId: string) {
 }
 
 /** Explicitly replace an untouched staged schedule with the reviewed invoice total. */
-export async function consolidatePrintInvoicePayment(paymentId: string, invoiceId: string, reviewedAmount: string, reviewedCurrency: string) {
+export async function consolidatePrintInvoicePayment(paymentId: string, invoiceId: string, reviewedAmount: string, reviewedCurrency: string): Promise<{ error?: string }> {
   const { user } = await requireRole("manager");
   const ctx = await paymentContext(paymentId);
   if (!ctx) return { error: "Payment not found." };

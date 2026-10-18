@@ -58,6 +58,10 @@ function clientActionImports() {
 }
 
 describe("client action interaction policy", () => {
+  it("keeps shared Next up selection and ordering optimistic", () => {
+    expect(interactionModeFor("setTaskNextUp")).toBe("optimistic");
+    expect(interactionModeFor("reorderUserTasks")).toBe("optimistic");
+  });
   it('keeps support submissions and attachments progress-based', () => {
     expect(interactionModeFor("downloadSupportAttachment")).toBe("progress");
     expect(interactionModeFor("updateSupportEmailPreference")).toBe("optimistic");

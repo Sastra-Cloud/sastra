@@ -69,7 +69,7 @@ export function splitTasksByAttention<
   return { attention, later };
 }
 
-export function selectPersonalWork<T extends Pick<MyTaskRow, "dueDate" | "status"> & PaymentTaskTiming>(tasks: T[], todayIso: string, timeZone = "UTC") {
+export function selectPersonalWork<T extends Pick<MyTaskRow, "id" | "dueDate" | "status"> & PaymentTaskTiming & { isNextUp?: boolean; rank?: number; blockedByTitle?: string | null }>(tasks: T[], todayIso: string, timeZone = "UTC", nextUpLimit = Infinity) {
   const open = tasks.filter(task => task.status !== "done");
   const dueToday: T[] = [];
   const waiting: T[] = [];
@@ -88,10 +88,20 @@ export function selectPersonalWork<T extends Pick<MyTaskRow, "dueDate" | "status
     );
   waiting.sort(byFollowUpDate);
   followUpDue.sort(byFollowUpDate);
-  const working = ordinary.filter(task => task.status === "in_progress" || task.status === "review");
-  const unstarted = ordinary.filter(task => task.status !== "in_progress" && task.status !== "review");
+  const waitingSet = new Set(waiting.map(task => task.id));
+  const selected = open.filter(task => task.isNextUp && !waitingSet.has(task.id));
+  const blockedNextUp = selected.filter(task => Boolean(task.blockedByTitle));
+  const allNextUp = selected.filter(task => !task.blockedByTitle).sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
+  const nextUp = allNextUp.slice(0, nextUpLimit);
+  const displayedNext = new Set([...nextUp, ...blockedNextUp].map(task => task.id));
+  const selectedIds = new Set(selected.map(task => task.id));
+  const remainingDueToday = dueToday.filter(task => !displayedNext.has(task.id));
+  const remainingOrdinary = ordinary.filter(task => !selectedIds.has(task.id));
+  const working = remainingOrdinary.filter(task => task.status === "in_progress" || task.status === "review");
+  const unstarted = remainingOrdinary.filter(task => task.status !== "in_progress" && task.status !== "review");
   const { attention, later } = splitTasksByAttention(unstarted, todayIso);
-  // Today's deadlines have their own uncapped section. Keep the existing order
-  // within every group, and never duplicate a task between sections.
-  return { dueToday, working, waiting, followUpDue, attention: [...followUpDue, ...attention], later, ordered: [...dueToday, ...working, ...followUpDue, ...attention] };
+  // Today's full deadline set stays represented across Next up and Due today.
+  // Preserve order within the other groups and never duplicate their task IDs.
+  const remainingFollowUps = followUpDue.filter(task => !selectedIds.has(task.id));
+  return { dueToday, remainingDueToday, nextUp, nextUpCount: allNextUp.length, selectedCount: open.filter(task => task.isNextUp).length, blockedNextUp, working, waiting, followUpDue: remainingFollowUps, attention: [...remainingFollowUps, ...attention], later, ordered: [...nextUp, ...remainingDueToday, ...working, ...remainingFollowUps, ...attention] };
 }

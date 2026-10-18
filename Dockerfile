@@ -1,11 +1,12 @@
 # syntax=docker/dockerfile:1
 
 # ── Base ──────────────────────────────────────────────────────────────────────
-FROM node:22-slim AS base
+FROM node:26-slim AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN corepack enable
+# Node 25+ no longer bundles Corepack; install the pinned package manager.
+RUN npm install --global pnpm@10.32.1
 WORKDIR /app
 
 # ── Dependencies (all, for build) ─────────────────────────────────────────────

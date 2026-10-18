@@ -4,7 +4,7 @@ import { showTaskCompleted } from "@/lib/tasks/completion-feedback";
 import { SectionDisclosure } from "@/components/section-disclosure";
 import { confirmDialog } from "@/lib/dialog-requests";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -34,6 +34,7 @@ import {
   moveTaskToProject,
   updateTaskFields,
   updateTaskStatus,
+  setTaskNextUp,
 } from "@/lib/tasks/actions";
 import {
   addTaskComment,
@@ -76,6 +77,7 @@ import { cn } from "@/lib/utils";
 import { requestNotificationRefresh } from "@/lib/notifications/client-events";
 import { undoAutoCreatedEmailTask } from "@/lib/email/task-suggestion-actions";
 import { isSourceControlledTask, taskSourceLink } from "@/lib/tasks/task-source";
+import { usePropState } from "@/hooks/use-prop-state";
 
 type Option = { id: string; name: string };
 type Priority = "low" | "medium" | "high" | "urgent";
@@ -145,6 +147,34 @@ function TaskDetailDialogContent({
   const [assignedTo, setAssignedTo] = useState(task.assignedTo ?? "");
   const [projectId, setProjectId] = useState(task.projectId ?? "");
   const [isMilestone, setIsMilestone] = useState(task.isMilestone);
+  const [isNextUp, setIsNextUp] = usePropState(task.isNextUp);
+  const queueInFlight = useRef(false);
+  const [queuePending, setQueuePending] = useState(false);
+
+  function toggleNextUp() {
+    if (queueInFlight.current || !canManage) return;
+    queueInFlight.current = true;
+    setQueuePending(true);
+    const previous = isNextUp;
+    const next = !previous;
+    setIsNextUp(next);
+    const rollback = onOptimisticUpdate?.({ isNextUp: next, rank: Number.MAX_SAFE_INTEGER });
+    void (async () => {
+      try {
+        const result = await setTaskNextUp(task.id, next);
+        onOptimisticUpdate?.({ isNextUp: result.isNextUp, rank: result.rank });
+        router.refresh();
+      } catch (error) {
+        setIsNextUp(previous);
+        rollback?.();
+        toast.error(saveErrorMessage(error));
+        router.refresh();
+      } finally {
+        queueInFlight.current = false;
+        setQueuePending(false);
+      }
+    })();
+  }
 
   useEffect(() => {
     listTaskComments(task.id)
@@ -169,6 +199,7 @@ function TaskDetailDialogContent({
   const sourceLink = taskSourceLink(t, projectSlug);
 
   function save(statusOverride?: string) {
+    if (queueInFlight.current) return;
     if (isApprovalTask) {
       if (!canManage) return;
       if (dueDate === (t.dueDate ?? "")) {
@@ -209,6 +240,7 @@ function TaskDetailDialogContent({
       priority,
       isMilestone,
       status: nextStatus,
+      isNextUp: nextStatus === "done" || (assignedTo || null) !== t.assignedTo ? false : isNextUp,
       assignedTo: assignedTo || null,
       assigneeName: assignees.find((item) => item.id === assignedTo)?.name ?? null,
       projectId: projectId || null,
@@ -737,7 +769,7 @@ function TaskDetailDialogContent({
                       id="d-assignee"
                       className={selectClass}
                       value={assignedTo}
-                      disabled={isApprovalTask || isSharedInvoiceTask || (!canManage && Boolean(t.royaltyPaymentId || t.licenseFeePaymentId))}
+                      disabled={isApprovalTask || isSharedInvoiceTask || !canManage}
                       onChange={(e) => setAssignedTo(e.target.value)}
                     >
                       <option value="">Unassigned</option>
@@ -761,6 +793,17 @@ function TaskDetailDialogContent({
                   </div>
                 </div>
 
+                {canManage && t.status !== "done" ? (
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border px-3 py-2">
+                    <div>
+                      <p className="text-sm font-medium">{isNextUp ? "In Next up" : "Standard queue"}</p>
+                      <p className="text-xs text-muted-foreground">{assignedTo !== (t.assignedTo ?? "") ? "Save the new assignee before changing placement." : "Shared manager order, independent of the due date."}</p>
+                    </div>
+                    <Button type="button" variant="outline" size="sm" className="min-h-11" disabled={queuePending || !t.assignedTo || assignedTo !== (t.assignedTo ?? "")} onClick={toggleNextUp}>
+                      {queuePending ? "Saving…" : isNextUp ? "Remove from Next up" : "Add to Next up"}
+                    </Button>
+                  </div>
+                ) : null}
                 <SectionDisclosure title="Task details" description="Priority and milestone">
                   <div className="grid gap-2">
                     <Label htmlFor="d-priority">Priority</Label>
@@ -943,12 +986,12 @@ function TaskDetailDialogContent({
               <Button
                 variant={status === "done" && !completionRequested ? "default" : "outline"}
                 onClick={() => save()}
-                disabled={saving}
+                disabled={saving || queuePending}
               >
                 {saving ? "Saving…" : "Save changes"}
               </Button>
               {!isControlledTask && (status !== "done" || completionRequested) ? (
-                <Button onClick={() => save("done")} disabled={saving}>
+                <Button onClick={() => save("done")} disabled={saving || queuePending}>
                   <CheckCircle2 className="size-4" />
                   {completionRequested ? "Marking done…" : "Mark task done"}
                 </Button>

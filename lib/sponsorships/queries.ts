@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq, getTableColumns, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, getTableColumns, inArray, isNull, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth/guards";
 import { requireWorkspaceModule } from "@/lib/workspace/module-guard";
@@ -91,5 +91,5 @@ export async function listSponsorshipBooks() {
   await requireRole("manager");
   await requireWorkspaceModule("sponsorships");
   return db.select({ id: projects.id, title: projects.title, slug: projects.slug })
-    .from(projects).where(eq(projects.kind, "book")).orderBy(asc(projects.title));
+    .from(projects).where(or(eq(projects.kind, "book"), isNull(projects.kind))).orderBy(asc(projects.title));
 }

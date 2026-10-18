@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getTableName } from "drizzle-orm";
+import { PgDialect } from "drizzle-orm/pg-core";
 
 const mocks = vi.hoisted(() => ({ auth: vi.fn(), module: vi.fn(), select: vi.fn(), insert: vi.fn(), update: vi.fn(), remove: vi.fn(), pdf: vi.fn(), put: vi.fn(), nextNumber: vi.fn(), revalidate: vi.fn() }));
 vi.mock("@/lib/auth/guards", () => ({ requireRole: mocks.auth }));
@@ -12,7 +13,7 @@ vi.mock("@/lib/db", () => {
   const db = { select: mocks.select, insert: mocks.insert, update: mocks.update, delete: mocks.remove, transaction: (work: (tx: unknown) => unknown) => work(db) };
   return { db };
 });
-import { generateSponsorshipInvoice, recordSponsorshipFundUse, recordSponsorshipReceipt, reverseSponsorshipReceipt, voidSponsorshipInvoice } from "./actions";
+import { generateSponsorshipInvoice, recordSponsorshipFundUse, recordSponsorshipReceipt, reverseSponsorshipReceipt, updateSponsorship, voidSponsorshipInvoice } from "./actions";
 
 const id = "00000000-0000-4000-8000-000000000001";
 const invoiceId = "00000000-0000-4000-8000-000000000002";
@@ -27,10 +28,11 @@ let selections: unknown[][];
 let writes: Array<{ table: string; value: Record<string, unknown> | Array<Record<string, unknown>> }>;
 function query(rows: unknown[]) {
   const result = {
-    from: () => result, where: () => result, innerJoin: () => result, orderBy: () => result,
+    from: () => result, where: vi.fn(), innerJoin: () => result, orderBy: () => result,
     for: vi.fn(() => result), limit: () => result,
     then: (resolve: (rows: unknown[]) => unknown, reject: (error: unknown) => unknown) => Promise.resolve(rows).then(resolve, reject),
   };
+  result.where.mockReturnValue(result);
   return result;
 }
 beforeEach(() => {
@@ -46,7 +48,35 @@ beforeEach(() => {
     writes.push({ table: getTableName(table), value });
     return { where: () => query([]) };
   } }));
+  mocks.remove.mockImplementation(() => ({ where: () => query([]) }));
   mocks.pdf.mockResolvedValue(Buffer.from("%PDF-test")); mocks.put.mockResolvedValue(undefined); mocks.nextNumber.mockResolvedValue("00001");
+});
+
+describe("sponsorship book validation", () => {
+  const input = { title: "Book sponsorship", partnerId: null, recipientName: "Partner", recipientEmail: "",
+    recipientAddress: "", currency: "USD", dueDate: "", notes: "",
+    lines: [{ projectId: bookId, description: "Book sponsorship", quantity: 1, unitPrice: "2.00" }] };
+
+  it("allows saving an eligible book and includes untyped projects in the eligibility query", async () => {
+    const eligibleBooks = query([{ id: bookId }]);
+    mocks.select.mockImplementationOnce(() => query([{ ...record, status: "draft" }]))
+      .mockImplementationOnce(() => eligibleBooks);
+
+    expect(await updateSponsorship(id, 1, input)).toEqual({ version: 2 });
+    const eligibility = new PgDialect().sqlToQuery(eligibleBooks.where.mock.calls[0][0]);
+    expect(eligibility.sql).toBe('("projects"."id" in ($1) and ("projects"."kind" = $2 or "projects"."kind" is null))');
+    expect(eligibility.params).toEqual([bookId, "book"]);
+    expect(writes).toContainEqual({ table: "sponsorship_lines", value: [expect.objectContaining({ projectId: bookId })] });
+    expect(mocks.revalidate).toHaveBeenCalledWith(`/sponsorships/${id}`);
+  });
+
+  it("rejects a missing or ineligible project before changing a draft", async () => {
+    selections.push([{ ...record, status: "draft" }], []);
+    expect(await updateSponsorship(id, 1, input)).toEqual({ error: "Select an existing book for every line." });
+    expect(writes).toEqual([]);
+    expect(mocks.remove).not.toHaveBeenCalled();
+    expect(mocks.revalidate).not.toHaveBeenCalled();
+  });
 });
 
 describe("sponsorship funding boundaries", () => {

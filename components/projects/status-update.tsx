@@ -424,6 +424,7 @@ export function ProjectStatusUpdate({
                         </div>
                         {isManager && recommendation.kind === "create_task" ? (
                           <CreateTaskDialog
+                            canManage={isManager}
                             projectId={projectId}
                             assignees={members.map((member) => ({
                               id: member.id,

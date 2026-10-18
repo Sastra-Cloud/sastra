@@ -15,6 +15,21 @@ function task(id: string, dueDate: string | null): MyTaskRow {
 const today = "2026-10-06";
 
 describe("Home task preview", () => {
+  it("reserves the selected undated order ahead of a long deadline list", () => {
+    const rows = [
+      { ...task("chosen-undated-task", null), isNextUp: true, rank: 0 },
+      { ...task("chosen-today-task", today), isNextUp: true, rank: 1 },
+      ...Array.from({ length: 12 }, (_, index) => task(`deadline-task-${index}`, today)),
+    ];
+    const html = renderToStaticMarkup(<MyTasksList tasks={rows} homePreview todayIso={today} />);
+    expect(html.indexOf("chosen-undated-task")).toBeLessThan(html.indexOf("deadline-task-0"));
+    expect(html).toContain("No due date");
+    expect(html).toContain("13 due today");
+    expect(html).toContain("1 of today&#x27;s tasks shown in Next up above");
+    expect(html).toContain("deadline-task-11");
+    expect(html).toContain('href="/tasks?view=focus#next-up"');
+    expect(html.match(/>chosen-today-task</g)).toHaveLength(1);
+  });
   it("shows every task due today above a separate three-task backlog preview", () => {
     const overdue = Array.from({ length: 8 }, (_, i) => task(`overdue-task-${i}`, "2026-10-01"));
     const dueToday = Array.from({ length: 6 }, (_, i) => task(`today-task-${i}`, today));

@@ -2098,7 +2098,7 @@
 
 ## `lib/db/schema/tasks.ts`
 
-- taskComments, taskDependencies, taskDriveFiles, tasks
+- taskComments, taskDependencies, taskDriveFiles, taskQueues, tasks
 
 ## `lib/db/schema/templates.ts`
 
@@ -3114,7 +3114,7 @@
 
 ## `lib/tasks/actions.ts`
 
-- TaskFormState, assignTask, createTask, deleteTask, moveTaskToProject, reorderUserTasks, setTaskDependencies, setTaskRank, updateTaskFields, updateTaskStatus
+- TaskFormState, assignTask, createTask, deleteTask, moveTaskToProject, reorderUserTasks, setTaskDependencies, setTaskNextUp, updateTaskFields, updateTaskStatus
 
 ## `lib/tasks/attention.ts`
 
@@ -3158,7 +3158,15 @@
 
 ## `lib/tasks/queries.ts`
 
-- DependencyEdge, MyTaskRow, MyWorkTaskRow, OpenTaskBlocker, PipelineData, RecurringTaskRow, TaskComment, TaskRow, TeamLoadPerson, WeeklyCount, getMyTasks, getMyWorkTasks, getOpenAssignedTasks, getOpenTaskBlockers, getProjectDependencyEdges, getProjectPipeline, getProjectTasks, getStandaloneTasks, getTaskComments, getTeamLoad, listProjectMilestones, listRecurringTasks, weeklyTaskCompletions
+- DependencyEdge, MyTaskRow, MyWorkTaskRow, OpenTaskBlocker, PipelineData, RecurringTaskRow, TaskComment, TaskRow, TeamLoadPerson, WeeklyCount, getMyTasks, getMyWorkTasks, getOpenAssignedTasks, getOpenTaskBlockers, getProjectDependencyEdges, getProjectPipeline, getProjectTasks, getStandaloneTasks, getTaskComments, getTaskQueueStates, getTeamLoad, listProjectMilestones, listRecurringTasks, weeklyTaskCompletions
+
+## `lib/tasks/queue-service.ts`
+
+- TaskTransaction, lockTaskQueues, nextTaskRank, touchTaskQueue
+
+## `lib/tasks/queue.ts`
+
+- QUEUE_CHANGED_MESSAGE, assertCompleteTaskQueue, assertQueueRevision
 
 ## `lib/tasks/recurring-actions.ts`
 

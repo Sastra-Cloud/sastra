@@ -28,6 +28,7 @@ export async function checkMailboxLogin(config: Pick<MailboxConfig, "mailbox" | 
   try {
     await imap.connect();
     const status = await imap.status("INBOX", { uidNext: true, uidValidity: true });
+    if (!status) throw new Error("IMAP did not return the inbox status.");
     uidValidity = String(status.uidValidity ?? "0");
     lastUid = Math.max(0, Number(status.uidNext ?? 1) - 1);
     await imap.logout();

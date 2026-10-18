@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, isNotNull, or } from "drizzle-orm";
+import { and, eq, isNotNull, ne, or } from "drizzle-orm";
 import { z } from "zod";
 
 import { requireRole, requireUser } from "@/lib/auth/guards";
@@ -14,7 +14,10 @@ import {
   taskDependencies,
   taskDriveFiles,
   tasks,
+  user as users,
 } from "@/lib/db/schema";
+import { assertCompleteTaskQueue, assertQueueRevision } from "./queue";
+import { lockTaskQueues, nextTaskRank, touchTaskQueue } from "./queue-service";
 import { advanceChapterAfterDone, type TaskHandoff } from "@/lib/projects/pipeline";
 import { clearOverdueNotifications } from "@/lib/notifications";
 import { logActivity } from "@/lib/activity/log";
@@ -104,6 +107,7 @@ const createSchema = z.object({
   priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
   status: z.enum(["todo", "in_progress", "review", "done"]).default("todo"),
   isMilestone: z.boolean().optional(),
+  isNextUp: z.boolean().default(false),
   estimateHours: z.coerce.number().min(0).max(9999).optional(),
   driveFolderId: z.string().max(200).nullable().optional(),
   driveFolderName: z.string().max(500).nullable().optional(),
@@ -156,6 +160,7 @@ export async function createTask(
     priority: (formData.get("priority") as string) || undefined,
     status: (formData.get("status") as string) || undefined,
     isMilestone: formData.get("isMilestone") === "on",
+    isNextUp: formData.get("isNextUp") === "true",
     estimateHours: (formData.get("estimateHours") as string) || undefined,
     driveFolderId: (formData.get("driveFolderId") as string) || undefined,
     driveFolderName: (formData.get("driveFolderName") as string) || undefined,
@@ -167,6 +172,13 @@ export async function createTask(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
   const d = parsed.data;
+  if (d.isNextUp || (d.assignedTo && d.assignedTo !== user.id)) await requireRole("manager");
+  if (d.isNextUp && !d.assignedTo) return { error: "Choose an assignee for Next up." };
+  if (d.isNextUp && d.status === "done") return { error: "Next up is for unfinished work." };
+  if (d.assignedTo) {
+    const [assignee] = await db.select({ active: users.isActive, bot: users.isBot }).from(users).where(eq(users.id, d.assignedTo));
+    if (!assignee?.active || assignee.bot) return { error: "Choose an active teammate." };
+  }
 
   const id = await insertTaskRow(
     {
@@ -180,6 +192,7 @@ export async function createTask(
       priority: d.priority,
       status: d.status,
       isMilestone: d.isMilestone ?? false,
+      isNextUp: d.isNextUp,
       estimateHours: d.estimateHours != null ? String(d.estimateHours) : null,
       driveFolderId: d.driveFolderId ?? null,
       driveFolderName: d.driveFolderName ?? null,
@@ -270,6 +283,7 @@ export async function updateTaskStatus(taskId: string, status: string) {
     .update(tasks)
     .set({
       status: s,
+      ...(s === "done" ? { isNextUp: false } : {}),
       completedAt: s === "done" ? new Date() : null,
       updatedAt: new Date(),
     })
@@ -314,7 +328,7 @@ export async function updateTaskStatus(taskId: string, status: string) {
 }
 
 export async function assignTask(taskId: string, userId: string | null) {
-  const { user } = await requireUser();
+  const { user } = await requireRole("manager");
   await assertOrdinaryTask(taskId);
   const payment = await linkedOutgoingPayment(taskId);
   if (payment.royaltyId || payment.licenseId) await requireRole("manager");
@@ -324,21 +338,37 @@ export async function assignTask(taskId: string, userId: string | null) {
     .where(eq(tasks.id, taskId))
     .limit(1);
   const row = await db.transaction(async (tx) => {
+    await lockTaskQueues(tx, [before?.assignedTo ?? null, userId]);
+    const [current] = await tx.select({ assignedTo: tasks.assignedTo }).from(tasks).where(eq(tasks.id, taskId)).for("update");
+    if (!current || current.assignedTo !== before?.assignedTo) throw new Error("This assignment changed. Refresh and try again.");
+    if (userId) {
+      const [assignee] = await tx.select({ active: users.isActive, bot: users.isBot }).from(users).where(eq(users.id, userId));
+      if (!assignee?.active || assignee.bot) throw new Error("Choose an active teammate.");
+    }
+    const rank = await nextTaskRank(tx, userId);
     const [updated] = await tx.update(tasks)
-      .set({ assignedTo: userId, updatedAt: new Date() })
+      .set({ assignedTo: userId, ...(before?.assignedTo !== userId ? { rank, isNextUp: false } : {}), updatedAt: new Date() })
       .where(eq(tasks.id, taskId))
       .returning({ projectId: tasks.projectId });
     if (payment.royaltyId) await tx.update(royaltyPayments)
       .set({ assigneeId: userId }).where(eq(royaltyPayments.id, payment.royaltyId));
     if (payment.licenseId) await tx.update(licenseFeePayments)
       .set({ assigneeId: userId }).where(eq(licenseFeePayments.id, payment.licenseId));
-    return updated;
+    const revisions: Record<string, number> = {};
+    if (before?.assignedTo !== userId) {
+      const source = await touchTaskQueue(tx, before?.assignedTo ?? null, user.id);
+      const target = await touchTaskQueue(tx, userId, user.id);
+      if (source) revisions[source.userId] = source.revision;
+      if (target) revisions[target.userId] = target.revision;
+    }
+    return { ...updated, revisions };
   });
   if (before && before.assignedTo !== userId) {
     await clearTaskDueDateNotifications([taskId]);
   }
   await notifyAssignment(taskId, userId, user.id);
   await revalidateForTask(row?.projectId ?? null);
+  return row.revisions;
 }
 
 const updateFieldsSchema = z.object({
@@ -366,6 +396,17 @@ export async function updateTaskFields(
     .limit(1);
   if (!before) throw new Error("Task not found.");
   const row = await db.transaction(async (tx) => {
+    const assignmentChanged = f.assignedTo !== undefined && f.assignedTo !== before.assignedTo;
+    if (assignmentChanged) {
+      await requireRole("manager");
+      await lockTaskQueues(tx, [before.assignedTo, f.assignedTo ?? null]);
+      const [current] = await tx.select({ assignedTo: tasks.assignedTo }).from(tasks).where(eq(tasks.id, taskId)).for("update");
+      if (!current || current.assignedTo !== before.assignedTo) throw new Error("This assignment changed. Refresh and try again.");
+      if (f.assignedTo) {
+        const [assignee] = await tx.select({ active: users.isActive, bot: users.isBot }).from(users).where(eq(users.id, f.assignedTo));
+        if (!assignee?.active || assignee.bot) throw new Error("Choose an active teammate.");
+      }
+    }
     const [updated] = await tx.update(tasks)
     .set({
       ...(f.title !== undefined ? { title: f.title } : {}),
@@ -373,6 +414,7 @@ export async function updateTaskFields(
       ...(f.dueDate !== undefined ? { dueDate: f.dueDate || null } : {}),
       ...(f.dueDate !== undefined ? { dueDateIsManual: true } : {}),
       ...(f.assignedTo !== undefined ? { assignedTo: f.assignedTo } : {}),
+      ...(assignmentChanged ? { rank: await nextTaskRank(tx, f.assignedTo ?? null), isNextUp: false } : {}),
       ...(f.priority !== undefined ? { priority: f.priority } : {}),
       ...(f.isMilestone !== undefined ? { isMilestone: f.isMilestone } : {}),
       updatedAt: new Date(),
@@ -388,6 +430,10 @@ export async function updateTaskFields(
       .set({ assigneeId: f.assignedTo }).where(eq(royaltyPayments.id, payment.royaltyId));
     if (payment?.licenseId) await tx.update(licenseFeePayments)
       .set({ assigneeId: f.assignedTo }).where(eq(licenseFeePayments.id, payment.licenseId));
+    if (assignmentChanged) {
+      await touchTaskQueue(tx, before.assignedTo, user.id);
+      await touchTaskQueue(tx, f.assignedTo ?? null, user.id);
+    }
     return updated;
   });
 
@@ -509,31 +555,49 @@ export async function deleteTask(taskId: string) {
 }
 
 /** Set a task's importance rank (PM drag-to-prioritize a person's queue). */
-export async function setTaskRank(taskId: string, rank: number) {
-  await requireUser();
-  const [row] = await db
-    .update(tasks)
-    .set({ rank, updatedAt: new Date() })
-    .where(eq(tasks.id, taskId))
-    .returning({ projectId: tasks.projectId });
-  await revalidateForTask(row?.projectId ?? null);
-}
-
-/**
- * Reorder a person's queue: assign rank = position for each id in order.
- * This is the order they then see in their My-Tasks "Do in this order" list.
- */
-export async function reorderUserTasks(orderedTaskIds: string[]) {
-  await requireRole("manager");
-  await db.transaction(async (tx) => {
+export async function reorderUserTasks(assigneeId: string, orderedTaskIds: string[], expectedRevision: number) {
+  const { user } = await requireRole("manager");
+  z.object({ assigneeId: z.string().min(1), ids: z.array(z.string().uuid()).max(10000), revision: z.number().int().nonnegative() })
+    .parse({ assigneeId, ids: orderedTaskIds, revision: expectedRevision });
+  const queue = await db.transaction(async (tx) => {
+    const queues = await lockTaskQueues(tx, [assigneeId]);
+    assertQueueRevision(queues.get(assigneeId)!.revision, expectedRevision);
+    const current = await tx.select({ id: tasks.id }).from(tasks)
+      .where(and(eq(tasks.assignedTo, assigneeId), ne(tasks.status, "done"))).for("update");
+    assertCompleteTaskQueue(current.map(task => task.id), orderedTaskIds);
     for (let i = 0; i < orderedTaskIds.length; i++) {
       await tx
         .update(tasks)
-        .set({ rank: i, updatedAt: new Date() })
+        .set({ rank: i })
         .where(eq(tasks.id, orderedTaskIds[i]));
     }
+    return touchTaskQueue(tx, assigneeId, user.id);
   });
   revalidatePath("/workload");
   revalidatePath("/tasks");
   revalidatePath("/dashboard");
+  return queue;
+}
+
+/** Selection changes only queue intent, never status, deadlines, or task activity. */
+export async function setTaskNextUp(taskId: string, isNextUp: boolean, expectedRevision?: number) {
+  const { user } = await requireRole("manager");
+  z.object({ taskId: z.string().uuid(), isNextUp: z.boolean(), expectedRevision: z.number().int().nonnegative().optional() })
+    .parse({ taskId, isNextUp, expectedRevision });
+  const result = await db.transaction(async (tx) => {
+    const [before] = await tx.select({ assignedTo: tasks.assignedTo }).from(tasks).where(eq(tasks.id, taskId));
+    if (!before?.assignedTo) throw new Error("Assign this task before adding it to Next up.");
+    const queues = await lockTaskQueues(tx, [before.assignedTo]);
+    assertQueueRevision(queues.get(before.assignedTo)!.revision, expectedRevision);
+    const [task] = await tx.select().from(tasks).where(eq(tasks.id, taskId)).for("update");
+    if (!task || task.assignedTo !== before.assignedTo || task.status === "done") throw new Error("This assignment changed. Refresh and try again.");
+    const rank = isNextUp !== task.isNextUp ? await nextTaskRank(tx, task.assignedTo) : task.rank;
+    await tx.update(tasks).set({ isNextUp, rank }).where(eq(tasks.id, taskId));
+    const queue = await touchTaskQueue(tx, task.assignedTo, user.id);
+    return { isNextUp, rank, queue };
+  });
+  revalidatePath("/workload");
+  revalidatePath("/tasks");
+  revalidatePath("/dashboard");
+  return result;
 }
