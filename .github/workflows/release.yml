@@ -18,6 +18,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check the release version and installation bundle
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          node --input-type=module <<'JS'
+          import assert from "node:assert/strict";
+          import { readFileSync } from "node:fs";
+          const version = process.env.RELEASE_TAG.replace(/^v/, "");
+          assert.equal(JSON.parse(readFileSync("package.json", "utf8")).version, version);
+          const env = readFileSync("deploy/compose/.env.example", "utf8");
+          assert.equal(/^SASTRA_TAG=(\S+)/m.exec(env)?.[1], version);
+          for (const file of ["docker-compose.yml", "docker-compose.neon.yml"]) {
+            const compose = readFileSync(`deploy/compose/${file}`, "utf8");
+            const pins = [...compose.matchAll(/SASTRA_TAG:-([^}]+)/g)];
+            assert.ok(pins.length > 0, `No application image pins found in ${file}`);
+            for (const pin of pins) assert.equal(pin[1], version, `Wrong image version in ${file}`);
+          }
+          JS
+
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
 
