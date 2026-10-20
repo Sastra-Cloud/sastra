@@ -21,6 +21,21 @@ structure, run `pnpm ai:map` and include the generated changes.
 Claude-specific path rules live in `.claude/rules/`. Codex should also consult
 the matching rule manually when touching those paths.
 
+# Test value and verification scope
+
+Read `.claude/rules/testing.md` before adding, changing, or pruning tests.
+Each new test must protect against a specific production failure whose
+consequence justifies its execution and maintenance. Reuse or update existing
+coverage first; do not add tests just because a file changed, another input is
+possible, or a coverage count can increase. Copy, styling, documentation, and
+mechanically equivalent changes do not require new tests on their own.
+
+Keep representative coverage for consequential behavior, including permissions,
+financial correctness, data integrity, and failure recovery. Run focused checks
+during development and retain the existing full checks required before a PR.
+This policy governs the value of new coverage; it does not bypass CI or the
+mutation-feedback verification requirements below.
+
 # Help documentation upkeep
 
 `content/help/*.md` is the single source of truth for user-facing help. It powers
@@ -142,9 +157,10 @@ through arbitrary `agent-browser` commands.
 
 ## Authenticated page geometry
 
-The signed-in app has one canonical content canvas. `AppShell` owns the centered
-`max-w-[88rem]` wrapper inside the responsive main padding; pages under
-`app/(app)` must not create a competing outer `mx-auto`/`max-w-*` shell.
+The signed-in app has one canonical content canvas. `AppShell` owns a fluid
+wrapper that fills the space inside the responsive main padding (no global
+maximum width); pages under `app/(app)` must not create a competing outer
+`mx-auto`/`max-w-*` shell.
 
 - Use `PageShell` for page-level vertical rhythm.
 - Use `ContentColumn` *inside* the page shell for deliberately narrow forms,
@@ -155,6 +171,18 @@ The signed-in app has one canonical content canvas. `AppShell` owns the centered
 - Keep the established navigation breakpoints: mobile below `lg`, compact rail
   at `lg`, expandable sidebar at `xl`. Use content-driven breakpoints for inner
   grids instead of changing the outer page width.
+- Wide screens should reveal more useful work, not larger UI. Dense data
+  surfaces (tables, boards, schedules, matrices) use the full canvas;
+  collections gain columns by usable container width; reading, writing, and
+  forms keep readable inner widths (prose about 65–75ch, forms about
+  32–48rem) and side rails stay bounded (about 22–28rem). Prefer CSS grid and
+  named container queries (`@container/name`, `@[76rem]/name:`) inside nested
+  layouts, because the sidebar changes the space available independent of the
+  viewport. Render a stateful form once and reposition it with CSS instead of
+  mounting breakpoint-specific copies. Do not put a container on `AppCanvas`
+  itself, and keep containers off wrappers around fixed-position overlays
+  (for example a drag overlay): some engines treat a query container as a
+  containing block for fixed descendants.
 - During responsive review, compare `[data-app-canvas]` against `/projects` at
   the same viewport and sidebar state. Check both collapsed and expanded sidebars
   and verify there is no document-level horizontal overflow.

@@ -55,16 +55,20 @@ export default async function AiSettingsPage() {
           AI usage
         </Button>
       </section>
-      {/* Sastra Cloud runs AI on the plan's credits only; the key card is a self-hosted feature. */}
-      {isHostedInstance() ? null : <AiKeyCard status={keyStatus} />}
-      {usageSettings ? (
-        <TypesafeToggle
-          defaultEnabled={usageSettings.typesafeEnabled}
-          configured={typesafeConfigured()}
-        />
-      ) : null}
-      <AssistantLearningManager report={learningReport} />
-      <EmailLearningManager lessons={emailLessons} />
+      <div className="grid items-start gap-5 @[64rem]/settings:grid-cols-2">
+        {/* Sastra Cloud runs AI on the plan's credits only; the key card is a self-hosted feature. */}
+        {isHostedInstance() ? null : <AiKeyCard status={keyStatus} />}
+        {usageSettings ? (
+          <TypesafeToggle
+            defaultEnabled={usageSettings.typesafeEnabled}
+            configured={typesafeConfigured()}
+          />
+        ) : null}
+      </div>
+      <div className="grid items-start gap-5 @[64rem]/settings:grid-cols-2">
+        <AssistantLearningManager report={learningReport} />
+        <EmailLearningManager lessons={emailLessons} />
+      </div>
       <EmailTaskLearningRules rules={emailTaskRules} workspace />
       <section aria-labelledby="model-routing-heading" className="pt-2">
         <details className="group overflow-hidden rounded-xl border bg-card">

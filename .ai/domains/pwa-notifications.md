@@ -18,6 +18,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/notifications/notifications-list.tsx`
 - `components/presence/presence-menu.tsx`
 - `components/presence/presence-provider.tsx`
+- `components/pwa/enable-push-flow.test.tsx`
 - `components/pwa/enable-push-flow.tsx`
 - `components/pwa/pull-to-refresh.tsx`
 - `components/pwa/push-nudge.tsx`
@@ -44,6 +45,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/presence/queries.ts`
 - `lib/presence/status.test.ts`
 - `lib/presence/status.ts`
+- `lib/push/client.test.ts`
 - `lib/push/client.ts`
 - `lib/push/keys.test.ts`
 - `lib/push/keys.ts`

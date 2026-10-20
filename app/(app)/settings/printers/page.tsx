@@ -45,7 +45,9 @@ export default async function PrintersSettingsPage() {
           </CardContent>
         </Card>
       ) : (
-        withHistory.map((p) => <PrinterCard key={p.contactId} p={p} />)
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,40rem),1fr))] items-start gap-4">
+          {withHistory.map((p) => <PrinterCard key={p.contactId} p={p} />)}
+        </div>
       )}
     </div>
   );

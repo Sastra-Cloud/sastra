@@ -20,7 +20,7 @@ export default async function SettingsLayout({
       </header>
       <div className="grid gap-4 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-8">
         <SettingsNav canManage={hasManagementAccess} isAdmin={isAdmin} />
-        <div className="min-w-0 max-w-4xl">{children}</div>
+        <div className="@container/settings min-w-0">{children}</div>
       </div>
     </PageShell>
   );

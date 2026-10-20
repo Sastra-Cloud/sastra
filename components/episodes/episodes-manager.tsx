@@ -566,9 +566,9 @@ export function EpisodesManager({
         </div>
       ) : null}
 
-      <Card>
+      <Card className="@container/episode-filters">
         <CardContent className="space-y-3 p-3">
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(180px,1.4fr)_repeat(5,minmax(120px,1fr))_auto]">
+          <div className="grid gap-2 @[30rem]/episode-filters:grid-cols-2 @[60rem]/episode-filters:grid-cols-[minmax(180px,1.4fr)_repeat(5,minmax(120px,1fr))_auto]">
             <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
@@ -1127,7 +1127,7 @@ function StageChecklist(props: RowSharedProps & { mobile?: boolean }) {
           {episode.externalUrl ? <a href={episode.externalUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">Published {props.workflow.projectKind === "video_series" ? "video" : "episode"} <ExternalLink className="size-3" /></a> : null}
         </div>
       </div>
-      <div className="grid gap-2 lg:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,22rem),1fr))] gap-2">
         {props.workflow.workflowStages.map((stage) => {
           if (!episode.videoRequired && (stage === "produce_video" || stage === "approve_video")) {
             return (

@@ -75,7 +75,8 @@ export function MissingDueDates({
   }
 
   return (
-    <ul className="divide-y rounded-xl border bg-card">
+    <div className="overflow-hidden rounded-xl border bg-card">
+    <ul className="-mb-px -mr-px grid grid-cols-[repeat(auto-fill,minmax(min(100%,34rem),1fr))]">
       {state.map((project) => {
         const pending = isPending(project.id);
         const chosen = dates[project.id] ?? "";
@@ -83,7 +84,7 @@ export function MissingDueDates({
           <li
             key={project.id}
             className={cn(
-              "flex flex-col gap-3 p-4 transition-opacity sm:flex-row sm:items-center sm:justify-between sm:gap-4",
+              "flex flex-col gap-3 border-b border-r p-4 transition-opacity sm:flex-row sm:items-center sm:justify-between sm:gap-4",
               pending && "opacity-60"
             )}
           >
@@ -144,5 +145,6 @@ export function MissingDueDates({
         );
       })}
     </ul>
+    </div>
   );
 }

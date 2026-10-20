@@ -235,3 +235,14 @@ Members can read projects and their team lists. Ask a manager to create projects
 Project headers keep status and deadline visible. On small screens, open **Project details** for secondary information. **Project settings** stays explicit; **Project actions** contains completion and document updates.
 
 Pipeline task cells show readable status labels. Use Tab to focus a task and Enter to open the shared task editor. Empty episode and video projects offer managers an add action; searches with no matches offer Clear filters.
+
+## On wide screens
+
+The **Projects** list shows more project cards in each row on a wide screen. The
+filters sit in one row when there is room, and open in the **Filters** panel on a
+narrow screen. The archive also uses more columns.
+
+On a project's **Overview**, the project brief, recent correspondence, and
+project analytics sit beside **Current work** on a wide screen. On a narrow
+screen they follow it. The **Stages and team** section keeps its team panel
+beside the stages when there is room.

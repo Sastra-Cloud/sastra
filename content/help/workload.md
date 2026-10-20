@@ -46,3 +46,9 @@ or make an old review look new.
 ## Time report
 
 **Export time report** downloads a `.xlsx` of tracked time across the team.
+
+## On wide screens
+
+Each person's workload card keeps the same size. A wide screen fits more cards in
+a row, so you can compare more people without scrolling. The order of people and
+the order of their tasks do not change.

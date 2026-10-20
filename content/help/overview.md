@@ -4,7 +4,7 @@ category: "Work"
 roles: [manager, admin]
 keywords: [team planning, manager attention, portfolio summary, trends and capacity, confirmation dialog, confirmation modal, cancel action, overview, portfolio, managers, rag, health, velocity, capacity, timeline, report, export, attention, project update, AI recommendation, follow up, automation, cron, wiki search index, due date, target completion date, projects without a due date, schedule dates, print funding, funding review, coordination pass]
 order: 42
-summary: "Review the complete manager attention queue and portfolio, then open Schedule, Workload, or expanded analytics."
+summary: "See the portfolio first, expand manager reviews and risk lists, then open Schedule, Workload, or analytics."
 ---
 
 **Team planning** opens the portfolio Overview. Its **Schedule** and **Workload**
@@ -13,15 +13,16 @@ these manager pages.
 
 ## What it shows
 
-- **Manager attention** is the complete list shared with Home's three-item
+- Expand **Manager attention** for the complete list shared with Home's three-item
   preview: suggested project follow-ups, email reviews, missing target dates,
   print funding review, and coordination decisions. Suggestions still require
   review before changing anything.
-- **Attention needed** shows current critical blockers, overdue projects, and
-  people flagged at risk by standup digests. Empty categories are omitted.
+- **Attention needed** keeps counts of critical blockers, overdue projects, and
+  people flagged at risk visible. Expand it for the full lists. Empty categories
+  are omitted.
 - The sortable **portfolio table** keeps health, progress, funding, blockers,
   dates, forecasts, and rights together. On phones it uses project cards.
-- **Coming due** lists money and rights deadlines.
+- Expand **Coming due** for money and rights deadlines.
 - Expand **Portfolio summary** for health and financial totals, **Timeline
   preview**, **Trends and capacity**, **Recent activity**, or **Automations** for
   reference detail. Use **Open schedule** and **Review team workload** for the
@@ -71,3 +72,11 @@ your browser’s control.
 Team planning groups **Overview**, **Schedule**, and **Workload**. Use its navigation to switch views. Team capacity remains inside Schedule. Existing bookmarks still work.
 
 Schedule reports how many projects have enough dates for assessment. Projects missing dates are listed as needing dates and are not counted as having achievable deadlines.
+
+## On wide screens
+
+The project table is the main surface and uses the full width. Reviews and
+attention lists start collapsed so a long queue does not push projects down the
+page. Their counts stay visible, and direct links open the relevant section.
+Expanded attention lists sit in a row when there is room and stack on a narrow
+screen. The project table scrolls on its own if it is too narrow.

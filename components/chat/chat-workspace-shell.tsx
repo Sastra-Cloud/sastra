@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { MessageSquareText } from "lucide-react";
 
@@ -12,6 +12,7 @@ import {
 } from "@/components/chat/chat-navigation-context";
 import { channelIdFromPathname } from "@/lib/chat/navigation";
 import { cn } from "@/lib/utils";
+import { useConversationViewport } from "@/hooks/use-conversation-viewport";
 
 export function ChatWorkspaceShell({
   sidebar,
@@ -32,30 +33,7 @@ export function ChatWorkspaceShell({
     sidebar.directMessages.length > 0 ||
     sidebar.channels.length > 0 ||
     sidebar.projects.length > 0;
-  const workspaceRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!activeChannelId) return;
-
-    const workspace = workspaceRef.current;
-    const viewport = window.visualViewport;
-    const updateViewportHeight = () => {
-      workspace?.style.setProperty(
-        "--chat-viewport-height",
-        `${Math.round(viewport?.height ?? window.innerHeight)}px`
-      );
-    };
-
-    updateViewportHeight();
-    viewport?.addEventListener("resize", updateViewportHeight);
-    window.addEventListener("resize", updateViewportHeight);
-
-    return () => {
-      viewport?.removeEventListener("resize", updateViewportHeight);
-      window.removeEventListener("resize", updateViewportHeight);
-      workspace?.style.removeProperty("--chat-viewport-height");
-    };
-  }, [activeChannelId]);
+  const workspaceRef = useConversationViewport<HTMLDivElement>(!!activeChannelId);
 
   return (
     <ChatNavigationProvider
@@ -64,11 +42,11 @@ export function ChatWorkspaceShell({
     >
       <div
         ref={workspaceRef}
-        data-chat-conversation={activeChannelId ? "" : undefined}
+        data-mobile-conversation={activeChannelId ? "" : undefined}
         className={cn(
           "grid gap-5 lg:grid-cols-[18rem_minmax(0,1fr)]",
           activeChannelId &&
-            "h-[calc(var(--chat-viewport-height,100dvh)-6.5rem-1px)] min-h-0 overflow-hidden md:h-[calc(var(--chat-viewport-height,100dvh)-7.5rem-1px)]"
+            "conversation-route h-[var(--conversation-height,calc(100dvh-7.5rem))] min-h-0 overflow-hidden"
         )}
       >
         <aside

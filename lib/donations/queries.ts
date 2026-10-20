@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import {
   budgetItems,
   donationAllocations,
+  donationCsvFormats,
   donationImports,
   donations,
   fundingReceipts,
@@ -15,10 +16,14 @@ import {
   projects,
   sharedMouGroups,
   sharedMouMemberships,
+  sponsorships,
+  sponsorshipReceipts,
+  sponsorshipReceiptAllocations,
   user,
 } from "@/lib/db/schema";
 import { getWorkspaceSettings } from "@/lib/workspace/queries";
 import { buildDonationSuggestion } from "./match";
+import { donationInvoiceCandidates } from "./invoice-match";
 import type {
   DonationAllocationDraft,
   DonationWorkspaceDTO,
@@ -45,7 +50,7 @@ export async function listDonationFundingReceiptLinks(
     })
     .from(donationAllocations)
     .where(eq(donationAllocations.projectId, projectId));
-  return rows;
+  return rows.filter((row): row is typeof row & { receiptId: string } => row.receiptId !== null);
 }
 
 /** Complete admin donation ledger plus deterministic match suggestions. */
@@ -61,6 +66,9 @@ export async function getDonationWorkspace(): Promise<DonationWorkspaceDTO> {
     receivableRows,
     sharedPaymentRows,
     sharedMemberRows,
+    invoiceRows,
+    sponsorshipReceivedRows,
+    formatRows,
   ] = await Promise.all([
     db
       .select({
@@ -93,14 +101,25 @@ export async function getDonationWorkspace(): Promise<DonationWorkspaceDTO> {
         mouPaymentId: donationAllocations.mouPaymentId,
         sharedMouGroupId: donationAllocations.sharedMouGroupId,
         note: donationAllocations.note,
+        invoiceId: donationAllocations.invoiceId,
+        invoiceNumber: invoices.invoiceNumber,
+        invoiceStatus: invoices.status,
+        sponsorshipId: invoices.sponsorshipId,
+        actualNetAmount: sponsorshipReceiptAllocations.actualNetAmount,
       })
       .from(donationAllocations)
       .innerJoin(projects, eq(projects.id, donationAllocations.projectId))
+      .leftJoin(invoices, eq(invoices.id, donationAllocations.invoiceId))
+      .leftJoin(sponsorshipReceiptAllocations, and(
+        eq(sponsorshipReceiptAllocations.receiptId, donationAllocations.sponsorshipReceiptId),
+        eq(sponsorshipReceiptAllocations.projectId, donationAllocations.projectId)
+      ))
       .orderBy(asc(projects.title)),
     db
       .select({
         id: donationImports.id,
         sourceFilename: donationImports.sourceFilename,
+        formatName: donationImports.formatName,
         currency: donationImports.currency,
         rowCount: donationImports.rowCount,
         successfulRows: donationImports.successfulRows,
@@ -183,6 +202,7 @@ export async function getDonationWorkspace(): Promise<DonationWorkspaceDTO> {
         groupName: sharedMouGroups.name,
         counterparty: sharedMouGroups.counterparty,
         amount: mouPayments.amount,
+        currency: mouPayments.currency,
       })
       .from(mouPayments)
       .innerJoin(
@@ -201,6 +221,32 @@ export async function getDonationWorkspace(): Promise<DonationWorkspaceDTO> {
       .from(sharedMouMemberships)
       .innerJoin(projects, eq(projects.id, sharedMouMemberships.projectId))
       .where(eq(sharedMouMemberships.active, true)),
+    db.select({
+      id: invoices.id, invoiceNumber: invoices.invoiceNumber, currency: invoices.currency,
+      recipientName: invoices.recipientName, status: invoices.status, amount: invoices.amount,
+      projectId: invoices.projectId, mouPaymentId: invoices.mouPaymentId,
+      sharedMouGroupId: invoices.sharedMouGroupId, sponsorshipId: invoices.sponsorshipId,
+      lineItems: invoices.lineItems, paidAt: mouPayments.paidAt, deductionBps: sponsorships.deductionBps,
+    }).from(invoices)
+      .leftJoin(mouPayments, eq(mouPayments.id, invoices.mouPaymentId))
+      .leftJoin(sponsorships, eq(sponsorships.id, invoices.sponsorshipId))
+      .where(eq(invoices.status, "sent")),
+    db.select({ invoiceId: sponsorshipReceipts.invoiceId, projectId: sponsorshipReceiptAllocations.projectId, amount: sponsorshipReceiptAllocations.amount })
+      .from(sponsorshipReceiptAllocations)
+      .innerJoin(sponsorshipReceipts, eq(sponsorshipReceipts.id, sponsorshipReceiptAllocations.receiptId))
+      .where(isNull(sponsorshipReceipts.reversedAt)),
+    db
+      .select({
+        id: donationCsvFormats.id,
+        name: donationCsvFormats.name,
+        mapping: donationCsvFormats.mapping,
+        createdAt: donationCsvFormats.createdAt,
+        lastUsedAt: donationCsvFormats.lastUsedAt,
+        createdByName: user.name,
+      })
+      .from(donationCsvFormats)
+      .leftJoin(user, eq(user.id, donationCsvFormats.createdBy))
+      .orderBy(asc(donationCsvFormats.name)),
   ]);
 
   const allocationsByDonation = new Map<string, DonationAllocationDraft[]>();
@@ -214,6 +260,11 @@ export async function getDonationWorkspace(): Promise<DonationWorkspaceDTO> {
       mouPaymentId: row.mouPaymentId,
       sharedMouGroupId: row.sharedMouGroupId,
       evidence: row.note ? [row.note] : [],
+      invoiceId: row.invoiceId,
+      invoiceNumber: row.invoiceNumber,
+      invoiceStatus: row.invoiceStatus,
+      sponsorshipId: row.sponsorshipId,
+      actualNetAmount: row.actualNetAmount,
     });
     allocationsByDonation.set(row.donationId, list);
   }
@@ -257,6 +308,7 @@ export async function getDonationWorkspace(): Promise<DonationWorkspaceDTO> {
     amountCents: cents(row.amount),
     counterparty: row.counterparty,
     invoiceNumber: row.invoiceNumber,
+    currency: row.currency,
   }));
   const sharedReceivables = sharedPaymentRows.map((row) => ({
     paymentId: row.paymentId,
@@ -265,7 +317,12 @@ export async function getDonationWorkspace(): Promise<DonationWorkspaceDTO> {
     counterparty: row.counterparty,
     amountCents: cents(row.amount),
     members: sharedMembersByGroup.get(row.groupId) ?? [],
+    currency: row.currency,
   }));
+  const invoiceCandidates = donationInvoiceCandidates(
+    invoiceRows.filter(row => !row.sponsorshipId || workspace.enabledModules.includes("sponsorships")),
+    new Map(projectRows.map(row => [row.id, row.title])), sharedMembersByGroup, sponsorshipReceivedRows
+  );
 
   let needsReviewCount = 0;
   let needsReviewCents = 0;
@@ -274,6 +331,7 @@ export async function getDonationWorkspace(): Promise<DonationWorkspaceDTO> {
   let postedCount = 0;
   let postedCents = 0;
 
+  const donationById = new Map(donationRows.map((row) => [row.id, row]));
   const rows = donationRows.map((row) => {
     const currentAllocations = allocationsByDonation.get(row.id) ?? [];
     const allocatedCents = currentAllocations.reduce(
@@ -311,16 +369,21 @@ export async function getDonationWorkspace(): Promise<DonationWorkspaceDTO> {
       priorAllocationCount:
         priorByDonorProject.get(`${row.donorKey}\u001f${project.id}`) ?? 0,
     }));
-    const suggestion = buildDonationSuggestion({
+    const suggestion = currentAllocations.length > 0 ? {
+      confidence: "none" as const, summary: "Project links already saved.",
+      evidence: [], allocations: [], candidateProjectIds: [],
+    } : buildDonationSuggestion({
       donation: {
         id: row.id,
         donor: row.donor,
         amountCents: donationCents,
+        currency: row.currency,
         notes: row.notes,
       },
       projects: matchProjects,
-      receivables,
-      sharedReceivables,
+      receivables: receivables.filter(payment => payment.currency === row.currency),
+      sharedReceivables: sharedReceivables.filter(payment => payment.currency === row.currency),
+      invoices: invoiceCandidates,
     });
     return {
       id: row.id,
@@ -334,6 +397,23 @@ export async function getDonationWorkspace(): Promise<DonationWorkspaceDTO> {
       notes: row.notes,
       reviewStatus: row.reviewStatus,
       duplicateOfId: row.duplicateOfId,
+      duplicateOf: (() => {
+        const match =
+          row.reviewStatus === "possible_duplicate" && row.duplicateOfId
+            ? donationById.get(row.duplicateOfId)
+            : undefined;
+        return match
+          ? {
+              donor: match.donor,
+              donationDate: match.donationDate,
+              amount: match.amount,
+              currency: match.currency,
+              sourceFilename: match.sourceFilename,
+              sourceRowNumber: match.sourceRowNumber,
+              reviewStatus: match.reviewStatus,
+            }
+          : null;
+      })(),
       duplicateResolutionNote: row.duplicateResolutionNote,
       sourceFilename: row.sourceFilename,
       allocations: currentAllocations,
@@ -348,6 +428,11 @@ export async function getDonationWorkspace(): Promise<DonationWorkspaceDTO> {
     imports: importRows.map((row) => ({
       ...row,
       createdAt: row.createdAt.toISOString(),
+    })),
+    formats: formatRows.map((row) => ({
+      ...row,
+      createdAt: row.createdAt.toISOString(),
+      lastUsedAt: row.lastUsedAt?.toISOString() ?? null,
     })),
     projects: projectRows.map((project) => ({
       id: project.id,

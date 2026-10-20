@@ -87,15 +87,15 @@ function TemplateRow({
     } : phase));
 
   return (
-    <Card>
+    <Card className="@container/template">
       <CardContent className="space-y-5 py-5">
-        <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
-          <div className="grid gap-3">
+        <div className="grid gap-4 @[36rem]/template:grid-cols-[1fr_auto] @[36rem]/template:items-end">
+          <div className="grid max-w-3xl gap-3">
             <div className="grid gap-1.5"><Label>Template name</Label><Input value={name} onChange={(event) => setName(event.target.value)} /></div>
             <div className="grid gap-1.5"><Label>Description</Label><Input value={description} onChange={(event) => setDescription(event.target.value)} /></div>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} />Available when creating projects</label>
           </div>
-          <div className="flex flex-wrap gap-2 sm:justify-end">
+          <div className="flex flex-wrap gap-2 @[36rem]/template:justify-end">
             {template.key ? (
               <Button
                 type="button"
@@ -122,7 +122,7 @@ function TemplateRow({
           <div className="mt-4 space-y-4">
             {phases.map((phase, phaseIndex) => (
               <section key={phaseIndex} className="space-y-3 rounded-xl border bg-background p-3">
-                <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem_7rem_auto] sm:items-end">
+                <div className="grid gap-3 @[40rem]/template:grid-cols-[minmax(0,1fr)_8rem_7rem_auto] @[40rem]/template:items-end">
                   <div className="grid gap-1"><Label>Phase</Label><Input value={phase.name} onChange={(event) => updatePhase(phaseIndex, { name: event.target.value })} /></div>
                   <div className="grid gap-1"><Label>Duration (days)</Label><Input type="number" min={0} value={phase.durationDays ?? ""} onChange={(event) => updatePhase(phaseIndex, { durationDays: event.target.value ? Number(event.target.value) : null })} /></div>
                   <div className="grid gap-1"><Label>Color</Label><Input type="color" value={phase.color ?? "#64748b"} onChange={(event) => updatePhase(phaseIndex, { color: event.target.value })} /></div>
@@ -130,7 +130,7 @@ function TemplateRow({
                 </div>
                 <div className="space-y-2">
                   {phase.tasks.map((task, taskIndex) => (
-                    <div key={taskIndex} className="grid gap-2 rounded-lg bg-muted/25 p-2 sm:grid-cols-[minmax(0,1fr)_10rem_6rem_auto_auto] sm:items-end">
+                    <div key={taskIndex} className="grid gap-2 rounded-lg bg-muted/25 p-2 @[44rem]/template:grid-cols-[minmax(0,1fr)_10rem_6rem_auto_auto] @[44rem]/template:items-end">
                       <div className="grid gap-1"><Label>Task</Label><Input value={task.name} onChange={(event) => updateTask(phaseIndex, taskIndex, { name: event.target.value })} /></div>
                       <div className="grid gap-1"><Label>Role</Label><select className={selectClass} value={task.roleId ?? ""} onChange={(event) => updateTask(phaseIndex, taskIndex, { roleId: event.target.value || null })}><option value="">No default</option>{roles.map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}</select></div>
                       <div className="grid gap-1"><Label>Offset</Label><Input type="number" value={task.offsetDays ?? ""} onChange={(event) => updateTask(phaseIndex, taskIndex, { offsetDays: event.target.value ? Number(event.target.value) : null })} /></div>

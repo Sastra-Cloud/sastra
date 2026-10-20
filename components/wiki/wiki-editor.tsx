@@ -615,7 +615,7 @@ export function WikiEditor({
             aria-label="Page title"
             maxLength={160}
             rows={2}
-            className="min-h-0 resize-none border-0 bg-transparent px-0 font-heading text-3xl font-semibold leading-tight tracking-tight shadow-none focus-visible:ring-0 md:text-3xl"
+            className="min-h-0 max-w-4xl resize-none border-0 bg-transparent px-0 font-heading text-3xl font-semibold leading-tight tracking-tight shadow-none focus-visible:ring-0 md:text-3xl"
           />
           <Textarea
             value={summary}
@@ -624,7 +624,7 @@ export function WikiEditor({
             placeholder="A short description that helps teammates know when to use this tutorial."
             maxLength={500}
             rows={2}
-            className="resize-none border-0 bg-transparent px-0 text-base text-muted-foreground shadow-none focus-visible:ring-0 md:text-base"
+            className="max-w-4xl resize-none border-0 bg-transparent px-0 text-base text-muted-foreground shadow-none focus-visible:ring-0 md:text-base"
           />
         </div>
 

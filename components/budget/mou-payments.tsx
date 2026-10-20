@@ -1,5 +1,6 @@
 "use client";
 
+import { invoiceEmailFallback, type DraftIdentity } from "@/lib/email/operational-drafts";
 import { confirmDialog } from "@/lib/dialog-requests";
 
 import { useState, useTransition } from "react";
@@ -240,6 +241,8 @@ function money(value: string | number, currency: string) {
 export function MouPayments({
   hasSharedSchedule = false,
   projectId,
+  projectTitle,
+  emailIdentity,
   printRunId = null,
   currency,
   canEdit,
@@ -254,6 +257,8 @@ export function MouPayments({
   initialEmailDrafts,
 }: {
   projectId: string;
+  projectTitle: string;
+  emailIdentity: DraftIdentity;
   printRunId?: string | null;
   currency: string;
   canEdit: boolean;
@@ -353,13 +358,15 @@ export function MouPayments({
     setInvoiceCc(
       saved ? saved.ccAddresses.join(", ") : defaultCcEmails.join(", ")
     );
-    setInvoiceSubject(
-      saved?.subject ?? `Invoice ${payment.invoice.invoiceNumber}`
-    );
-    setInvoiceBody(
-      saved?.body ??
-        `Hello,\n\nPlease find invoice ${payment.invoice.invoiceNumber} attached for your review.\n\nThank you.`
-    );
+    const initial = invoiceEmailFallback({
+      ...emailIdentity,
+      invoiceNumber: payment.invoice.invoiceNumber,
+      projectTitles: [projectTitle],
+      amountLabel: new Intl.NumberFormat(undefined, { style: "currency", currency: payment.currency, currencyDisplay: "code" }).format(Number(payment.amount)),
+      paymentTrigger: payment.trigger,
+    });
+    setInvoiceSubject(saved?.subject ?? initial.subject);
+    setInvoiceBody(saved?.body ?? initial.body);
     setInvoiceReviewed(false);
     setInvoiceDelivery(null);
     if (saved) toast.success("Saved draft restored");

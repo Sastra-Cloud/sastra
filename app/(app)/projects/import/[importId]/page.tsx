@@ -110,7 +110,7 @@ export default async function ImportReviewPage({
         <ChevronLeft className="size-4" />
         {target ? target.title : "All imports"}
       </Link>
-      <ContentColumn width="focused" className="space-y-5">
+      <ContentColumn width="reading" className="space-y-5">
         {target && queuedCount > 0 ? (
           <div className="flex items-start gap-2 rounded-lg border border-info/30 bg-info/5 px-3 py-2 text-sm">
             <Layers className="mt-0.5 size-4 shrink-0 text-info" />

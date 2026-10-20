@@ -16,6 +16,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ConversationHeader } from "@/components/chat/conversation-header";
+import { ConversationJump } from "@/components/chat/conversation-jump";
+import { useConversationViewport } from "@/hooks/use-conversation-viewport";
+import { useConversationScroll } from "@/hooks/use-conversation-scroll";
+import { sendOnConversationKey } from "@/lib/chat/composer-key";
 import { cn } from "@/lib/utils";
 
 export function PlannerWorkspace({
@@ -40,10 +45,13 @@ export function PlannerWorkspace({
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
+  const viewportRef = useConversationViewport<HTMLDivElement>(mode === "interview" || !!plan);
+  const { scrollRef, onScroll, canJump, scrollToLatest } = useConversationScroll(`${convo.length}:${busy}`, mode === "interview" || !!plan);
 
   async function send() {
     const text = input.trim();
     if (!text || busy || !aiReady) return;
+    scrollToLatest();
     setConvo((c) => [...c, { role: "user", content: text }]);
     setInput("");
     setBusy(true);
@@ -77,19 +85,18 @@ export function PlannerWorkspace({
 
   return (
     <>
-    {plan ? <div hidden={mode !== "review"}><PlanReview key={revision} draftId={draftId} plan={plan} onBack={() => setMode("interview")} /></div> : null}
-    <div hidden={mode !== "interview"} className="w-full max-w-2xl space-y-4">
-      <h1 className="font-heading text-2xl font-semibold tracking-tight">
-        Plan with AI
-      </h1>
-      <p className="text-xs text-muted-foreground">
-        Draft status: {initialStatus.replace("_", " ")}
-      </p>
-
-      {failure ? <p role="alert" className="text-sm text-destructive">{failure}</p> : null}
-      <Card>
-        <CardContent className="space-y-4 py-4">
-          <div className="max-h-[55vh] space-y-3 overflow-y-auto">
+    <div className="@container/planner min-w-0 space-y-4">
+      <header className="hidden space-y-1 lg:block">
+        <h1 className="font-heading text-2xl font-semibold tracking-tight">Plan with AI</h1>
+        <p className="text-xs text-muted-foreground">Draft status: {initialStatus.replaceAll("_", " ")}</p>
+      </header>
+      <div className={cn("grid min-w-0 items-start gap-6", plan && "@[80rem]/planner:grid-cols-[minmax(26rem,36rem)_minmax(0,56rem)]")}>
+    <div ref={viewportRef} data-mobile-conversation={mode === "interview" ? "" : undefined} className={cn("conversation-route flex h-[var(--conversation-height,calc(100dvh-7.5rem))] min-h-0 w-full flex-col lg:max-w-2xl lg:gap-3", mode !== "interview" && "hidden @[80rem]/planner:flex")}>
+      <div className="lg:hidden"><ConversationHeader title="Plan with AI" subtitle={`Draft · ${initialStatus.replaceAll("_", " ")}`} backHref="/projects/plan" /></div>
+      <h2 className="hidden font-heading text-lg font-semibold lg:block">Interview</h2>
+      <div className="relative flex min-h-0 flex-1 flex-col">
+          <div ref={scrollRef} onScroll={onScroll} data-conversation-scroll role="region" aria-label="Messages" tabIndex={0} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 lg:rounded-xl lg:border lg:p-4">
+            <div className="flex min-h-full flex-col justify-end gap-3">
             {convo
               .filter((m) => m.role !== "system")
               .map((m, i) => (
@@ -102,9 +109,9 @@ export function PlannerWorkspace({
                 >
                   <div
                     className={cn(
-                      "max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap",
+                      "max-w-[min(85%,65ch)] whitespace-pre-wrap rounded-xl px-3 py-2 text-[15px] leading-relaxed lg:text-sm",
                       m.role === "user"
-                        ? "bg-primary text-primary-foreground"
+                        ? "conversation-own-bubble bg-primary text-primary-foreground"
                         : "bg-secondary"
                     )}
                   >
@@ -117,37 +124,38 @@ export function PlannerWorkspace({
                 <Loader2 className="size-4 animate-spin" /> thinking…
               </div>
             ) : null}
+            </div>
           </div>
 
-          <div className="flex items-end gap-2 border-t pt-3">
+          <ConversationJump visible={canJump} onClick={scrollToLatest} />
+      </div>
+      {failure ? <p role="alert" className="shrink-0 px-3 py-2 text-sm text-destructive">{failure}</p> : null}
+          <div data-followed-by-actions className="conversation-composer flex items-end gap-2 border-t bg-background px-2 pt-2">
             <Textarea
               disabled={busy || !aiReady}
               aria-label="Your answer"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  void send();
-                }
+                sendOnConversationKey(e, () => void send());
               }}
               rows={1}
               placeholder="Type your answer…"
-              className="max-h-32 min-h-9 flex-1 resize-none"
+              className="max-h-32 min-h-11 flex-1 resize-none rounded-xl"
             />
-            <Button size="icon" aria-label="Send" disabled={busy || !aiReady} onClick={send}>
+            <Button size="icon" className="conversation-send size-11 shrink-0" aria-label="Send" disabled={busy || !aiReady || !input.trim()} onClick={send}>
               <Send className="size-4" />
             </Button>
           </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-end gap-2">
-        {plan ? <Button variant="outline" disabled={busy} onClick={() => setMode("review")}>Return to review</Button> : null}
-        <Button onClick={gen} disabled={busy || !aiReady}>
-          <Sparkles className="size-4" />
+      <div className="conversation-footer flex shrink-0 justify-end gap-2 border-t px-3 py-2">
+        {plan ? <Button className="@[80rem]/planner:hidden" variant="outline" disabled={busy} onClick={() => setMode("review")}>Return to review</Button> : null}
+        <Button onClick={gen} disabled={busy || !aiReady} className="min-h-11">
+          {busy ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
           Generate plan
         </Button>
+      </div>
+    </div>
+    {plan ? <div className={cn("min-w-0", mode !== "review" && "hidden @[80rem]/planner:block")}><PlanReview key={revision} draftId={draftId} plan={plan} onBack={() => setMode("interview")} /></div> : null}
       </div>
     </div>
     </>
@@ -238,16 +246,16 @@ function PlanReview({
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground @[80rem]/planner:hidden"
       >
         <ChevronLeft className="size-4" />
         Back to chat
       </button>
 
       <div>
-        <h1 className="font-heading text-2xl font-semibold tracking-tight">
+        <h2 className="font-heading text-2xl font-semibold tracking-tight">
           Review the plan
-        </h1>
+        </h2>
         <p className="text-muted-foreground">
           Edit anything below. Nothing is created until you choose Create project.
         </p>

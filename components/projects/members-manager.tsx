@@ -118,115 +118,117 @@ export function MembersManager({
   };
 
   return (
-    <div className="grid w-full min-w-0 gap-5 lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)] lg:items-start">
-      {canEdit ? <Card>
-        <CardContent className="space-y-3 py-4">
-          <p className="text-sm font-medium">Add a member</p>
-          <div className="flex flex-col gap-2">
-            <select
-              aria-label="User"
-              className={selectClass}
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-            >
-              <option value="">Select person…</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
-            </select>
-            <select
-              aria-label="Role"
-              className={selectClass}
-              value={roleId}
-              onChange={(e) => setRoleId(e.target.value)}
-            >
-              <option value="">Select role…</option>
-              {roles.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-            <Button
-              onClick={add}
-              disabled={pending || !userId || !roleId}
-            >
-              Add
-            </Button>
-            {userId ? (
-              selectedRoleCapacity ? (
-                <p
-                  className={
-                    selectedRoleCapacity.used >= selectedRoleCapacity.capacity
-                      ? "text-xs text-destructive"
-                      : "text-xs text-muted-foreground"
-                  }
-                >
-                  This role: <b className="tabular-nums">{selectedRoleCapacity.used}/{selectedRoleCapacity.capacity}</b>{" "}
-                  {selectedRoleCapacity.used >= selectedRoleCapacity.capacity
-                    ? "— already at capacity; assigning will overload them."
-                    : "— has room."}
-                </p>
-              ) : selectedCapacity && roleId ? (
-                <p className="text-xs text-muted-foreground">
-                  This person has no capacity set for this role. Add it in{" "}
-                  <a href="/settings/team" className="text-primary hover:underline">Team settings</a>.
-                </p>
-              ) : selectedCapacity ? (
-                <p className="text-xs text-muted-foreground">
-                  Overall load: {selectedCapacity.status === "full" ? "booked up" : selectedCapacity.status === "tight" ? "nearly full" : "has room"}.
-                </p>
-              ) : null
-            ) : null}
-          </div>
-        </CardContent>
-      </Card> : <p className="text-sm text-muted-foreground">Ask a manager to add or change project members.</p>}
-
-      <div className="grid min-w-0 gap-2 2xl:grid-cols-2">
-        {visibleMembers.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No members yet.</p>
-        ) : (
-          visibleMembers.map((m) => (
-            <div
-              key={m.id}
-              className="flex items-center justify-between gap-2 rounded-md border bg-card px-3 py-2"
-            >
-              <div className="flex min-w-0 items-center gap-2.5">
-                <UserAvatar
-                  name={m.userName}
-                  image={m.userImage}
-                  size="sm"
-                  userId={m.userId}
-                  showPresence
-                />
-                <span className="truncate text-sm font-medium">{m.userName}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className="border-transparent"
-                  style={{
-                    background: `${m.roleColor ?? "#64748b"}1a`,
-                    color: m.roleColor ?? undefined,
-                  }}
-                >
-                  {m.roleLabel}
-                </Badge>
-                {canEdit ? <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  aria-label="Remove member"
-                  onClick={() => remove(m)}
-                  disabled={pending}
-                >
-                  <X className="size-4" />
-                </Button> : null}
-              </div>
+    <div className="@container/members min-w-0">
+      <div className="grid w-full min-w-0 gap-5 @[52rem]/members:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)] @[52rem]/members:items-start">
+        {canEdit ? <Card>
+          <CardContent className="space-y-3 py-4">
+            <p className="text-sm font-medium">Add a member</p>
+            <div className="flex flex-col gap-2">
+              <select
+                aria-label="User"
+                className={selectClass}
+                value={userId}
+                onChange={(e) => setUserId(e.target.value)}
+              >
+                <option value="">Select person…</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label="Role"
+                className={selectClass}
+                value={roleId}
+                onChange={(e) => setRoleId(e.target.value)}
+              >
+                <option value="">Select role…</option>
+                {roles.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+              <Button
+                onClick={add}
+                disabled={pending || !userId || !roleId}
+              >
+                Add
+              </Button>
+              {userId ? (
+                selectedRoleCapacity ? (
+                  <p
+                    className={
+                      selectedRoleCapacity.used >= selectedRoleCapacity.capacity
+                        ? "text-xs text-destructive"
+                        : "text-xs text-muted-foreground"
+                    }
+                  >
+                    This role: <b className="tabular-nums">{selectedRoleCapacity.used}/{selectedRoleCapacity.capacity}</b>{" "}
+                    {selectedRoleCapacity.used >= selectedRoleCapacity.capacity
+                      ? "— already at capacity; assigning will overload them."
+                      : "— has room."}
+                  </p>
+                ) : selectedCapacity && roleId ? (
+                  <p className="text-xs text-muted-foreground">
+                    This person has no capacity set for this role. Add it in{" "}
+                    <a href="/settings/team" className="text-primary hover:underline">Team settings</a>.
+                  </p>
+                ) : selectedCapacity ? (
+                  <p className="text-xs text-muted-foreground">
+                    Overall load: {selectedCapacity.status === "full" ? "booked up" : selectedCapacity.status === "tight" ? "nearly full" : "has room"}.
+                  </p>
+                ) : null
+              ) : null}
             </div>
-          ))
-        )}
+          </CardContent>
+        </Card> : <p className="text-sm text-muted-foreground">Ask a manager to add or change project members.</p>}
+
+        <div className="grid min-w-0 grid-cols-[repeat(auto-fill,minmax(min(100%,22rem),1fr))] gap-2">
+          {visibleMembers.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No members yet.</p>
+          ) : (
+            visibleMembers.map((m) => (
+              <div
+                key={m.id}
+                className="flex items-center justify-between gap-2 rounded-md border bg-card px-3 py-2"
+              >
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <UserAvatar
+                    name={m.userName}
+                    image={m.userImage}
+                    size="sm"
+                    userId={m.userId}
+                    showPresence
+                  />
+                  <span className="truncate text-sm font-medium">{m.userName}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    className="border-transparent"
+                    style={{
+                      background: `${m.roleColor ?? "#64748b"}1a`,
+                      color: m.roleColor ?? undefined,
+                    }}
+                  >
+                    {m.roleLabel}
+                  </Badge>
+                  {canEdit ? <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    aria-label="Remove member"
+                    onClick={() => remove(m)}
+                    disabled={pending}
+                  >
+                    <X className="size-4" />
+                  </Button> : null}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

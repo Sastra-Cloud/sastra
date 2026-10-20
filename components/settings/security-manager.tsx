@@ -84,8 +84,8 @@ export function SecurityManager({
   }
 
   return (
-    <div className="space-y-8">
-      <section className="space-y-4">
+    <div className="grid items-start gap-x-10 gap-y-8 @[64rem]/settings:grid-cols-2">
+      <section className="min-w-0 space-y-4">
         <div>
           <h2 className="font-semibold">Passkeys</h2>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -160,7 +160,7 @@ export function SecurityManager({
         </div>
       </section>
 
-      <section className="space-y-4 border-t pt-6">
+      <section className="min-w-0 space-y-4 border-t pt-6 @[64rem]/settings:border-t-0 @[64rem]/settings:pt-0">
         <div>
           <h2 className="font-semibold">Trusted browsers</h2>
           <p className="mt-1 text-sm text-muted-foreground">

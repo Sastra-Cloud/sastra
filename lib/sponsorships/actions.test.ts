@@ -114,9 +114,14 @@ describe("sponsorship funding boundaries", () => {
     expect(writes).toEqual([]);
   });
   it("does not reverse received money that has already been used", async () => {
-    selections.push([record], [{ ...receipt, sponsorshipId: id }], [invoice], [{ projectId: bookId, actualNetAmount: "500.00" }],
+    selections.push([record], [{ ...receipt, sponsorshipId: id }], [], [invoice], [{ projectId: bookId, actualNetAmount: "500.00" }],
       [{ projectId: bookId, actualNetAmount: "500.00" }], [{ projectId: bookId, amount: "125.00" }]);
     expect((await reverseSponsorshipReceipt(id, requestId, "Wrong payment")).error).toContain("funds were used");
+    expect(writes).toEqual([]);
+  });
+  it("keeps imported sponsorship receipts linked to their donation", async () => {
+    selections.push([record], [{ ...receipt, sponsorshipId: id }], [{ id: "donation-allocation" }]);
+    expect((await reverseSponsorshipReceipt(id, requestId, "Wrong payment")).error).toContain("Donations page");
     expect(writes).toEqual([]);
   });
   it("protects invoice history while funding is received", async () => {

@@ -2,9 +2,9 @@
 title: "Notifications"
 category: "Communication"
 roles: [member, manager, admin]
-keywords: [notification, bell, alert, bell not updating, idle, paused, email, bundled email, daily digest, immediate email, digest time, project-first digest, preheader, push, web push, quiet hours, work hours, unsubscribe, stop workflow emails, stop standup emails, mention, overdue task, due date changed, reschedule, stale notification, enable notifications, install, add to home screen, test notification, devices, blocked, badge, app icon badge, unread count, number on icon, email assistant, task suggestions, proof review, task learning, forwarded email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice]
+keywords: [notification, bell, alert, bell not updating, idle, paused, email, email branding, workspace name, project subject, view agreement, bundled email, daily digest, immediate email, digest time, project-first digest, preheader, push, web push, quiet hours, work hours, unsubscribe, stop workflow emails, stop standup emails, mention, overdue task, due date changed, reschedule, stale notification, enable notifications, install, add to home screen, test notification, devices, blocked, badge, correspondence badge, actions for you, needs review, app icon badge, unread count, number on icon, email assistant, task suggestions, proof review, task learning, forwarded email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice]
 order: 105
-summary: "The bell, bundled or daily notification email, email categories, and web-push scheduling."
+summary: "Menu badges explained: personal due work, shared email reviews, unread chats and waiting standups; the bell, project context and branding in notification email, and web-push scheduling."
 ---
 
 Notifications keep you posted about work that needs you. The **bell** in the top
@@ -17,6 +17,47 @@ The bell checks for new notifications every 20 seconds while you use Sastra. If
 you stop typing, clicking, or scrolling for 10 minutes, it stops checking. It
 catches up as soon as you come back. Chat and the online dots work the same way.
 Push notifications still reach you while it is paused.
+
+## Badges in the menu
+
+The menu highlights destinations with something to read or act on:
+
+- **My Work** counts your unfinished tasks due today or overdue, email task
+  suggestions awaiting your review, and due external follow-ups owned by you.
+  Printer-payment tasks respect their follow-up waiting period. The date follows
+  the workspace timezone. Future tasks and completed work do not add to the badge.
+  The **actions for you** summary in My Work explains this total. Select the due-task
+  count to see its exact list, including printer-payment follow-ups. Personal email
+  work stays here even though its source is Correspondence.
+- **Correspondence** counts email threads with shared project suggestions, project
+  updates, rights or funding documents, suggested printer quotes, or unassigned
+  due follow-ups. A thread counts once, even if it has several reviews. Select
+  the badged menu link to open **Needs review**. Your personal task suggestions
+  and owned follow-ups are counted in My Work instead. This badge is manager-only.
+- **Chat** counts unread messages from other people or bots in your direct
+  messages, team channels you can access, and active project conversations.
+  Your own messages, deleted messages, closed project conversations, and private
+  channels you do not belong to are excluded. Reading a conversation clears its
+  unread messages after the read position saves.
+- **Standups** counts your active check-ins waiting for an answer today, using
+  each standup's timezone. Completing the check-in clears it.
+
+Counts appear beside the label in the expanded sidebar and mobile menu, capped
+at **99+**. The compact sidebar shows a dot; hover or focus a link to hear or see
+the full count and its meaning. A dot on the mobile menu button lets you know
+there is work or unread chat inside.
+
+Badges check for updates every 20 seconds while you are active and catch up when
+you return or change pages. My Work reflects task and review changes immediately
+and restores the count if saving fails. A temporary connection failure preserves
+the last known count. Opening a menu destination does not clear work that still
+needs action. **Mark all read** in the bell only clears bell notifications;
+menu badges reflect the underlying work and chat state independently.
+
+Correspondence counts pending reviews, not unread email. Opening a thread or
+marking its bell alert read does not clear its reviews. Acting on the source
+review clears it after the server confirms the result. Routine captured email
+and mailbox noise do not add to the badge. Other menu entries have no badge.
 
 When a task due date changes, Sastra removes the old overdue alert from the bell
 and notification history, whether it was read or unread. Future overdue reminders
@@ -58,15 +99,19 @@ not wait for a bundle or daily digest.
 Bundles and daily digests are organized by project. The project with the newest
 update appears first, and each project’s items are newest-first. Updates that do
 not belong to a project appear under **Workspace**; completed summaries appear
-under **Standups**. The subject is **N new Sastra updates** for a bundle and
-**Your Sastra digest: N updates** for a daily message. A short hidden preview
+under **Standups**. Bundle and daily subjects include your configured workspace
+name and the number of updates. A short hidden preview
 summarizes the event mix, such as overdue tasks, assignments, and standup
 summaries.
 
 Digests show up to 50 details and link to **View all notifications** for any
 remainder. Reading an alert before its email is sent removes that item from the
-pending email. Empty digests are not sent. Immediate emails use the alert title
-as the subject and send one alert per message.
+pending email. Empty digests are not sent. Single-alert emails include the project
+name in the subject when available, show the project and workspace inside, and
+link directly to the task, agreement, budget, conversation, or other work.
+Immediate emails send one alert per message. Emails use the Sastra logo and
+consistent styling in light and dark mode; the workspace name remains readable
+even when your mail app blocks images.
 
 The category switches are independent of frequency:
 
@@ -131,7 +176,9 @@ notification.
 Shared MoU funding reviews notify eligible project creators in-app and by permitted
 push, without intake email. Installment readiness notifies the invoice owner and
 other eligible creators, including a creator who triggered readiness themselves.
-Recipients are deduplicated. The notification links to the agreement and explains
-the next action. PDF generation does not repeat the readiness notification.
+Recipients are deduplicated. The notification names the covered projects,
+installment amount and currency, partner when recorded, and invoice owner. It
+links to the agreement and explains the next action. PDF generation does not
+repeat the readiness notification.
 Invoice sending and receipt recording create separate updates. Workflow email
 follows notification preferences. Paused invoice work suppresses overdue prompts.

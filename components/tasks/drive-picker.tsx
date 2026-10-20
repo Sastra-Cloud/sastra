@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useCallback, useEffect, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ExternalLink,
@@ -27,14 +27,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-declare global {
-  interface Window {
-    gapi?: any;
-    google?: any;
-  }
-}
+import {
+  loadGooglePicker,
+  prepareGooglePicker,
+  showGooglePicker,
+} from "@/lib/tasks/google-picker-client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const FOLDER_MIME = "application/vnd.google-apps.folder";
 
 /** Best deep-link for a picked Drive item (folders and files differ). */
@@ -49,37 +48,6 @@ function driveItemUrl(
     : `https://drive.google.com/file/d/${id}/view`;
 }
 
-// Load Google's api.js + the picker module once, shared across button instances.
-let pickerLoad: Promise<void> | null = null;
-function loadPicker(): Promise<void> {
-  if (typeof window === "undefined") return Promise.resolve();
-  if (window.google?.picker) return Promise.resolve();
-  if (pickerLoad) return pickerLoad;
-  pickerLoad = new Promise<void>((resolve, reject) => {
-    const fail = () => reject(new Error("Google Picker failed to load"));
-    const ready = () =>
-      window.gapi.load("picker", {
-        callback: () => resolve(),
-        onerror: fail,
-        timeout: 10_000,
-        ontimeout: fail,
-      });
-    if (window.gapi) return ready();
-    const s = document.createElement("script");
-    s.src = "https://apis.google.com/js/api.js";
-    s.async = true;
-    s.defer = true;
-    s.onload = ready;
-    s.onerror = () => reject(new Error("Failed to load Google Picker"));
-    document.body.appendChild(s);
-  }).catch((error) => {
-    // A transient script/module failure must not poison every later retry.
-    pickerLoad = null;
-    throw error;
-  });
-  return pickerLoad;
-}
-
 function pickerBuilder(g: any, ctx: DriveAttachContext, token: string) {
   const builder = new g.picker.PickerBuilder()
     .setDeveloperKey(ctx.apiKey)
@@ -91,7 +59,7 @@ function pickerBuilder(g: any, ctx: DriveAttachContext, token: string) {
 
 function showDriveOpenError(error: unknown) {
   console.error("Google Picker could not open", error);
-  toast.error("Couldn't open Google Drive. Refresh and try again.");
+  toast.error("Couldn't open Google Drive. Check your internet and try again.");
 }
 
 /**
@@ -99,8 +67,23 @@ function showDriveOpenError(error: unknown) {
  * caller. Handles the server token refresh and the "reconnect" fallback so each
  * button doesn't repeat it.
  */
-function useDrive() {
+function useDrive(activeInForm = true) {
   const [ctx, setCtx] = useState<DriveAttachContext | null>(null);
+  const active = useRef<AbortController | null>(null);
+
+  useEffect(() => () => active.current?.abort(), []);
+
+  useEffect(() => {
+    // The create-task form stays mounted after closing to preserve its draft.
+    if (!activeInForm) active.current?.abort();
+  }, [activeInForm]);
+
+  useEffect(() => {
+    if (ctx?.configured && ctx.connected) {
+      // Start the shared SDK load while the user fills in the task form.
+      void loadGooglePicker().catch(() => {});
+    }
+  }, [ctx?.configured, ctx?.connected]);
 
   useEffect(() => {
     getDriveAttachContext()
@@ -116,20 +99,35 @@ function useDrive() {
     });
   }, []);
 
-  /** Build + show a picker. `build` receives the google namespace and a token. */
-  const open = useCallback(async (build: (g: any, token: string) => any) => {
-    const token = await getDriveOAuthToken();
-    if (!token) {
-      toast.error("Reconnect your Google account to use Drive.");
-      setCtx((c) => (c ? { ...c, connected: false } : c));
-      return;
+  /** Keep opening feedback visible until the iframe loads or opening fails. */
+  const open = useCallback(async (
+    build: (g: any, token: string) => any,
+    onPicked: (data: any) => void | Promise<void>
+  ) => {
+    active.current?.abort();
+    const controller = new AbortController();
+    active.current = controller;
+    const loadingToast = toast.loading("Opening Google Drive…", {
+      action: { label: "Cancel", onClick: () => controller.abort() },
+    });
+    try {
+      const token = await prepareGooglePicker(getDriveOAuthToken, controller.signal);
+      if (controller.signal.aborted) return;
+      if (!token) {
+        toast.error("Reconnect your Google account to use Drive.");
+        setCtx((c) => (c ? { ...c, connected: false } : c));
+        return;
+      }
+      await showGooglePicker(build(window.google, token), {
+        signal: controller.signal,
+        onPicked,
+        onError: showDriveOpenError,
+      });
+    } catch (error) {
+      if (!controller.signal.aborted) throw error;
+    } finally {
+      toast.dismiss(loadingToast);
     }
-    await loadPicker();
-    if (!window.google?.picker) {
-      throw new Error("Google Picker module is unavailable");
-    }
-    const picker = build(window.google, token);
-    picker.setVisible(true);
   }, []);
 
   return { ctx, connect, open };
@@ -182,30 +180,27 @@ export function DriveAttachButton({
         const uploadView = new g.picker.DocsUploadView().setParent(
           ctx.sharedDriveId
         );
-        const builder = pickerBuilder(g, ctx, token)
+        return pickerBuilder(g, ctx, token)
           .enableFeature(g.picker.Feature.MULTISELECT_ENABLED)
           .addView(view)
-          .addView(uploadView)
-          .setCallback(async (data: any) => {
-            if (data.action !== g.picker.Action.PICKED) return;
-            const docs: any[] = data.docs ?? [];
-            try {
-              for (const d of docs) {
-                await addTaskDriveFile(taskId, {
-                  driveFileId: d.id,
-                  name: d.name ?? "Drive item",
-                  mimeType: d.mimeType ?? null,
-                  iconUrl: d.iconUrl ?? null,
-                  url: driveItemUrl(d.id, d.mimeType, d.url),
-                });
-              }
-              toast.success(docs.length > 1 ? "Items attached" : "Attached");
-              onChange();
-            } catch {
-              toast.error("Couldn't attach.");
-            }
-          });
-        return builder.build();
+          .addView(uploadView);
+      }, async (data: any) => {
+        const docs: any[] = data.docs ?? [];
+        try {
+          for (const d of docs) {
+            await addTaskDriveFile(taskId, {
+              driveFileId: d.id,
+              name: d.name ?? "Drive item",
+              mimeType: d.mimeType ?? null,
+              iconUrl: d.iconUrl ?? null,
+              url: driveItemUrl(d.id, d.mimeType, d.url),
+            });
+          }
+          toast.success(docs.length > 1 ? "Items attached" : "Attached");
+          onChange();
+        } catch {
+          toast.error("Couldn't attach.");
+        }
       });
     } catch (error) {
       showDriveOpenError(error);
@@ -241,11 +236,13 @@ export function DriveAttachButton({
  * main folder) so sub-folders are easy to reach.
  */
 export function DriveFolderPickerButton({
+  active = true,
   startInFolderId,
   label = "Link Drive folder",
   quiet = false,
   onPicked,
 }: {
+  active?: boolean;
   startInFolderId?: string | null;
   label?: string;
   /** Render nothing (instead of a gate message) when Drive isn't ready. */
@@ -256,7 +253,7 @@ export function DriveFolderPickerButton({
     url: string;
   }) => void | Promise<void>;
 }) {
-  const { ctx, connect, open } = useDrive();
+  const { ctx, connect, open } = useDrive(active);
   const [busy, setBusy] = useState(false);
 
   const openPicker = useCallback(async () => {
@@ -269,23 +266,20 @@ export function DriveFolderPickerButton({
           .setSelectFolderEnabled(true)
           .setMimeTypes(FOLDER_MIME);
         if (startInFolderId) view.setParent(startInFolderId);
-        const builder = pickerBuilder(g, ctx, token)
-          .addView(view)
-          .setCallback(async (data: any) => {
-            if (data.action !== g.picker.Action.PICKED) return;
-            const d = (data.docs ?? [])[0];
-            if (!d) return;
-            try {
-              await onPicked({
-                folderId: d.id,
-                name: d.name ?? "Drive folder",
-                url: driveItemUrl(d.id, FOLDER_MIME, d.url),
-              });
-            } catch {
-              toast.error("Couldn't save the folder.");
-            }
+        return pickerBuilder(g, ctx, token)
+          .addView(view);
+      }, async (data: any) => {
+        const d = (data.docs ?? [])[0];
+        if (!d) return;
+        try {
+          await onPicked({
+            folderId: d.id,
+            name: d.name ?? "Drive folder",
+            url: driveItemUrl(d.id, FOLDER_MIME, d.url),
           });
-        return builder.build();
+        } catch {
+          toast.error("Couldn't save the folder.");
+        }
       });
     } catch (error) {
       showDriveOpenError(error);
@@ -322,12 +316,14 @@ export function DriveFolderPickerButton({
  * picker inside the project's main folder so sub-folders are one click away.
  */
 export function TaskDriveFolderPicker({
+  active = true,
   value,
   onChange,
   startInFolderId,
   label,
   hint,
 }: {
+  active?: boolean;
   value: { folderId: string; name: string; url: string } | null;
   onChange: (
     folder: { folderId: string; name: string; url: string } | null
@@ -355,6 +351,7 @@ export function TaskDriveFolderPicker({
           <span className="min-w-0 truncate">{value.name}</span>
         </span>
         <DriveFolderPickerButton
+          active={active}
           label="Change"
           startInFolderId={startInFolderId}
           onPicked={onChange}
@@ -372,6 +369,7 @@ export function TaskDriveFolderPicker({
   } else {
     control = (
       <DriveFolderPickerButton
+        active={active}
         label="Choose Drive folder"
         startInFolderId={startInFolderId}
         onPicked={onChange}
@@ -395,15 +393,17 @@ export function TaskDriveFolderPicker({
  * are saved with the task when its create action succeeds.
  */
 export function TaskDriveFilesPicker({
+  active = true,
   value,
   onChange,
   defaultFolderId,
 }: {
+  active?: boolean;
   value: TaskDriveFileSelection[];
   onChange: (files: TaskDriveFileSelection[]) => void;
   defaultFolderId?: string | null;
 }) {
-  const { ctx, connect, open } = useDrive();
+  const { ctx, connect, open } = useDrive(active);
   const [busy, setBusy] = useState(false);
 
   const openPicker = useCallback(async () => {
@@ -423,24 +423,21 @@ export function TaskDriveFilesPicker({
         return pickerBuilder(g, ctx, token)
           .enableFeature(g.picker.Feature.MULTISELECT_ENABLED)
           .addView(view)
-          .addView(uploadView)
-          .setCallback((data: any) => {
-            if (data.action !== g.picker.Action.PICKED) return;
-            const selected = (data.docs ?? []).map((item: any) => ({
-              driveFileId: String(item.id),
-              name: String(item.name ?? "Drive file"),
-              mimeType: item.mimeType ? String(item.mimeType) : null,
-              iconUrl: item.iconUrl ? String(item.iconUrl) : null,
-              url: driveItemUrl(item.id, item.mimeType, item.url),
-            }));
-            onChange(mergeTaskDriveFileSelections(value, selected));
-            toast.success(
-              selected.length > 1
-                ? `${selected.length} files ready to attach`
-                : "File ready to attach"
-            );
-          })
-          .build();
+          .addView(uploadView);
+      }, (data: any) => {
+        const selected = (data.docs ?? []).map((item: any) => ({
+          driveFileId: String(item.id),
+          name: String(item.name ?? "Drive file"),
+          mimeType: item.mimeType ? String(item.mimeType) : null,
+          iconUrl: item.iconUrl ? String(item.iconUrl) : null,
+          url: driveItemUrl(item.id, item.mimeType, item.url),
+        }));
+        onChange(mergeTaskDriveFileSelections(value, selected));
+        toast.success(
+          selected.length > 1
+            ? `${selected.length} files ready to attach`
+            : "File ready to attach"
+        );
       });
     } catch (error) {
       showDriveOpenError(error);
@@ -563,28 +560,24 @@ export function DriveUploadButton({
       try {
         await open((g, token) => {
           const uploadView = new g.picker.DocsUploadView().setParent(folderId);
-          const builder = pickerBuilder(g, ctx, token)
-            .addView(uploadView)
-            .setCallback(async (data: any) => {
-              if (data.action !== g.picker.Action.PICKED) return;
-              const docs: any[] = data.docs ?? [];
-              try {
-                for (const d of docs) {
-                  await addTaskDriveFile(taskId, {
-                    driveFileId: d.id,
-                    name: d.name ?? "Uploaded file",
-                    mimeType: d.mimeType ?? null,
-                    iconUrl: d.iconUrl ?? null,
-                    url: driveItemUrl(d.id, d.mimeType, d.url),
-                  });
-                }
-                toast.success("Uploaded to Drive");
-                onChange();
-              } catch {
-                toast.error("Uploaded, but couldn't link it to the task.");
-              }
-            });
-          return builder.build();
+          return pickerBuilder(g, ctx, token).addView(uploadView);
+        }, async (data: any) => {
+          const docs: any[] = data.docs ?? [];
+          try {
+            for (const d of docs) {
+              await addTaskDriveFile(taskId, {
+                driveFileId: d.id,
+                name: d.name ?? "Uploaded file",
+                mimeType: d.mimeType ?? null,
+                iconUrl: d.iconUrl ?? null,
+                url: driveItemUrl(d.id, d.mimeType, d.url),
+              });
+            }
+            toast.success("Uploaded to Drive");
+            onChange();
+          } catch {
+            toast.error("Uploaded, but couldn't link it to the task.");
+          }
         });
       } catch (error) {
         showDriveOpenError(error);

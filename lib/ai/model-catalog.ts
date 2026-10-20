@@ -2,7 +2,7 @@
  * Curated OpenRouter model catalog + per-task metadata for the admin Settings ▸ AI
  * picker. Pure data (no server imports) so the client component can render it.
  *
- * Prices are indicative USD per 1M tokens (input/output) as of September 2026 and are
+ * Prices are indicative USD per 1M tokens (input/output) as of October 2026 and are
  * for guidance only — actual spend is billed by OpenRouter's returned `usage.cost`.
  * Any OpenRouter `provider/model` slug also works via the "Custom…" option, so this
  * list does not need to be exhaustive.
@@ -26,38 +26,39 @@ export type CatalogModel = {
 export const MODEL_CATALOG: CatalogModel[] = [
   // ── Cheap ──
   {
-    slug: "google/gemini-2.5-flash-lite",
-    label: "Gemini 2.5 Flash Lite",
+    slug: "google/gemini-3.5-flash-lite",
+    label: "Gemini 3.5 Flash Lite",
+    tier: "cheap",
+    inPrice: 0.3,
+    outPrice: 2.5,
+    vision: true,
+    notes: "Fast, efficient multimodal model for simple tasks.",
+  },
+  {
+    slug: "deepseek/deepseek-v4.1-flash",
+    label: "DeepSeek V4.1 Flash",
+    tier: "cheap",
+    inPrice: 0.0632,
+    outPrice: 0.12,
+    vision: true,
+    notes: "Efficient general reasoning with native image input.",
+  },
+  {
+    slug: "anthropic/claude-haiku-5.5",
+    label: "Claude Haiku 5.5",
     tier: "cheap",
     inPrice: 0.1,
-    outPrice: 0.4,
+    outPrice: 0.5,
     vision: true,
-    notes: "Cheapest; fast. Fine for simple tasks.",
-  },
-  {
-    slug: "deepseek/deepseek-chat",
-    label: "DeepSeek V4 Flash",
-    tier: "cheap",
-    inPrice: 0.14,
-    outPrice: 0.28,
-    notes: "Very cheap; decent general quality.",
-  },
-  {
-    slug: "openai/gpt-5-mini",
-    label: "GPT-5 Mini",
-    tier: "cheap",
-    inPrice: 0.25,
-    outPrice: 2.0,
-    vision: true,
-    notes: "Reliable native tool-calling. Great for the assistant.",
+    notes: "Fast, 1M context. Rates shown for prompts up to 100K; above that, $0.50/$2.50 per 1M.",
   },
   // ── Balanced ──
   {
-    slug: "google/gemini-2.5-flash",
-    label: "Gemini 2.5 Flash",
+    slug: "google/gemini-3.8-flash",
+    label: "Gemini 3.8 Flash",
     tier: "balanced",
-    inPrice: 0.3,
-    outPrice: 2.5,
+    inPrice: 0.825,
+    outPrice: 4.125,
     vision: true,
     notes: "Strong tool-calling, 1M context.",
   },
@@ -68,26 +69,17 @@ export const MODEL_CATALOG: CatalogModel[] = [
     inPrice: 0.75,
     outPrice: 4.5,
     vision: true,
-    notes: "Newer mini; strong reasoning + tool use.",
-  },
-  {
-    slug: "anthropic/claude-haiku-4.5",
-    label: "Claude Haiku 4.5",
-    tier: "balanced",
-    inPrice: 1.0,
-    outPrice: 5.0,
-    vision: true,
-    notes: "Near-Sonnet quality, fast. Good all-rounder.",
+    notes: "Latest Mini; reliable tool-calling with our current API integration.",
   },
   // ── Premium ──
   {
-    slug: "openai/gpt-5.4",
-    label: "GPT-5.4",
+    slug: "openai/gpt-5.6-sol",
+    label: "GPT-5.6 Sol",
     tier: "premium",
-    inPrice: 2.5,
-    outPrice: 15.0,
+    inPrice: 4.0,
+    outPrice: 20.0,
     vision: true,
-    notes: "Long-context document reasoning; agreement Q&A fallback.",
+    notes: "Long-context reasoning with Chat Completions tools; agreement Q&A fallback.",
   },
   {
     slug: "anthropic/claude-sonnet-5.5",
@@ -108,8 +100,8 @@ export const MODEL_CATALOG: CatalogModel[] = [
     notes: "Previous Sonnet; fallback for email drafting.",
   },
   {
-    slug: "google/gemini-3.1-pro",
-    label: "Gemini 3.1 Pro",
+    slug: "google/gemini-3.1-pro-preview",
+    label: "Gemini 3.1 Pro (Preview)",
     tier: "premium",
     inPrice: 2.0,
     outPrice: 12.0,
@@ -124,15 +116,6 @@ export const MODEL_CATALOG: CatalogModel[] = [
     outPrice: 20.0,
     vision: true,
     notes: "Top intelligence; use only where depth is worth it.",
-  },
-  {
-    slug: "openai/gpt-5.5",
-    label: "GPT-5.5",
-    tier: "premium",
-    inPrice: 5.0,
-    outPrice: 30.0,
-    vision: true,
-    notes: "Strong knowledge work + chat.",
   },
 ];
 
@@ -161,7 +144,7 @@ export const TASK_META: Record<string, TaskMeta> = {
     label: "Assistant (agentic)",
     description:
       "The in-app helper that runs tools on your behalf. High-volume and cost-gated per user — favour a cheap, reliable tool-calling model.",
-    recommended: "openai/gpt-5-mini",
+    recommended: "openai/gpt-5.4-mini",
     order: 0,
   },
   assistant_complex: {
@@ -175,7 +158,7 @@ export const TASK_META: Record<string, TaskMeta> = {
     label: "Assistant conversation summaries",
     description:
       "Compacts older turns into structured conversation state. This is separate from durable user memory.",
-    recommended: "openai/gpt-5-mini",
+    recommended: "openai/gpt-5.4-mini",
     order: 2,
   },
   assistant_reflection: {
@@ -189,35 +172,35 @@ export const TASK_META: Record<string, TaskMeta> = {
     label: "Daily project update review",
     description:
       "Compares new project status updates with tasks, blockers, budget, rights, and deadlines to suggest manager follow-ups.",
-    recommended: "openai/gpt-5-mini",
+    recommended: "openai/gpt-5.4-mini",
     order: 4,
   },
   email_project_signal: {
     label: "Correspondence signal detection",
     description:
       "Reviews inbound correspondence and suggests possible new publishing projects, rights holders, funding partners, and printers for manager review.",
-    recommended: "openai/gpt-5-mini",
+    recommended: "openai/gpt-5.4-mini",
     order: 5,
   },
   email_task_signal: {
     label: "Forwarded email task detection",
     description:
       "Finds concrete follow-up work in deliberate internal forwards. Explicit instructions can create a self-owned task; inferred work always requires review.",
-    recommended: "openai/gpt-5-mini",
+    recommended: "openai/gpt-5.4-mini",
     order: 6,
   },
   email_follow_up_summary: {
     label: "External email follow-up summaries",
     description:
       "Turns the newest outbound project email into a short waiting-state summary while ignoring quoted history.",
-    recommended: "openai/gpt-5-mini",
+    recommended: "openai/gpt-5.4-mini",
     order: 7,
   },
   email_rights_document: {
     label: "Email rights documents",
     description:
       "Reads only project-linked PDFs that look like signed agreements or license-fee receipts, then prepares a manager-reviewed update.",
-    recommended: "openai/gpt-5-mini",
+    recommended: "openai/gpt-5.4-mini",
     order: 8,
     requires: "vision",
   },
@@ -254,7 +237,7 @@ export const TASK_META: Record<string, TaskMeta> = {
     label: "Agreement OCR cleanup",
     description:
       "Faithfully cleans and returns text from scanned MoU and License PDFs after the PDF OCR parser runs. A cheaper model is usually sufficient.",
-    recommended: "openai/gpt-5-mini",
+    recommended: "openai/gpt-5.4-mini",
     order: 9,
   },
   agreement_qa: {
@@ -268,7 +251,14 @@ export const TASK_META: Record<string, TaskMeta> = {
     label: "Standup insights",
     description:
       "Summarises standups and flags impediments. Low-stakes background task — a cheap model is fine.",
-    recommended: "anthropic/claude-haiku-4.5",
+    recommended: "anthropic/claude-haiku-5.5",
+    order: 10,
+  },
+  donation_csv_format: {
+    label: "Donation CSV columns",
+    description:
+      "Suggests which column holds the date, donor, and amount in a new donation CSV format. Sees column names and masked value patterns only.",
+    recommended: "openai/gpt-5.4-mini",
     order: 10,
   },
   print_quote_extract: {

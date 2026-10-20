@@ -18,3 +18,23 @@ export function openAssistant(prompt?: string): void {
     })
   );
 }
+
+/** Remembers that the one-time "Ask the assistant" tip is done (hidden or used). */
+export const ASSISTANT_TIP_KEY = "assistant:intro";
+
+/**
+ * A lone sparkle icon is ambiguous, so new people get a one-time tip beside the
+ * launcher. It is coaching, so it respects the guidance switch, and it never
+ * shows to someone who has already asked the assistant something.
+ */
+export function showAssistantTip({
+  introduced,
+  guidanceEnabled,
+  isDismissed,
+}: {
+  introduced: boolean;
+  guidanceEnabled: boolean;
+  isDismissed: (key: string) => boolean;
+}): boolean {
+  return !introduced && guidanceEnabled && !isDismissed(ASSISTANT_TIP_KEY);
+}

@@ -96,14 +96,14 @@ export function DocumentLearningManager({ enabled: initialEnabled, canPause, can
         <div><h3 className="font-medium">Reviewed examples</h3><p className="text-sm text-muted-foreground">Only reviews approved after learning was enabled appear here.</p></div>
         <Button nativeButton={false} render={<Link href="/projects/import" />} variant="outline" size="sm">Upload an example</Button>
       </div>
-      {cases.length ? cases.map((item) => <article key={item.id} className="rounded-xl border bg-card p-4">
+      {cases.length ? <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,32rem),1fr))] items-start gap-3">{cases.map((item) => <article key={item.id} className="min-w-0 rounded-xl border bg-card p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0"><p className="font-medium">{LABELS[item.workflow] ?? item.workflow}</p><p className="flex flex-wrap gap-x-1 text-sm text-muted-foreground"><span className="break-all">{item.sourceName ?? "Reviewed document"}</span><span>· {item.source.replaceAll("_", " ")} · {new Date(item.createdAt).toLocaleDateString()}</span></p></div>
           <div className="flex items-center gap-2"><label className="flex min-h-9 items-center gap-2 text-sm"><Checkbox checked={item.enabled} disabled={pendingCases.has(item.id)} onCheckedChange={(value) => changeCase(item.id, value === true)} /> Active</label><Button type="button" size="icon" variant="ghost" aria-label="Remove example" disabled={pendingCases.has(item.id)} onClick={() => remove(item.id)}><Trash2 className="size-4" /></Button></div>
         </div>
         <details className="mt-3 rounded-md bg-muted/40 px-3 py-2 text-sm"><summary className="cursor-pointer">Corrected fields</summary><pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words text-xs">{JSON.stringify(item.corrected, null, 2)}</pre></details>
         {canShare ? <CloudContribution item={item} /> : null}
-      </article>) : <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground"><BookOpenCheck className="mx-auto mb-2 size-6" />No reviewed examples yet. Upload a document and save it as a teaching example, or approve a regular import.</div>}
+      </article>)}</div> : <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground"><BookOpenCheck className="mx-auto mb-2 size-6" />No reviewed examples yet. Upload a document and save it as a teaching example, or approve a regular import.</div>}
     </section>
   </div>;
 }

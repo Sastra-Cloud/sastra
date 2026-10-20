@@ -38,9 +38,11 @@ export function TeamCapacityView({ data }: { data: CapacityByPath }) {
         Each work path runs in parallel with its own people. A path can be jammed
         while another has room, so capacity is assessed per path.
       </p>
-      {data.paths.map((path) => (
-        <PathCapacityBlock key={path.group.key} path={path} />
-      ))}
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,38rem),1fr))] items-start gap-5">
+        {data.paths.map((path) => (
+          <PathCapacityBlock key={path.group.key} path={path} />
+        ))}
+      </div>
     </div>
   );
 }

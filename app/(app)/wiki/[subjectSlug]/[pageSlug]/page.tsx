@@ -28,7 +28,7 @@ export default async function WikiReaderPage({ params }: { params: Promise<{ sub
           <Button nativeButton={false} render={<Link href={`/wiki/${subjectSlug}/${pageSlug}/edit`} />} variant="outline" size="sm"><Edit3 /> Open draft</Button>
         </div>
       ) : null}
-      <article className="wiki-reader-paper">
+      <article className="wiki-reader-paper @container/reader">
         <header className="border-b px-5 py-7 sm:px-10 sm:py-10">
           <div className="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             <BookOpenText className="size-4 text-primary" />
@@ -45,11 +45,11 @@ export default async function WikiReaderPage({ params }: { params: Promise<{ sub
           </div>
           <p className="mt-5 text-xs text-muted-foreground">Published {new Date(page.publishedAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })} · Revision {page.revisionNumber}</p>
         </header>
-        <div className="grid gap-8 px-5 py-7 sm:px-10 sm:py-10 xl:grid-cols-[minmax(0,1fr)_13rem]">
+        <div className="grid gap-8 px-5 py-7 sm:px-10 sm:py-10 @[56rem]/reader:grid-cols-[minmax(0,60rem)_13rem]">
           <WikiDocumentView document={document} />
           {headings.length > 1 ? (
-            <aside className="order-first xl:order-last">
-              <nav aria-label="On this page" className="rounded-xl border bg-muted/20 p-3 xl:sticky xl:top-5">
+            <aside className="order-first @[56rem]/reader:order-last">
+              <nav aria-label="On this page" className="rounded-xl border bg-muted/20 p-3 @[56rem]/reader:sticky @[56rem]/reader:top-5">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">On this page</p>
                 {headings.map((heading) => <a key={heading.id} href={`#${heading.id}`} className={`block rounded-md px-2 py-1.5 text-sm hover:bg-muted ${heading.level === 3 ? "pl-5 text-muted-foreground" : "font-medium"}`}>{heading.text}</a>)}
               </nav>

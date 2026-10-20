@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
 import { appNavigation, navigationItemActive, type NavigationItem } from "@/lib/navigation";
 import { navigationIcons } from "@/components/navigation-icons";
 import { useWorkspaceModules } from "@/components/settings/workspace-modules-provider";
+import { useNavigationBadges } from "@/components/navigation-badges-provider";
+import { navigationBadgeFor, navigationBadgeText } from "@/lib/navigation/badges";
 
 export function AppNav({
   onNavigate,
@@ -99,13 +101,17 @@ function NavItem({
   const pathname = usePathname();
   const active = navigationItemActive(pathname, item);
   const Icon = navigationIcons[item.icon];
+  const counts = useNavigationBadges();
+  const badge = navigationBadgeFor(item.href, counts);
+  const accessibleLabel = badge ? `${item.label}: ${badge.description}` : item.label;
 
   const navLink = (
     <Link
-      href={item.href}
+      href={badge?.href ?? item.href}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
-      title={item.label}
+      title={accessibleLabel}
+      aria-label={accessibleLabel}
       className={cn(
         "group relative flex min-h-10 items-center rounded-lg px-3 py-2 text-sm font-medium outline-none transition-[color,box-shadow,scale] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-sidebar-ring/50 active:scale-[0.96]",
         collapsed
@@ -133,12 +139,12 @@ function NavItem({
       ) : null}
       <span
         className={cn(
-          "relative z-10 flex items-center gap-3",
+          "relative z-10 flex min-w-0 items-center gap-3",
           collapsed
             ? "justify-center"
             : mobile
-              ? "justify-start"
-              : "justify-center xl:justify-start"
+              ? "flex-1 justify-start"
+              : "justify-center xl:flex-1 xl:justify-start"
         )}
       >
         <Icon
@@ -159,6 +165,25 @@ function NavItem({
           {item.label}
         </span>
       </span>
+      {badge ? (
+        <span
+          aria-hidden="true"
+          data-nav-badge={item.href}
+          className={cn(
+            "z-10 shrink-0 rounded-full font-semibold tabular-nums",
+            active ? "bg-sidebar-primary-foreground text-sidebar-primary" : "bg-sidebar-foreground text-sidebar",
+            collapsed
+              ? "absolute right-1.5 top-1.5 size-2.5"
+              : mobile
+                ? "relative ml-2 inline-flex h-5 min-w-5 items-center justify-center px-1.5 text-[11px] leading-none"
+                : "absolute right-1.5 top-1.5 size-2.5 xl:relative xl:top-auto xl:right-auto xl:ml-2 xl:inline-flex xl:h-5 xl:w-auto xl:min-w-5 xl:items-center xl:justify-center xl:px-1.5 xl:text-[11px] xl:leading-none"
+          )}
+        >
+          <span className={collapsed ? "hidden" : mobile ? "inline" : "hidden xl:inline"}>
+            {navigationBadgeText(badge.count)}
+          </span>
+        </span>
+      ) : null}
     </Link>
   );
 
@@ -172,7 +197,7 @@ function NavItem({
         sideOffset={10}
         className={cn("font-medium", !collapsed && "xl:hidden")}
       >
-        {item.label}
+        {accessibleLabel}
       </TooltipContent>
     </Tooltip>
   );

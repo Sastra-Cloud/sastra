@@ -19,7 +19,7 @@ export default async function ProfileSettingsPage() {
   const guidanceEnabled =
     (user as { guidanceLevel?: string }).guidanceLevel !== "off";
   return (
-    <div className="space-y-6">
+    <div className="max-w-3xl space-y-6">
       <div className="space-y-3">
         <p className="text-sm font-medium">Profile photo</p>
         <AvatarUploader name={user.name} image={user.image ?? null} />

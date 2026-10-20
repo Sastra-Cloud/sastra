@@ -2,9 +2,9 @@
 title: "Settings"
 category: "Settings"
 roles: [member, manager, admin]
-keywords: [modules, sponsorships, sponsorship funds, enable module, disable module, without AI, missing AI key, self-hosted AI, search settings, find a setting, email assistant preferences, active email preferences, personal, publishing, AI usage, document learning, pause learning, reviewed examples, voice dictionary, project roles, IANA, pending invitations, file space, storage, storage full, out of space, upload limit, your plan, manage plan, people limit, billing address, partner address, invoice description, settings, setup, profile, timezone, languages, currency, invoice issuer, payment instructions, invoice numbering, organization donation fee, organization fee, admin fee, donation deduction, net available, templates, avatar, team, invite, roles, super admin, publishers, printers, email, default cc, cc recipients, outbound email defaults, dictionary, voice, ai, model, budget, costs, usage, cloudflare, r2, openrouter, ai key, api key, openrouter key, credits, ai credits, credits used up, buy credits, branding, logo, workspace, organization identity, aliases, internal domains, mobile settings, planning capacity, projects at once, project duration, completion date planner, work path, work paths, creative path, project type capacity, books at once, articles podcasts and video, guidance, show helpful guidance, guided setup, tips, hide tips, expert mode, security, passkey, fingerprint, trusted browser, two factor, dependency audit, security updates, check again, run security check, GitHub Actions, fast AI pre-checks, pre-check, typesafe, jev, skip AI calls]
+keywords: [modules, sponsorships, sponsorship funds, enable module, disable module, without AI, missing AI key, self-hosted AI, search settings, find a setting, email assistant preferences, active email preferences, personal, publishing, AI usage, document learning, pause learning, reviewed examples, voice dictionary, project roles, IANA, pending invitations, file space, storage, storage full, out of space, upload limit, your plan, manage plan, people limit, billing address, partner address, invoice description, settings, setup, profile, timezone, languages, currency, invoice issuer, payment instructions, invoice numbering, organization donation fee, organization fee, admin fee, donation deduction, net available, templates, avatar, team, invite, roles, super admin, publishers, printers, email, default cc, cc recipients, outbound email defaults, dictionary, voice, ai, model, model routing, fallback models, Haiku, Sonnet, GPT, Gemini, DeepSeek, budget, costs, usage, cloudflare, r2, openrouter, ai key, api key, openrouter key, credits, ai credits, credits used up, buy credits, branding, logo, workspace, organization identity, aliases, internal domains, mobile settings, planning capacity, projects at once, project duration, completion date planner, work path, work paths, creative path, project type capacity, books at once, articles podcasts and video, guidance, show helpful guidance, guided setup, tips, hide tips, expert mode, security, passkey, fingerprint, trusted browser, two factor, dependency audit, security updates, check again, run security check, GitHub Actions, fast AI pre-checks, pre-check, typesafe, jev, skip AI calls]
 order: 140
-summary: "Search personal and shared settings, manage Profile email preferences, workspace defaults, publishing, and AI availability."
+summary: "Search personal and shared settings, manage Profile email preferences, workspace defaults, publishing, AI availability, and model routing."
 ---
 
 **Settings** holds your personal preferences and the workspace's shared
@@ -136,6 +136,15 @@ confirmed.
   rarely needs changing. Cost reports and usage limits are in
   **Settings → Costs**.
 
+The model picker includes Claude Haiku, Sonnet, and Opus 5.5, GPT-5.4 Mini,
+GPT-5.6 Sol, Gemini 3.5 Flash Lite and 3.8 Flash, Gemini 3.1 Pro (Preview), and
+DeepSeek V4.1 Flash. Claude Sonnet 5 remains available as an intentional
+email-drafting fallback. Model updates refresh shipped defaults; task models
+and fallback lists saved by an admin are kept. Prices are estimates and can
+vary by provider and prompt length. Haiku 5.5's displayed rates apply to prompts
+up to 100,000 tokens, and GPT-5.6 Sol's apply up to 272,000 input tokens;
+longer prompts have higher rates.
+
 On a self-hosted installation with no AI key, manual planning and tracking
 still work. The assistant, AI plan generation, AI document extraction,
 AI drafting, and AI summaries need a configured OpenRouter key. An admin
@@ -222,3 +231,11 @@ Timezone fields in setup, Profile, Workspace, and Standups share a searchable li
 On Sastra Cloud, **AI usage** and team assistant limits use credits. Team settings shows active people plus pending invitations before you invite someone. Use **Manage account** when available to change your plan. AI and email setup issues on hosted workspaces go to Sastra Cloud support.
 
 Self-hosted administrators see provider-dollar reporting and can configure an AI provider key in **Settings → AI**. Email server setup instructions remain in **Settings → Email** for self-hosted teams.
+
+## On wide screens
+
+Settings pages use the width of your screen. Forms stay at a readable width, and
+independent sections sit side by side when there is room, for example the two
+halves of **Security** or **Notifications**. Tables such as role capacity and the
+AI usage report use the full width. The **Settings** home lists its groups in two
+or three columns.

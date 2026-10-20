@@ -52,6 +52,16 @@ export function isIOS(): boolean {
   );
 }
 
+/** Safari's Mac install path is File → Add to Dock, not beforeinstallprompt. */
+export function isMacSafari(): boolean {
+  if (typeof navigator === "undefined" || isIOS()) return false;
+  return (
+    /Macintosh/.test(navigator.userAgent) &&
+    /Version\/[\d.]+.*Safari\//.test(navigator.userAgent) &&
+    !/Chrome|Chromium|CriOS|Edg|OPR|Firefox|FxiOS|Android/.test(navigator.userAgent)
+  );
+}
+
 export function isStandalone(): boolean {
   if (typeof window === "undefined") return false;
   return (
@@ -88,30 +98,35 @@ export function setAppBadge(count: number): void {
 /** Whether this browser currently has an active push subscription. */
 export async function currentEndpoint(): Promise<string | null> {
   if (!(await pushSupported())) return null;
-  const reg = await navigator.serviceWorker.ready;
+  const reg = await readyRegistration();
   const sub = await reg.pushManager.getSubscription();
   return sub?.endpoint ?? null;
 }
 
 /** Subscribe (idempotent) + register with the server. Returns the endpoint. */
 export async function enablePush(): Promise<string> {
-  if (!(await pushSupported())) throw new Error("Push not supported on this device.");
+  if (!browserSupportsPush()) throw new Error("Push not supported on this device.");
 
-  const permission = await Notification.requestPermission();
-  if (permission !== "granted") throw new Error("Permission denied.");
+  // Safari requires the permission request directly in the click's call stack.
+  // Do not await key discovery or service-worker readiness before asking.
+  const permission = Notification.permission === "granted"
+    ? "granted"
+    : await Notification.requestPermission();
+  if (permission !== "granted") {
+    throw new Error("Notifications were not allowed. Check your notification settings and try again.");
+  }
 
-  // iOS: navigator.serviceWorker.ready can hang — race a timeout.
-  const reg = await Promise.race([
-    navigator.serviceWorker.ready,
-    new Promise<ServiceWorkerRegistration>((_, rej) =>
-      setTimeout(() => rej(new Error("Service worker timed out.")), 10_000)
-    ),
-  ]);
+  const publicKey = await pushPublicKey();
+  if (!publicKey) {
+    throw new Error("Notifications are not set up. Ask your admin to check the notification settings.");
+  }
+
+  const reg = await readyRegistration();
 
   // subscribe() is idempotent — returns the existing sub if still valid.
   const sub = await reg.pushManager.subscribe({
     userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(await pushPublicKey()),
+    applicationServerKey: urlBase64ToUint8Array(publicKey),
   });
 
   const res = await fetch("/api/push/subscribe", {
@@ -121,6 +136,21 @@ export async function enablePush(): Promise<string> {
   });
   if (!res.ok) throw new Error("Could not register with the server.");
   return sub.endpoint;
+}
+
+/** Safari can leave ready pending indefinitely after app installation. */
+async function readyRegistration(): Promise<ServiceWorkerRegistration> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<ServiceWorkerRegistration>((_, reject) => {
+        timeout = setTimeout(() => reject(new Error("Notifications could not start. Reload Sastra and try again.")), 10_000);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 /**
@@ -133,7 +163,7 @@ export async function enablePush(): Promise<string> {
 export async function syncSubscription(): Promise<void> {
   if (!(await pushSupported())) return;
   try {
-    const reg = await navigator.serviceWorker.ready;
+    const reg = await readyRegistration();
     const sub = await reg.pushManager.getSubscription();
     if (!sub) return;
     await fetch("/api/push/subscribe", {
@@ -149,7 +179,7 @@ export async function syncSubscription(): Promise<void> {
 /** Unsubscribe this browser + tell the server to forget it. */
 export async function disablePush(): Promise<void> {
   if (!("serviceWorker" in navigator)) return;
-  const reg = await navigator.serviceWorker.ready;
+  const reg = await readyRegistration();
   const sub = await reg.pushManager.getSubscription();
   if (!sub) return;
   await fetch("/api/push/unsubscribe", {

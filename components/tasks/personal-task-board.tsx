@@ -133,26 +133,6 @@ export function PersonalTaskBoard({
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-1 rounded-lg bg-muted p-1 md:hidden">
-        {columns.map((column) => (
-          <button
-            key={column.status}
-            type="button"
-            onClick={() => setMobileStatus(column.status)}
-            aria-pressed={mobileStatus === column.status}
-            className={cn(
-              "min-h-10 rounded-md px-1 text-xs font-medium transition-colors",
-              mobileStatus === column.status
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground"
-            )}
-          >
-            <span className="block truncate">{TASK_STATUS[column.status].label}</span>
-            <span className="tabular-nums">{column.tasks.length}</span>
-          </button>
-        ))}
-      </div>
-
       <DndContext
         id="personal-task-board"
         sensors={sensors}
@@ -161,10 +141,50 @@ export function PersonalTaskBoard({
         onDragEnd={onDragEnd}
         onDragCancel={() => setActiveId(null)}
       >
-        <div className="md:hidden" aria-busy={pending}>
-          {columns
-            .filter((column) => column.status === mobileStatus)
-            .map((column) => (
+        {/* The container wraps only the board, never the fixed-position drag overlay. */}
+        <div className="@container/board min-w-0 space-y-4">
+          <div className="grid grid-cols-4 gap-1 rounded-lg bg-muted p-1 @[44rem]/board:hidden">
+            {columns.map((column) => (
+              <button
+                key={column.status}
+                type="button"
+                onClick={() => setMobileStatus(column.status)}
+                aria-pressed={mobileStatus === column.status}
+                className={cn(
+                  "min-h-10 rounded-md px-1 text-xs font-medium transition-colors",
+                  mobileStatus === column.status
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground"
+                )}
+              >
+                <span className="block truncate">{TASK_STATUS[column.status].label}</span>
+                <span className="tabular-nums">{column.tasks.length}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="@[44rem]/board:hidden" aria-busy={pending}>
+            {columns
+              .filter((column) => column.status === mobileStatus)
+              .map((column) => (
+                <BoardColumn key={column.status} status={column.status} tasks={column.tasks}>
+                  {column.tasks.map((task) => (
+                    <BoardTask
+                      key={task.id}
+                      task={task}
+                      blockedBy={blockedByTaskId[task.id]}
+                      timerRunning={activeTimerTaskId === task.id}
+                      onOpen={() => onOpen(task)}
+                      onStatus={(status) => onStatus(task, status)}
+                      onTimer={() => onTimer(task)}
+                    />
+                  ))}
+                </BoardColumn>
+              ))}
+          </div>
+
+          <div className="hidden gap-4 @[44rem]/board:grid @[44rem]/board:grid-cols-2 @[60rem]/board:grid-cols-4" aria-busy={pending}>
+            {columns.map((column) => (
               <BoardColumn key={column.status} status={column.status} tasks={column.tasks}>
                 {column.tasks.map((task) => (
                   <BoardTask
@@ -179,24 +199,7 @@ export function PersonalTaskBoard({
                 ))}
               </BoardColumn>
             ))}
-        </div>
-
-        <div className="hidden gap-4 md:grid md:grid-cols-2 xl:grid-cols-4" aria-busy={pending}>
-          {columns.map((column) => (
-            <BoardColumn key={column.status} status={column.status} tasks={column.tasks}>
-              {column.tasks.map((task) => (
-                <BoardTask
-                  key={task.id}
-                  task={task}
-                  blockedBy={blockedByTaskId[task.id]}
-                  timerRunning={activeTimerTaskId === task.id}
-                  onOpen={() => onOpen(task)}
-                  onStatus={(status) => onStatus(task, status)}
-                  onTimer={() => onTimer(task)}
-                />
-              ))}
-            </BoardColumn>
-          ))}
+          </div>
         </div>
 
         <DragOverlay dropAnimation={null}>

@@ -43,6 +43,7 @@ a component.
 | Author/rights payment tied to sales | **royalty** | cut, share | |
 | Signed funding agreement with a partner | **MoU** | agreement (when it's specifically the MoU) | spell out once: "MoU (a funding agreement)" |
 | Fee the organization keeps from a donation | **organization donation fee** | admin fee, overhead | matches Settings copy |
+| Saved column layout of one kind of donation CSV | **CSV format** | template, mapping, profile | Donations → Import history → Saved CSV formats |
 | Partner support priced by book and sponsored copies | **sponsorship** | book sale | separate from production MoUs |
 | Received book sponsorship money held for later use | **sponsorship funds** | budget funding | has its own received, used, and available balance |
 | Optional workspace feature | **module** | plugin (for workspace features) | admins enable modules in Settings |
@@ -87,5 +88,7 @@ a component.
 - **Daily work**: Home, My Work, and Projects.
 - **Team planning**: the manager area with Overview, Schedule, and Workload.
 - **Publishing**: a project's Rights, Budget, and Print, Episodes, or Videos.
-- **Suggestions to review**: proposed email tasks and candidate personal rules.
+- **Suggestions to review**: personal email task suggestions awaiting a decision.
+- **Other assigned work**: remaining tasks in My Work, including upcoming and undated tasks.
+- **Needs review** in Correspondence: shared email reviews and unassigned due follow-ups, counted by thread.
 - **Email assistant preferences**: personal controls and approved rules in Profile.

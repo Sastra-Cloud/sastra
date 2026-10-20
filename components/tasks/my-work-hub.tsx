@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import {
   CalendarDays,
   Check,
-  CheckCircle2,
   ChevronDown,
   CircleDollarSign,
   Clock3,
@@ -63,6 +62,14 @@ import { EmailTaskLearningRules } from "@/components/tasks/email-task-learning-r
 import type { EmailTaskRuleRow } from "@/lib/email/task-rule-queries";
 import type { ExternalFollowUp } from "@/lib/email/follow-ups";
 import { ExternalFollowUpCard } from "@/components/correspondence/external-follow-up-card";
+import {
+  TaskSearchField,
+  TaskSearchResults,
+  useOtherTaskSearch,
+} from "@/components/tasks/task-search";
+import { useNavigationBadgeAdjustment, useNavigationBadges } from "@/components/navigation-badges-provider";
+import { countDueWorkTasks, selectDueWorkTasks } from "@/lib/navigation/badges";
+import { MyWorkAttentionSummary } from "@/components/tasks/my-work-attention-summary";
 
 // House ease + spring for list reflow when a completed row leaves.
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -143,6 +150,8 @@ export function MyWorkHub({
 }) {
   const router = useRouter();
   const [view, setView] = useState<MyWorkView>(initialView);
+  const [dueOnly, setDueOnly] = useState(false);
+  const badgeCounts = useNavigationBadges();
   const [detailTask, setDetailTask] = useState<MyWorkTaskRow | null>(() =>
     initialTaskId
       ? initialTasks.find((task) => task.id === initialTaskId) ?? null
@@ -151,6 +160,13 @@ export function MyWorkHub({
   const { activeTimer, setActiveTimer } = useActiveTimer();
   const [pending, startTransition] = useTransition();
   const [tasks, setTasks] = usePropState(initialTasks);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searching = searchQuery.trim().length > 0;
+  const otherTasks = useOtherTaskSearch(searchQuery, initialTasks);
+  useNavigationBadgeAdjustment("dueTasks",
+    countDueWorkTasks(tasks, currentUserId, todayIso, timeZone) -
+    countDueWorkTasks(initialTasks, currentUserId, todayIso, timeZone)
+  );
   const statusInFlight = useRef(new Set<string>());
   const [previousTaskId, setPreviousTaskId] = useState(initialTaskId);
   if (initialTaskId !== previousTaskId) {
@@ -161,6 +177,7 @@ export function MyWorkHub({
 
   useEffect(() => {
     const syncFromHistory = () => {
+      setDueOnly(false);
       const next = new URL(window.location.href).searchParams.get("view");
       if (next === "board" || next === "agenda" || next === "focus") {
         setView(next);
@@ -173,6 +190,9 @@ export function MyWorkHub({
   }, []);
 
   const changeView = (next: MyWorkView) => {
+    setSearchQuery("");
+    setDueOnly(false);
+    if (next === view) return;
     setView(next);
     const url = new URL(window.location.href);
     if (next === "focus") url.searchParams.delete("view");
@@ -258,16 +278,55 @@ export function MyWorkHub({
     (task) => task.status === "in_progress" || task.status === "review"
   ).length;
 
+  const emailContent = (<>
+      {initialExternalFollowUps.length > 0 ? (
+        <section id="external-follow-ups" className="scroll-mt-24 space-y-3" aria-labelledby="external-follow-ups-heading">
+          <div>
+            <h2 id="external-follow-ups-heading" className="text-sm font-medium">
+              External follow-ups
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Project email that has not received a response by its follow-up date.
+            </p>
+          </div>
+          {initialExternalFollowUps.map((followUp) => (
+            <ExternalFollowUpCard key={followUp.id} followUp={followUp} showProject syncNavigationBadge />
+          ))}
+        </section>
+      ) : null}
+      {initialEmailSuggestions.length > 0 ? (
+        <SectionDisclosure id="suggestions" title="Suggestions to review" summary={initialEmailSuggestions.length} description="Personal email task suggestions awaiting your review" defaultOpen={Boolean(initialEmailSuggestionId)} revealFor={initialEmailSuggestionId}>
+          <EmailTaskSuggestions
+            syncNavigationBadge
+            initialSuggestions={initialEmailSuggestions}
+            assignees={assignees}
+            projects={projects}
+            currentUserId={currentUserId}
+            canManage={canManage}
+            highlightedId={initialEmailSuggestionId}
+            showCorrespondenceLink={canManage}
+          />
+        </SectionDisclosure>
+      ) : null}
+      {initialEmailTaskRules.some(rule => rule.status === "candidate") ? (
+        <SectionDisclosure id="email-preferences" title="Email assistant preferences" summary={initialEmailTaskRules.filter(rule => rule.status === "candidate").length}
+          description="Proposed preferences do not add to your menu badge.">
+          <EmailTaskLearningRules rules={initialEmailTaskRules.filter(rule => rule.status === "candidate")} />
+        </SectionDisclosure>
+      ) : null}
+
+  </>);
+
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <nav
           aria-label="My Work views"
-          className="grid grid-cols-3 rounded-lg bg-muted p-1 sm:inline-grid sm:w-auto"
+          className="grid shrink-0 grid-cols-3 rounded-lg bg-muted p-1 md:inline-grid md:w-auto"
         >
           {VIEW_META.map((item) => {
             const Icon = item.icon;
-            const active = view === item.value;
+            const active = view === item.value && !searching;
             return (
               <button
                 key={item.value}
@@ -287,35 +346,64 @@ export function MyWorkHub({
             );
           })}
         </nav>
-        <CreateTaskDialog
-          canManage={canManage}
-          assignees={assignees}
-          projects={projects}
-          defaultAssignee={currentUserId}
-          triggerLabel="Create task"
-          onOptimisticCreate={({ task, save, onSuccess, onError }) => {
-            const mine = task.assignedTo === currentUserId;
-            if (mine) setTasks(current => [...current, { ...task, projectSlug: null, projectTitle: projects.find(project => project.id === task.projectId)?.name ?? null, completedAt: null, trackedSeconds: 0 }]);
-            startTransition(async () => {
-              try {
-                const result = await save();
-                if (result.error) throw new Error(result.error);
-                if (!result.id) throw new Error("The task was saved without an ID.");
-                setTasks(current => current.map(item => item.id === task.id && result.id ? { ...item, id: result.id } : item));
-                onSuccess(result);
-                router.refresh();
-              } catch (error) {
-                setTasks(current => current.filter(item => item.id !== task.id));
-                onError(error instanceof Error ? error.message : "Could not create the task.");
-              }
-            });
-          }}
-        />
+        <div className="flex items-center gap-2 md:flex-1 md:justify-end">
+          <TaskSearchField
+            value={searchQuery}
+            onValueChange={setSearchQuery}
+            className="min-w-0 flex-1 md:max-w-sm"
+          />
+          <CreateTaskDialog
+            canManage={canManage}
+            assignees={assignees}
+            projects={projects}
+            defaultAssignee={currentUserId}
+            triggerLabel="Create task"
+            onOptimisticCreate={({ task, save, onSuccess, onError }) => {
+              const mine = task.assignedTo === currentUserId;
+              if (mine) setTasks(current => [...current, { ...task, projectSlug: null, projectTitle: projects.find(project => project.id === task.projectId)?.name ?? null, completedAt: null, trackedSeconds: 0 }]);
+              startTransition(async () => {
+                try {
+                  const result = await save();
+                  if (result.error) throw new Error(result.error);
+                  if (!result.id) throw new Error("The task was saved without an ID.");
+                  setTasks(current => current.map(item => item.id === task.id && result.id ? { ...item, id: result.id } : item));
+                  onSuccess(result);
+                  router.refresh();
+                } catch (error) {
+                  setTasks(current => current.filter(item => item.id !== task.id));
+                  onError(error instanceof Error ? error.message : "Could not create the task.");
+                }
+              });
+            }}
+          />
+        </div>
       </div>
 
-      {view === "focus" ? (
+      {searching ? (
+        <TaskSearchResults
+          query={searchQuery}
+          tasks={tasks}
+          other={otherTasks}
+          todayIso={todayIso}
+          timeZone={timeZone}
+          currentUserId={currentUserId}
+          onOpen={setDetailTask}
+        />
+      ) : null}
+
+      {!searching ? <MyWorkAttentionSummary counts={badgeCounts} onShowDueTasks={() => {
+        changeView("focus");
+        setDueOnly(true);
+      }} /> : null}
+
+      {!searching && view === "focus" ? (
         <FocusView
           tasks={tasks}
+          currentUserId={currentUserId}
+          dueOnly={dueOnly}
+          onShowAll={() => setDueOnly(false)}
+          emailContent={emailContent}
+          hasEmailContent={initialExternalFollowUps.length > 0 || initialEmailSuggestions.length > 0 || initialEmailTaskRules.some(rule => rule.status === "candidate")}
           todayIso={todayIso}
           timeZone={timeZone}
           completedToday={completedToday}
@@ -328,7 +416,7 @@ export function MyWorkHub({
         />
       ) : null}
 
-      {view === "board" ? (
+      {!searching && view === "board" ? (
         <PersonalTaskBoard
           tasks={tasks}
           projects={projects}
@@ -341,44 +429,18 @@ export function MyWorkHub({
         />
       ) : null}
 
-      {view === "agenda" ? (
+      {!searching && view === "agenda" ? (
         <AgendaView items={agendaItems} todayIso={todayIso} />
       ) : null}
 
-      {initialExternalFollowUps.length > 0 ? (
-        <section className="space-y-3" aria-labelledby="external-follow-ups-heading">
-          <div>
-            <h2 id="external-follow-ups-heading" className="text-sm font-medium">
-              External follow-ups
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Project email that has not received a response by its follow-up date.
-            </p>
-          </div>
-          {initialExternalFollowUps.map((followUp) => (
-            <ExternalFollowUpCard key={followUp.id} followUp={followUp} showProject />
-          ))}
-        </section>
-      ) : null}
-      {initialEmailSuggestions.length > 0 || initialEmailTaskRules.some(rule => rule.status === "candidate") ? (
-        <SectionDisclosure id="suggestions" title="Suggestions to review" summary={initialEmailSuggestions.length + initialEmailTaskRules.filter(rule => rule.status === "candidate").length} description="Email task suggestions and proposed preferences" defaultOpen={Boolean(initialEmailSuggestionId)} revealFor={initialEmailSuggestionId}>
-          <EmailTaskSuggestions
-            initialSuggestions={initialEmailSuggestions}
-            assignees={assignees}
-            projects={projects}
-            currentUserId={currentUserId}
-            canManage={canManage}
-            highlightedId={initialEmailSuggestionId}
-            showCorrespondenceLink={canManage}
-          />
-          <EmailTaskLearningRules rules={initialEmailTaskRules.filter(rule => rule.status === "candidate")} />
-        </SectionDisclosure>
-      ) : null}
+      {!searching && view !== "focus" ? emailContent : null}
 
       <TaskDetailDialog
         task={
           detailTask
-            ? tasks.find((task) => task.id === detailTask.id) ?? detailTask
+            ? tasks.find((task) => task.id === detailTask.id) ??
+              otherTasks.result?.tasks.find((task) => task.id === detailTask.id) ??
+              detailTask
             : null
         }
         assignees={assignees}
@@ -388,28 +450,33 @@ export function MyWorkHub({
         onOptimisticUpdate={(fields) => {
           if (!detailTask) return undefined;
           const previous = tasks.find((task) => task.id === detailTask.id);
-          setTasks((current) =>
-            applyTaskMutation(current, {
-              type: "patch",
-              taskId: detailTask.id,
-              fields,
-            })
-          );
+          const previousOther = otherTasks.result?.tasks.find((task) => task.id === detailTask.id);
+          const mutation: TaskMutation = { type: "patch", taskId: detailTask.id, fields };
+          setTasks((current) => applyTaskMutation(current, mutation));
+          otherTasks.update((current) => applyTaskMutation(current, mutation));
           return () => {
-            if (!previous) return;
-            setTasks((current) =>
-              current.map((task) => (task.id === previous.id ? previous : task))
-            );
+            if (previous) {
+              setTasks((current) =>
+                current.map((task) => (task.id === previous.id ? previous : task))
+              );
+            }
+            if (previousOther) {
+              otherTasks.update((current) =>
+                current.map((task) => (task.id === previousOther.id ? previousOther : task))
+              );
+            }
           };
         }}
         onOptimisticDelete={() => {
           if (!detailTask) return undefined;
           const previous = tasks.find((task) => task.id === detailTask.id);
           const previousIndex = tasks.findIndex((task) => task.id === detailTask.id);
-          setTasks((current) =>
-            applyTaskMutation(current, { type: "delete", taskId: detailTask.id })
-          );
+          const previousOthers = otherTasks.result?.tasks ?? null;
+          const mutation: TaskMutation = { type: "delete", taskId: detailTask.id };
+          setTasks((current) => applyTaskMutation(current, mutation));
+          otherTasks.update((current) => applyTaskMutation(current, mutation));
           return () => {
+            if (previousOthers) otherTasks.update(() => previousOthers);
             if (!previous) return;
             setTasks((current) => {
               const next = current.filter((task) => task.id !== previous.id);
@@ -434,18 +501,12 @@ export function MyWorkHub({
 }
 
 function FocusView({
-  tasks,
-  todayIso,
-  timeZone,
-  completedToday,
-  trackedTodaySeconds,
-  activeTimer,
-  pending,
-  onOpen,
-  onStatus,
-  onTimer,
+  tasks, currentUserId, todayIso, timeZone, completedToday, trackedTodaySeconds,
+  activeTimer, pending, onOpen, onStatus, onTimer, dueOnly, onShowAll,
+  emailContent, hasEmailContent,
 }: {
   tasks: MyWorkTaskRow[];
+  currentUserId: string;
   todayIso: string;
   timeZone: string;
   completedToday: MyWorkTaskRow[];
@@ -455,24 +516,23 @@ function FocusView({
   onOpen: (task: MyWorkTaskRow) => void;
   onStatus: (task: MyWorkTaskRow, status: Status) => void;
   onTimer: (task: MyWorkTaskRow) => void;
+  dueOnly: boolean;
+  onShowAll: () => void;
+  emailContent: React.ReactNode;
+  hasEmailContent: boolean;
 }) {
   const [showLater, setShowLater] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
   const [showAllAttention, setShowAllAttention] = useState(false);
   const runningSeconds = useLiveElapsed(activeTimer?.startedAt ?? null);
-  const open = tasks.filter((task) => task.status !== "done");
+  const open = tasks.filter(task => task.status !== "done");
+  const dueWork = selectDueWorkTasks(open, currentUserId, todayIso, timeZone);
+  const overdue = dueWork.filter(task => (printPaymentFollowUp(task, todayIso, timeZone)?.date ?? task.dueDate)! < todayIso);
   const { dueToday, remainingDueToday, nextUp, selectedCount, blockedNextUp, working, waiting, attention, later } = selectPersonalWork(open, todayIso, timeZone);
+  const hasSecondary = hasEmailContent || waiting.length > 0 || later.length > 0 || completedToday.length > 0;
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-xl border bg-card px-4 py-3">
-        <FocusStat label="Open" value={open.length} icon={ListChecks} />
-        <FocusStat label="Due today" value={dueToday.length} icon={CalendarDays} />
-        <FocusStat label="Overdue" value={open.filter(task => task.dueDate && task.dueDate < todayIso).length} icon={CalendarDays} />
-        <FocusStat label="Completed today" value={completedToday.length} icon={CheckCircle2} />
-        <FocusStat label="Tracked today" value={formatDuration(trackedTodaySeconds)} icon={Clock3} />
-      </div>
-
       {activeTimer ? (
         <div className="flex flex-col gap-3 rounded-xl border border-success/30 bg-success/8 px-4 py-3 sm:flex-row sm:items-center">
           <span className="relative flex size-3 shrink-0" aria-hidden>
@@ -500,138 +560,68 @@ function FocusView({
         </div>
       ) : null}
 
-      <FocusSection
-        id="next-up"
-        title="Next up"
-        description="Manager order across your projects · No due date needed"
-        tasks={nextUp}
-        todayIso={todayIso}
-        timeZone={timeZone}
-        pending={pending}
-        activeTimerTaskId={activeTimer?.taskId ?? null}
-        onOpen={onOpen}
-        onStatus={onStatus}
-        onTimer={onTimer}
-        emptyTitle={selectedCount > 0 ? "Your selected tasks are waiting below; other ready work is still available." : "No next tasks chosen yet. Your other assigned work is below."}
-      />
-      {blockedNextUp.length > 0 ? <FocusSection
-        title="Next up · blocked"
-        description="Selected work waiting on a dependency"
-        tasks={blockedNextUp}
-        todayIso={todayIso}
-        timeZone={timeZone}
-        pending={pending}
-        activeTimerTaskId={activeTimer?.taskId ?? null}
-        onOpen={onOpen}
-        onStatus={onStatus}
-        onTimer={onTimer}
-      /> : null}
-
-      <FocusSection
-        id="due-today"
-        title="Due today"
-        description={dueToday.length !== remainingDueToday.length ? `${dueToday.length - remainingDueToday.length} of today's tasks shown in Next up above` : "Today's deadlines and payment follow-ups"}
-        tasks={remainingDueToday}
-        totalCount={dueToday.length}
-        todayIso={todayIso}
-        timeZone={timeZone}
-        pending={pending}
-        activeTimerTaskId={activeTimer?.taskId ?? null}
-        onOpen={onOpen}
-        onStatus={onStatus}
-        onTimer={onTimer}
-        emptyTitle={dueToday.length > 0 ? "Today's selected tasks are shown above in Next up" : "No tasks due today"}
-      />
-
-      {working.length > 0 ? (
-        <FocusSection
-          title="Working now"
-          description="In progress and waiting for review"
-          tasks={working}
-          todayIso={todayIso}
-          timeZone={timeZone}
-          pending={pending}
-          activeTimerTaskId={activeTimer?.taskId ?? null}
-          onOpen={onOpen}
-          onStatus={onStatus}
-          onTimer={onTimer}
-        />
-      ) : null}
-
-      <FocusSection
-        title="Needs attention"
-        description="Overdue work, earlier follow-ups, upcoming tasks, and undated work"
-        tasks={showAllAttention ? attention : attention.slice(0, 5)}
-        totalCount={attention.length}
-        todayIso={todayIso}
-        timeZone={timeZone}
-        pending={pending}
-        activeTimerTaskId={activeTimer?.taskId ?? null}
-        onOpen={onOpen}
-        onStatus={onStatus}
-        onTimer={onTimer}
-        emptyTitle="Nothing needs attention right now"
-      />
-
-      {attention.length > 5 ? <Button variant="ghost" onClick={() => setShowAllAttention(value => !value)}>{showAllAttention ? "Show next 5" : `Show all ${attention.length} needing attention`}</Button> : null}
-
-      {waiting.length > 0 ? (
-        <SectionDisclosure id="waiting" title="Waiting on confirmation" summary={waiting.length}>
-        <FocusSection
-          title="Waiting on confirmation"
-          description="Payment requests sent; follow-up dates bring them back to your action queue"
-          tasks={waiting}
-          todayIso={todayIso}
-          timeZone={timeZone}
-          pending={pending}
-          activeTimerTaskId={activeTimer?.taskId ?? null}
-          onOpen={onOpen}
-          onStatus={onStatus}
-          onTimer={onTimer}
-        />
-        </SectionDisclosure>
-      ) : null}
-
-      {later.length > 0 ? (
-        <CollapsibleSection
-          title={`Later · ${later.length}`}
-          description="Farther-future work kept out of your active queue"
-          open={showLater}
-          onToggle={() => setShowLater((value) => !value)}
-        >
-          <FocusTaskList
-            tasks={later}
-            todayIso={todayIso}
-            timeZone={timeZone}
-            pending={pending}
-            activeTimerTaskId={activeTimer?.taskId ?? null}
-            onOpen={onOpen}
-            onStatus={onStatus}
-            onTimer={onTimer}
-          />
-        </CollapsibleSection>
-      ) : null}
-
-      {completedToday.length > 0 ? (
-        <CollapsibleSection
-          title={`Completed today · ${completedToday.length}`}
-          description="A quick record of today's progress"
-          open={showCompleted}
-          onToggle={() => setShowCompleted((value) => !value)}
-          tone="success"
-        >
-          <FocusTaskList
-            tasks={completedToday}
-            todayIso={todayIso}
-            timeZone={timeZone}
-            pending={pending}
-            activeTimerTaskId={activeTimer?.taskId ?? null}
-            onOpen={onOpen}
-            onStatus={onStatus}
-            onTimer={onTimer}
-          />
-        </CollapsibleSection>
-      ) : null}
+      <div className="@container/focus min-w-0">
+        <div className={cn("grid min-w-0 items-start gap-8", hasSecondary && "@[76rem]/focus:grid-cols-[minmax(0,1fr)_26rem] @[100rem]/focus:gap-12")}>
+          <div className="min-w-0 space-y-6">
+            <dl aria-label="Work summary" className="flex flex-wrap gap-x-5 gap-y-2 text-xs">
+              <FocusStat label="Open" value={open.length} />
+              <FocusStat label="Due today" value={dueToday.length} />
+              <FocusStat label="Overdue" value={overdue.length} />
+              <FocusStat label="Completed today" value={completedToday.length} />
+              <FocusStat label="Tracked today" value={formatDuration(trackedTodaySeconds)} />
+            </dl>
+            {dueOnly ? <>
+              <Button variant="ghost" size="sm" onClick={onShowAll}>Show all assigned work</Button>
+              <FocusSection title="Tasks due" description="Due today or overdue, including printer-payment follow-ups."
+                tasks={dueWork} todayIso={todayIso} timeZone={timeZone} pending={pending}
+                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} emptyTitle="No tasks due now" />
+            </> : <>
+              {nextUp.length > 0 ? <FocusSection id="next-up" title="Next up"
+                description="Manager order across your projects · No due date needed" tasks={nextUp}
+                todayIso={todayIso} timeZone={timeZone} pending={pending}
+                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} emptyTitle="Your selected tasks are waiting on a dependency or confirmation." /> : (
+                selectedCount > 0 ? <p id="next-up" className="text-sm text-muted-foreground">Your selected tasks are waiting on a dependency or confirmation.</p> : null
+              )}
+              {blockedNextUp.length > 0 ? <FocusSection title="Next up · blocked"
+                description="Selected work waiting on a dependency" tasks={blockedNextUp} todayIso={todayIso} timeZone={timeZone} pending={pending}
+                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} /> : null}
+              {dueToday.length > 0 ? <FocusSection id="due-today" title="Due today"
+                description={dueToday.length !== remainingDueToday.length ? `${dueToday.length - remainingDueToday.length} of today's tasks shown in Next up above` : "Today's deadlines and payment follow-ups"}
+                tasks={remainingDueToday} totalCount={dueToday.length} todayIso={todayIso} timeZone={timeZone} pending={pending}
+                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer}
+                emptyTitle="Today's selected tasks are shown above in Next up" /> : null}
+              {working.length > 0 ? <FocusSection title="Working now" description="In progress and waiting for review"
+                tasks={working} todayIso={todayIso} timeZone={timeZone} pending={pending}
+                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} /> : null}
+              <FocusSection title="Other assigned work" description="Overdue work, payment follow-ups, upcoming tasks, and undated work"
+                tasks={showAllAttention ? attention : attention.slice(0, 5)} totalCount={attention.length}
+                todayIso={todayIso} timeZone={timeZone} pending={pending}
+                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} emptyTitle="No other work needs attention right now" />
+              {attention.length > 5 ? <Button variant="ghost" onClick={() => setShowAllAttention(value => !value)}>
+                {showAllAttention ? "Show fewer tasks" : `Show all ${attention.length} tasks`}
+              </Button> : null}
+            </>}
+          </div>
+          {hasSecondary ? <aside aria-label="Email and other work" className="min-w-0 space-y-5 @[76rem]/focus:border-l @[76rem]/focus:pl-6">
+            {emailContent}
+            {waiting.length > 0 ? <SectionDisclosure id="waiting" title="Waiting on confirmation" summary={waiting.length}>
+              <FocusSection title="Waiting on confirmation" description="Payment requests sent; follow-up dates bring them back to your action queue"
+                tasks={waiting} todayIso={todayIso} timeZone={timeZone} pending={pending}
+                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} />
+            </SectionDisclosure> : null}
+            {later.length > 0 ? <CollapsibleSection title={`Later · ${later.length}`} description="Farther-future work kept out of your active queue"
+              open={showLater} onToggle={() => setShowLater(value => !value)}>
+              <FocusTaskList tasks={later} todayIso={todayIso} timeZone={timeZone} pending={pending}
+                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} />
+            </CollapsibleSection> : null}
+            {completedToday.length > 0 ? <CollapsibleSection title={`Completed today · ${completedToday.length}`} description="A quick record of today's progress"
+              open={showCompleted} onToggle={() => setShowCompleted(value => !value)} tone="success">
+              <FocusTaskList tasks={completedToday} todayIso={todayIso} timeZone={timeZone} pending={pending}
+                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} />
+            </CollapsibleSection> : null}
+          </aside> : null}
+        </div>
+      </div>
     </div>
   );
 }
@@ -639,18 +629,14 @@ function FocusView({
 function FocusStat({
   label,
   value,
-  icon: Icon,
 }: {
   label: string;
   value: string | number;
-  icon: React.ComponentType<{ className?: string }>;
 }) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-muted-foreground">
-        <Icon className="size-4" />
-      </span>
-      <span className="text-xs text-muted-foreground">{label} <span className="ml-1 text-sm font-semibold tabular-nums text-foreground">{value}</span></span>
+    <div className="flex items-baseline gap-1.5">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="font-medium tabular-nums">{value}</dd>
     </div>
   );
 }
@@ -696,6 +682,7 @@ function FocusSection({
       {tasks.length > 0 ? (
         <FocusTaskList
           tasks={tasks}
+          showNextUp={id !== "next-up"}
           todayIso={todayIso}
           timeZone={timeZone}
           pending={pending}
@@ -716,6 +703,7 @@ function FocusSection({
 
 function FocusTaskList({
   tasks,
+  showNextUp = true,
   todayIso,
   timeZone,
   pending,
@@ -725,6 +713,7 @@ function FocusTaskList({
   onTimer,
 }: {
   tasks: MyWorkTaskRow[];
+  showNextUp?: boolean;
   todayIso: string;
   timeZone: string;
   pending: boolean;
@@ -734,7 +723,7 @@ function FocusTaskList({
   onTimer: (task: MyWorkTaskRow) => void;
 }) {
   return (
-    <ul className="divide-y overflow-hidden rounded-xl border bg-card" aria-busy={pending}>
+    <ul className="@container/tasklist divide-y overflow-hidden rounded-xl border bg-card" aria-busy={pending}>
       <AnimatePresence initial={false}>
         {tasks.map((task) => {
         const followUp = printPaymentFollowUp(task, todayIso, timeZone);
@@ -799,12 +788,12 @@ function FocusTaskList({
               </div>
               <TaskAttachmentShortcut task={task} />
               {task.blockedByTitle ? <p className="mt-1 text-xs text-warning-text">Blocked by {task.blockedByTitle}</p> : null}
-              {task.isNextUp ? <span className="mt-1 inline-block text-xs font-medium text-primary">Next up</span> : null}
+              {showNextUp && task.isNextUp ? <span className="mt-1 inline-block text-xs font-medium text-primary">Next up</span> : null}
               {sourceLink ? <Link href={sourceLink.href} className="text-xs text-primary hover:underline">{sourceLink.label}</Link> : null}
-              <p className={cn("mt-1 text-xs lg:hidden", due.tone === "overdue" ? "font-medium text-destructive" : due.tone === "soon" ? "font-medium text-warning-text" : "text-muted-foreground")}>{due.tone === "none" ? "No due date" : due.text}</p>
+              <p className={cn("mt-1 text-xs @[40rem]/tasklist:hidden", due.tone === "overdue" ? "font-medium text-destructive" : due.tone === "soon" ? "font-medium text-warning-text" : "text-muted-foreground")}>{due.tone === "none" ? "No due date" : due.text}</p>
             </div>
             <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
-              <div className="hidden items-center gap-2 lg:flex">
+              <div className="hidden items-center gap-2 @[40rem]/tasklist:flex">
                 <span
                   className={cn(
                     "text-xs",
@@ -815,7 +804,7 @@ function FocusTaskList({
                 >
                   {due.tone === "none" ? "No due date" : due.text}
                 </span>
-                <PriorityBadge priority={task.priority} />
+                {task.priority !== "medium" ? <PriorityBadge priority={task.priority} /> : null}
               </div>
               {!done ? (
                 <Button
@@ -914,6 +903,7 @@ function AgendaView({ items, todayIso }: { items: AgendaItem[]; todayIso: string
     { key: "next2Weeks", label: "Next two weeks" },
     { key: "later", label: "Later" },
   ];
+  const visibleSections = sections.filter((section) => buckets[section.key].length > 0);
   const filters: Array<{ value: AgendaFilter; label: string; icon: React.ComponentType<{ className?: string }> }> = [
     { value: "all", label: "All", icon: CalendarDays },
     { value: "tasks", label: "My tasks", icon: ListChecks },
@@ -956,23 +946,32 @@ function AgendaView({ items, todayIso }: { items: AgendaItem[]; todayIso: string
           <p className="text-sm text-muted-foreground">Try another filter or enjoy the clear schedule.</p>
         </div>
       ) : (
-        sections.map((section) => {
-          const rows = buckets[section.key];
-          if (rows.length === 0) return null;
-          return (
-            <section key={section.key} className="space-y-2">
-              <div className="flex items-baseline justify-between">
-                <h2 className={cn("text-lg font-semibold", section.destructive && "text-destructive")}>{section.label}</h2>
-                <span className="text-xs tabular-nums text-muted-foreground">{rows.length}</span>
-              </div>
-              <ul className="divide-y overflow-hidden rounded-xl border bg-card">
-                {rows.map((item) => (
-                  <li key={item.id}><AgendaRow item={item} /></li>
-                ))}
-              </ul>
-            </section>
-          );
-        })
+        <div className="@container/agenda min-w-0">
+          <div
+            className={cn(
+              "grid min-w-0 items-start gap-5",
+              visibleSections.length > 1 && "@[64rem]/agenda:grid-cols-2",
+              visibleSections.length > 2 && "@[116rem]/agenda:grid-cols-[repeat(auto-fit,minmax(26rem,1fr))]"
+            )}
+          >
+            {visibleSections.map((section) => {
+              const rows = buckets[section.key];
+              return (
+                <section key={section.key} className="min-w-0 space-y-2">
+                  <div className="flex items-baseline justify-between">
+                    <h2 className={cn("text-lg font-semibold", section.destructive && "text-destructive")}>{section.label}</h2>
+                    <span className="text-xs tabular-nums text-muted-foreground">{rows.length}</span>
+                  </div>
+                  <ul className="divide-y overflow-hidden rounded-xl border bg-card">
+                    {rows.map((item) => (
+                      <li key={item.id}><AgendaRow item={item} /></li>
+                    ))}
+                  </ul>
+                </section>
+              );
+            })}
+          </div>
+        </div>
       )}
     </div>
   );

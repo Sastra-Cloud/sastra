@@ -6,7 +6,7 @@ import { inboxHref, inboxPage } from "@/lib/email/inbox-filters";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { listThreadsPage, type ThreadStatus } from "@/lib/email/queries";
+import { countThreadsNeedingReview, listThreadsPage, type ThreadStatus } from "@/lib/email/queries";
 import { getProjectHeader } from "@/lib/projects/queries";
 import { isCorrespondenceCaptureEnabled } from "@/lib/gmail";
 import { EmptyState, PageHero, PageShell } from "@/components/cockpit";
@@ -25,6 +25,7 @@ const STATUS_VARIANT: Record<ThreadStatus, "default" | "secondary" | "outline"> 
 };
 
 const FILTERS = [
+  { key: "review", label: "Needs review", href: "/correspondence?bucket=review" },
   { key: "project", label: "Project related", href: "/correspondence" },
   { key: "other", label: "Other email", href: "/correspondence?bucket=other" },
   { key: "all", label: "All", href: "/correspondence?bucket=all" },
@@ -48,7 +49,7 @@ export default async function CorrespondencePage({
     ? sp.status
     : undefined) as ThreadStatus | undefined;
   const bucket =
-    sp.needsLinking === "1" || sp.bucket === "other"
+    sp.bucket === "review" ? "review" : sp.needsLinking === "1" || sp.bucket === "other"
       ? "other"
       : sp.bucket === "all"
         ? "all"
@@ -58,16 +59,15 @@ export default async function CorrespondencePage({
     : null;
   const page = inboxPage(sp.page);
   const filters = { bucket, status, project: sp.project, q: sp.q };
-  const { items: threads, hasMore } = await listThreadsPage({
+  const [{ items: threads, hasMore }, reviewCount, captureEnabled] = await Promise.all([listThreadsPage({
     status,
     projectId: projectFilter?.id,
     projectRelated:
       bucket === "project" ? true : bucket === "other" ? false : undefined,
     search: sp.q,
     page,
-  });
-
-  const captureEnabled = await isCorrespondenceCaptureEnabled();
+    needsReview: bucket === "review",
+  }), countThreadsNeedingReview(), isCorrespondenceCaptureEnabled()]);
   return (
     <PageShell>
       <PageHero
@@ -87,7 +87,16 @@ export default async function CorrespondencePage({
         </div>
       )}
 
-      <form action="/correspondence" className="grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
+        <div>
+          <p className="text-sm font-medium">{reviewCount} email {reviewCount === 1 ? "thread needs" : "threads need"} review</p>
+          <p className="max-w-prose text-xs text-muted-foreground">Shared suggestions, documents, and unassigned follow-ups. Each thread counts once.</p>
+          <p className="max-w-prose text-xs text-muted-foreground">Your task suggestions and owned follow-ups stay in My Work.</p>
+        </div>
+        <Link href="/tasks" className={buttonVariants({ variant: "ghost", size: "sm" })}>Open My Work</Link>
+      </div>
+
+      <form action="/correspondence" className="grid max-w-4xl items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
         <input type="hidden" name="bucket" value={bucket} />
         {sp.project ? <input type="hidden" name="project" value={sp.project} /> : null}
         <div className="min-w-0 flex-1 space-y-1"><Label htmlFor="email-search">Search subject or linked project</Label><Input id="email-search" name="q" defaultValue={sp.q ?? ""} /></div>
@@ -102,13 +111,14 @@ export default async function CorrespondencePage({
             key={f.key}
             href={inboxHref(filters, { bucket: f.key, page: undefined })}
             className={cn(
+              "min-h-11",
               buttonVariants({
                 variant: bucket === f.key ? "default" : "outline",
                 size: "sm",
               })
             )}
           >
-            {f.label}
+            {f.label}{f.key === "review" ? <span className="tabular-nums">{reviewCount}</span> : null}
           </Link>
         ))}
       </div>
@@ -139,10 +149,12 @@ export default async function CorrespondencePage({
       {threads.length === 0 ? (
         <EmptyState
           icon={<Inbox className="size-5" />}
-          title={sp.q || sp.status || sp.project ? "No email matches these filters" : "No correspondence here"}
+          title={sp.q || sp.status || sp.project ? "No email matches these filters" : bucket === "review" ? "No email needs review" : "No correspondence here"}
           description={
             sp.q || sp.status || sp.project ? "Change your search or clear filters to see more email." : bucket === "project"
               ? "No project-related email yet. Unlinked mailbox messages stay under Other email."
+              : bucket === "review"
+                ? "No shared email reviews or unassigned follow-ups are waiting. Your personal email work stays in My Work."
               : bucket === "other"
                 ? "No other mailbox email here. Security alerts and unlinked forwards will appear in this view."
                 : "Captured email will appear here as it arrives."
@@ -173,6 +185,7 @@ export default async function CorrespondencePage({
                     )}
                     {t.holderName && <span>· {t.holderName}</span>}
                   </div>
+                  {t.reviewLabels?.length ? <p className="mt-1 text-xs font-medium text-primary">{t.reviewLabels.join(" · ")}</p> : null}
                 </div>
                 <span className="shrink-0 text-xs text-muted-foreground">
                   {t.lastMessageAt ? timeAgo(t.lastMessageAt) : ""}

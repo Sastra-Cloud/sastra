@@ -55,6 +55,7 @@ export function SponsorshipDetail({ detail, options, defaultCc, today }: { detai
   const activeReceipts = visible.receipts.filter(receipt => !receipt.reversedAt);
   const noReceipts = !activeReceipts.length;
   function failure(message: string) { setError(message); }
+  const hasAside = record.status === "invoiced" || visible.receipts.length > 0 || visible.uses.length > 0 || visible.invoiceHistory.some(invoice => invoice.status === "void");
   return <div className="space-y-6">
     <PageHero title={record.title} description={record.recipientName} actions={record.status === "draft" ? <>
       <Button variant="outline" disabled={optimistic.pending || generating || editing} onClick={() => { setEditing(true); setFailedInput(null); setError(null); setReviewed(false); }}>Edit sponsorship</Button>
@@ -69,6 +70,9 @@ export function SponsorshipDetail({ detail, options, defaultCc, today }: { detai
     </PageHero>
     <Link href="/sponsorships" className="inline-flex min-h-11 items-center text-sm text-primary underline underline-offset-4">Back to sponsorships</Link>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+    <div className="@container/sponsorship min-w-0">
+    <div className={`grid min-w-0 items-start gap-6${hasAside ? " @[72rem]/sponsorship:grid-cols-[minmax(0,1fr)_minmax(26rem,34rem)]" : ""}`}>
+    <div className="min-w-0 space-y-6">
     {editing ? <SponsorshipForm initial={failedInput ?? draftInput(visible)} options={options} pending={optimistic.pending} onCancel={() => setEditing(false)} onSave={input => {
       setEditing(false); setError(null); setReviewed(false);
       optimistic.run({ kind: "edit", input, books: options.books }, () => updateSponsorship(record.id, record.version, input), {
@@ -115,7 +119,12 @@ export function SponsorshipDetail({ detail, options, defaultCc, today }: { detai
       </>}
     </section>}
     {emailOpen && invoice && <SponsorshipEmail key={invoice.id} detail={visible} defaultCc={defaultCc} onClose={() => setEmailOpen(false)} />}
+    </div>
+    {hasAside && <div className="min-w-0 space-y-6">
     {(record.status === "invoiced" || visible.receipts.length > 0 || visible.uses.length > 0) && <SponsorshipFunding detail={visible} today={today} />}
     {visible.invoiceHistory.some(invoice => invoice.status === "void") && <section className="space-y-2"><h2 className="text-base font-semibold">Previous invoices</h2><ul className="space-y-2">{visible.invoiceHistory.filter(invoice => invoice.status === "void").map(invoice => <li key={invoice.id}><a href={`/api/invoices/${invoice.id}`} target="_blank" rel="noreferrer" className="text-sm text-primary underline underline-offset-4">Invoice {invoice.invoiceNumber} · void</a></li>)}</ul></section>}
+    </div>}
+    </div>
+    </div>
   </div>;
 }

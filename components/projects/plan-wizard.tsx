@@ -270,7 +270,8 @@ export function PlanWizard({
 
   // ── Review step ──
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-5">
+    <div className="@container/wizard min-w-0">
+    <div className="mx-auto w-full max-w-3xl space-y-5 @[72rem]/wizard:max-w-6xl">
       <div>
         <h1 className="font-heading text-2xl font-semibold tracking-tight">
           Review the plan
@@ -321,127 +322,132 @@ export function PlanWizard({
         </div>
       ) : null}
 
-      {/* Stages */}
-      <div className="space-y-2">
-        {plan.phases.map((ph, i) => (
-          <Card key={i}>
-            <CardContent className="flex flex-wrap items-center gap-2 py-3">
-              <Input
-                value={ph.name}
-                onChange={(e) => setPhase(i, { name: e.target.value })}
-                className="h-8 min-w-40 flex-1 font-medium"
-              />
-              <select
-                className={selectClass + " h-8"}
-                value={ph.roleKey ?? ""}
-                onChange={(e) => setPhase(i, { roleKey: e.target.value || undefined })}
-                aria-label="Coordinator role"
-              >
-                <option value="">— role —</option>
-                {roles.map((r) => (
-                  <option key={r.key} value={r.key}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
-              <Input
-                type="number"
-                min="0"
-                value={ph.durationDays ?? ""}
-                onChange={(e) =>
-                  setPhase(i, {
-                    durationDays: e.target.value ? Number(e.target.value) : undefined,
-                  })
-                }
-                className="h-8 w-20"
-                placeholder="days"
-                aria-label="Duration days"
-              />
-              <label className="flex items-center gap-1 text-xs text-muted-foreground">
-                <input
-                  type="checkbox"
-                  checked={ph.tasks.some((t) => t.isPerUnit)}
-                  onChange={(e) => setPhasePerUnit(i, e.target.checked)}
-                />
-                per {units.singular}
-              </label>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                aria-label="Remove stage"
-                onClick={() => removePhase(i)}
-              >
-                <X className="size-4" />
-              </Button>
+      <div className="grid items-start gap-5 @[72rem]/wizard:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)]">
+        <div className="min-w-0">
+          {/* Stages */}
+          <div className="space-y-2">
+            {plan.phases.map((ph, i) => (
+              <Card key={i}>
+                <CardContent className="flex flex-wrap items-center gap-2 py-3">
+                  <Input
+                    value={ph.name}
+                    onChange={(e) => setPhase(i, { name: e.target.value })}
+                    className="h-8 min-w-40 flex-1 font-medium"
+                  />
+                  <select
+                    className={selectClass + " h-8"}
+                    value={ph.roleKey ?? ""}
+                    onChange={(e) => setPhase(i, { roleKey: e.target.value || undefined })}
+                    aria-label="Coordinator role"
+                  >
+                    <option value="">— role —</option>
+                    {roles.map((r) => (
+                      <option key={r.key} value={r.key}>
+                        {r.label}
+                      </option>
+                    ))}
+                  </select>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={ph.durationDays ?? ""}
+                    onChange={(e) =>
+                      setPhase(i, {
+                        durationDays: e.target.value ? Number(e.target.value) : undefined,
+                      })
+                    }
+                    className="h-8 w-20"
+                    placeholder="days"
+                    aria-label="Duration days"
+                  />
+                  <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={ph.tasks.some((t) => t.isPerUnit)}
+                      onChange={(e) => setPhasePerUnit(i, e.target.checked)}
+                    />
+                    per {units.singular}
+                  </label>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    aria-label="Remove stage"
+                    onClick={() => removePhase(i)}
+                  >
+                    <X className="size-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setPlan((p) =>
+                  p
+                    ? {
+                        ...p,
+                        phases: [
+                          ...p.phases,
+                          { name: "New stage", roleKey: undefined, durationDays: 7, tasks: [{ name: "New stage" }] },
+                        ],
+                      }
+                    : p
+                )
+              }
+            >
+              <Plus className="size-4" />
+              Add stage
+            </Button>
+          </div>
+        </div>
+        <div className="min-w-0 space-y-5">
+          {/* Coordinators */}
+          <Card>
+            <CardContent className="space-y-2 py-4">
+              <p className="text-sm font-medium">Assign a coordinator per stage</p>
+              {usedRoleKeys.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No roles on the stages yet.</p>
+              ) : (
+                usedRoleKeys.map((rk) => (
+                  <div key={rk} className="flex items-center gap-3">
+                    <span className="w-56 shrink-0 text-sm">{roleLabel.get(rk) ?? rk}</span>
+                    <select
+                      className={selectClass + " flex-1"}
+                      value={coordinators[rk] ?? ""}
+                      onChange={(e) =>
+                        setCoordinators((c) => ({ ...c, [rk]: e.target.value }))
+                      }
+                    >
+                      <option value="">— unassigned —</option>
+                      {users.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
-        ))}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() =>
-            setPlan((p) =>
-              p
-                ? {
-                    ...p,
-                    phases: [
-                      ...p.phases,
-                      { name: "New stage", roleKey: undefined, durationDays: 7, tasks: [{ name: "New stage" }] },
-                    ],
-                  }
-                : p
-            )
-          }
-        >
-          <Plus className="size-4" />
-          Add stage
-        </Button>
+
+          <Card>
+            <CardContent className="flex flex-wrap items-center gap-3 py-4">
+              <Label className="text-sm">Start date</Label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="h-8 w-44"
+              />
+              <span className="text-xs text-muted-foreground">
+                Defaults to the project start; due dates cascade from here.
+              </span>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-
-      {/* Coordinators */}
-      <Card>
-        <CardContent className="space-y-2 py-4">
-          <p className="text-sm font-medium">Assign a coordinator per stage</p>
-          {usedRoleKeys.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No roles on the stages yet.</p>
-          ) : (
-            usedRoleKeys.map((rk) => (
-              <div key={rk} className="flex items-center gap-3">
-                <span className="w-56 shrink-0 text-sm">{roleLabel.get(rk) ?? rk}</span>
-                <select
-                  className={selectClass + " flex-1"}
-                  value={coordinators[rk] ?? ""}
-                  onChange={(e) =>
-                    setCoordinators((c) => ({ ...c, [rk]: e.target.value }))
-                  }
-                >
-                  <option value="">— unassigned —</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="flex flex-wrap items-center gap-3 py-4">
-          <Label className="text-sm">Start date</Label>
-          <Input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="h-8 w-44"
-          />
-          <span className="text-xs text-muted-foreground">
-            Defaults to the project start; due dates cascade from here.
-          </span>
-        </CardContent>
-      </Card>
 
       <div className="flex justify-between gap-2 border-t pt-4">
         <Button variant="ghost" onClick={() => setPlan(null)} disabled={committing}>
@@ -458,6 +464,7 @@ export function PlanWizard({
           )}
         </Button>
       </div>
+    </div>
     </div>
   );
 }

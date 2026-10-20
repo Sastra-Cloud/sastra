@@ -58,7 +58,7 @@ export default async function MissingDueDatesPage() {
         </div>
       </Reveal>
 
-      <ContentColumn width="focused">
+      <ContentColumn width="reading">
         <Reveal>
           <MissingDueDates projects={missing} />
         </Reveal>

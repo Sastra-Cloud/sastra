@@ -27,6 +27,7 @@ import { SignOutButton } from "@/components/auth/sign-out-button";
 import { TimerWidget } from "@/components/time/timer-widget";
 import { cn } from "@/lib/utils";
 import { isAdminRole } from "@/lib/auth/policy";
+import { useNavigationBadges } from "@/components/navigation-badges-provider";
 
 const ROLE_BADGE: Record<string, string> = {
   super_admin: "bg-primary text-primary-foreground",
@@ -53,6 +54,8 @@ export function Topbar({
 }) {
   const [open, setOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const badges = useNavigationBadges();
+  const hasUpdates = Object.values(badges).some((count) => count > 0);
 
   function closeAccountAfterNavigation(event: MouseEvent<HTMLAnchorElement>) {
     if (
@@ -69,7 +72,7 @@ export function Topbar({
   }
 
   return (
-    <header className="sticky top-0 z-20 border-b bg-background/88 backdrop-blur-md">
+    <header data-app-topbar className="sticky top-0 z-20 border-b bg-background/88 backdrop-blur-md">
       <div className="flex h-16 items-center gap-3 px-4 md:px-6">
         {/* Mobile nav */}
         <Sheet open={open} onOpenChange={setOpen}>
@@ -78,12 +81,13 @@ export function Topbar({
               <Button
                 variant="ghost"
                 size="icon"
-                className="lg:hidden"
-                aria-label="Open menu"
+                className="relative lg:hidden"
+                aria-label={hasUpdates ? "Open menu, work or unread messages waiting" : "Open menu"}
               />
             }
           >
             <Menu className="size-5" />
+            {hasUpdates ? <span aria-hidden="true" className="absolute right-1 top-1 size-2 rounded-full bg-info" /> : null}
           </SheetTrigger>
           <SheetContent
             side="left"

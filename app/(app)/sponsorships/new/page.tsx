@@ -16,7 +16,7 @@ export default async function NewSponsorshipPage() {
   if (!moduleEnabled(workspace.enabledModules, "sponsorships")) return null;
   const [books, directory] = await Promise.all([listSponsorshipBooks(), listPartnersWithContacts()]);
   return <PageShell className="pb-16"><PageHero title="Create sponsorship" description="Choose books and agreed prices. You can review the invoice before sending." />
-    <ContentColumn><Link href="/sponsorships" className="mb-4 inline-flex min-h-11 items-center text-sm text-primary underline underline-offset-4">Back to sponsorships</Link>
+    <ContentColumn width="reading"><Link href="/sponsorships" className="mb-4 inline-flex min-h-11 items-center text-sm text-primary underline underline-offset-4">Back to sponsorships</Link>
       <CreateSponsorship currency={workspace.defaultCurrency} options={{ books,
         partners: directory.partners.map(({ id, name, billingAddress }) => ({ id, name, billingAddress })),
         contacts: directory.contacts.map(({ id, partnerId, firstName, lastName, email, isPrimary }) => ({ id, partnerId, firstName, lastName, email, isPrimary })),

@@ -518,7 +518,7 @@ export async function listMyExternalFollowUps(userId: string) {
     .leftJoin(user, eq(user.id, emailFollowUps.ownerUserId))
     .where(
       and(
-        or(eq(emailFollowUps.ownerUserId, userId), isNull(emailFollowUps.ownerUserId)),
+        eq(emailFollowUps.ownerUserId, userId),
         isNull(emailFollowUps.resolvedAt)
       )
     )

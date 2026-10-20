@@ -1,0 +1,93 @@
+import { Children, isValidElement, type ReactNode } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { toast } from "sonner";
+import { MessageActions } from "./message-actions";
+import { messageHoldHaptic } from "@/lib/chat/haptics";
+import type { ChatMessageView } from "@/lib/chat/queries";
+
+const hooks = vi.hoisted(() => ({ values: [] as unknown[], cursor: 0, hold: undefined as (() => void) | undefined }));
+vi.mock("react", async original => ({
+  ...await original<typeof import("react")>(), useEffect: vi.fn(), useLayoutEffect: vi.fn(),
+  useState(initial: unknown) {
+    const i = hooks.cursor++;
+    if (!(i in hooks.values)) hooks.values[i] = initial;
+    return [hooks.values[i], (next: unknown) => { hooks.values[i] = typeof next === "function" ? next(hooks.values[i]) : next; }];
+  },
+  useRef(initial: unknown) {
+    const i = hooks.cursor++;
+    if (!(i in hooks.values)) hooks.values[i] = { current: initial };
+    return hooks.values[i];
+  },
+}));
+vi.mock("./use-message-hold", () => ({ useMessageHold: (_enabled: boolean, onHold: () => void) => { hooks.hold = onHold; return {}; } }));
+vi.mock("@/lib/chat/haptics", () => ({ messageHoldHaptic: vi.fn() }));
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+const react = vi.fn();
+const edit = vi.fn();
+function elements(node: ReactNode): React.ReactElement<Record<string, unknown>>[] {
+  return isValidElement<Record<string, unknown>>(node) ? [node, ...Children.toArray(node.props.children as ReactNode).flatMap(elements)] : [];
+}
+function render() {
+  hooks.cursor = 0;
+  const all = elements(MessageActions({ m: { id: "saved", status: "sent", content: "Hello @Teammate", authorName: "Sender", reactions: [{ emoji: "👍", count: 1, mine: true }] } as ChatMessageView,
+    isOwn: true, pin: false, time: "12:00", reactionPending: false, pinPending: false, onEdit: edit, onReact: react, onTogglePin: vi.fn(), onDelete: vi.fn(), children: "Message" }));
+  return {
+    popover: all.find(e => "open" in e.props)!.props,
+    menu: all.find(e => e.props["aria-label"] === "Message actions")!.props,
+    button: (label: string) => all.find(e => e.props["aria-label"] === label || e.props.children && Children.toArray(e.props.children as ReactNode).includes(label))!.props,
+  };
+}
+beforeEach(() => { hooks.values = []; hooks.cursor = 0; vi.clearAllMocks(); });
+describe("message actions", () => {
+  it("opens the message editor and closes the action menu", () => {
+    (render().popover.onOpenChange as (open: boolean) => void)(true);
+    (render().button("Edit message").onClick as () => void)();
+    expect(edit).toHaveBeenCalledOnce();
+    expect(render().popover.open).toBe(false);
+    expect(render().menu.finalFocus).toBe(false);
+    hooks.hold!();
+    expect(render().menu.finalFocus).not.toBe(false);
+  });
+  it("gives haptic feedback only when a touch hold opens the menu", () => {
+    render();
+    expect(messageHoldHaptic).not.toHaveBeenCalled();
+    (render().popover.onOpenChange as (open: boolean) => void)(true);
+    expect(messageHoldHaptic).not.toHaveBeenCalled();
+    (render().popover.onOpenChange as (open: boolean) => void)(false);
+    hooks.hold!();
+    expect(render().popover.open).toBe(true);
+    expect(messageHoldHaptic).toHaveBeenCalledOnce();
+  });
+  it("highlights your quick reaction and closes after choosing", () => {
+    (render().popover.onOpenChange as (open: boolean) => void)(true);
+    expect(render().button("React 👍")["aria-pressed"]).toBe(true);
+    (render().button("React 👍").onClick as () => void)();
+    expect(react).toHaveBeenCalledWith("👍");
+    expect(render().popover.open).toBe(false);
+  });
+  it("waits for clipboard success, prevents duplicates, then closes", async () => {
+    let finish!: () => void;
+    const writeText = vi.fn(() => new Promise<void>(resolve => { finish = resolve; }));
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    (render().popover.onOpenChange as (open: boolean) => void)(true);
+    const copy = render().button("Copy text").onClick as () => Promise<void>;
+    const pending = copy(); await copy();
+    expect(writeText).toHaveBeenCalledTimes(1);
+    expect(writeText).toHaveBeenCalledWith("Hello @Teammate");
+    expect(render().button("Copying…").disabled).toBe(true);
+    expect(toast.success).not.toHaveBeenCalled();
+    finish(); await pending;
+    expect(toast.success).toHaveBeenCalledWith("Message copied");
+    expect(render().popover.open).toBe(false);
+    vi.unstubAllGlobals();
+  });
+  it("keeps the menu open and reports clipboard failure", async () => {
+    vi.stubGlobal("navigator", { clipboard: { writeText: vi.fn().mockRejectedValue(new Error("Denied")) } });
+    (render().popover.onOpenChange as (open: boolean) => void)(true);
+    await (render().button("Copy text").onClick as () => Promise<void>)();
+    expect(toast.error).toHaveBeenCalled();
+    expect(render().popover.open).toBe(true);
+    expect(render().button("Copy text").disabled).toBe(false);
+    vi.unstubAllGlobals();
+  });
+});

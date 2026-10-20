@@ -54,6 +54,7 @@ export type ChatMessageView = {
   content: string | null;
   status: string;
   createdAt: string;
+  editedAt: string | null;
   isMine: boolean;
   reactions: ChatReaction[];
   attachments: Attachment[];
@@ -61,6 +62,18 @@ export type ChatMessageView = {
 
 /** How many of a conversation's newest messages the thread loads and polls. */
 export const RECENT_MESSAGE_LIMIT = 100;
+
+/** Personal usage across saved, non-deleted messages; never accepts a client user ID. */
+export async function getFrequentReactions(userId: string): Promise<string[]> {
+  const rows = await db.select({ emoji: messageReactions.emoji })
+    .from(messageReactions)
+    .innerJoin(chatMessages, eq(chatMessages.id, messageReactions.messageId))
+    .where(and(eq(messageReactions.userId, userId), isNull(chatMessages.deletedAt)))
+    .groupBy(messageReactions.emoji)
+    .orderBy(desc(sql`count(*)`), desc(sql`max(${messageReactions.createdAt})`), asc(messageReactions.emoji))
+    .limit(24);
+  return rows.map(row => row.emoji);
+}
 
 export async function getRecentMessages(
   channelId: string,
@@ -76,6 +89,7 @@ export async function getRecentMessages(
       content: chatMessages.content,
       status: chatMessages.status,
       createdAt: chatMessages.createdAt,
+      editedAt: chatMessages.editedAt,
     })
     .from(chatMessages)
     .leftJoin(user, eq(user.id, chatMessages.userId))
@@ -98,7 +112,9 @@ export async function getRecentMessages(
     })
     .from(messageReactions)
     .where(inArray(messageReactions.messageId, ids))
-    .groupBy(messageReactions.messageId, messageReactions.emoji);
+    .groupBy(messageReactions.messageId, messageReactions.emoji)
+    // Keep counts from moving pills around when a fresh aggregation arrives.
+    .orderBy(asc(sql`min(${messageReactions.createdAt})`), asc(messageReactions.emoji));
 
   const reactionMap = new Map<string, ChatReaction[]>();
   for (const r of reactionRows) {
@@ -117,6 +133,7 @@ export async function getRecentMessages(
     content: r.content,
     status: r.status,
     createdAt: r.createdAt.toISOString(),
+    editedAt: r.editedAt?.toISOString() ?? null,
     isMine: r.userId === currentUserId,
     reactions: reactionMap.get(r.id) ?? [],
     attachments: attachMap.get(r.id) ?? [],
@@ -630,4 +647,35 @@ export async function listChatSidebar(
     channels,
     projects: projectSummaries,
   };
+}
+
+/** Resume the latest visited chat that the teammate can still open. */
+export async function getLastVisitedChannelId(currentUserId: string) {
+  const [channel] = await db
+    .select({ id: chatChannels.id })
+    .from(channelReads)
+    .innerJoin(chatChannels, eq(chatChannels.id, channelReads.channelId))
+    .leftJoin(
+      chatChannelMembers,
+      and(
+        eq(chatChannelMembers.channelId, chatChannels.id),
+        eq(chatChannelMembers.userId, currentUserId)
+      )
+    )
+    .where(
+      and(
+        eq(channelReads.userId, currentUserId),
+        or(
+          inArray(chatChannels.kind, ["general", "project"]),
+          and(
+            inArray(chatChannels.kind, ["direct", "custom"]),
+            eq(chatChannelMembers.userId, currentUserId)
+          )
+        )
+      )
+    )
+    .orderBy(desc(channelReads.updatedAt), asc(chatChannels.id))
+    .limit(1);
+
+  return channel?.id ?? null;
 }

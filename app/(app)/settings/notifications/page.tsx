@@ -19,7 +19,8 @@ export default async function NotificationSettingsPage() {
     lastSeenAt: d.lastSeenAt.toISOString(),
   }));
   return (
-    <div className="space-y-5">
+    <div className="grid items-start gap-5 @[64rem]/settings:grid-cols-2">
+      <div className="min-w-0 space-y-5">
       <NotificationPrefs
         workflowOptIn={prefs.workflowOptIn}
         standupOptIn={prefs.standupOptIn}
@@ -28,6 +29,7 @@ export default async function NotificationSettingsPage() {
         timezone={user.timezone || "UTC"}
       />
       <Link href="/settings/profile#email-assistant" className="inline-flex min-h-11 items-center text-sm text-primary hover:underline">Email assistant preferences → Profile</Link>
+      </div>
       <PushSettings
         devices={devices}
         schedule={{

@@ -33,12 +33,15 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
-  SheetHeader,
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { ConversationHeader } from "@/components/chat/conversation-header";
+import { ConversationJump } from "@/components/chat/conversation-jump";
+import { useConversationViewport } from "@/hooks/use-conversation-viewport";
+import { useConversationScroll } from "@/hooks/use-conversation-scroll";
+import { sendOnConversationKey } from "@/lib/chat/composer-key";
 import { usePropState } from "@/hooks/use-prop-state";
 
 const STARTERS = [
@@ -134,9 +137,9 @@ function Message({
       <div className={cn("min-w-0 space-y-2", message.role === "user" ? "max-w-[88%]" : "w-full")}>
         <div
           className={cn(
-            "whitespace-pre-wrap rounded-xl px-3 py-2.5 text-sm leading-relaxed text-pretty",
+            "whitespace-pre-wrap rounded-xl px-3 py-2.5 text-[15px] leading-relaxed lg:text-sm text-pretty",
             message.role === "user"
-              ? "rounded-br-sm bg-primary text-primary-foreground"
+              ? "rounded-br-sm conversation-own-bubble bg-primary text-primary-foreground"
               : "rounded-bl-sm bg-muted text-foreground"
           )}
         >
@@ -197,7 +200,8 @@ export function AgreementChatSheet({
   const [input, setInput] = useState("");
   const [busy, startTransition] = useTransition();
   const [progress, setProgress] = useState("Searching agreements…");
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useConversationViewport<HTMLDivElement>(open, "overlay");
+  const { scrollRef, onScroll, canJump, scrollToLatest } = useConversationScroll(`${snapshot.messages.length}:${busy}`, open);
   const knownReadyIdsRef = useRef(new Set(readyIds));
   const indexingCount = snapshot.documents.filter(
     (document) => document.status === "pending" || document.status === "processing"
@@ -205,10 +209,6 @@ export function AgreementChatSheet({
   const failedDocuments = snapshot.documents.filter(
     (document) => document.status === "failed"
   );
-
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [snapshot.messages.length, busy]);
 
   useEffect(() => {
     const previous = knownReadyIdsRef.current;
@@ -256,6 +256,7 @@ export function AgreementChatSheet({
   function send(raw = input) {
     const text = raw.trim();
     if (!text || busy || selectedIds.length === 0) return;
+    scrollToLatest();
     const optimisticId = `optimistic-${crypto.randomUUID()}`;
     const previous = snapshot;
     setInput("");
@@ -346,34 +347,19 @@ export function AgreementChatSheet({
         <MessageCircleQuestion className="size-4" />
         Ask about agreements
       </SheetTrigger>
-      <SheetContent
+      <SheetContent ref={viewportRef} showCloseButton={false}
         side="right"
-        className="h-[100dvh] gap-0 p-0 motion-reduce:transition-none data-[side=right]:w-screen data-[side=right]:max-w-none data-[side=right]:border-l-0 sm:data-[side=right]:w-[48rem] sm:data-[side=right]:max-w-[calc(100vw-2rem)] sm:data-[side=right]:border-l"
+        className="conversation-overlay gap-0 p-0 motion-reduce:transition-none data-[side=right]:w-screen data-[side=right]:max-w-none data-[side=right]:border-l-0 lg:data-[side=right]:w-[48rem] lg:data-[side=right]:max-w-[calc(100vw-2rem)] lg:data-[side=right]:border-l"
       >
-        <SheetHeader className="shrink-0 gap-3 border-b px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3 pr-12 sm:px-5 sm:pt-5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <SheetTitle className="truncate text-lg">Ask about agreements</SheetTitle>
-              <SheetDescription className="truncate">{snapshot.projectName}</SheetDescription>
-            </div>
-            {snapshot.messages.length > 0 ? (
-              <Button
-                type="button"
-                size="xs"
-                variant="ghost"
-                className="shrink-0 text-muted-foreground"
-                aria-label="Clear conversation"
-                disabled={busy}
-                onClick={clearConversation}
-              >
-                <Trash2 className="size-3.5" />
-                <span className="hidden sm:inline">Clear conversation</span>
-              </Button>
-            ) : null}
-          </div>
-
+        <SheetTitle className="sr-only">Agreement Q&amp;A</SheetTitle>
+        <ConversationHeader title="Agreement Q&A" subtitle={`Private · ${snapshot.projectName}`} onClose={() => setOpen(false)} actions={snapshot.messages.length > 0 ? <Button type="button" variant="ghost" className="min-h-11" disabled={busy} onClick={clearConversation}><Trash2 className="size-4" />Clear conversation</Button> : null} />
           {hasAttachments ? (
-            <div className="space-y-2">
+            <details className="shrink-0 border-b bg-background px-4">
+              <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-2 text-xs font-medium">
+                <span>Sources · {selectedIds.length} selected</span>
+                <span className="text-muted-foreground">{indexingCount > 0 ? `${indexingCount} indexing` : failedDocuments.length > 0 ? `${failedDocuments.length} need attention` : "Change sources"}</span>
+              </summary>
+              <div className="max-h-[min(16rem,30dvh)] space-y-2 overflow-y-auto overscroll-contain pb-3">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-medium text-muted-foreground">Sources for your next question</p>
                 <p className="text-[11px] text-muted-foreground" aria-live="polite">
@@ -386,7 +372,7 @@ export function AgreementChatSheet({
                         : "No readable sources"}
                 </p>
               </div>
-              <div className="flex max-h-24 flex-wrap gap-1.5 overflow-y-auto">
+              <div className="flex flex-wrap gap-1.5">
                 {snapshot.documents.map((document) => {
                   const selectable = document.status === "ready" && !!document.id;
                   const selected = selectable && selectedIds.includes(document.id!);
@@ -399,7 +385,7 @@ export function AgreementChatSheet({
                       title={document.error ?? document.name}
                       onClick={() => document.id && toggleSource(document.id)}
                       className={cn(
-                        "inline-flex min-w-0 max-w-[18rem] items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-100",
+                        "inline-flex min-h-11 min-w-0 max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-100",
                         selected
                           ? "border-primary/40 bg-primary/10 text-foreground"
                           : "border-border bg-background text-muted-foreground"
@@ -443,11 +429,13 @@ export function AgreementChatSheet({
                     : null}
                 </div>
               ) : null}
-            </div>
+              </div>
+            </details>
           ) : null}
-        </SheetHeader>
 
-        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+
+        <div className="relative flex min-h-0 flex-1 flex-col">
+        <div ref={scrollRef} onScroll={onScroll} data-conversation-scroll role="region" aria-label="Messages" tabIndex={0} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 lg:px-5">
           {!hasReady ? (
             <div className="mx-auto flex min-h-full max-w-md flex-col items-center justify-center gap-3 py-8 text-center">
               <div className="flex size-11 items-center justify-center rounded-xl bg-muted text-muted-foreground">
@@ -546,7 +534,7 @@ export function AgreementChatSheet({
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="flex min-h-full flex-col justify-end gap-4">
               {snapshot.messages.map((message) => (
                 <Message key={message.id} message={message} snapshot={snapshot} />
               ))}
@@ -564,13 +552,15 @@ export function AgreementChatSheet({
           )}
         </div>
 
+        <ConversationJump visible={canJump} onClick={scrollToLatest} />
+        </div>
         {hasReady ? (
-          <div className="shrink-0 border-t bg-background px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5 sm:pb-4">
+          <div className="conversation-composer shrink-0 border-t bg-background px-2 pt-2">
             <div className="flex items-end gap-2">
               <label className="sr-only" htmlFor="agreement-question">Ask about the selected agreements</label>
               <Textarea
                 id="agreement-question"
-                rows={2}
+                rows={1}
                 maxLength={4000}
                 value={input}
                 disabled={busy}
@@ -579,19 +569,17 @@ export function AgreementChatSheet({
                     ? "Ask about the selected agreements…"
                     : "Select at least one source above"
                 }
-                className="min-h-11 resize-none"
+                className="min-h-11 max-h-32 resize-none rounded-xl"
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    send();
-                  }
+                  sendOnConversationKey(event, () => send());
                 }}
               />
               <Button
                 type="button"
                 size="icon"
                 aria-label="Send agreement question"
+                className="conversation-send size-11 shrink-0"
                 disabled={busy || !input.trim() || selectedIds.length === 0}
                 onClick={() => send()}
               >

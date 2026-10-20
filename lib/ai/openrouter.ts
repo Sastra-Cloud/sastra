@@ -19,7 +19,7 @@ import type { ConversationMessage } from "./types";
 
 const DEFAULTS: Record<string, string> = {
   planner: "anthropic/claude-sonnet-5.5",
-  standup_insights: "anthropic/claude-haiku-4.5",
+  standup_insights: "anthropic/claude-haiku-5.5",
   // PDF/vision-capable — reads MOU/license documents natively. Sonnet was the
   // most complete at extracting itemized budget lines in head-to-head testing.
   // Sonnet 5.5 (1M ctx, file+structured-output) supersedes Sonnet 5 at the same
@@ -27,21 +27,21 @@ const DEFAULTS: Record<string, string> = {
   doc_import: "anthropic/claude-sonnet-5.5",
   // Mistral's file parser performs the PDF OCR; this model faithfully cleans
   // and returns that text, so the premium document-import model is unnecessary.
-  agreement_ocr: "openai/gpt-5-mini",
+  agreement_ocr: "openai/gpt-5.4-mini",
   // Per-user agentic assistant — reliable tool-calling at low cost (cost-gated).
-  // GPT-5 Mini: native OpenAI function calling, ~1/3 Haiku's cost; the seed adds
-  // a Haiku 4.5 fallback so reliability never regresses.
-  assistant: "openai/gpt-5-mini",
+  // GPT-5.4 Mini supports our Chat Completions tool loop.
+  // The seed adds a Haiku 5.5 fallback for provider failures.
+  assistant: "openai/gpt-5.4-mini",
   assistant_complex: "openai/gpt-5.4-mini",
-  assistant_summary: "openai/gpt-5-mini",
+  assistant_summary: "openai/gpt-5.4-mini",
   assistant_reflection: "openai/gpt-5.4-mini",
-  project_update_review: "openai/gpt-5-mini",
-  email_project_signal: "openai/gpt-5-mini",
-  email_task_signal: "openai/gpt-5-mini",
-  email_follow_up_summary: "openai/gpt-5-mini",
+  project_update_review: "openai/gpt-5.4-mini",
+  email_project_signal: "openai/gpt-5.4-mini",
+  email_task_signal: "openai/gpt-5.4-mini",
+  email_follow_up_summary: "openai/gpt-5.4-mini",
   // Narrow, heuristic-gated PDF pass for signed rights documents and receipts.
   // This runs only for project-linked candidate attachments and remains review-only.
-  email_rights_document: "openai/gpt-5-mini",
+  email_rights_document: "openai/gpt-5.4-mini",
   // Offline critic that distills manager dismissals of intake suggestions into
   // human-approved negative lessons — reasoning-heavy, low volume.
   email_signal_reflection: "openai/gpt-5.4-mini",
@@ -54,14 +54,16 @@ const DEFAULTS: Record<string, string> = {
   print_quote_extract: "anthropic/claude-sonnet-5.5",
   // Extracts printer quote tiers from plain email TEXT (no vision needed) — cheap
   // model, cross-checked against the regex parser before anything is suggested.
-  print_text_quote_extract: "anthropic/claude-haiku-4.5",
+  print_text_quote_extract: "anthropic/claude-haiku-5.5",
+  // Maps an unfamiliar donation CSV's headers from masked value patterns only.
+  donation_csv_format: "openai/gpt-5.4-mini",
   // Private, read-only project agreement Q&A. Long context and precise
   // structured citations matter more than tool use here.
   agreement_qa: "anthropic/claude-sonnet-5.5",
 };
 
 const DEFAULT_FALLBACKS: Record<string, string[]> = {
-  agreement_qa: ["openai/gpt-5.4"],
+  agreement_qa: ["openai/gpt-5.6-sol"],
 };
 
 export const WIKI_EMBEDDING_MODEL = "qwen/qwen3-embedding-8b";
@@ -265,7 +267,7 @@ async function resolveModel(taskKey: string) {
     .from(aiTaskModels)
     .where(eq(aiTaskModels.taskKey, taskKey))
     .limit(1);
-  const model = row?.model ?? DEFAULTS[taskKey] ?? "openai/gpt-4o";
+  const model = row?.model ?? DEFAULTS[taskKey] ?? "openai/gpt-5.4-mini";
   const fallbackModels = row?.fallbackModels ?? DEFAULT_FALLBACKS[taskKey] ?? undefined;
   let temperature = row?.temperature ?? undefined;
   // The whole chain must accept it: with `route: "fallback"`, a fallback model

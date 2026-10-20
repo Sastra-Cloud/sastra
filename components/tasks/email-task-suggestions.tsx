@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { usePropState } from "@/hooks/use-prop-state";
+import { useNavigationBadgeAdjustment } from "@/components/navigation-badges-provider";
 
 type Option = { id: string; name: string };
 type Draft = Pick<
@@ -51,6 +52,7 @@ export function EmailTaskSuggestions({
   canManage,
   highlightedId,
   showCorrespondenceLink = false,
+  syncNavigationBadge = false,
 }: {
   initialSuggestions: EmailTaskSuggestionRow[];
   assignees: Option[];
@@ -59,10 +61,12 @@ export function EmailTaskSuggestions({
   canManage: boolean;
   highlightedId?: string | null;
   showCorrespondenceLink?: boolean;
+  syncNavigationBadge?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [suggestions, setSuggestions] = usePropState(initialSuggestions);
+  useNavigationBadgeAdjustment("taskSuggestions", syncNavigationBadge ? suggestions.length - initialSuggestions.length : 0);
   const [drafts, setDrafts] = useState<Record<string, Draft>>(() =>
     Object.fromEntries(initialSuggestions.map((item) => [item.id, draftFor(item)]))
   );

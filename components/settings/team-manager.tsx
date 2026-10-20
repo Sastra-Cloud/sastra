@@ -129,7 +129,7 @@ export function TeamManager({
   return (
     <div className="space-y-6">
       {/* Invite */}
-      <Card>
+      <Card className="max-w-4xl">
         <CardContent className="space-y-3 py-4">
           <p className="text-sm font-medium">Invite a teammate</p>
           <form onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); startTransition(() => action(data)); }} className="flex flex-col gap-2 sm:flex-row sm:items-end">

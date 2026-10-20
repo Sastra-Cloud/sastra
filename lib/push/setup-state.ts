@@ -42,7 +42,7 @@ export type PushSetupInput = {
  *
  * The `beforeinstallprompt`/install affordance is orthogonal — it never changes
  * the resting state (on Android, push can be enabled in a tab before install),
- * so it is surfaced separately by the hook, not derived here.
+ * so it is managed separately by PwaProvider, not derived here.
  */
 export function derivePushSetupState(input: PushSetupInput): PushSetupState {
   if (input.supported === null || input.hasEndpoint === null) return "detecting";

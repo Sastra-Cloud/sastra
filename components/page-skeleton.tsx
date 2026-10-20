@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { ConversationHeader } from "@/components/chat/conversation-header";
 
 function LoadingFrame({
   children,
@@ -187,23 +188,24 @@ export function DashboardSkeleton() {
   return (
     <LoadingFrame>
       <div className="space-y-6">
-        <PageHeroSkeleton />
-        <StatGridSkeleton />
-        <div className="space-y-2">
-          <SectionHeadingSkeleton />
-          <div className="grid gap-2 sm:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <CardSkeleton key={index} className="h-28 space-y-2 p-3">
-                <Skeleton className="size-7 rounded-lg" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-3 w-2/3" />
-              </CardSkeleton>
-            ))}
+        <PlainHeaderSkeleton />
+        <div className="@container/home min-w-0">
+          <div className="grid min-w-0 items-start gap-6 @[76rem]/home:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)] @[96rem]/home:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)_minmax(22rem,26rem)]">
+            <div className="min-w-0 space-y-2">
+              <SectionHeadingSkeleton />
+              <RowListSkeleton rows={4} />
+            </div>
+            <div className="flex min-w-0 flex-col gap-6 @[96rem]/home:contents">
+              <div className="min-w-0 space-y-2">
+                <SectionHeadingSkeleton />
+                <RowListSkeleton rows={3} />
+              </div>
+              <div className="min-w-0 space-y-2">
+                <SectionHeadingSkeleton />
+                <RowListSkeleton rows={4} />
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="space-y-2">
-          <SectionHeadingSkeleton />
-          <RowListSkeleton rows={4} />
         </div>
       </div>
     </LoadingFrame>
@@ -244,16 +246,16 @@ export function OverviewSkeleton() {
 export function ProjectsSkeleton() {
   return (
     <LoadingFrame>
-      <div className="space-y-6">
+      <div className="@container/projects min-w-0 space-y-6">
         <PageHeroSkeleton actions={3} />
         <CardSkeleton className="surface-shadow space-y-3">
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[minmax(16rem,1fr)_10.5rem_11rem_12rem_13rem_auto]">
+          <div className="grid gap-3 sm:grid-cols-[repeat(auto-fill,minmax(min(100%,14rem),1fr))] @[76rem]/projects:grid-cols-[minmax(12.5rem,1fr)_7.75rem_8rem_11.25rem_9.25rem_13.75rem_auto]">
             {Array.from({ length: 6 }).map((_, index) => (
               <Skeleton
                 key={index}
                 className={cn(
                   "h-10 rounded-lg",
-                  index === 0 && "md:col-span-2 xl:col-span-1",
+                  index === 0 && "sm:col-span-full @[76rem]/projects:col-span-1",
                   index === 5 && "w-24"
                 )}
               />
@@ -261,7 +263,7 @@ export function ProjectsSkeleton() {
           </div>
           <Skeleton className="h-4 w-36" />
         </CardSkeleton>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,21rem),1fr))] gap-4">
           {Array.from({ length: 6 }).map((_, index) => (
             <CardSkeleton key={index} className="h-[13.5rem] space-y-4">
               <div className="flex gap-3">
@@ -288,7 +290,7 @@ export function StandupsSkeleton() {
       <div className="space-y-6">
         <PageHeroSkeleton eyebrow />
         <StatGridSkeleton />
-        <div className="grid gap-4">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,30rem),1fr))] items-start gap-4">
           {Array.from({ length: 3 }).map((_, index) => (
             <CardSkeleton key={index} className="min-h-40 space-y-5">
               <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
@@ -313,7 +315,7 @@ export function WorkloadSkeleton() {
     <LoadingFrame>
       <div className="space-y-6">
         <PlainHeaderSkeleton />
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,26rem),1fr))] gap-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <CardSkeleton
               key={index}
@@ -359,7 +361,8 @@ export function ProjectOverviewSkeleton() {
           <Skeleton className="h-4 w-4/5" />
           <Skeleton className="h-4 w-2/3" />
         </CardSkeleton>
-        <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <div className="@container/overview min-w-0">
+        <div className="grid min-w-0 items-start gap-6 @[80rem]/overview:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)]">
           <div className="min-w-0 space-y-6">
             <CardSkeleton className="h-56 space-y-4">
               <Skeleton className="h-6 w-32" />
@@ -382,6 +385,7 @@ export function ProjectOverviewSkeleton() {
               <Skeleton className="h-4 w-4/5" />
             </CardSkeleton>
           </div>
+        </div>
         </div>
       </div>
     </LoadingFrame>
@@ -443,12 +447,12 @@ export function ProjectWorkspaceSkeleton({ slug }: { slug: string }) {
 
 export function ProjectChatSkeleton() {
   return (
-    <LoadingFrame>
-      <div className="space-y-3">
-        <Skeleton className="h-11 w-full rounded-xl" />
-        <ConversationLoadingSkeleton variant="project" />
+    <div className="flex h-full min-h-0 flex-1 flex-col lg:gap-3">
+      <ConversationHeader title="Project chat" subtitle="Loading messages…" backHref="/projects" />
+      <div role="status" aria-busy="true" className="flex min-h-0 flex-1 flex-col">
+        <ConversationLoadingSkeleton variant="project" fillAvailable />
       </div>
-    </LoadingFrame>
+    </div>
   );
 }
 
@@ -499,7 +503,7 @@ export function ConversationLoadingSkeleton({
   return (
     <CardSkeleton
       className={cn(
-        "flex flex-col overflow-hidden p-0",
+        "conversation-transcript flex flex-col overflow-hidden p-0 max-lg:rounded-none max-lg:border-0 max-lg:shadow-none",
         fillAvailable
           ? "h-full min-h-0 flex-1"
           : variant === "project"
@@ -507,7 +511,7 @@ export function ConversationLoadingSkeleton({
           : "h-[calc(100vh-14rem)] min-h-[32rem]"
       )}
     >
-      <div className="relative flex flex-1 items-center justify-center bg-[radial-gradient(circle_at_20%_0%,oklch(0.69_0.14_35_/_0.09),transparent_24rem)]">
+      <div className="relative flex flex-1 items-center justify-center">
         <div className="flex flex-col items-center gap-3 rounded-xl border bg-background/92 px-5 py-4 shadow-sm">
           <Loader2
             aria-hidden="true"
@@ -528,14 +532,15 @@ export function ConversationLoadingSkeleton({
 export function ProjectMembersSkeleton() {
   return (
     <LoadingFrame>
-      <div className="grid w-full min-w-0 gap-5 lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)] lg:items-start">
+      <div className="@container/members min-w-0">
+      <div className="grid w-full min-w-0 gap-5 @[52rem]/members:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)] @[52rem]/members:items-start">
         <CardSkeleton className="space-y-3">
           <Skeleton className="h-4 w-28" />
           <Skeleton className="h-10 w-full rounded-lg" />
           <Skeleton className="h-10 w-full rounded-lg" />
           <Skeleton className="h-10 w-full rounded-lg" />
         </CardSkeleton>
-        <div className="grid min-w-0 gap-2 2xl:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-[repeat(auto-fill,minmax(min(100%,22rem),1fr))] gap-2">
           {Array.from({ length: 6 }).map((_, index) => (
             <CardSkeleton key={index} className="flex h-14 items-center gap-3 p-3">
               <Skeleton className="size-8 shrink-0 rounded-full" />
@@ -544,6 +549,7 @@ export function ProjectMembersSkeleton() {
             </CardSkeleton>
           ))}
         </div>
+      </div>
       </div>
     </LoadingFrame>
   );
@@ -572,7 +578,7 @@ export function ProjectTasksSkeleton() {
             <Skeleton className="h-4 w-20" />
             <Skeleton className="h-9 w-24 rounded-lg" />
           </div>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="@container/tasks min-w-0"><div className="grid gap-4 @[44rem]/tasks:grid-cols-2 @[60rem]/tasks:grid-cols-4">
             {Array.from({ length: 4 }).map((_, column) => (
               <div key={column} className="space-y-2">
                 <div className="flex justify-between px-1">
@@ -588,7 +594,7 @@ export function ProjectTasksSkeleton() {
                 </div>
               </div>
             ))}
-          </div>
+          </div></div>
         </div>
       </div>
     </LoadingFrame>
@@ -744,11 +750,13 @@ export function ProjectPrintSkeleton() {
             <Skeleton className="h-48 rounded-lg" />
           </div>
         </CardSkeleton>
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.65fr)]">
-          <CardSkeleton className="h-80" />
-          <div className="space-y-5">
-            <CardSkeleton className="h-40" />
-            <CardSkeleton className="h-40" />
+        <div className="@container/print min-w-0">
+          <div className="grid items-start gap-5 @[64rem]/print:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)]">
+            <CardSkeleton className="h-80" />
+            <div className="space-y-5">
+              <CardSkeleton className="h-40" />
+              <CardSkeleton className="h-40" />
+            </div>
           </div>
         </div>
       </div>
@@ -783,8 +791,8 @@ export function ProjectEpisodesSkeleton() {
             </div>
           </div>
         </CardSkeleton>
-        <CardSkeleton className="space-y-3 p-3">
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(180px,1.4fr)_repeat(5,minmax(120px,1fr))_auto]">
+        <CardSkeleton className="@container/episode-filters space-y-3 p-3">
+          <div className="grid gap-2 @[30rem]/episode-filters:grid-cols-2 @[60rem]/episode-filters:grid-cols-[minmax(180px,1.4fr)_repeat(5,minmax(120px,1fr))_auto]">
             {Array.from({ length: 7 }).map((_, index) => (
               <Skeleton key={index} className="h-8 rounded-lg" />
             ))}

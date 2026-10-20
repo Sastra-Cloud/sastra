@@ -80,7 +80,7 @@ export function ManagerHealthBand({
           </div>
         </div>
 
-        <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-x-6 gap-y-4">
           {/* Budget */}
           <div className="space-y-1.5">
             <Link

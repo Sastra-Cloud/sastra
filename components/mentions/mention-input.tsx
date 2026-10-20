@@ -229,6 +229,7 @@ export function MentionInput({
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
     if (open && results.length > 0) {
       if (event.key === "ArrowDown") {
         event.preventDefault();

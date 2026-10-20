@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { documentImports } from "@/lib/db/schema";
+import { documentImports, printQuotes, projects as projectTable } from "@/lib/db/schema";
+import { and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowUpRight, Mail, Sparkles } from "lucide-react";
 
@@ -13,7 +14,7 @@ import {
 } from "@/lib/email/queries";
 import { canSendAsCorrespondenceAddress } from "@/lib/gmail";
 import { listAssignableUsers, listProjects } from "@/lib/projects/queries";
-import { ContentColumn, PageHero, PageShell } from "@/components/cockpit";
+import { PageHero, PageShell } from "@/components/cockpit";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThreadControls } from "@/components/correspondence/thread-controls";
@@ -63,6 +64,7 @@ export default async function ThreadPage({
     replyDraft,
     workspaceSettings,
     fundingReviews,
+    suggestedQuotes,
   ] = await Promise.all([
     getThread(threadId),
     listThreadProjects(threadId),
@@ -77,6 +79,9 @@ export default async function ThreadPage({
     getEmailDraftForUser(user.id, "thread_reply", threadId),
     getWorkspaceSettings(),
     db.select({ id: documentImports.id, status: documentImports.status, extraction: documentImports.extraction }).from(documentImports).where(eq(documentImports.sourceThreadId, threadId)),
+    db.select({ id: printQuotes.id, projectSlug: projectTable.slug, projectTitle: projectTable.title })
+      .from(printQuotes).innerJoin(projectTable, eq(projectTable.id, printQuotes.projectId))
+      .where(and(eq(printQuotes.sourceThreadId, threadId), eq(printQuotes.reviewStatus, "suggested"))),
   ]);
   if (!data) notFound();
   const { thread, messages } = data;
@@ -140,10 +145,14 @@ export default async function ThreadPage({
           .join(" · ")}
       />
 
-      <ContentColumn width="reading" className="space-y-6">
+      {/* Messages and the reply stay in a readable column; suggestions and
+          thread controls sit in a bounded rail beside them on wide screens.
+          The rail stays first in the DOM so reading and tab order are unchanged. */}
+      <div className="@container/thread min-w-0">
+      <div className="mx-auto grid max-w-6xl gap-6 @[80rem]/thread:mx-0 @[80rem]/thread:max-w-none @[80rem]/thread:grid-cols-[minmax(0,60rem)_minmax(22rem,28rem)] @[80rem]/thread:items-start">
         <div
           id="correspondence-review-results"
-          className="space-y-6 scroll-mt-24"
+          className={`min-w-0 space-y-6 scroll-mt-24 @[80rem]/thread:col-start-2 @[80rem]/thread:row-start-1 ${canSend && recipient ? "@[80rem]/thread:row-span-2" : ""}`}
         >
           {pendingSuggestions.length > 0 ? (
             <Card className="border-primary/30 bg-primary/5">
@@ -176,6 +185,16 @@ export default async function ThreadPage({
           ) : null}
 
           <ProjectUpdateSuggestions suggestions={projectUpdateSuggestions} />
+
+          {suggestedQuotes.length > 0 ? <Card><CardContent className="space-y-2 py-4">
+            <p className="text-sm font-medium">Printer quotes to review</p>
+            <p className="text-xs text-muted-foreground">Check suggested quotes before accepting them.</p>
+            {[...new Map(suggestedQuotes.map(quote => [quote.projectSlug, quote])).values()].map(quote => (
+              <Link key={quote.projectSlug} href={`/projects/${quote.projectSlug}/print`} className="block min-h-11 py-2 text-sm font-medium text-primary underline underline-offset-4">
+                Review printer quotes · {quote.projectTitle}
+              </Link>
+            ))}
+          </CardContent></Card> : null}
 
           <EmailTaskSuggestions
             initialSuggestions={emailTaskSuggestions}
@@ -234,10 +253,12 @@ export default async function ThreadPage({
           </Card>
         </div>
 
-        <ThreadMessageList messages={messages} threadId={thread.id} />
+        <div className="min-w-0 @[80rem]/thread:col-start-1 @[80rem]/thread:row-start-1">
+          <ThreadMessageList messages={messages} threadId={thread.id} />
+        </div>
 
         {canSend && recipient && (
-          <Card>
+          <Card className="min-w-0 @[80rem]/thread:col-start-1 @[80rem]/thread:row-start-2">
             <CardHeader>
               <CardTitle className="text-base">Reply</CardTitle>
             </CardHeader>
@@ -253,7 +274,8 @@ export default async function ThreadPage({
             </CardContent>
           </Card>
         )}
-      </ContentColumn>
+      </div>
+      </div>
     </PageShell>
   );
 }

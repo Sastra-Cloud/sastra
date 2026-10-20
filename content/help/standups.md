@@ -34,3 +34,10 @@ Managers set standups up in **Settings ▸ Standups**: the **name**, **days**,
 **questions** (drag to reorder how they're asked); and the **participants**.
 
 Standups are scheduled team check-ins. Before any exist, managers see a setup action and members see a waiting explanation. Statistics appear once check-in runs exist.
+
+## On wide screens
+
+On **Standups**, schedule cards sit side by side when there is room, and a
+digest shows its people in columns. In **Settings → Standups**, the new standup
+form sits beside the list of standups. When you edit a standup, the participants
+sit beside the schedule and questions.

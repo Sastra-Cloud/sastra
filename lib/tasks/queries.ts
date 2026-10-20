@@ -3,10 +3,13 @@ import "server-only";
 import {
   and,
   asc,
+  desc,
   eq,
   gte,
+  ilike,
   isNotNull,
   isNull,
+  lt,
   ne,
   or,
   sql,
@@ -39,6 +42,7 @@ import {
 import { nextDueDate, type Frequency } from "@/lib/recurring/schedule";
 import { daysUntil } from "@/lib/format";
 import { getTeamTrackedSeconds } from "./time-queries";
+import { escapeLikePattern, MY_WORK_RECENT_DONE_DAYS } from "./search";
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
@@ -377,13 +381,16 @@ export async function getMyTasks(userId: string): Promise<MyTaskRow[]> {
     .orderBy(asc(tasks.rank), asc(tasks.dueDate), asc(tasks.id));
 }
 
+const myWorkRecentDoneSince = () =>
+  new Date(Date.now() - MY_WORK_RECENT_DONE_DAYS * 86_400_000);
+
 /**
  * A user's full personal-work surface: every open task plus recently completed
  * work for the board and daily progress recap.
  */
 export async function getMyWorkTasks(
   userId: string,
-  recentDoneSince = new Date(Date.now() - 7 * 86_400_000)
+  recentDoneSince = myWorkRecentDoneSince()
 ): Promise<MyWorkTaskRow[]> {
   return db
     .select({
@@ -413,6 +420,80 @@ export async function getMyWorkTasks(
       )
     )
     .orderBy(asc(tasks.rank), asc(tasks.dueDate), asc(tasks.id));
+}
+
+/**
+ * Tasks matching every search word that My Work does not already list: older
+ * done work, tasks assigned to someone else, and unassigned tasks. Members see
+ * project tasks and their own standalone tasks; managers see every task.
+ */
+export async function searchTasksOutsideMyWork({
+  userId,
+  canManage,
+  terms,
+  limit,
+}: {
+  userId: string;
+  canManage: boolean;
+  terms: string[];
+  limit: number;
+}): Promise<MyWorkTaskRow[]> {
+  if (terms.length === 0) return [];
+  const patterns = terms.map((term) => `%${escapeLikePattern(term)}%`);
+  const titleMatch = and(...patterns.map((pattern) => ilike(tasks.title, pattern)));
+  return db
+    .select({
+      ...baseSelect,
+      projectSlug: projects.slug,
+      projectTitle: projects.title,
+      completedAt: tasks.completedAt,
+      trackedSeconds: sql<number>`coalesce((
+        select sum(${timeEntries.durationSeconds})
+        from ${timeEntries}
+        where ${timeEntries.taskId} = ${tasks.id}
+      ), 0)::int`,
+    })
+    .from(tasks)
+    .leftJoin(user, eq(user.id, tasks.assignedTo))
+    .leftJoin(printRuns, eq(printRuns.id, tasks.printRunId))
+    .leftJoin(phases, eq(phases.id, tasks.phaseId))
+    .leftJoin(units, eq(units.id, tasks.unitId))
+    .leftJoin(projects, eq(projects.id, tasks.projectId))
+    .where(
+      and(
+        ...patterns.map(
+          (pattern) =>
+            or(
+              ilike(tasks.title, pattern),
+              ilike(tasks.description, pattern),
+              ilike(projects.title, pattern)
+            )!
+        ),
+        canManage
+          ? undefined
+          : or(
+              isNotNull(tasks.projectId),
+              eq(tasks.assignedTo, userId),
+              eq(tasks.createdBy, userId)
+            ),
+        // The complement of getMyWorkTasks, written null-safe for unassigned rows.
+        or(
+          sql`${tasks.assignedTo} is distinct from ${userId}`,
+          and(
+            eq(tasks.status, "done"),
+            or(isNull(tasks.completedAt), lt(tasks.completedAt, myWorkRecentDoneSince()))
+          )
+        )
+      )
+    )
+    .orderBy(
+      sql`case when ${tasks.assignedTo} = ${userId} then 0 else 1 end`,
+      sql`case when ${tasks.status} <> 'done' then 0 else 1 end`,
+      sql`case when ${titleMatch} then 0 else 1 end`,
+      desc(sql`coalesce(${tasks.completedAt}, ${tasks.updatedAt})`),
+      asc(tasks.id)
+    )
+    .limit(limit);
 }
 
 /** All open (not-done) assigned tasks across the team, for the workload view. */

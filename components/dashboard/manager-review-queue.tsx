@@ -12,6 +12,7 @@ import { timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 import type { ManagerReviewItem } from "@/lib/dashboard/attention";
+import { SectionDisclosure } from "@/components/section-disclosure";
 
 const SOURCE = {
   dates: { label: "Scheduling", icon: CalendarPlus },
@@ -35,41 +36,25 @@ const SOURCE = {
   },
 } as const;
 
-export function ManagerReviewQueue({ items, limit, id = "manager-attention" }: { items: ManagerReviewItem[]; limit?: number; id?: string }) {
+export function ManagerReviewQueue({ items, limit, id = "manager-attention", collapsed = false }: { items: ManagerReviewItem[]; limit?: number; id?: string; collapsed?: boolean }) {
   if (items.length === 0) return null;
 
-  return (
-    <section id={id} className="scroll-mt-32 space-y-2" aria-labelledby={`${id}-heading`}>
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h2 id={`${id}-heading`} className="text-lg font-semibold">
-            Manager attention
-          </h2>
-          <p className="text-sm text-muted-foreground text-pretty">
-            Reviews and planning decisions. Suggested changes require your approval.
-          </p>
-        </div>
-        <span className="text-xs tabular-nums text-muted-foreground">
-          {items.length} {items.length === 1 ? "item" : "items"}
-        </span>
-      </div>
-
-      <ul className="divide-y overflow-hidden rounded-xl border bg-card">
-        {items.slice(0, limit ?? items.length).map((item) => {
+  const description = "Reviews and planning decisions. Suggested changes require your approval.";
+  const count = `${items.length} ${items.length === 1 ? "item" : "items"}`;
+  const list = (
+      <ul className={cn("@container/reviews divide-y", !collapsed && "rounded-xl border bg-card")}>
+        {(collapsed ? items : items.slice(0, limit ?? items.length)).map((item) => {
           const source = SOURCE[item.source];
           const Icon = source.icon;
           return (
             <li key={item.id}>
               <Link
                 href={item.href}
-                className="group grid min-h-16 grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 px-4 py-3 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:grid-cols-[auto_minmax(0,1fr)_auto]"
+                className="group grid min-h-16 grid-cols-1 items-start gap-x-6 gap-y-2 px-4 py-4 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset @[40rem]/reviews:grid-cols-[minmax(0,1fr)_auto]"
               >
-                <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Icon className="size-4" aria-hidden />
-                </span>
-                <span className="min-w-0 flex-1">
+                <span className="min-w-0 max-w-3xl">
                   <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                    <span>{source.label}</span>
+                    <span className="inline-flex items-center gap-1.5"><Icon className="size-3.5" aria-hidden />{source.label}</span>
                     {item.project ? (
                       <>
                         <span aria-hidden>·</span>
@@ -78,16 +63,9 @@ export function ManagerReviewQueue({ items, limit, id = "manager-attention" }: {
                         </span>
                       </>
                     ) : null}
-                    {item.priority !== "low" ? (
-                      <span
-                        className={cn(
-                          "rounded-full px-1.5 py-0.5 font-medium",
-                          item.priority === "high"
-                            ? "bg-destructive/10 text-destructive"
-                            : "bg-warning/15 text-warning-text"
-                        )}
-                      >
-                        {item.priority} priority
+                    {item.priority === "high" ? (
+                      <span className="rounded-full bg-destructive/10 px-1.5 py-0.5 font-medium text-destructive">
+                        High priority
                       </span>
                     ) : null}
                   </span>
@@ -100,9 +78,9 @@ export function ManagerReviewQueue({ items, limit, id = "manager-attention" }: {
                     </span>
                   ) : null}
                 </span>
-                <span className="col-start-2 flex min-w-0 items-center justify-between gap-3 pr-10 text-xs text-muted-foreground sm:col-start-3 sm:row-start-1 sm:flex-col sm:items-end sm:self-stretch sm:pr-0">
-                  <span>{item.createdAt ? timeAgo(item.createdAt) : "Needs attention"}</span>
-                  <span className="inline-flex items-center gap-1 font-medium text-primary sm:mt-auto">
+                <span className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground @[40rem]/reviews:col-start-2 @[40rem]/reviews:row-start-1 @[40rem]/reviews:flex-col @[40rem]/reviews:items-end @[40rem]/reviews:self-stretch">
+                  {item.createdAt ? <span>{timeAgo(item.createdAt)}</span> : null}
+                  <span className="inline-flex items-center gap-1 font-medium text-foreground @[40rem]/reviews:mt-auto">
                     {item.actionLabel}
                     <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
                   </span>
@@ -112,6 +90,22 @@ export function ManagerReviewQueue({ items, limit, id = "manager-attention" }: {
           );
         })}
       </ul>
+  );
+
+  if (collapsed) return (
+    <SectionDisclosure id={id} title="Manager attention" summary={count} description={description} contentClassName="p-0">
+      {list}
+    </SectionDisclosure>
+  );
+
+  return (
+    <section id={id} className="scroll-mt-32 space-y-3" aria-labelledby={`${id}-heading`}>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 id={`${id}-heading`} className="text-lg font-semibold">Manager attention</h2>
+        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{count}</span>
+      </div>
+      <p className="text-xs text-muted-foreground text-pretty">{description}</p>
+      {list}
       {limit && items.length > limit ? <Link href="/overview#manager-attention" className="inline-flex min-h-11 items-center gap-1 text-sm text-primary">View all {items.length} items <ArrowRight className="size-3.5" /></Link> : null}
     </section>
   );

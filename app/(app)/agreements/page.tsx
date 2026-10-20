@@ -48,7 +48,7 @@ export default async function SharedMouGroupsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,24rem),1fr))] gap-4">
           {groups.map((group) => (
             <Link key={group.id} href={`/agreements/${group.id}`} className="group">
               <Card className="h-full transition-colors group-hover:border-primary/40">

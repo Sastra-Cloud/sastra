@@ -284,6 +284,10 @@
 
 - GET, dynamic
 
+## `app/api/chat/reactions/route.ts`
+
+- GET, dynamic
+
 ## `app/api/cron/agreement-index/route.ts`
 
 - GET, POST, dynamic, runtime
@@ -381,6 +385,10 @@
 - GET, dynamic, runtime
 
 ## `app/api/invoices/[invoiceId]/route.ts`
+
+- GET, dynamic
+
+## `app/api/navigation/badges/route.ts`
 
 - GET, dynamic
 
@@ -664,6 +672,10 @@
 
 - ChannelMembersSheet
 
+## `components/chat/chat-image-gallery.tsx`
+
+- ChatImageGallery
+
 ## `components/chat/chat-navigation-context.tsx`
 
 - ChatNavigationProvider, useChatNavigation
@@ -676,13 +688,33 @@
 
 - ChatIndexPanel, ChatWorkspaceShell
 
+## `components/chat/conversation-header.tsx`
+
+- ConversationHeader
+
+## `components/chat/conversation-jump.tsx`
+
+- ConversationJump
+
 ## `components/chat/create-channel-dialog.tsx`
 
 - CreateChannelDialog
 
+## `components/chat/message-actions.tsx`
+
+- MessageActions
+
+## `components/chat/message-editor.tsx`
+
+- MessageEditor
+
 ## `components/chat/message-pins.tsx`
 
 - MessagePinsProvider, PinnedMessagesButton, useMessagePins
+
+## `components/chat/message-reactions.tsx`
+
+- MessageReactions
 
 ## `components/chat/new-direct-message-popover.tsx`
 
@@ -699,6 +731,14 @@
 ## `components/chat/project-pin-toggle.tsx`
 
 - ProjectPinToggle
+
+## `components/chat/use-frequent-reactions.ts`
+
+- useFrequentReactions
+
+## `components/chat/use-message-hold.ts`
+
+- useMessageHold
 
 ## `components/chat/voice-message-player.tsx`
 
@@ -763,6 +803,10 @@
 ## `components/dashboard/onboarding-checklist.tsx`
 
 - OnboardingChecklist
+
+## `components/donations/donation-csv-format-dialog.tsx`
+
+- DonationCsvFormatDialog
 
 ## `components/donations/donation-import-button.tsx`
 
@@ -871,6 +915,10 @@
 ## `components/motion/tab-link.tsx`
 
 - MotionTabLink
+
+## `components/navigation-badges-provider.tsx`
+
+- NavigationBadgesProvider, useNavigationBadgeAdjustment, useNavigationBadges
 
 ## `components/navigation-icons.ts`
 
@@ -1324,6 +1372,10 @@
 
 - MyTasksList
 
+## `components/tasks/my-work-attention-summary.tsx`
+
+- MyWorkAttentionSummary
+
 ## `components/tasks/my-work-hub.tsx`
 
 - MyWorkHub
@@ -1351,6 +1403,10 @@
 ## `components/tasks/task-detail-dialog.tsx`
 
 - TaskDetailDialog
+
+## `components/tasks/task-search.tsx`
+
+- TaskSearchField, TaskSearchResults, useOtherTaskSearch
 
 ## `components/tasks/task-time-section.tsx`
 
@@ -1447,6 +1503,14 @@
 ## `components/workload/workload-view.tsx`
 
 - WorkloadView
+
+## `hooks/use-conversation-scroll.ts`
+
+- useConversationScroll
+
+## `hooks/use-conversation-viewport.ts`
+
+- useConversationViewport
 
 ## `hooks/use-mobile.ts`
 
@@ -1666,7 +1730,7 @@
 
 ## `lib/assistant/launcher.ts`
 
-- ASSISTANT_OPEN_EVENT, AssistantOpenDetail, openAssistant
+- ASSISTANT_OPEN_EVENT, ASSISTANT_TIP_KEY, AssistantOpenDetail, openAssistant, showAssistantTip
 
 ## `lib/assistant/learning-actions.ts`
 
@@ -1698,7 +1762,7 @@
 
 ## `lib/assistant/queries.ts`
 
-- AssistantBudgetRow, AssistantThreadMessage, PendingActionView, UsageBucket, UsageByModel, UsageByUser, UsageTotals, getAssistantBudgetMap, getPendingActions, getThread, getUsageByModel, getUsageByUser, getUsageOverTime, getUsageTotals
+- AssistantBudgetRow, AssistantThreadMessage, PendingActionView, UsageBucket, UsageByModel, UsageByUser, UsageTotals, getAssistantBudgetMap, getPendingActions, getThread, getUsageByModel, getUsageByUser, getUsageOverTime, getUsageTotals, hasAskedAssistant
 
 ## `lib/assistant/reflection.ts`
 
@@ -1884,13 +1948,45 @@
 
 - ChannelMember, ChannelMembershipChange, MEMBER_SCOPED_CHANNEL_KINDS, isMemberScopedChannel, updateChannelMembers
 
+## `lib/chat/clipboard.ts`
+
+- clipboardImageFiles
+
+## `lib/chat/composer-key.ts`
+
+- sendOnConversationKey
+
+## `lib/chat/conversation.ts`
+
+- continuesMessageGroup, conversationDay, conversationViewport, isNearConversationEnd, shouldSendConversationKey
+
 ## `lib/chat/direct.ts`
 
 - directConversationKey
 
+## `lib/chat/edit-actions.ts`
+
+- editMessage
+
+## `lib/chat/edit-state.ts`
+
+- MessageEditDraft, reconcileDeletedMessages, reconcileMessageEdits, restoreDeletedMessage
+
+## `lib/chat/haptics.ts`
+
+- messageHoldHaptic
+
+## `lib/chat/images.ts`
+
+- ChatImage, chatMessageImages
+
+## `lib/chat/message-hold.ts`
+
+- createMessageHold
+
 ## `lib/chat/navigation.ts`
 
-- channelIdFromPathname
+- CHAT_LIST_HREF, channelIdFromPathname
 
 ## `lib/chat/pin-actions.ts`
 
@@ -1910,7 +2006,23 @@
 
 ## `lib/chat/queries.ts`
 
-- ChannelListItem, ChatMessageView, ChatReaction, ChatSidebarData, DirectMessageCandidate, DirectMessageListItem, ProjectChannelListItem, ProjectChatSummary, ProjectSidebarChannel, RECENT_MESSAGE_LIMIT, getChannelById, getChannelSignature, getProjectChannel, getRecentMessages, listChannels, listChatSidebar, listDirectMessageCandidates, listDirectMessages, listProjectChannels, listProjectChatSummaries
+- ChannelListItem, ChatMessageView, ChatReaction, ChatSidebarData, DirectMessageCandidate, DirectMessageListItem, ProjectChannelListItem, ProjectChatSummary, ProjectSidebarChannel, RECENT_MESSAGE_LIMIT, getChannelById, getChannelSignature, getFrequentReactions, getLastVisitedChannelId, getProjectChannel, getRecentMessages, listChannels, listChatSidebar, listDirectMessageCandidates, listDirectMessages, listProjectChannels, listProjectChatSummaries
+
+## `lib/chat/reaction-state.ts`
+
+- reconcileReactionMessages
+
+## `lib/chat/reaction-suggestions.ts`
+
+- DEFAULT_REACTIONS, reactionSuggestions
+
+## `lib/chat/reaction-summary.ts`
+
+- summarizeReactions
+
+## `lib/chat/read-client.ts`
+
+- syncChannelRead
 
 ## `lib/chat/sidebar-order.ts`
 
@@ -2018,7 +2130,7 @@
 
 ## `lib/db/schema/donations.ts`
 
-- DonationAllocationSnapshot, DonationReviewStatus, donationAllocations, donationImports, donationReviews, donations
+- DonationAllocationSnapshot, DonationCsvField, DonationCsvMapping, DonationReviewStatus, donationAllocations, donationCsvFormats, donationImports, donationReviews, donations
 
 ## `lib/db/schema/email-drafts.ts`
 
@@ -2158,19 +2270,47 @@
 
 ## `lib/donations/actions.ts`
 
-- DonationImportResult, confirmDonationAllocations, confirmDonationMouPaymentMatch, createDonationImportFromFile, resolveDonationDuplicate, setDonationUnallocated
+- confirmDonationAllocations, confirmDonationMouPaymentMatch, createDonationImportFromFile, reopenDonationDuplicates, resolveDonationDuplicate, resolveDonationDuplicates, setDonationUnallocated, setDonationsUnallocated
+
+## `lib/donations/csv-format-ai.ts`
+
+- suggestDonationCsvMappingWithAi
+
+## `lib/donations/csv-format-schema.ts`
+
+- DONATION_CSV_FORMAT_JSON_SCHEMA, DONATION_CSV_FORMAT_SYSTEM_PROMPT, DONATION_CSV_FORMAT_TASK_KEY, normalizeAiDonationCsvMapping
+
+## `lib/donations/csv-format.ts`
+
+- DONATION_CSV_FIELDS, DonationCsvColumnProfile, DonationCsvSuggestion, GIVING_PLATFORM_MAPPING, REQUIRED_DONATION_CSV_FIELDS, columnValueCounts, defaultSuccessStatuses, detectDateOrder, donationCsvColumnProfiles, donationCsvMappingProblems, donationValueShape, emptyDonationCsvMapping, formatNameFromFilename, isGivingPlatformExport, isKnownSuccessStatus, normalizeCsvHeader, suggestDonationCsvMapping
 
 ## `lib/donations/csv.ts`
 
-- DonationCsvResult, MAX_DONATION_CSV_BYTES, ParsedDonationRow, SensitiveDonationColumnsError, assertSafeDonationHeaders, donationFileHash, donationRowFingerprint, findSensitiveDonationHeaders, normalizeDonationText, parseCsvRows, parseDonationCsv
+- DonationCsvError, DonationCsvResult, DonationCsvTable, MAX_DONATION_CSV_BYTES, ParsedDonationRow, RECEIVED_STATUS, SensitiveDonationColumnsError, assertSafeDonationHeaders, donationCsvHeaderSignature, donationFileHash, donationRowFingerprint, findSensitiveDonationHeaders, normalizeDonationText, parseCsvRows, parseDonationAmount, parseDonationCsv, parseDonationDate, parseDonationTable, previewDonationTable, readDonationCsv
 
 ## `lib/donations/dedupe.ts`
 
-- DonationDedupeState, classifyDonationRow, donationCandidateKey
+- DonationDedupeState, classifyDonationRow, donationCandidateKey, lookalikeDonorKey
 
 ## `lib/donations/exact-match.ts`
 
 - applyUniqueExactMouMatch
+
+## `lib/donations/format-actions.ts`
+
+- deleteDonationCsvFormat, generateDonationCsvMapping, getDonationCsvPreview, learnDonationCsvFormat
+
+## `lib/donations/import-ledger.ts`
+
+- LoadedDonationCsv, buildDonationCsvProposal, donationCsvErrorResult, findDonationCsvFormat, isLoadedDonationCsv, loadDonationCsv, markDonationCsvFormatUsed, recordDonationImport, saveDonationCsvFormat
+
+## `lib/donations/invoice-match.ts`
+
+- DonationInvoiceCandidate, DonationInvoiceSource, donationInvoiceCandidates, matchDonationInvoices
+
+## `lib/donations/invoice-posting.ts`
+
+- prepareDonationInvoicePosting, restoreDonationInvoiceStatus
 
 ## `lib/donations/match.ts`
 
@@ -2182,7 +2322,7 @@
 
 ## `lib/donations/types.ts`
 
-- DonationAllocationDraft, DonationConfidence, DonationImportDTO, DonationMouPaymentOption, DonationProjectOption, DonationRowDTO, DonationSuggestion, DonationWorkspaceDTO
+- DonationAllocationDraft, DonationConfidence, DonationCsvFormatDTO, DonationCsvFormatProposal, DonationCsvPreview, DonationImportDTO, DonationImportResult, DonationMouPaymentOption, DonationProjectOption, DonationRowDTO, DonationSuggestion, DonationWorkspaceDTO
 
 ## `lib/email/actions.ts`
 
@@ -2228,6 +2368,10 @@
 
 - ExternalFollowUp, backfillExternalFollowUps, ensureFollowUpForThread, externalFollowUpEffectiveDueAt, getThreadExternalFollowUp, listMyExternalFollowUps, listProjectExternalFollowUps, notifyDueExternalFollowUps, reassignFollowUpOwnerForThread, reconcileFollowUpForMessage, refreshFollowUpSummary, resolveFollowUpForThread, resolveFollowUpRecord, resolveRelatedPrintFollowUps, snoozeFollowUpRecord
 
+## `lib/email/identity.ts`
+
+- correspondenceFrom
+
 ## `lib/email/inbound-signature.ts`
 
 - INBOUND_SIGNATURE_HEADER, INBOUND_SIGNATURE_TOLERANCE_SECONDS, INBOUND_TIMESTAMP_HEADER, InboundSignatureFailure, InboundSignatureResult, bodyDigest, inboundSigningString, signInboundMessage, verifyInboundSignature
@@ -2268,9 +2412,13 @@
 
 - MAX_NOTIFICATION_EMAIL_ITEMS, NotificationEmailItem, notificationPreheader, renderNotificationEmail, sendNotificationEmail
 
+## `lib/email/notification-presentation.ts`
+
+- notificationAction, notificationSubject
+
 ## `lib/email/operational-drafts.ts`
 
-- DraftIdentity, ExternalThreadMessage, buildExternalEmailDraftMessages, buildOperationalDraftSystemPrompt, establishedThreadClosing, fundingProposalFallback, printRfqFallback, wireRequestFallback
+- DraftIdentity, ExternalThreadMessage, buildExternalEmailDraftMessages, buildOperationalDraftSystemPrompt, establishedThreadClosing, fundingProposalFallback, invoiceEmailFallback, printRfqFallback, wireRequestFallback
 
 ## `lib/email/password-reset.ts`
 
@@ -2298,7 +2446,7 @@
 
 ## `lib/email/queries.ts`
 
-- CORRESPONDENCE_PAGE_SIZE, EmailDirection, ListThreadsOptions, PendingProjectSuggestion, ProjectKind, ProjectThreadPreview, ThreadMessage, ThreadProject, ThreadStatus, ThreadSummary, getThread, lastInboundMessageId, listPendingProjectSuggestions, listProjectThreadPreviews, listThreadProjects, listThreads, listThreadsPage, replyContext
+- CORRESPONDENCE_PAGE_SIZE, EmailDirection, ListThreadsOptions, PendingProjectSuggestion, ProjectKind, ProjectThreadPreview, ThreadMessage, ThreadProject, ThreadStatus, ThreadSummary, countThreadsNeedingReview, getThread, lastInboundMessageId, listPendingProjectSuggestions, listProjectThreadPreviews, listThreadProjects, listThreads, listThreadsPage, replyContext
 
 ## `lib/email/renderTemplate.ts`
 
@@ -2307,6 +2455,10 @@
 ## `lib/email/resend-webhook.ts`
 
 - RESEND_API_BASE_URL, RESEND_SIGNATURE_TOLERANCE_SECONDS, ResendRawMessage, ResendWebhookEvent, SvixVerifyFailure, SvixVerifyResult, decodeSvixSecret, fetchResendRawMessage, parseResendEvent, receivedEmailId, signSvix, svixSigningString, verifySvixSignature
+
+## `lib/email/review-queue.ts`
+
+- correspondenceNeedsReview, correspondenceReviewLabels
 
 ## `lib/email/rights-review-actions.ts`
 
@@ -2607,6 +2759,14 @@
 ## `lib/navigation.ts`
 
 - NavigationGroup, NavigationItem, appNavigation, navigationItemActive, projectNavigation, settingsNavigation
+
+## `lib/navigation/badge-queries.ts`
+
+- getNavigationBadgeCounts
+
+## `lib/navigation/badges.ts`
+
+- EMPTY_NAVIGATION_BADGES, NavigationBadge, NavigationBadgeCounts, countDueWorkTasks, navigationBadgeFor, navigationBadgeText, selectDueWorkTasks
 
 ## `lib/notifications/actions.ts`
 
@@ -2958,7 +3118,7 @@
 
 ## `lib/push/client.ts`
 
-- currentEndpoint, disablePush, enablePush, isIOS, isStandalone, permissionState, pushPublicKey, pushSupported, setAppBadge, syncSubscription
+- currentEndpoint, disablePush, enablePush, isIOS, isMacSafari, isStandalone, permissionState, pushPublicKey, pushSupported, setAppBadge, syncSubscription
 
 ## `lib/push/keys.ts`
 
@@ -3152,13 +3312,17 @@
 
 - clearTaskDueDateNotifications, reconcileTaskDueDateChange
 
+## `lib/tasks/google-picker-client.ts`
+
+- loadGooglePicker, prepareGooglePicker, showGooglePicker
+
 ## `lib/tasks/my-work.ts`
 
 - AgendaFilter, MyWorkView, isCompletedOn, matchesAgendaFilter, normalizeMyWorkView
 
 ## `lib/tasks/queries.ts`
 
-- DependencyEdge, MyTaskRow, MyWorkTaskRow, OpenTaskBlocker, PipelineData, RecurringTaskRow, TaskComment, TaskRow, TeamLoadPerson, WeeklyCount, getMyTasks, getMyWorkTasks, getOpenAssignedTasks, getOpenTaskBlockers, getProjectDependencyEdges, getProjectPipeline, getProjectTasks, getStandaloneTasks, getTaskComments, getTaskQueueStates, getTeamLoad, listProjectMilestones, listRecurringTasks, weeklyTaskCompletions
+- DependencyEdge, MyTaskRow, MyWorkTaskRow, OpenTaskBlocker, PipelineData, RecurringTaskRow, TaskComment, TaskRow, TeamLoadPerson, WeeklyCount, getMyTasks, getMyWorkTasks, getOpenAssignedTasks, getOpenTaskBlockers, getProjectDependencyEdges, getProjectPipeline, getProjectTasks, getStandaloneTasks, getTaskComments, getTaskQueueStates, getTeamLoad, listProjectMilestones, listRecurringTasks, searchTasksOutsideMyWork, weeklyTaskCompletions
 
 ## `lib/tasks/queue-service.ts`
 
@@ -3175,6 +3339,14 @@
 ## `lib/tasks/recurring.ts`
 
 - generateDueRecurringTasks, materializeRuleById
+
+## `lib/tasks/search-actions.ts`
+
+- listTaskSearchResults
+
+## `lib/tasks/search.ts`
+
+- MY_WORK_RECENT_DONE_DAYS, TASK_SEARCH_LIMIT, escapeLikePattern, matchesTaskSearch, myWorkTaskLocations, otherTaskReason, rankTaskSearchMatches, taskSearchTerms
 
 ## `lib/tasks/task-source.ts`
 

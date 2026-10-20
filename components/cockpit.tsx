@@ -18,7 +18,7 @@ export function AppCanvas({
     <div
       {...props}
       data-app-canvas
-      className={cn("mx-auto w-full min-w-0 max-w-[88rem]", className)}
+      className={cn("w-full min-w-0", className)}
     >
       {children}
     </div>

@@ -9,9 +9,13 @@ export type MutationInteractionMode =
 // `sync*` are silent, idempotent background reconciliations (no user gesture,
 // no pending/progress UI) — treated like reads for the interaction contract.
 const READ = /^(reviewPrintWirePayment|get|list|load|current|is[A-Z]|sync|pushSupported)/;
+const READ_ACTIONS = new Set(["markChannelRead"]); // silent background read receipt
 const DESTRUCTIVE = /^(delete|remove|revoke|clear|discard|trash)/;
 const PROGRESS = /^(send|submit|draft|generate|publish|refresh|reprocess|repair|retry|upload|extract|startParse|startNow|startReprint|resume|applyImport|commitImport|attachAgreement|createImport|createProjectsFrom|enablePush|disablePush|runAssistant|request|invite|learn|seed)/;
 const PROGRESS_ACTIONS = new Set([
+  "copyMessageText", // Wait for clipboard permission/write before reporting success.
+  "promptInstall", // Native browser prompt: wait for the person's choice.
+  "uploadToMessage", // Picked, pasted, and dropped files upload only after Send, with progress.
   "submitSupportRequest",
   "sendSupportReply",
   "uploadSupportAttachment",
@@ -40,6 +44,10 @@ const PROGRESS_ACTIONS = new Set([
   "confirmDonationMouPaymentMatch",
   "resolveDonationDuplicate",
   "setDonationUnallocated",
+  // Confirmed bulk review: server-computed counts, then Undo for duplicates.
+  "resolveDonationDuplicates",
+  "reopenDonationDuplicates",
+  "setDonationsUnallocated",
   "initiateRightsStep",
   "resetBudgetLineRate",
   "resetPassword",
@@ -68,6 +76,10 @@ const CONFIRMED_DESTRUCTIVE_ACTIONS = new Set([
   "cancelSponsorship",
 ]);
 const OPTIMISTIC_ACTIONS = new Set([
+  // Message menus retain immediate text/reaction feedback; uploads have their own progress action.
+  "postMessage",
+  "toggleReaction",
+  "editMessage", // Text and Edited marker update immediately; failure restores the edit draft.
   "setTaskNextUp", // shared task selection: immediate state with rollback
   // Chat message pins: predictable, reversible, and rolled back on failure.
   "pinMessage",
@@ -93,7 +105,7 @@ const OPTIMISTIC = /^(accept|add|approve|assign|bulk|complete|create|decline|dis
 
 /** Classify every client-invoked action so new interaction code has an explicit UX contract. */
 export function interactionModeFor(actionName: string): MutationInteractionMode {
-  if (READ.test(actionName)) return "read";
+  if (READ.test(actionName) || READ_ACTIONS.has(actionName)) return "read";
   if (NAVIGATION.has(actionName)) return "navigation";
   if (CONFIRMED_DESTRUCTIVE_ACTIONS.has(actionName)) return "confirmed-destructive";
   if (DESTRUCTIVE.test(actionName)) return "confirmed-destructive";

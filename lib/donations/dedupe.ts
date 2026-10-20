@@ -10,8 +10,23 @@ type DedupeRow = {
   donationDate: string;
 };
 
+const ANONYMOUS_DONOR =
+  /^(?:anon|anonymous|anonymous (?:donor|giver|gift|contributor|supporter)|unknown|unknown donor|name withheld)$/;
+
+/**
+ * Donor identity for lookalike checks across export formats: "&" and "and"
+ * are ignored, and every anonymous spelling is the same donor.
+ */
+export function lookalikeDonorKey(donorKey: string): string {
+  const key = donorKey
+    .split(" ")
+    .filter((word) => word && word !== "and")
+    .join(" ");
+  return ANONYMOUS_DONOR.test(key) ? "anonymous" : key;
+}
+
 export function donationCandidateKey(row: DedupeRow): string {
-  return `${row.donorKey}\u001f${row.amountCents}\u001f${row.donationDate}`;
+  return `${lookalikeDonorKey(row.donorKey)}\u001f${row.amountCents}\u001f${row.donationDate}`;
 }
 
 /**

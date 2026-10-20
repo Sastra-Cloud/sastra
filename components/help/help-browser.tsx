@@ -109,7 +109,7 @@ export function HelpBrowser({ topics }: { topics: HelpTopic[] }) {
           }
         />
       ) : (
-        <div className="grid items-start gap-6 xl:grid-cols-2">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,30rem),1fr))] items-start gap-6">
           {grouped.map(([category, docs]) => (
             <section
               key={category}

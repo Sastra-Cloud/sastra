@@ -4,6 +4,9 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Sastra",
     short_name: "Sastra",
+    // Match the previous implicit ID (start_url) so existing installs keep
+    // their identity if the launch route changes later.
+    id: "/dashboard",
     description:
       "Tasks, chat, rights, budget, and AI-assisted planning for the Sastra team.",
     start_url: "/dashboard",
@@ -13,7 +16,6 @@ export default function manifest(): MetadataRoute.Manifest {
     // splash/status chrome matches the app background (no dark manifest variant).
     background_color: "#fbfaf6",
     theme_color: "#fbfaf6",
-    orientation: "portrait-primary",
     categories: ["productivity"],
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },

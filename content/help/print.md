@@ -325,3 +325,9 @@ fresh draft and the invoice attachment. Consolidation never sends an email.
 Paid, wire-requested, in-progress, and manually entered payments are not consolidated.
 Multiple accepted order invoices require review rather than guessing a total.
 If a wire send has an uncertain outcome, check correspondence before retrying.
+
+## On wide screens
+
+On the Print page, quote tables and runs use the main area. The side panel stays
+about the same width, so extra width goes to the quotes. When the screen is too
+narrow for both, the side panel moves below the quotes.

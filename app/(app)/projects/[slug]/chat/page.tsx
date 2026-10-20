@@ -1,3 +1,4 @@
+import { getWorkspaceSettings } from "@/lib/workspace/queries";
 import { notFound } from "next/navigation";
 
 import { requireUser } from "@/lib/auth/guards";
@@ -24,7 +25,7 @@ export default async function ProjectChatPage({
   const { slug } = await params;
   const { channel: selectedChannelId } = await searchParams;
   const { user } = await requireUser();
-  const project = await getProjectHeader(slug);
+  const [project, workspace] = await Promise.all([getProjectHeader(slug), getWorkspaceSettings()]);
   if (!project) notFound();
 
   const channels = await listProjectChannels(project.id, user.id);
@@ -48,12 +49,14 @@ export default async function ProjectChatPage({
     <ProjectChatView
       key={channel.id}
       slug={slug}
+      projectTitle={project.title}
       channels={channels}
       activeChannel={channel}
       currentUser={{
         id: user.id,
         name: user.name,
         image: user.image ?? null,
+        timezone: user.timezone ?? workspace.timezone,
       }}
       messages={messages}
       members={members}

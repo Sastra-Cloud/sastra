@@ -157,224 +157,229 @@ export function StandupEditor({
       </div>
 
       {/* Schedule */}
-      <Card>
-        <CardContent className="py-4">
-          <form onSubmit={event => { event.preventDefault(); const form = new FormData(event.currentTarget); run(() => updateStandup(standup.id, form), "Check-in schedule saved"); }} className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="grid gap-1">
-                <Label htmlFor="scheduleTime">Time</Label>
-                <Input id="scheduleTime" name="scheduleTime" type="time" defaultValue={standup.scheduleTime} />
-              </div>
-              <div className="grid gap-1">
-                <Label htmlFor="timezone">Timezone</Label>
-                <TimezoneControl id="timezone" defaultValue={standup.timezone} />
-              </div>
-              <div className="grid gap-1">
-                <Label htmlFor="reminderAfterMinutes">Reminder after (min)</Label>
-                <Input
-                  id="reminderAfterMinutes"
-                  name="reminderAfterMinutes"
-                  type="number"
-                  min="0"
-                  defaultValue={standup.reminderAfterMinutes ?? ""}
-                  placeholder="off"
-                />
-              </div>
-            </div>
-            <div className="grid gap-1">
-              <Label>Days</Label>
-              <div className="flex flex-wrap gap-2">
-                {DAYS.map((d) => (
-                  <label key={d.v} className="flex items-center gap-1 text-sm">
-                    <input
-                      type="checkbox"
-                      name="days"
-                      value={d.v}
-                      defaultChecked={standup.scheduleDays.includes(d.v)}
+      <div className="grid items-start gap-5 @[64rem]/settings:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)]">
+        <div className="min-w-0 space-y-5">
+          <Card>
+            <CardContent className="py-4">
+              <form onSubmit={event => { event.preventDefault(); const form = new FormData(event.currentTarget); run(() => updateStandup(standup.id, form), "Check-in schedule saved"); }} className="space-y-3">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="grid gap-1">
+                    <Label htmlFor="scheduleTime">Time</Label>
+                    <Input id="scheduleTime" name="scheduleTime" type="time" defaultValue={standup.scheduleTime} />
+                  </div>
+                  <div className="grid gap-1">
+                    <Label htmlFor="timezone">Timezone</Label>
+                    <TimezoneControl id="timezone" defaultValue={standup.timezone} />
+                  </div>
+                  <div className="grid gap-1">
+                    <Label htmlFor="reminderAfterMinutes">Reminder after (min)</Label>
+                    <Input
+                      id="reminderAfterMinutes"
+                      name="reminderAfterMinutes"
+                      type="number"
+                      min="0"
+                      defaultValue={standup.reminderAfterMinutes ?? ""}
+                      placeholder="off"
                     />
-                    {d.l}
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div className="grid gap-1 sm:max-w-xs">
-              <Label htmlFor="reportToUserId">Report to (reviewer)</Label>
-              <select
-                id="reportToUserId"
-                name="reportToUserId"
-                className={selectClass}
-                defaultValue={standup.reportToUserId ?? "none"}
+                  </div>
+                </div>
+                <div className="grid gap-1">
+                  <Label>Days</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {DAYS.map((d) => (
+                      <label key={d.v} className="flex items-center gap-1 text-sm">
+                        <input
+                          type="checkbox"
+                          name="days"
+                          value={d.v}
+                          defaultChecked={standup.scheduleDays.includes(d.v)}
+                        />
+                        {d.l}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid gap-1 sm:max-w-xs">
+                  <Label htmlFor="reportToUserId">Report to (reviewer)</Label>
+                  <select
+                    id="reportToUserId"
+                    name="reportToUserId"
+                    className={selectClass}
+                    defaultValue={standup.reportToUserId ?? "none"}
+                  >
+                    <option value="none">Managers only</option>
+                    {users.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    name="isActive"
+                    defaultChecked={standup.isActive}
+                  />
+                  Active
+                </label>
+                <Button type="submit" disabled={pending} size="sm">
+                  Save schedule
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Questions */}
+          <div className="space-y-2">
+            <p className="flex items-center gap-1.5 text-sm font-medium">
+              Questions
+              <HelpTip title="Standup questions" side="right" align="start">
+                These are asked, in order, each time the standup runs. Drag the
+                handle (or use keyboard) to reorder them.
+              </HelpTip>
+            </p>
+            <DndContext
+              sensors={qSensors}
+              collisionDetection={closestCenter}
+              modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+              onDragEnd={onQuestionDragEnd}
+            >
+              <SortableContext
+                items={questions.map((q) => q.id)}
+                strategy={verticalListSortingStrategy}
               >
-                <option value="none">Managers only</option>
-                {users.map((u) => (
+                {questions.map((q, i) => (
+                  <SortableQuestion
+                    key={q.id}
+                    question={q}
+                    index={i}
+                    onRemove={async () => {
+                      if (!(await confirmDialog("Remove this standup question?"))) return;
+                      const previous = questions;
+                      setQuestions((current) => current.filter((item) => item.id !== q.id));
+                      run(
+                        async () => {
+                          try {
+                            await removeQuestion(q.id, standup.id);
+                          } catch (error) {
+                            setQuestions(previous);
+                            throw error;
+                          }
+                        }
+                      );
+                    }}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+            <div className="flex gap-2">
+              <Input
+                value={newQ}
+                onChange={(e) => setNewQ(e.target.value)}
+                placeholder="Add a question…"
+              />
+              <Button
+                variant="outline"
+                disabled={pending || !newQ.trim()}
+                onClick={() => {
+                  const prompt = newQ.trim();
+                  const previous = questions;
+                  const temporaryId = `pending-${crypto.randomUUID()}`;
+                  setQuestions((current) => [...current, { id: temporaryId, prompt }]);
+                  setNewQ("");
+                  run(async () => {
+                    try {
+                      const result = await addQuestion(standup.id, prompt);
+                      if (result?.id) {
+                        setQuestions((current) => current.map((question) => question.id === temporaryId ? { ...question, id: result.id as string } : question));
+                      }
+                    } catch (error) {
+                      setQuestions(previous);
+                      setNewQ(prompt);
+                      throw error;
+                    }
+                  });
+                }}
+              >
+                Add
+              </Button>
+            </div>
+          </div>
+        </div>
+        <div className="min-w-0">
+          {/* Participants */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Participants</p>
+            {participants.map((p) => (
+              <div
+                key={p.id}
+                className="flex items-center justify-between gap-2 rounded-md border bg-card px-3 py-2"
+              >
+                <span className="text-sm">{p.userName}</span>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label="Remove participant"
+                  onClick={async () => {
+                    if (!(await confirmDialog(`Remove ${p.userName} from this standup?`))) return;
+                    const previous = participants;
+                    setParticipants((current) => current.filter((item) => item.id !== p.id));
+                    run(async () => {
+                      try {
+                        await removeParticipant(p.id, standup.id);
+                      } catch (error) {
+                        setParticipants(previous);
+                        throw error;
+                      }
+                    });
+                  }}
+                >
+                  <X className="size-4" />
+                </Button>
+              </div>
+            ))}
+            <div className="flex gap-2">
+              <select
+                className={selectClass}
+                value={addUserId}
+                onChange={(e) => setAddUserId(e.target.value)}
+              >
+                <option value="">Add person…</option>
+                {addable.map((u) => (
                   <option key={u.id} value={u.id}>
                     {u.name}
                   </option>
                 ))}
               </select>
-            </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                name="isActive"
-                defaultChecked={standup.isActive}
-              />
-              Active
-            </label>
-            <Button type="submit" disabled={pending} size="sm">
-              Save schedule
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Questions */}
-      <div className="space-y-2">
-        <p className="flex items-center gap-1.5 text-sm font-medium">
-          Questions
-          <HelpTip title="Standup questions" side="right" align="start">
-            These are asked, in order, each time the standup runs. Drag the
-            handle (or use keyboard) to reorder them.
-          </HelpTip>
-        </p>
-        <DndContext
-          sensors={qSensors}
-          collisionDetection={closestCenter}
-          modifiers={[restrictToVerticalAxis, restrictToParentElement]}
-          onDragEnd={onQuestionDragEnd}
-        >
-          <SortableContext
-            items={questions.map((q) => q.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            {questions.map((q, i) => (
-              <SortableQuestion
-                key={q.id}
-                question={q}
-                index={i}
-                onRemove={async () => {
-                  if (!(await confirmDialog("Remove this standup question?"))) return;
-                  const previous = questions;
-                  setQuestions((current) => current.filter((item) => item.id !== q.id));
-                  run(
-                    async () => {
-                      try {
-                        await removeQuestion(q.id, standup.id);
-                      } catch (error) {
-                        setQuestions(previous);
-                        throw error;
+              <Button
+                variant="outline"
+                disabled={pending || !addUserId}
+                onClick={() => {
+                  const user = users.find((item) => item.id === addUserId);
+                  if (!user) return;
+                  const previous = participants;
+                  const temporaryId = `pending-${crypto.randomUUID()}`;
+                  setParticipants((current) => [...current, { id: temporaryId, userId: user.id, userName: user.name }]);
+                  setAddUserId("");
+                  run(async () => {
+                    try {
+                      const result = await addParticipant(standup.id, user.id);
+                      if (result?.id) {
+                        setParticipants((current) => current.map((participant) => participant.id === temporaryId ? { ...participant, id: result.id as string } : participant));
                       }
+                    } catch (error) {
+                      setParticipants(previous);
+                      setAddUserId(user.id);
+                      throw error;
                     }
-                  );
+                  });
                 }}
-              />
-            ))}
-          </SortableContext>
-        </DndContext>
-        <div className="flex gap-2">
-          <Input
-            value={newQ}
-            onChange={(e) => setNewQ(e.target.value)}
-            placeholder="Add a question…"
-          />
-          <Button
-            variant="outline"
-            disabled={pending || !newQ.trim()}
-            onClick={() => {
-              const prompt = newQ.trim();
-              const previous = questions;
-              const temporaryId = `pending-${crypto.randomUUID()}`;
-              setQuestions((current) => [...current, { id: temporaryId, prompt }]);
-              setNewQ("");
-              run(async () => {
-                try {
-                  const result = await addQuestion(standup.id, prompt);
-                  if (result?.id) {
-                    setQuestions((current) => current.map((question) => question.id === temporaryId ? { ...question, id: result.id as string } : question));
-                  }
-                } catch (error) {
-                  setQuestions(previous);
-                  setNewQ(prompt);
-                  throw error;
-                }
-              });
-            }}
-          >
-            Add
-          </Button>
-        </div>
-      </div>
-
-      {/* Participants */}
-      <div className="space-y-2">
-        <p className="text-sm font-medium">Participants</p>
-        {participants.map((p) => (
-          <div
-            key={p.id}
-            className="flex items-center justify-between gap-2 rounded-md border bg-card px-3 py-2"
-          >
-            <span className="text-sm">{p.userName}</span>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              aria-label="Remove participant"
-              onClick={async () => {
-                if (!(await confirmDialog(`Remove ${p.userName} from this standup?`))) return;
-                const previous = participants;
-                setParticipants((current) => current.filter((item) => item.id !== p.id));
-                run(async () => {
-                  try {
-                    await removeParticipant(p.id, standup.id);
-                  } catch (error) {
-                    setParticipants(previous);
-                    throw error;
-                  }
-                });
-              }}
-            >
-              <X className="size-4" />
-            </Button>
+              >
+                Add
+              </Button>
+            </div>
           </div>
-        ))}
-        <div className="flex gap-2">
-          <select
-            className={selectClass}
-            value={addUserId}
-            onChange={(e) => setAddUserId(e.target.value)}
-          >
-            <option value="">Add person…</option>
-            {addable.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
-          <Button
-            variant="outline"
-            disabled={pending || !addUserId}
-            onClick={() => {
-              const user = users.find((item) => item.id === addUserId);
-              if (!user) return;
-              const previous = participants;
-              const temporaryId = `pending-${crypto.randomUUID()}`;
-              setParticipants((current) => [...current, { id: temporaryId, userId: user.id, userName: user.name }]);
-              setAddUserId("");
-              run(async () => {
-                try {
-                  const result = await addParticipant(standup.id, user.id);
-                  if (result?.id) {
-                    setParticipants((current) => current.map((participant) => participant.id === temporaryId ? { ...participant, id: result.id as string } : participant));
-                  }
-                } catch (error) {
-                  setParticipants(previous);
-                  setAddUserId(user.id);
-                  throw error;
-                }
-              });
-            }}
-          >
-            Add
-          </Button>
         </div>
       </div>
 

@@ -59,7 +59,7 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
   return (
     <FieldErrorsContext.Provider value={fieldErrors}>
     <form
-      className="space-y-5"
+      className="grid min-w-0 items-start gap-5 @[80rem]/settings:grid-cols-2"
       onSubmit={(event) => {
         event.preventDefault();
         const form = new FormData(event.currentTarget);
@@ -146,7 +146,7 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
         });
       }}
     >
-      <Card>
+      <Card className="@container/ws-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Languages className="size-4" />Language, locale, and schedule</CardTitle>
           <CardDescription>Defaults for new people, projects, standups, and scheduled summaries. Existing overrides stay unchanged.</CardDescription>
@@ -191,12 +191,12 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="@container/ws-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Settings2 className="size-4" />Publishing, budget, and print defaults</CardTitle>
           <CardDescription>Copied into new project settings. Project teams can then override them without changing the workspace.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <CardContent className="grid gap-4 sm:grid-cols-2 @[48rem]/ws-card:grid-cols-3">
           <Field label="Words per page" name="wordsPerPage" type="number" defaultValue={settings.wordsPerPage} />
           <Field label="Target-language expansion factor" name="languageExpansionFactor" type="number" defaultValue={settings.languageExpansionFactor} />
           <Field label="Default delivery location" name="defaultDeliveryLocation" defaultValue={settings.defaultDeliveryLocation} />
@@ -205,7 +205,7 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
           <Field label="Finance recipient" name="financialEmail" type="email" defaultValue={settings.financialEmail} />
           <div
             id="outbound-email-defaults"
-            className="grid scroll-mt-24 gap-1.5 sm:col-span-2 lg:col-span-3"
+            className="grid scroll-mt-24 gap-1.5 sm:col-span-2 @[48rem]/ws-card:col-span-3"
           >
             <Label htmlFor="defaultCcEmails">
               Default CC recipients for outbound email
@@ -248,7 +248,7 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="@container/ws-card @[80rem]/settings:col-span-2">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Gauge className="size-4" />Planning capacity</CardTitle>
           <CardDescription>Group project types into <strong>work paths</strong> that run in parallel, each with its own &ldquo;how many at once.&rdquo; Books are typically their own path; articles, podcasts, and video series share one because they use the same creative staff. Duration stays per project type. These drive the completion-date planner and the Schedule roadmap; adjust them as real completion data accrues.</CardDescription>
@@ -268,7 +268,7 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
           </div>
           <div className="grid gap-1.5">
             <Label>Typical duration per project type</Label>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 @[60rem]/ws-card:grid-cols-4">
               {[
                 ["Book (months)", "durationMonthsBook", settings.durationMonthsBook],
                 ["Article collection (months)", "durationMonthsArticle", settings.durationMonthsArticle],
@@ -281,7 +281,7 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
         </CardContent>
       </Card>
 
-      <Card id="invoice-issuer" className="scroll-mt-24">
+      <Card id="invoice-issuer" className="@container/ws-card scroll-mt-24">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><FileText className="size-4" />Invoice issuer</CardTitle>
           <CardDescription>Public details are snapshotted when an invoice is generated, so historical invoices remain stable.</CardDescription>
@@ -327,7 +327,7 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="@container/ws-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Bot className="size-4" />AI organization context</CardTitle>
           <CardDescription>Trusted context used to distinguish your team from external partners, rights holders, and printers.</CardDescription>
@@ -340,7 +340,7 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
         </CardContent>
       </Card>
 
-      <div className="sticky bottom-4 flex justify-end pr-14">
+      <div className="sticky bottom-4 flex justify-end pr-14 @[80rem]/settings:col-span-2">
         <Button type="submit" size="lg" disabled={pending || uploadingLogo} className="shadow-lg">
           {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
           {pending ? "Saving defaults…" : "Save workspace defaults"}

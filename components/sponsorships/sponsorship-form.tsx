@@ -31,13 +31,13 @@ export function SponsorshipForm({ initial, options, pending, onSave, onCancel, l
   }
   let total = 0;
   try { total = sponsorshipTotalCents(value.lines) / 100; } catch { /* incomplete form */ }
-  return <form className="space-y-6" onSubmit={event => {
+  return <form className="@container/sponsorship-form min-w-0 space-y-6" onSubmit={event => {
     event.preventDefault();
     const parsed = sponsorshipInputSchema.safeParse(value);
     if (!parsed.success) { setError(parsed.error.issues[0]?.message ?? "Check the highlighted fields."); return; }
     setError(null); onSave(parsed.data);
   }}>
-    <fieldset disabled={pending} className="space-y-6">
+    <fieldset disabled={pending} className="grid min-w-0 gap-6 @[60rem]/sponsorship-form:grid-cols-2 @[60rem]/sponsorship-form:items-start">
       <section className="space-y-4 rounded-xl border bg-card p-4 md:p-5">
         <h2 className="text-base font-semibold">Partner and invoice details</h2>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -102,7 +102,7 @@ export function SponsorshipForm({ initial, options, pending, onSave, onCancel, l
           <p aria-live="polite" className="font-semibold tabular-nums">Total: {sponsorshipMoney(total, value.currency)}</p>
         </div>
       </section>
-      <div className="grid gap-1.5"><Label htmlFor="sponsorship-notes">Invoice note (optional)</Label><Textarea id="sponsorship-notes" maxLength={2000} rows={3} value={value.notes} onChange={event => patch({ notes: event.target.value })} /><p className="text-xs text-muted-foreground">This note appears on the invoice. Explain how the sponsorship helps.</p></div>
+      <div className="grid gap-1.5 @[60rem]/sponsorship-form:col-span-2"><Label htmlFor="sponsorship-notes">Invoice note (optional)</Label><Textarea id="sponsorship-notes" maxLength={2000} rows={3} value={value.notes} onChange={event => patch({ notes: event.target.value })} /><p className="text-xs text-muted-foreground">This note appears on the invoice. Explain how the sponsorship helps.</p></div>
     </fieldset>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     <div className="flex flex-wrap justify-end gap-2">

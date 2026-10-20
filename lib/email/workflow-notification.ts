@@ -5,6 +5,7 @@ import { appUrl, from } from "./transport";
 import { sendMail } from "./send";
 import { escapeHtml } from "./renderTemplate";
 import { getWorkspaceSettings } from "@/lib/workspace/queries";
+import { notificationSubject } from "./notification-presentation";
 
 export function renderWorkflowEmail({
   title,
@@ -33,6 +34,7 @@ export function renderWorkflowEmail({
     ${ctaButton(actionLabel, url)}
   `;
   const text = [
+    workspaceName?.trim(),
     project,
     title,
     body,
@@ -41,9 +43,9 @@ export function renderWorkflowEmail({
     `Stop workflow emails: ${unsubscribeUrl}`,
   ].filter(Boolean).join("\n\n");
   return {
-    subject: title,
+    subject: notificationSubject(title, project),
     html: baseLayout(content, {
-      preheader: body || [project, title].filter(Boolean).join(" · "),
+      preheader: [project, body || title].filter(Boolean).join(" · "),
       workspaceName: workspaceName?.trim() || undefined,
       unsubscribeUrl,
       unsubscribeLabel: "Stop workflow emails",

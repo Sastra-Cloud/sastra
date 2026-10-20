@@ -18,12 +18,21 @@ Do not edit `.ai/` files by hand.
 Claude path-triggered rules live in `.claude/rules/`:
 
 - `next-16.md` - Next.js 16 App Router conventions
+- `testing.md` - test value, coverage selection, pruning, and focused verification
 - `ui-review.md` - browser verification for UI changes
 - `assistant-tools.md` - assistant tool and task-id contracts
 - `drizzle-migrations.md` - schema/migration workflow
 - `dependency-hygiene.md` - pnpm dependency discipline
 - `help-docs.md` - keep `content/help/*.md` current as features change
 - `copy-style.md` - plain-language, one-term-per-concept UI copy for the ESL team
+
+# Test value
+
+Before adding, changing, or pruning tests, apply `AGENTS.md` and
+`.claude/rules/testing.md`. Reuse existing coverage first. Add tests for
+consequential behavior and failure recovery; copy, styling, documentation, and
+mechanically equivalent changes do not require new tests on their own. Keep
+per-handler permission checks and the existing PR verification gates.
 
 # Keeping user documentation up to date
 
@@ -83,12 +92,15 @@ interface work complete. Also read the agent-browser lessons learned in
 
 # Authenticated page geometry
 
-`AppShell` owns the signed-in app's centered `max-w-[88rem]` canvas. Pages and
-nested layouts under `app/(app)` must not add their own outer
-`mx-auto`/`max-w-*` wrapper. Use `PageShell` for vertical rhythm and nest a
+`AppShell` owns the signed-in app's fluid canvas, which fills the space inside the
+responsive main padding with no global maximum width. Pages and nested layouts
+under `app/(app)` must not add their own outer `mx-auto`/`max-w-*` wrapper. Use `PageShell` for vertical rhythm and nest a
 `ContentColumn` only around focused forms, correspondence threads, chat, or
 prose; primary headers and page heroes stay on the full canvas. Loading and
-empty states follow the same rule.
+empty states follow the same rule. Dense data uses the width; collections add
+columns by container width (use named `@container` queries, not viewport
+breakpoints, inside nested layouts); forms and prose keep readable inner
+widths and side rails stay bounded.
 
 Keep mobile below `lg`, the compact rail at `lg`, and the expandable sidebar at
 `xl`. For responsive work, compare `[data-app-canvas]` with `/projects` at the

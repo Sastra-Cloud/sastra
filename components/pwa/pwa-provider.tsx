@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 
-import { syncSubscription } from "@/lib/push/client";
+import { isMacSafari, isStandalone, syncSubscription } from "@/lib/push/client";
 
 /** Chrome/Android fires this so we can offer a custom "Install app" button. */
 type BeforeInstallPromptEvent = Event & {
@@ -19,7 +19,8 @@ type BeforeInstallPromptEvent = Event & {
 
 export type InstallOutcome = "accepted" | "dismissed" | "unavailable";
 
-type PwaState = { canInstall: boolean; installed: boolean };
+type PwaState = { canInstall: boolean; installed: boolean; macSafari: boolean };
+const INITIAL_STATE: PwaState = { canInstall: false, installed: false, macSafari: false };
 
 // --- Module-scope install-prompt store ---------------------------------------
 // `beforeinstallprompt` can fire before React hydrates, so we must capture it at
@@ -35,7 +36,12 @@ function emit() {
 }
 
 function currentState(): PwaState {
-  return { canInstall: deferredPrompt !== null && !installed, installed };
+  const runningInstalled = installed || isStandalone();
+  return {
+    canInstall: deferredPrompt !== null && !runningInstalled,
+    installed: runningInstalled,
+    macSafari: isMacSafari(),
+  };
 }
 
 if (typeof window !== "undefined") {
@@ -74,8 +80,7 @@ type PwaContextValue = PwaState & {
 };
 
 const PwaContext = createContext<PwaContextValue>({
-  canInstall: false,
-  installed: false,
+  ...INITIAL_STATE,
   promptInstall: async () => "unavailable",
 });
 
@@ -90,7 +95,7 @@ export function usePwaInstall(): PwaContextValue {
  * after server-side pruning). Mount once, high in the app layout.
  */
 export function PwaProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<PwaState>(() => currentState());
+  const [state, setState] = useState<PwaState>(INITIAL_STATE);
 
   useEffect(() => {
     // Re-read in case an event fired between module init and this mount.
@@ -98,6 +103,8 @@ export function PwaProvider({ children }: { children: ReactNode }) {
     setState(currentState());
     const cb = () => setState(currentState());
     listeners.add(cb);
+    const standalone = window.matchMedia("(display-mode: standalone)");
+    standalone.addEventListener("change", cb);
 
     if (!syncedThisSession) {
       syncedThisSession = true;
@@ -106,6 +113,7 @@ export function PwaProvider({ children }: { children: ReactNode }) {
 
     return () => {
       listeners.delete(cb);
+      standalone.removeEventListener("change", cb);
     };
   }, []);
 

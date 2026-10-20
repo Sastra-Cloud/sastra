@@ -38,7 +38,7 @@ type OptimisticTaskCreateRequest = {
 };
 
 const selectClass =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50";
+  "flex h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 pointer-coarse:min-h-11";
 
 const REPEAT_LABEL: Record<Exclude<Repeat, "none">, string> = {
   weekly: "week",
@@ -134,7 +134,8 @@ export function CreateTaskDialog({
         dueDate: anchorDate || null,
         isMilestone: fd.get("isMilestone") === "on",
         rank: Number.MAX_SAFE_INTEGER,
-        isNextUp: canManage && fd.get("isNextUp") === "true" && Boolean(assignedTo),
+        isNextUp:
+          canManage && fd.get("isNextUp") === "true" && Boolean(assignedTo),
         blockedByTitle: null,
         estimateHours: estimateHours || null,
         updatedAt: new Date(),
@@ -205,7 +206,9 @@ export function CreateTaskDialog({
       } catch {
         submissionInFlight.current = false;
         setOptimisticPending(false);
-        setError("Couldn't create the task. Please check your internet and try again.");
+        setError(
+          "Couldn't create the task. Please check your internet and try again.",
+        );
         setOpen(true);
       }
       return;
@@ -218,10 +221,15 @@ export function CreateTaskDialog({
           const estimate = String(fd.get("estimateHours") ?? "").trim();
           const res = await createRecurringTask({
             title,
-            description: String(fd.get("description") ?? "").trim() || undefined,
+            description:
+              String(fd.get("description") ?? "").trim() || undefined,
             projectId: selectedProjectId,
             assigneeId: String(fd.get("assignedTo") ?? "") || null,
-            priority: fd.get("priority") as "low" | "medium" | "high" | "urgent",
+            priority: fd.get("priority") as
+              | "low"
+              | "medium"
+              | "high"
+              | "urgent",
             isMilestone: fd.get("isMilestone") === "on",
             estimateHours: estimate ? Number(estimate) : undefined,
             frequency: repeat,
@@ -248,11 +256,13 @@ export function CreateTaskDialog({
         if (warning) toast.warning(warning);
         else
           toast.success(
-            recurring ? "Recurring task scheduled" : "Task created"
+            recurring ? "Recurring task scheduled" : "Task created",
           );
         router.refresh();
       } catch {
-        setError("Couldn't create the task. Please check your internet and try again.");
+        setError(
+          "Couldn't create the task. Please check your internet and try again.",
+        );
       } finally {
         submissionInFlight.current = false;
       }
@@ -260,229 +270,287 @@ export function CreateTaskDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={next => { setOpen(next); if (next) setHasOpened(true); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) setHasOpened(true);
+      }}
+    >
       <DialogTrigger
         render={
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={optimisticPending}
-          />
+          <Button size="sm" variant="outline" disabled={optimisticPending} />
         }
       >
         <Plus className="size-4" />
         {triggerLabel}
       </DialogTrigger>
-      <DialogContent keepMounted={hasOpened}>
-        <DialogHeader>
+      <DialogContent
+        keepMounted={hasOpened}
+        className="max-h-[calc(100dvh-2rem)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-[min(48rem,calc(100vw-2rem))]"
+      >
+        <DialogHeader className="px-5 py-4">
           <DialogTitle>New task</DialogTitle>
         </DialogHeader>
-        <form ref={formRef} onSubmit={onSubmit} className="grid gap-4">
-          {projectId ? (
-            <input type="hidden" name="projectId" value={projectId} />
-          ) : null}
-          {printRunId ? (
-            <input type="hidden" name="printRunId" value={printRunId} />
-          ) : null}
-          <input type="hidden" name="status" value={defaultStatus} />
-          {driveFolder ? (
-            <>
-              <input
-                type="hidden"
-                name="driveFolderId"
-                value={driveFolder.folderId}
-              />
-              <input
-                type="hidden"
-                name="driveFolderName"
-                value={driveFolder.name}
-              />
-              <input
-                type="hidden"
-                name="driveFolderUrl"
-                value={driveFolder.url}
-              />
-            </>
-          ) : null}
-
-          <div className="grid gap-2">
-            <Label htmlFor="t-title">Title</Label>
-            <Input
-              id="t-title"
-              name="title"
-              defaultValue={defaultTitle}
-              required
-              autoFocus
-            />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="grid gap-2">
-              <Label htmlFor="t-assignee">Assignee</Label>
-              <select id="t-assignee" name="assignedTo" className={selectClass} defaultValue={defaultAssignee}>
-                <option value="">Unassigned</option>
-                {assignees.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="t-due">{recurring ? "Starts on" : "Due date"}</Label>
-              <Input
-                id="t-due"
-                name="dueDate"
-                type="date"
-                required={recurring}
-              />
-            </div>
-          </div>
-          {canManage && !recurring ? (
-            <div className="grid gap-2">
-              <Label htmlFor="t-next-up">Placement</Label>
-              <select id="t-next-up" name="isNextUp" className={selectClass} defaultValue="false">
-                <option value="false">Standard queue</option>
-                <option value="true">Next up</option>
-              </select>
-              <p className="text-xs text-muted-foreground">Next up puts this in the assignee&apos;s shared work order. No due date needed.</p>
-            </div>
-          ) : null}
-          {!projectId && projects.length > 0 ? (
-            <div className="grid gap-2">
-              <Label htmlFor="t-project">Project</Label>
-              <select
-                id="t-project"
-                name="projectId"
-                className={selectClass}
-                defaultValue=""
-              >
-                <option value="">None — general task</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : null}
-
-          <SectionDisclosure title="Description and files" defaultOpen={Boolean(defaultDescription)}>
-          <div className="grid gap-2">
-            <Label htmlFor="t-desc">Description</Label>
-            <Textarea
-              id="t-desc"
-              name="description"
-              defaultValue={defaultDescription}
-              rows={2}
-            />
-          </div>
-
-          {!recurring ? (
-            <>
-              <TaskDriveFolderPicker
-                value={driveFolder}
-                onChange={setDriveFolder}
-                startInFolderId={projectDriveFolderId}
-                label="Drive folder (optional)"
-                hint="Where finished files for this task get uploaded. You can change it later."
-              />
-              <TaskDriveFilesPicker
-                value={driveFiles}
-                onChange={setDriveFiles}
-                defaultFolderId={
-                  driveFolder?.folderId ?? projectDriveFolderId
-                }
-              />
-            </>
-          ) : null}
-
-          </SectionDisclosure>
-          <SectionDisclosure title="More options" description="Priority, repeat, estimate, stage, and milestone">
-            <div className="grid gap-2">
-              <Label htmlFor="t-priority">Priority</Label>
-              <select
-                id="t-priority"
-                name="priority"
-                className={selectClass}
-                defaultValue={defaultPriority}
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
-              </select>
-            </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid gap-2">
-              <Label htmlFor="t-repeat">Repeat</Label>
-              <select
-                id="t-repeat"
-                className={selectClass}
-                value={repeat}
-                onChange={(e) => setRepeat(e.target.value as Repeat)}
-              >
-                <option value="none">Doesn&apos;t repeat</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-                <option value="quarterly">Quarterly</option>
-                <option value="annual">Annually</option>
-              </select>
-            </div>
-          </div>
-          {recurring ? (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-2">
-                <Label htmlFor="t-ends">Ends on (optional)</Label>
-                <Input id="t-ends" name="endsOn" type="date" />
-              </div>
-            </div>
-          ) : null}
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid gap-2">
-              <Label htmlFor="t-estimate">Estimate (hrs)</Label>
-              <Input
-                id="t-estimate"
-                name="estimateHours"
-                type="number"
-                min="0"
-                step="0.5"
-                placeholder="optional"
-                className="tabular-nums"
-              />
-            </div>
-            {phases.length > 0 && !recurring ? (
-              <div className="grid gap-2">
-                <Label htmlFor="t-phase">Stage</Label>
-                <select id="t-phase" name="phaseId" className={selectClass} defaultValue="">
-                  <option value="">None</option>
-                  {phases.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+        <form
+          ref={formRef}
+          onSubmit={onSubmit}
+          className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto]"
+        >
+          <div className="grid min-h-0 content-start gap-4 overflow-y-auto overscroll-contain px-5 pb-5">
+            {projectId ? (
+              <input type="hidden" name="projectId" value={projectId} />
             ) : null}
+            {printRunId ? (
+              <input type="hidden" name="printRunId" value={printRunId} />
+            ) : null}
+            <input type="hidden" name="status" value={defaultStatus} />
+            {driveFolder ? (
+              <>
+                <input
+                  type="hidden"
+                  name="driveFolderId"
+                  value={driveFolder.folderId}
+                />
+                <input
+                  type="hidden"
+                  name="driveFolderName"
+                  value={driveFolder.name}
+                />
+                <input
+                  type="hidden"
+                  name="driveFolderUrl"
+                  value={driveFolder.url}
+                />
+              </>
+            ) : null}
+
+            <div className="grid gap-1.5">
+              <Label htmlFor="t-title">Title</Label>
+              <Input
+                id="t-title"
+                name="title"
+                defaultValue={defaultTitle}
+                required
+                autoFocus
+                placeholder="What needs to be done?"
+              />
+            </div>
+
+            <div className="grid min-w-0 items-start gap-5 md:grid-cols-[minmax(0,1fr)_16rem]">
+              <div className="grid min-w-0 content-start gap-3 md:col-start-2 md:row-start-1 md:border-l md:pl-5">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="t-assignee">Assignee</Label>
+                  <select
+                    id="t-assignee"
+                    name="assignedTo"
+                    className={selectClass}
+                    defaultValue={defaultAssignee}
+                  >
+                    <option value="">Unassigned</option>
+                    {assignees.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="t-due">
+                    {recurring ? "Starts on" : "Due date"}
+                  </Label>
+                  <Input
+                    id="t-due"
+                    name="dueDate"
+                    type="date"
+                    required={recurring}
+                  />
+                </div>
+                {!projectId && projects.length > 0 ? (
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="t-project">Project</Label>
+                    <select
+                      id="t-project"
+                      name="projectId"
+                      className={selectClass}
+                      defaultValue=""
+                    >
+                      <option value="">None — general task</option>
+                      {projects.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : null}
+                {canManage && !recurring ? (
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="t-next-up">Placement</Label>
+                    <select
+                      id="t-next-up"
+                      name="isNextUp"
+                      className={selectClass}
+                      defaultValue="false"
+                    >
+                      <option value="false">Standard queue</option>
+                      <option value="true">Next up</option>
+                    </select>
+                    <p className="text-xs text-muted-foreground">
+                      Next up adds this to the assignee&apos;s shared work
+                      order. No due date needed.
+                    </p>
+                  </div>
+                ) : null}
+
+                <SectionDisclosure
+                  title="More options"
+                  className="rounded-none border-0 border-t bg-transparent [&>summary]:rounded-none [&>summary]:px-0 [&>summary]:py-2.5"
+                  contentClassName="space-y-3 px-0 pt-3 pb-0"
+                >
+                  <div className="grid gap-2">
+                    <Label htmlFor="t-priority">Priority</Label>
+                    <select
+                      id="t-priority"
+                      name="priority"
+                      className={selectClass}
+                      defaultValue={defaultPriority}
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="urgent">Urgent</option>
+                    </select>
+                  </div>
+                  <div className="grid gap-3">
+                    <div className="grid gap-2">
+                      <Label htmlFor="t-repeat">Repeat</Label>
+                      <select
+                        id="t-repeat"
+                        className={selectClass}
+                        value={repeat}
+                        onChange={(e) => setRepeat(e.target.value as Repeat)}
+                      >
+                        <option value="none">Doesn&apos;t repeat</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="quarterly">Quarterly</option>
+                        <option value="annual">Annually</option>
+                      </select>
+                    </div>
+                  </div>
+                  {recurring ? (
+                    <div className="grid gap-3">
+                      <div className="grid gap-2">
+                        <Label htmlFor="t-ends">Ends on (optional)</Label>
+                        <Input id="t-ends" name="endsOn" type="date" />
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-1">
+                    <div className="grid gap-2">
+                      <Label htmlFor="t-estimate">Estimate (hrs)</Label>
+                      <Input
+                        id="t-estimate"
+                        name="estimateHours"
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        placeholder="optional"
+                        className="tabular-nums"
+                      />
+                    </div>
+                    {phases.length > 0 && !recurring ? (
+                      <div className="grid gap-2">
+                        <Label htmlFor="t-phase">Stage</Label>
+                        <select
+                          id="t-phase"
+                          name="phaseId"
+                          className={selectClass}
+                          defaultValue=""
+                        >
+                          <option value="">None</option>
+                          {phases.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      name="isMilestone"
+                      className="size-4"
+                    />
+                    Mark as milestone
+                  </label>
+
+                  {recurring ? (
+                    <p className="text-xs text-muted-foreground">
+                      We&apos;ll create and assign this task every{" "}
+                      {REPEAT_LABEL[repeat]}, starting on the date above.
+                    </p>
+                  ) : null}
+                </SectionDisclosure>
+              </div>
+
+              <div className="grid min-w-0 content-start gap-4 md:col-start-1 md:row-start-1">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="t-desc">Description (optional)</Label>
+                  <Textarea
+                    id="t-desc"
+                    name="description"
+                    defaultValue={defaultDescription}
+                    rows={3}
+                    placeholder="Add instructions or helpful context."
+                    className="min-h-24 max-h-48 resize-y overflow-y-auto"
+                  />
+                </div>
+                {!recurring ? (
+                  <div className="grid gap-3 border-t pt-4">
+                    <TaskDriveFilesPicker
+                      active={open}
+                      value={driveFiles}
+                      onChange={setDriveFiles}
+                      defaultFolderId={
+                        driveFolder?.folderId ?? projectDriveFolderId
+                      }
+                    />
+                    <SectionDisclosure
+                      title="Drive folder (optional)"
+                      defaultOpen={Boolean(driveFolder)}
+                      className="rounded-none border-0 border-t bg-transparent [&>summary]:rounded-none [&>summary]:px-0 [&>summary]:py-2.5"
+                      contentClassName="px-0 pt-3 pb-0"
+                    >
+                      <TaskDriveFolderPicker
+                        active={open}
+                        value={driveFolder}
+                        onChange={setDriveFolder}
+                        startInFolderId={projectDriveFolderId}
+                        hint="Where finished files for this task get uploaded. You can change it later."
+                      />
+                    </SectionDisclosure>
+                  </div>
+                ) : null}
+              </div>
+            </div>
           </div>
-
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="isMilestone" className="size-4" />
-            Mark as milestone
-          </label>
-
-          {recurring ? (
-            <p className="text-xs text-muted-foreground">
-              We&apos;ll create and assign this task every {REPEAT_LABEL[repeat]},
-              starting on the date above.
-            </p>
-          ) : null}
-
-          </SectionDisclosure>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-
-          <DialogFooter>
-            <Button type="submit" disabled={pending || optimisticPending}>
+          <DialogFooter className="mx-0 mb-0 flex-col gap-3 rounded-none px-5 py-3 sm:flex-row sm:items-center">
+            {error ? (
+              <p role="alert" className="min-w-0 text-sm text-destructive">
+                {error}
+              </p>
+            ) : null}
+            <Button
+              type="submit"
+              disabled={pending || optimisticPending}
+              className="w-full sm:ml-auto sm:w-auto"
+            >
               {pending || optimisticPending
                 ? "Saving…"
                 : recurring

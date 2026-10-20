@@ -14,3 +14,8 @@ The Help page uses the same content as the Sastra Assistant. You can ask the ass
 On connected installations, the Help page offers **Contact support**, **Report a problem**, **Request a feature**, and **My requests**. Each request action selects the matching request type. The Support page separates **New request** from **My requests**, so you can write a request or follow an existing conversation without a long combined page.
 
 Ordinary self-hosted installations show community help and public bug/feature links. They do not connect to the private support service or upload diagnostics automatically. See **Support and feature requests** for visibility, attachments, and email replies.
+
+## On wide screens
+
+The Help library shows more topic groups in each row on a wide screen. A guide
+keeps its text at a readable width, with related guides beside it.

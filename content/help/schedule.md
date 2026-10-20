@@ -122,3 +122,8 @@ the answer uses this path capacity, its running-project finish dates, duration
 default, dated commitments, and overdue or unscheduled workload. A manager can
 then ask it to set the selected funding-proposal completion date, subject to the
 normal approval preview.
+
+## On wide screens
+
+On **Team capacity**, work paths sit side by side when there is room. On a
+narrow screen they stack. The roadmap uses the full width of the page.

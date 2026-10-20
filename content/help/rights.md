@@ -2,7 +2,7 @@
 title: "Rights & licensing"
 category: "Publishing"
 roles: [member, manager, admin]
-keywords: [publishing, rights summary, next step, expiry, rights, license, licence, mou, commercial, publisher, holder, formats, copyright, obligation, compliance, agreement, multiple projects, multi-project mou, shared agreement pdf, agreement chat, ask about agreements, citations, source selection, indexing, retry index, compare agreements, initiate request, signed email, payment receipt, license fee, file note, attachment note, license fee task, mark license fee paid]
+keywords: [publishing, rights summary, next step, expiry, rights, license, licence, mou, commercial, publisher, holder, formats, copyright, obligation, compliance, agreement, multiple projects, multi-project mou, shared agreement pdf, agreement chat, ask about agreements, citations, source selection, mobile, sources, conversation details, keyboard, latest messages, indexing, retry index, compare agreements, initiate request, signed email, payment receipt, license fee, file note, attachment note, license fee task, mark license fee paid]
 order: 50
 summary: "Review Rights under Publishing: status, deadlines, permitted formats, agreement steps, and obligations."
 ---
@@ -51,6 +51,13 @@ project. This is a private conversation for you and this project; it does not
 appear in project Chat or in your general Sastra Assistant transcript. Agreement
 questions do not run assistant tools, change Rights fields, or add agreement
 content to Assistant memory or learning.
+
+On a phone, Agreement Q&A opens as a full-screen conversation. Use the back
+arrow to close it. Expand **Sources** to change the selected documents or see
+indexing details. **Conversation details** includes **Clear conversation**,
+which asks for confirmation. Touch **Return** adds a line; select **Send** to
+ask. Reading older answers keeps your place; **Latest messages** returns to
+the end.
 
 All readable MoU and License sources start selected. Turn a source off to ask
 about only one document, or leave both selected to compare their terms and find

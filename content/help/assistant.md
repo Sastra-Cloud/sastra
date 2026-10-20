@@ -2,7 +2,7 @@
 title: "The Sastra Assistant"
 category: "AI & assistant"
 roles: [member, manager, admin]
-keywords: [assistant, ai, chat, ask, help, wiki, tutorial, knowledge, search, projects, current project, acting on project, move task, create project, project blueprint, units, project workflow, project budget, partner quote, completion date, schedule advice, portfolio capacity, portfolio, project status, deadlines, progress, team, health, blockers, rights, licenses, approve, pending action, draft email, default cc, cc recipients, email sign-off, reviewed email, external email, memory, learning, reflection, feedback, regression, eval, budget, voice, dictation, mobile, full screen, agreement chat, ask about agreements, mou, license, citations, source selection, indexing, what can you do, walk me through, guide me, step by step, help me do this]
+keywords: [assistant, ai, chat, ask, help, ask the assistant, first time, new user, introduction, launcher, sparkle button, assistant tip, hide tip, find the assistant, wiki, tutorial, knowledge, search, projects, current project, acting on project, move task, create project, project blueprint, units, project workflow, project budget, partner quote, completion date, schedule advice, portfolio capacity, portfolio, project status, deadlines, progress, team, health, blockers, rights, licenses, approve, pending action, draft email, default cc, cc recipients, email sign-off, reviewed email, external email, memory, learning, reflection, feedback, regression, eval, budget, voice, dictation, mobile, full screen, agreement chat, ask about agreements, mou, license, citations, source selection, indexing, what can you do, walk me through, guide me, step by step, help me do this, conversation details, keyboard, newline, voice preview, latest messages]
 order: 110
 summary: "Ask the in-app assistant to look things up, take actions, and answer how-to questions."
 ---
@@ -11,11 +11,25 @@ The **Sastra Assistant** is an in-app helper you can chat with. Open it from the
 **Assistant** page or the floating launcher in the bottom corner of any page. It
 can look things up, take actions on your behalf, and explain how Sastra works.
 The floating Assistant opens full-screen on phones so the transcript, approvals,
-keyboard, and send controls have enough room; close it with the top-right button.
+keyboard, and send controls have enough room. Use the back arrow to close it.
 Sent messages appear in the transcript immediately while the assistant works. If
 the request fails, the message returns to the composer so it can be retried.
+On phones, the Assistant page uses the same compact conversation layout.
+Open **Conversation details** for memory, monthly usage, and **Clear chat**.
+Clearing asks for confirmation. Pending approvals stay in the scrolling
+conversation; showing a draft never sends it. Project context remains above
+what you type. Reading older messages keeps your place; **Latest messages**
+returns to the end. Touch **Return** adds a line. Select **Send** to send;
+on desktop, **Enter** sends and **Shift+Enter** adds a line.
+
 Feedback, declined previews, and memory review changes also update immediately
 and restore their prior state when saving fails.
+
+The launcher is the round sparkle button. While guidance is on, a short **tip**
+appears above it until you open the assistant for the first time. Choose **Try
+the assistant** to open it, or **Hide tip** to close the tip. People who have
+used the assistant before do not see the tip. If you hid the tip and want it
+back, use **Settings → Profile → Show hidden tips again**.
 
 ## What you can ask
 
@@ -132,8 +146,10 @@ retry, citation, and removed-source behavior.
   approve, edit, and clear memories.
 - **Budget** — each person has a monthly assistant spend cap; the workspace
   tracks usage so costs stay predictable.
-- **Voice** — you can dictate to the assistant instead of typing. Workspace
-  dictionary terms guide transcription, and their optional heard-as aliases fix
+- **Voice** — you can dictate to the assistant instead of typing.
+  Select the microphone to record, then stop to transcribe. Review or edit the
+  words in the message box and select **Send**. Stopping does not send the text.
+  Workspace dictionary terms guide transcription, and their optional heard-as aliases fix
   recurring misspellings before the transcript is sent to the assistant. When you
   fix a name in a task preview before approving it, the assistant offers to add
   that spelling to the voice dictionary so dictation gets it right next time.
@@ -156,3 +172,11 @@ Recent reflection cards explain which signal types were found and why no lesson
 was proposed. A correction and its follow-up turns remain one incident rather
 than being counted repeatedly. Personal preferences remain user memory; they do
 not become shared workspace lessons.
+
+## On wide screens
+
+On a wide screen the Assistant page keeps the conversation at a readable width.
+**Monthly AI usage** sits beside the conversation. Actions waiting for your
+approval stay with the messages so you can review their context. Nothing is sent
+or saved until you approve it. The floating panel uses the same conversation
+controls in a single column.

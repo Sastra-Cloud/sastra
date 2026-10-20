@@ -51,6 +51,7 @@ export function renderSecurityAlertEmail({
       }
     ),
     text: [
+      organization,
       subject,
       summary,
       nextStep,

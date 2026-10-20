@@ -20,6 +20,8 @@ import { ActiveTimerProvider } from "@/components/time/active-timer-provider";
 import { AppCanvas } from "@/components/cockpit";
 import { isAdminRole } from "@/lib/auth/policy";
 import { WorkspaceModulesProvider } from "@/components/settings/workspace-modules-provider";
+import { NavigationBadgesProvider } from "@/components/navigation-badges-provider";
+import type { NavigationBadgeCounts } from "@/lib/navigation/badges";
 
 const SIDEBAR_COOKIE = "sastra-sidebar-collapsed";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
@@ -41,9 +43,11 @@ export function AppShell({
   initialActiveTimer,
   guidanceEnabled,
   initialGuidanceDismissals,
+  assistantIntroduced = false,
   sourceUrl,
   versionLabel,
   enabledModules = [],
+  initialNavigationBadges,
 }: {
   children: React.ReactNode;
   userId: string;
@@ -55,10 +59,13 @@ export function AppShell({
   initialActiveTimer: ActiveTimer | null;
   guidanceEnabled: boolean;
   initialGuidanceDismissals: string[];
+  /** The person has asked the assistant something before; skip its intro. */
+  assistantIntroduced?: boolean;
   /** AGPL source link for the running build. */
   sourceUrl: string;
   versionLabel: string | null;
   enabledModules?: string[];
+  initialNavigationBadges: NavigationBadgeCounts;
 }) {
   const [collapsed, setCollapsed] = useState(initialSidebarCollapsed);
 
@@ -72,6 +79,7 @@ export function AppShell({
 
   return (
     <WorkspaceModulesProvider enabledModules={enabledModules}>
+    <NavigationBadgesProvider initialCounts={initialNavigationBadges}>
     <GuidanceProvider
       enabled={guidanceEnabled}
       initialDismissedKeys={initialGuidanceDismissals}
@@ -147,15 +155,16 @@ export function AppShell({
           role={role}
           canManage={canManage}
         />
-        <main className="min-w-0 flex-1 overflow-x-clip px-4 py-5 md:px-8 md:py-7">
+        <main data-app-main className="min-w-0 flex-1 overflow-x-clip px-4 py-5 md:px-8 md:py-7">
           <AppCanvas>{children}</AppCanvas>
         </main>
       </div>
     </div>
-    <FloatingAssistant userName={userName} />
+    <FloatingAssistant userName={userName} introduced={assistantIntroduced} />
     </PresenceProvider>
     </ActiveTimerProvider>
     </GuidanceProvider>
+    </NavigationBadgesProvider>
     </WorkspaceModulesProvider>
   );
 }

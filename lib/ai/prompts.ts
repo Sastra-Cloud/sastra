@@ -14,6 +14,7 @@ export {
 export { EXTRACTION_SYSTEM_PROMPT } from "@/lib/imports/schema";
 export { PRINT_QUOTE_SYSTEM_PROMPT } from "@/lib/print/extract-schema";
 export { PRINT_TEXT_QUOTE_SYSTEM_PROMPT } from "@/lib/print/text-extract-schema";
+export { DONATION_CSV_FORMAT_SYSTEM_PROMPT } from "@/lib/donations/csv-format-schema";
 
 export type PromptManifestEntry = {
   /** aiTaskModels task key this prompt serves. */
@@ -66,6 +67,12 @@ export const PROMPT_MANIFEST: PromptManifestEntry[] = [
     promptName: "PRINT_TEXT_QUOTE_SYSTEM_PROMPT",
     version: 1,
     file: "lib/print/text-extract-schema.ts",
+  },
+  {
+    taskKey: "donation_csv_format",
+    promptName: "DONATION_CSV_FORMAT_SYSTEM_PROMPT",
+    version: 1,
+    file: "lib/donations/csv-format-schema.ts",
   },
   // Context-built prompts (not constants, listed for completeness):
   {

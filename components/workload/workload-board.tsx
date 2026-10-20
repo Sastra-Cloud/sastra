@@ -222,7 +222,7 @@ export function WorkloadBoard({
       onDragEnd={onDragEnd}
       onDragCancel={() => setActiveId(null)}
     >
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,26rem),1fr))] gap-4">
         {people.map((person, pi) => (
           <PersonCard
             key={person.userId}

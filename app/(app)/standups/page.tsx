@@ -141,7 +141,7 @@ export default async function StandupsPage() {
           }
         />
       ) : (
-        <div className="grid gap-4">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,30rem),1fr))] items-start gap-4">
           {view.map((s) => (
           <Card key={s.id} className="surface-shadow">
             <CardHeader>
@@ -175,6 +175,7 @@ export default async function StandupsPage() {
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Latest digest · {s.report.runDate}
                   </p>
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,22rem),1fr))] gap-2">
                   {s.report.people.map((p, i) => (
                     <div key={i} className="rounded-md border bg-card px-3 py-2">
                       <div className="flex items-center justify-between gap-2">
@@ -197,6 +198,7 @@ export default async function StandupsPage() {
                       ) : null}
                     </div>
                   ))}
+                  </div>
                 </div>
               ) : null}
             </CardContent>

@@ -72,7 +72,7 @@ export function RolesManager({ roles }: { roles: Role[] }) {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="max-w-3xl">
         <CardContent className="space-y-3 py-4">
           <p className="text-sm font-medium">Add a project role</p>
           <form action={action} className="flex flex-col gap-2 sm:flex-row">
@@ -94,7 +94,7 @@ export function RolesManager({ roles }: { roles: Role[] }) {
         </CardContent>
       </Card>
 
-      <div className="space-y-2" aria-busy={pending}>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,30rem),1fr))] gap-2" aria-busy={pending}>
         {visibleRoles.map((r) => (
           <div
             key={r.id}

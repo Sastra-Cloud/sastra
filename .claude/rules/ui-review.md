@@ -20,8 +20,10 @@ For UI, visual polish, responsive layout, dark mode, or interaction changes, ins
 - For authenticated routes, measure `[data-app-canvas]` and confirm it matches
   `/projects` at the same viewport and sidebar state. Route pages must not add a
   competing outer width.
-- Exercise the responsive boundaries at 390, 640, 768, 1024, 1280, 1536, and
-  1920 CSS pixels when the change affects the app shell or page geometry. Check
+- Exercise the responsive boundaries at 390, 640, 768, 1024, 1280, 1536,
+  1920, 2560, and 3440 CSS pixels when the change affects the app shell or page
+  geometry. The canvas must keep growing (no plateau) while prose, composers,
+  and forms stay bounded. Check
   both collapsed and expanded sidebar states where the sidebar is available.
 - For navigation changes, scroll a long route well below its header, follow a
   normal in-app link, and confirm the destination starts at `window.scrollY ===

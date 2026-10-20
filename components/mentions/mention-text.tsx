@@ -33,6 +33,7 @@ export function MentionText({
         return (
           <span
             key={i}
+            data-mention-self={isSelf ? "" : undefined}
             className={cn(
               "rounded px-1 font-medium",
               tone === "onPrimary"

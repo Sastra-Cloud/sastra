@@ -110,3 +110,10 @@ This helps the team monitor compressed image storage, private private video spac
 and video duration before costs become surprising.
 
 The empty Wiki offers managers Create subject directly. Private video space shows the space used by uploaded videos.
+
+## On wide screens
+
+Wiki articles keep their text at a readable width. **On this page** appears
+beside the article when the reading area is wide enough, and above it on a
+narrow screen. Images and videos can use more width than the text. The subject
+list shows more subjects in each row.

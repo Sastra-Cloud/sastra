@@ -7,8 +7,10 @@ import { AppShell } from "@/components/app-shell";
 import { getWorkspaceSettings, workspaceSetupComplete } from "@/lib/workspace/queries";
 import { redirect } from "next/navigation";
 import { listGuidanceDismissals } from "@/lib/guidance/queries";
+import { hasAskedAssistant } from "@/lib/assistant/queries";
 import { runningVersion } from "@/lib/ops/version";
 import { cleanVersion, sourceUrlFor } from "@/lib/ops/source-url";
+import { getNavigationBadgeCounts } from "@/lib/navigation/badge-queries";
 
 export default async function AppLayout({
   children,
@@ -23,12 +25,15 @@ export default async function AppLayout({
   const cookieStore = await cookies();
   const initialSidebarCollapsed =
     cookieStore.get("sastra-sidebar-collapsed")?.value === "1";
-  const activeTimer = await getActiveTimer(user.id);
   const guidanceEnabled =
     (user as { guidanceLevel?: string }).guidanceLevel !== "off";
-  const guidanceDismissals = guidanceEnabled
-    ? await listGuidanceDismissals(user.id)
-    : [];
+  const [activeTimer, guidanceDismissals, assistantIntroduced, navigationBadges] = await Promise.all([
+    getActiveTimer(user.id),
+    guidanceEnabled ? listGuidanceDismissals(user.id) : Promise.resolve([]),
+    // The assistant tip is coaching too; only check it with guidance on.
+    guidanceEnabled ? hasAskedAssistant(user.id) : Promise.resolve(true),
+    getNavigationBadgeCounts(user, workspace.timezone),
+  ]);
 
   return (
     <AppShell
@@ -41,9 +46,11 @@ export default async function AppLayout({
       initialActiveTimer={activeTimer}
       guidanceEnabled={guidanceEnabled}
       initialGuidanceDismissals={guidanceDismissals}
+      assistantIntroduced={assistantIntroduced}
       sourceUrl={sourceUrlFor(build)}
       versionLabel={cleanVersion(build.version)}
       enabledModules={workspace.enabledModules}
+      initialNavigationBadges={navigationBadges}
     >
       {children}
     </AppShell>

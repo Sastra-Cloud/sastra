@@ -181,8 +181,8 @@
 }
 
 @media (max-width: 1023px) {
-  html:has([data-chat-conversation]),
-  body:has([data-chat-conversation]) {
+  html:has([data-mobile-conversation]),
+  body:has([data-mobile-conversation]) {
     height: 100%;
     overflow: hidden;
     overscroll-behavior: none;
@@ -598,3 +598,139 @@
 .project-chat-frame .project-header > div:last-child { margin-top: 0.5rem; }
 .project-chat-frame .project-secondary { display: none; }
 .project-chat-frame .project-header > div:nth-child(2) { gap: 0.5rem; }
+
+/* Conversations track the visible viewport, including mobile keyboard changes. */
+.conversation-overlay {
+  top: var(--conversation-top, 0px);
+  bottom: auto;
+  height: var(--conversation-height, 100dvh);
+}
+@media (max-width: 1023px) {
+  body:has([data-mobile-conversation]) [data-app-topbar],
+  body:has([data-mobile-conversation]) [data-assistant-launcher] { display: none; }
+  body:has([data-mobile-conversation]) [data-app-main] { padding: 0; }
+  .conversation-route {
+    position: fixed;
+    inset-inline: 0;
+    top: var(--conversation-top, 0px);
+    height: var(--conversation-height, 100dvh);
+    z-index: 20;
+  }
+  .conversation-header {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+    padding-left: max(0.75rem, env(safe-area-inset-left));
+    padding-right: max(0.75rem, env(safe-area-inset-right));
+  }
+  .project-chat-frame { gap: 0; }
+  .project-chat-frame > :not(.project-content) { display: none; }
+  .conversation-transcript { border: 0; border-radius: 0; background: var(--background); }
+}
+.conversation-composer {
+  flex-shrink: 0;
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  padding-left: max(0.5rem, env(safe-area-inset-left));
+  padding-right: max(0.5rem, env(safe-area-inset-right));
+}
+.conversation-composer textarea { min-inline-size: 0; }
+.conversation-composer textarea:placeholder-shown { field-sizing: fixed; }
+.conversation-composer textarea::placeholder { white-space: nowrap; }
+@media (pointer: coarse) {
+  .conversation-composer textarea { font-size: 1rem; }
+}
+
+.conversation-composer[data-followed-by-actions] { padding-bottom: 0.5rem; }
+.conversation-footer { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+
+/* Keep message surfaces distinct from primary actions in both themes. */
+.conversation-route, .conversation-overlay {
+  --conversation-primary: color-mix(in oklch, var(--primary) 90%, black);
+  --conversation-outgoing: color-mix(in oklch, var(--primary) 18%, var(--card));
+  --conversation-outgoing-border: color-mix(in oklch, var(--primary) 24%, var(--border));
+}
+.dark .conversation-route, .dark .conversation-overlay {
+  --conversation-primary: var(--primary);
+  --conversation-outgoing: color-mix(in oklch, var(--primary) 24%, var(--card));
+  --conversation-outgoing-border: color-mix(in oklch, var(--primary) 24%, var(--card));
+}
+.conversation-own-bubble {
+  background-color: var(--conversation-outgoing, var(--secondary));
+  color: var(--foreground);
+  border-color: var(--conversation-outgoing-border, var(--border));
+}
+.conversation-incoming-bubble {
+  background-color: var(--card);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+.conversation-mention {
+  background-color: color-mix(in oklch, var(--primary) 18%, transparent);
+  color: inherit;
+  padding-inline: 0.2em;
+}
+.conversation-mention[data-mention-self] {
+  background-color: color-mix(in oklch, var(--primary) 24%, transparent);
+}
+.conversation-route [data-slot="button"].bg-primary,
+.conversation-overlay [data-slot="button"].bg-primary {
+  background-color: var(--conversation-primary, var(--primary));
+}
+.conversation-composer .conversation-send {
+  border-radius: 9999px;
+}
+.conversation-composer .conversation-send:disabled {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+  opacity: 1;
+}
+[data-message-press-surface][data-message-selected] {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+/* One summary overlaps by 8px while its 44px target stays in flow. */
+.conversation-transcript { --conversation-surface: var(--card); }
+@media (width < 64rem) {
+  .conversation-transcript { --conversation-surface: var(--background); }
+}
+.conversation-reaction-badge {
+  background: var(--card);
+  box-shadow: 0 0 0 2px var(--conversation-surface, var(--background));
+}
+.conversation-reaction[data-has-mine] .conversation-reaction-badge {
+  background: color-mix(in oklch, var(--primary) 20%, var(--card));
+  border-color: var(--conversation-primary, var(--primary));
+}
+@media (hover: hover) {
+  .conversation-reaction:hover .conversation-reaction-badge { border-color: var(--conversation-primary, var(--primary)); }
+}
+.conversation-reaction:active .conversation-reaction-badge { border-color: var(--conversation-primary, var(--primary)); }
+@media (pointer: coarse) {
+  [data-message-press-surface] {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+}
+.conversation-emoji-picker em-emoji-picker {
+  --border-radius: 0;
+  --shadow: none;
+  --font-family: var(--font-sans);
+  height: 100%;
+  min-height: 0;
+}
+.conversation-reaction-sheet {
+  max-height: min(42rem, calc(var(--reaction-viewport-height, 100dvh) * .9));
+}
+.conversation-emoji-picker {
+  height: min(435px, calc(var(--reaction-viewport-height, 100dvh) * .9 - 5rem));
+}
+.conversation-reaction-sheet[data-compact-reactions] [aria-label="Frequent reactions"] { display: none; }
+@media (width >= 40rem) {
+  .conversation-reaction-details { bottom: 1.5rem; }
+}
+@media (pointer: coarse) {
+  .conversation-route [data-slot="button"],
+  .conversation-overlay [data-slot="button"] {
+    min-inline-size: 2.75rem;
+    min-block-size: 2.75rem;
+  }
+}

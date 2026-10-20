@@ -13,11 +13,37 @@ export function buildOperationalDraftSystemPrompt(identity: DraftIdentity) {
     "Put the request and the most useful facts first. Use short paragraphs or a readable specification list when there are several details.",
     "Use a calm, direct voice; be warm with partners and printers and firm with finance.",
     "Keep the subject self-sufficient and near 50 characters when practical.",
+    "Include the supplied project title in the subject and opening paragraph. For a shared agreement, name the agreement and every covered project. Never replace the project title with a generic document label.",
     "Return only a subject and plain-text body. Do not use markdown or placeholders.",
     "Use only supplied facts and never invent names, dates, amounts, specifications, attachments, or commitments.",
     `For a new message, close with ${identity.senderName} and ${identity.organizationName}.`,
     "For print RFQ drafts, include context.pageCountLine verbatim when present and request both total price and price per copy for every quantity.",
   ].join(" ");
+}
+
+export function invoiceEmailFallback(input: DraftIdentity & {
+  invoiceNumber: string;
+  projectTitles: readonly string[];
+  agreementName?: string;
+  amountLabel?: string;
+  paymentTrigger: string;
+  evidence?: readonly { requirement: string; url: string }[];
+}) {
+  const projects = input.projectTitles.filter((title) => title.trim()).join("; ");
+  const context = projects || input.agreementName || "Project funding";
+  const stage = input.paymentTrigger === "on_signing" ? "signing installment"
+    : input.paymentTrigger === "on_completion" ? "final installment" : "scheduled installment";
+  const evidence = input.evidence?.filter((item) => item.url.trim()) ?? [];
+  return {
+    subject: `Invoice ${input.invoiceNumber}: ${context}`,
+    body: [
+      "Hello,", "",
+      `Please review the attached invoice ${input.invoiceNumber}${input.amountLabel ? ` for ${input.amountLabel}` : ""}.`,
+      `It covers the ${stage} for ${context}${projects && input.agreementName ? ` under ${input.agreementName}` : ""}.`,
+      ...(evidence.length ? ["", "Delivery evidence:", ...evidence.map((item) => `${item.requirement}: ${item.url}`)] : []),
+      "", "Please reply if you have any questions.", "", ...closing(input),
+    ].join("\n"),
+  };
 }
 
 export function fundingProposalFallback(input: DraftIdentity & {
@@ -146,6 +172,7 @@ export function buildExternalEmailDraftMessages(input: DraftIdentity & {
     `You are drafting a professional external email on behalf of ${input.senderName} at ${input.organizationName}, sent from ${input.from}.`,
     "Put the request or decision first. Use short paragraphs, or a readable list when several specifications or actions are involved.",
     "Use a clear, warm, professional plain-text style. Keep the subject self-sufficient and near 50 characters when practical.",
+    "When supplied, name the project or covered projects in the opening paragraph and in a new message's subject. Keep an existing reply subject so the conversation stays together. Never infer a project from a generic document title.",
     "Use only supplied facts. Do not invent names, dates, amounts, attachments, commitments, or placeholders.",
     isReply
       ? threadClosing

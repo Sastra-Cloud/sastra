@@ -17,6 +17,7 @@ import {
 } from "@/lib/db/schema";
 import { buildReferencesHeader } from "@/lib/gmail/message-id";
 import { emailMessagePreviewText } from "@/lib/email/message-preview";
+import { correspondenceNeedsReview, correspondenceReviewLabels } from "./review-queue";
 
 export type ThreadStatus = "open" | "waiting" | "done";
 export type EmailDirection = "inbound" | "outbound";
@@ -45,6 +46,7 @@ export type ThreadSummary = {
   ownerUserId: string | null;
   assigneeId: string | null;
   linkedManually: boolean;
+  reviewLabels?: string[];
 };
 
 export type ProjectThreadPreview = ThreadSummary & {
@@ -105,6 +107,7 @@ export type ListThreadsOptions = {
   limit?: number;
   offset?: number;
   search?: string;
+  needsReview?: boolean;
 };
 
 export async function listThreads(
@@ -119,6 +122,8 @@ export async function listThreads(
   if (opts.needsLinking) conds.push(isNull(emailThreads.projectId));
   if (opts.projectRelated === true) conds.push(isNotNull(emailThreads.projectId));
   if (opts.projectRelated === false) conds.push(isNull(emailThreads.projectId));
+  const now = new Date();
+  if (opts.needsReview) conds.push(correspondenceNeedsReview(now));
 
   if (opts.search?.trim()) {
     const term = `%${opts.search.trim().replace(/[\\%_]/g, "\\$&")}%`;
@@ -130,7 +135,7 @@ export async function listThreads(
   }
 
   let q = db
-    .select(summaryColumns)
+    .select({ ...summaryColumns, reviewLabels: correspondenceReviewLabels(now) })
     .from(emailThreads)
     .leftJoin(projects, eq(projects.id, emailThreads.projectId))
     .leftJoin(rightsHolders, eq(rightsHolders.id, emailThreads.holderId))
@@ -159,6 +164,14 @@ export async function listThreads(
 }
 
 export const CORRESPONDENCE_PAGE_SIZE = 50;
+
+/** No message bodies or notification read state enter this shared count. */
+export async function countThreadsNeedingReview(now = new Date()): Promise<number> {
+  await requireRole("manager");
+  const [row] = await db.select({ count: sql<number>`count(*)::int` })
+    .from(emailThreads).where(correspondenceNeedsReview(now));
+  return row.count;
+}
 
 /** One extra row indicates another page; the existing listThreads API stays available. */
 export async function listThreadsPage(opts: Omit<ListThreadsOptions, "limit" | "offset"> & { page?: number } = {}): Promise<{ items: ThreadSummary[]; hasMore: boolean }> {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -9,13 +9,15 @@ import {
   Check,
   Download,
   Info,
+  Monitor,
   RefreshCw,
   Share,
   Smartphone,
   SquarePlus,
 } from "lucide-react";
 
-import { usePushSetup } from "@/hooks/use-push-setup";
+import { usePushSetup, type UsePushSetup } from "@/hooks/use-push-setup";
+import { usePwaInstall } from "@/components/pwa/pwa-provider";
 import type { PushSetupState } from "@/lib/push/setup-state";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +32,10 @@ import { StaggerGroup, StaggerItem } from "@/components/motion/reveal";
 import { cn } from "@/lib/utils";
 
 type Variant = "card" | "settings";
+type EnablePushFlowProps = {
+  variant?: Variant;
+  forceState?: PushSetupState;
+};
 
 /**
  * Guided, platform-aware flow for turning on push notifications. Reused by the
@@ -41,14 +47,29 @@ type Variant = "card" | "settings";
 export function EnablePushFlow({
   variant = "settings",
   forceState,
-}: {
-  variant?: Variant;
-  forceState?: PushSetupState;
-}) {
-  const router = useRouter();
+}: EnablePushFlowProps) {
   const setup = usePushSetup();
   const state =
     forceState && process.env.NODE_ENV !== "production" ? forceState : setup.state;
+
+  return (
+    <div className="space-y-3">
+      <PushSetupPanel variant={variant} setup={setup} state={state} />
+      {state !== "ready" ? <InstallAppButton /> : null}
+    </div>
+  );
+}
+
+function PushSetupPanel({
+  variant,
+  setup,
+  state,
+}: {
+  variant: Variant;
+  setup: UsePushSetup;
+  state: PushSetupState;
+}) {
+  const router = useRouter();
 
   async function enable() {
     await setup.enable();
@@ -58,13 +79,6 @@ export function EnablePushFlow({
   async function disable() {
     await setup.disable();
     router.refresh();
-  }
-
-  async function install() {
-    const outcome = await setup.install();
-    if (outcome === "accepted") {
-      toast.success("Sastra is being installed — open it from your Home Screen.");
-    }
   }
 
   switch (state) {
@@ -78,7 +92,7 @@ export function EnablePushFlow({
         <Note icon={Info} tone="muted">
           {setup.ios && setup.standalone
             ? "Update your iPhone or iPad to iOS 16.4 or later to receive notifications here."
-            : "This browser can't show push notifications. Try Chrome on Android, or Safari on an up-to-date iPhone or iPad."}
+            : "Notifications are unavailable here. Try an up-to-date Safari, Edge, or Chrome browser. If this continues, ask your admin to check notification setup."}
         </Note>
       );
 
@@ -96,16 +110,21 @@ export function EnablePushFlow({
       );
 
     case "denied":
-      return <DeniedRecovery ios={setup.ios} onRecheck={setup.refresh} />;
+      return (
+        <DeniedRecovery
+          ios={setup.ios}
+          macSafari={setup.macSafari}
+          standalone={setup.standalone}
+          onRecheck={setup.refresh}
+        />
+      );
 
     case "ready":
       return (
         <ReadyPanel
           busy={setup.busy}
           error={setup.error}
-          canInstall={setup.canInstall}
           onEnable={enable}
-          onInstall={install}
         />
       );
 
@@ -125,6 +144,76 @@ export function EnablePushFlow({
 }
 
 /* --- Shared pieces --------------------------------------------------------- */
+
+/** Installation is available independently of notification permission/setup. */
+function InstallAppButton() {
+  const { canInstall, installed, macSafari, promptInstall } = usePwaInstall();
+  const [busy, setBusy] = useState(false);
+  const inFlight = useRef(false);
+
+  async function install() {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setBusy(true);
+    try {
+      const outcome = await promptInstall();
+      if (outcome === "accepted") {
+        toast.success("Installation started. Open Sastra from your device's apps.");
+      } else if (outcome === "unavailable") {
+        toast.info("Open your browser's menu to install Sastra.");
+      }
+    } finally {
+      inFlight.current = false;
+      setBusy(false);
+    }
+  }
+
+  if (installed) return null;
+  if (macSafari) {
+    return (
+      <Dialog>
+        <DialogTrigger render={<Button size="sm" variant="outline" />}>
+          <Monitor /> Add to Dock
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Sastra to your Dock</DialogTitle>
+            <DialogDescription>
+              Open Sastra like a Mac app. Requires macOS Sonoma 14 or later.
+            </DialogDescription>
+          </DialogHeader>
+          <ol className="list-decimal space-y-3 pl-5 text-sm text-pretty">
+            <li>
+              In Safari&apos;s menu bar, choose <strong>File</strong> →{" "}
+              <strong>Add to Dock</strong>. You can also use Safari&apos;s{" "}
+              <strong>Share</strong> menu.
+            </li>
+            <li>
+              Keep the name <strong>Sastra</strong> and click <strong>Add</strong>.
+            </li>
+            <li>
+              Open <strong>Sastra</strong> from the Dock. Sign in if asked.
+            </li>
+            <li>
+              In the Dock app, open <strong>Settings → Notifications</strong>.
+              Click <strong>Turn on notifications</strong>, then <strong>Allow</strong>.
+            </li>
+          </ol>
+          <p className="text-xs text-muted-foreground text-pretty">
+            Safari and the Dock app have separate notification settings. Allow
+            notifications inside the Dock app to show its unread badge.
+          </p>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+  if (!canInstall && !busy) return null;
+  return (
+    <Button size="sm" variant="outline" onClick={install} disabled={busy}>
+      <Download /> {busy ? "Installing…" : "Install app"}
+    </Button>
+  );
+}
 
 function Note({
   icon: Icon,
@@ -235,9 +324,13 @@ function IosCardPrompt() {
 
 function DeniedRecovery({
   ios,
+  macSafari,
+  standalone,
   onRecheck,
 }: {
   ios: boolean;
+  macSafari: boolean;
+  standalone: boolean;
   onRecheck: () => void;
 }) {
   return (
@@ -254,6 +347,27 @@ function DeniedRecovery({
             </li>
             <li>
               2. Turn on <strong>Allow Notifications</strong>, then return here.
+            </li>
+          </>
+        ) : macSafari ? (
+          <>
+            <li>
+              1. {standalone ? (
+                <>
+                  Open <strong>System Settings</strong> → <strong>Notifications</strong>{" "}
+                  → <strong>Sastra</strong>. Turn on <strong>Allow notifications</strong>.
+                </>
+              ) : (
+                <>
+                  Open <strong>Safari</strong> → <strong>Settings</strong> →{" "}
+                  <strong>Websites</strong> → <strong>Notifications</strong>.
+                  Allow this site.
+                </>
+              )}
+            </li>
+            <li>
+              2. Check <strong>System Settings → Notifications</strong> and{" "}
+              <strong>Focus</strong> if alerts still do not appear. Then return here.
             </li>
           </>
         ) : (
@@ -279,15 +393,11 @@ function DeniedRecovery({
 function ReadyPanel({
   busy,
   error,
-  canInstall,
   onEnable,
-  onInstall,
 }: {
   busy: boolean;
   error: string | null;
-  canInstall: boolean;
   onEnable: () => void;
-  onInstall: () => void;
 }) {
   return (
     <div className="space-y-2.5">
@@ -296,11 +406,7 @@ function ReadyPanel({
           <BellRing />
           {busy ? "Turning on…" : "Turn on notifications"}
         </Button>
-        {canInstall ? (
-          <Button size="sm" variant="outline" onClick={onInstall} disabled={busy}>
-            <Download /> Install app
-          </Button>
-        ) : null}
+        <InstallAppButton />
       </div>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>

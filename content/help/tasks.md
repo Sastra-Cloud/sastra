@@ -2,9 +2,9 @@
 title: "Tasks & the board"
 category: "Work"
 roles: [member, manager, admin]
-keywords: [next up, shared queue, undated task, due today, today tasks, overdue tasks, your next tasks, suggestions to review, next task, handoff, more options, task, kanban, board, column, to do, in progress, review, done, drag, move, assign, priority, due date, earliest due first, task order, reschedule, edit task, move task to project, milestone, recurring, recurring schedule, google drive, task attachment, upload file, attach file, working folder, license obligation, printer payment, printing coordinator, proof review, approve proof, reply to printer, budget approval, approve, request changes, wip, time tracking, comment, mention, email task, forwarded email, meeting reminder, booking link, email assistant, task suggestion, learn from email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice, waiting for payment, follow up due, source linked task]
+keywords: [badge breakdown, actions for you, due tasks, search tasks, find task, missing task, lost task, old task, done task, reopen task, next up, shared queue, undated task, due today, today tasks, overdue tasks, your next tasks, suggestions to review, next task, handoff, more options, create task, laptop task form, task, kanban, board, column, to do, in progress, review, done, drag, move, assign, priority, due date, earliest due first, task order, reschedule, edit task, move task to project, milestone, recurring, recurring schedule, google drive, drive loading, cancel drive, small screen, task form scrolling, task attachment, upload file, attach file, working folder, license obligation, printer payment, printing coordinator, proof review, approve proof, reply to printer, budget approval, approve, request changes, wip, time tracking, comment, mention, email task, forwarded email, meeting reminder, booking link, email assistant, task suggestion, learn from email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice, waiting for payment, follow up due, source linked task]
 order: 30
-summary: "Follow a shared Next up order without due dates, see real deadlines, review email suggestions, and use Board and Agenda."
+summary: "Follow a shared Next up order without due dates, see real deadlines, search for any task, review email suggestions, and use Board and Agenda."
 ---
 
 Tasks are the unit of work. **My Work** brings your personal tasks and dated
@@ -18,7 +18,7 @@ project also keeps its own task board.
   The summary keeps today's and overdue counts visible. **Due today** then shows
   today's remaining deadlines and payment follow-ups; selected tasks already
   shown above are counted but not duplicated. Dates use the workspace timezone.
-  **Working now** shows other started work. **Needs attention** shows the next five
+  **Working now** shows other started work. **Other assigned work** shows the next five
   remaining tasks, with **Show all** for the full queue. **Waiting on
   confirmation**, **Later**, and **Completed today** are collapsed sections with
   counts. All started and review tasks remain visible. The summary reports open
@@ -29,6 +29,47 @@ project also keeps its own task board.
 - **Agenda** orders tasks and operational deadlines by date. Managers can filter
   the same view to tasks, project deadlines, rights, or finance obligations.
 
+### Understand your menu badge
+
+The **actions for you** summary explains the My Work badge. It adds your tasks
+due today or overdue, your pending email task suggestions, and email follow-ups
+owned by you that are due. Select the task count to see exactly those due tasks.
+The same printer-payment follow-up dates drive this list and the Overdue total.
+For example, six due tasks and two owned email follow-ups make eight actions.
+Future tasks and proposed email assistant preferences do not add to this total.
+
+On large screens, Focus keeps the main task queue together. Badge totals and
+their links stay together above the queue. Work totals appear as a quiet summary
+above the tasks. Medium-priority tasks do not repeat a priority badge; open task
+details to check or change the priority. Your email follow-ups,
+suggestions, and collapsed waiting, later, and completed sections sit beside it.
+On smaller screens they follow the task queue. Empty Next up and Due today
+sections do not create large empty panels. Home follows the same two-column
+layout, with up to three manager reviews and three active projects beside your
+task preview.
+Open a task's details to edit or delete it; Home keeps those extra controls out
+of the preview.
+
+### Find a task
+
+Use **Search all tasks** at the top of My Work when a task seems to be missing.
+Type at least two letters from the task title, its project name, or its
+description. Results replace the current view until you clear the search, press
+**Esc**, or choose **Focus**, **Board**, or **Agenda**.
+
+- **In My Work** lists your matching tasks and shows where each one is, such as
+  **In Later** or **In Other assigned work**. This finds tasks hidden in a closed
+  section or after the first five rows.
+- **Other tasks** lists matching tasks that My Work does not show: your tasks
+  marked done more than a week ago, tasks assigned to someone else, and tasks
+  that are not assigned. Each result says why, for example **Done Sep 3, 2026**
+  or **Assigned to a teammate**.
+
+Select a result to open its task details. From there you can reopen done work
+by changing its status. Managers can also assign it back to you.
+Members search project tasks and their own tasks without a project. Managers
+search every task. Deleted tasks cannot be found.
+
 Requested printer payments leave the top action queue while waiting for payment
 confirmation. They return with **Follow up due** after three business days or
 on an earlier due date. Open the linked payment to record that it was paid;
@@ -37,8 +78,10 @@ invoice, and budget approval tasks follow their source records, so ordinary
 task status and deletion controls are unavailable for them. Payment tasks link
 back to the record that controls them.
 
-Managers also see due **External follow-ups** in My Work. These are lightweight
-email-response watches rather than tasks: open the thread, snooze the reminder,
+Managers also see their own due **External follow-ups** in My Work.
+These are lightweight email-response watches rather than tasks. Unassigned
+follow-ups appear in **Correspondence ▸ Needs review** until assigned.
+Open the thread, snooze the reminder,
 or resolve it. A reply resolves the watch automatically.
 
 Focus and Board include a timer control on each open task. Starting a different
@@ -90,7 +133,7 @@ the manager-only correspondence inbox. An automatically created task also has
 **Undo automatic task**, which removes it after confirmation.
 
 Sastra can learn narrow personal preferences from repeated accepts, edits,
-dismissals, and undos. A proposed preference appears under **My Work ▸ Suggestions to review** and does nothing
+dismissals, and undos. A proposed preference appears under **My Work ▸ Email assistant preferences** and does nothing
 until you choose **Apply**. Patterns shared by several teammates are likewise
 reviewed by an admin under **Settings ▸ AI** before becoming workspace rules.
 Manage approved personal preferences and turn task suggestions or learning off
@@ -149,6 +192,16 @@ For a one-off task, you can choose an optional Google Drive **working folder**
 and **add or upload files while creating the task**. Files uploaded through the
 Google picker are placed in Drive immediately, then linked to the task when you
 choose **Create task**. Selected files stay in the form if task creation fails.
+On laptops, the wider task form shows description and files beside the assignee,
+date, project, and placement fields. On phones, the fields stack in one column.
+The description and attachment controls are visible immediately. Expand
+**Drive folder (optional)** to choose a working folder. **More options** contains
+priority, repeat, estimate, stage, and milestone settings.
+The form scrolls when needed. Its title, close button, and **Create task** button
+stay visible when you expand more fields. Saving errors appear beside the button.
+While Drive opens, an **Opening Google Drive…** message lets you cancel loading.
+If opening times out or Google reports an error, try **Add or upload files**
+again. Your task fields and selected files stay in the form.
 After creation, open the task to attach more existing Drive files, upload into
 its working folder, change the folder, open an attachment, or remove the task's
 link to it. **Upload file** opens the upload panel immediately and uses the task
@@ -272,3 +325,9 @@ Home and My Work use the same selection and grouping rules: shared Next up order
 today's remaining work, other started work, then remaining work needing attention.
 Deadline counts remain visible above the selection. Manual ordering is retained
 within each group; the queue does not independently sort by priority labels.
+
+## Project board on wide screens
+
+The project **Tasks** board shows all four status columns when your screen is
+wide, two columns on a medium screen, and one column on a phone. Dragging a card
+and the **⋯** menu work the same at every width.

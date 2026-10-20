@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, ne, inArray } from "drizzle-orm";
+import { and, asc, eq, ne, inArray } from "drizzle-orm";
 import { formatInTimeZone } from "date-fns-tz";
 
 import { db } from "@/lib/db";
@@ -26,6 +26,7 @@ function money(value: string, currency: string) {
     return new Intl.NumberFormat(undefined, {
       style: "currency",
       currency,
+      currencyDisplay: "code",
     }).format(Number(value));
   } catch {
     return `${currency} ${Number(value).toFixed(2)}`;
@@ -124,6 +125,7 @@ export async function reevaluateSharedMouPayments(input?: {
       invoiceTaskId: mouPayments.invoiceTaskId,
       administrativeProjectId: sharedMouGroups.administrativeProjectId,
       groupName: sharedMouGroups.name,
+      counterparty: sharedMouGroups.counterparty,
     })
     .from(mouPayments)
     .innerJoin(
@@ -170,6 +172,12 @@ export async function reevaluateSharedMouPayments(input?: {
       .where(and(eq(sharedMouMemberships.groupId, payment.groupId!),
         eq(sharedMouMemberships.active, true), eq(user.isActive, true),
         eq(user.isBot, false), inArray(user.role, ["manager", "admin", "super_admin"])));
+    const coveredProjects = await db.select({ title: projects.title })
+      .from(sharedMouMemberships)
+      .innerJoin(projects, eq(projects.id, sharedMouMemberships.projectId))
+      .where(and(eq(sharedMouMemberships.groupId, payment.groupId!), eq(sharedMouMemberships.active, true)))
+      .orderBy(asc(projects.title));
+    const projectContext = coveredProjects.map((project) => project.title).join("; ");
     const [owner] = payment.invoiceAssigneeId ? await db.select({ id: user.id, name: user.name })
       .from(user).where(and(eq(user.id, payment.invoiceAssigneeId), eq(user.isActive, true),
         eq(user.isBot, false), inArray(user.role, ["manager", "admin", "super_admin"]))).limit(1) : [];
@@ -219,7 +227,8 @@ export async function reevaluateSharedMouPayments(input?: {
         eventKey: `shared-payment:${payment.id}:${event}:${invoiceVersions.length}:${owner?.id ?? "unassigned"}`,
         type: "invoice_ready",
         title: `${finished ? readiness.status === "received" ? "Funds received" : "Invoice sent" : deliveryWork ? "Confirm delivery" : "Invoice ready"}: ${payment.groupName}`,
-        body: `${label} installment · Owner: ${owner?.name ?? "unassigned"}. ${readiness.reason}`,
+        body: `${label === "signing" ? "Signing" : label === "final" ? "Final" : "Scheduled"} installment: ${money(payment.amount, payment.currency)}.${payment.counterparty ? ` Partner: ${payment.counterparty}.` : ""} Invoice owner: ${owner?.name ?? "unassigned"}. ${readiness.reason}`,
+        project: projectContext || undefined,
         link: `/agreements/${payment.groupId}#payment-${payment.id}`,
         data: { taskId, groupId: payment.groupId, paymentId: payment.id },
       });

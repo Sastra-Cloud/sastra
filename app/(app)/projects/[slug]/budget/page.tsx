@@ -779,6 +779,8 @@ export default async function ProjectBudgetPage({
         <MouPayments
           hasSharedSchedule={sharedMouGroups.length > 0}
           projectId={project.id}
+          projectTitle={project.title}
+          emailIdentity={{ senderName: session.user.name?.trim() || "Sastra team", organizationName: workspaceSettings.orgName?.trim() || "Sastra workspace" }}
           printRunId={selectedRunId ?? null}
           currency={settings.currency}
           canEdit={canEdit}

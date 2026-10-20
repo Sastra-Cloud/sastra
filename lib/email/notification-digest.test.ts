@@ -35,12 +35,49 @@ describe("notification digest rendering", () => {
     expect(rendered.html).toContain("Review &lt;script&gt;alert(1)&lt;/script&gt;");
     expect(rendered.html).not.toContain("Review <script>");
     expect(rendered.html).not.toContain(">Workflow<");
-    expect(rendered.html).toContain("View all notifications");
+    expect(rendered.html).toContain(">View tasks<");
     expect(rendered.text).toContain(
       "http://localhost:3000/projects/example/tasks?item=1&from=email"
     );
     expect(rendered.unsubscribeCategory).toBe("workflow");
     expect(rendered.text).toContain("Stop workflow emails");
+  });
+
+  it("identifies a shared-payment update in the inbox and links directly to the agreement", () => {
+    const rendered = renderNotificationEmail({
+      items: [item(1, {
+        type: "invoice_ready", title: "Funds received: Memorandum of Understanding",
+        project: "Article series; Video series",
+        body: "Signing installment: USD 4,200.00. Partner: Example Partner. Invoice owner: Sam. Payment received.",
+        link: "/agreements/example#payment-signing",
+      })], mode: "bundled", unsubscribeToken: "token", workspaceName: "Example & Co",
+    });
+    expect(rendered.subject).toBe("Article series; Video series · Funds received: Memorandum of Understanding");
+    expect(rendered.preheader).toContain("Article series; Video series");
+    expect(rendered.html).toContain("Example &amp; Co");
+    expect(rendered.html).toContain("/icons/icon-192.png");
+    expect(rendered.html).toContain(">View agreement<");
+    expect(rendered.html).not.toContain(">View all notifications<");
+    expect(rendered.text).toContain("View agreement: http://localhost:3000/agreements/example#payment-signing");
+    expect(rendered.text).toContain("USD 4,200.00");
+    expect(rendered.text).toContain("Example & Co");
+  });
+
+  it("brands multi-item subjects with workspace identity without substituting a project", () => {
+    for (const mode of ["bundled", "daily"] as const) {
+      const rendered = renderNotificationEmail({ items: [item(1), item(2)], mode, unsubscribeToken: "token", workspaceName: "Another workspace" });
+      expect(rendered.subject).toBe(mode === "daily" ? "Another workspace · Daily digest: 2 updates" : "Another workspace · 2 new updates");
+      expect(rendered.html).toContain("Sent from Another workspace through Sastra.");
+      expect(rendered.html).toContain(">View all notifications<");
+    }
+  });
+
+  it.each([null, "javascript:alert(1)", "https://outside.test/tasks", "http://["])("uses a safe fallback for a missing or invalid destination (%s)", (link) => {
+    const rendered = renderNotificationEmail({ items: [item(1, { link })], mode: "immediate", unsubscribeToken: "token" });
+    expect(rendered.html).toContain(">View all notifications<");
+    expect(rendered.text).toContain("View all notifications: http://localhost:3000/notifications");
+    expect(rendered.html).not.toContain('href="javascript:');
+    expect(rendered.html).not.toContain('href="https://outside.test');
   });
 
   it("uses concise bundle and daily subjects", () => {
@@ -49,6 +86,21 @@ describe("notification digest rendering", () => {
       .toBe("2 new Sastra updates");
     expect(renderNotificationEmail({ items, mode: "daily", unsubscribeToken: "t" }).subject)
       .toBe("Your Sastra digest: 2 updates");
+  });
+
+  it.each([
+    ["budget_approval_assigned", "/projects/example/budget#budget-approval", "Review budget"],
+    ["budget_approval_reset", "/projects/example/budget", "Review budget"],
+    ["budget_approval_complete", "/projects/example/budget", "View budget"],
+    ["status_update_reply", "/projects/example", "View project"],
+    ["mention", "/chat/channel", "Open conversation"],
+    ["standup_digest", "/standups", "View standup summary"],
+    ["weekly_deadlines", "/tasks?view=agenda", "View deadlines"],
+    ["task_ready", "/projects/example/tasks", "View tasks"],
+  ])("labels the destination for %s accurately", (type, link, label) => {
+    const rendered = renderNotificationEmail({ items: [item(1, { type, link })], mode: "immediate", unsubscribeToken: "t" });
+    expect(rendered.html).toContain(`>${label}<`);
+    expect(rendered.text).toContain(`${label}: http://localhost:3000${link}`);
   });
 
   it("summarizes notification types in the hidden preheader", () => {

@@ -49,7 +49,7 @@ export function FundingReview({ importId, extraction, projects, owners, today }:
     }));
     setConfirmed(false);
   }
-  return <div className="space-y-5">
+  return <div className="@container/funding min-w-0 space-y-5">
     <div className="grid gap-3 sm:grid-cols-2">
       {([['name', 'Agreement'], ['counterparty', 'Counterparty'], ['contactName', 'Invoice recipient name'], ['contactEmail', 'Invoice recipient email'], ['signedDate', 'Proposed signed date'], ['currency', 'Currency']] as const).map(([key, label]) =>
         <label key={key} className="grid gap-1 text-sm">{label}<Input value={data[key]} type={key === "signedDate" ? "date" : "text"} onChange={(event) => update({ [key]: event.target.value })} /></label>)}
@@ -58,6 +58,8 @@ export function FundingReview({ importId, extraction, projects, owners, today }:
         <option value="">Select a manager or administrator</option>{owners.map((owner) => <option key={owner.id} value={owner.id}>{owner.name}</option>)}
       </select></label>
     </div>
+    <div className="grid min-w-0 items-start gap-5 @[80rem]/funding:grid-cols-2">
+    <section className="min-w-0 space-y-3">
     <h2 className="font-semibold">Covered projects and allocations</h2>
     <p className="text-sm text-muted-foreground">Select an existing project for every work before approving. Each work must use a different project.</p>
     {data.allocations.map((row, index) => <div key={index} className="grid gap-2 rounded-lg border p-3 sm:grid-cols-2">
@@ -83,6 +85,8 @@ export function FundingReview({ importId, extraction, projects, owners, today }:
       {!row.projectId && <p id={`mapping-${index}-error`} className="text-sm text-destructive sm:col-span-2">Select the existing project for this work.</p>}
       <p className="text-xs text-muted-foreground sm:col-span-2">Proposed publication deadline: {extraction.projects[index]?.publicationDate ?? "Not stated"}. Existing deadline: {projects.find((project) => project.id === row.projectId)?.dueDate ?? "Not set"}. Review any rights or deadline conflicts separately.</p>
     </div>)}
+    </section>
+    <section className="min-w-0 space-y-3">
     <h2 className="font-semibold">Installments</h2>
     <p className="text-sm text-muted-foreground">For an agreement already signed, signing installments default to today in the workspace timezone. Reviewed dates stay editable; partner payment deadlines are separate.</p>
     {data.installments.map((row, index) => {
@@ -96,6 +100,8 @@ export function FundingReview({ importId, extraction, projects, owners, today }:
         <label className="grid gap-1 text-sm">Required delivery evidence (one per line)<Textarea value={row.requirements.join("\n")} onChange={(event) => edit({ requirements: event.target.value.split("\n") })} /></label>
       </div>;
     })}
+    </section>
+    </div>
     <p className={reconciled ? "text-sm text-muted-foreground" : "text-sm text-destructive"}>{reconciled ? "Allocations and installments both reconcile to the agreement total." : "Allocations and installments must each match the agreement total."}</p>
     {duplicateMappings && <p role="alert" className="text-sm text-destructive">Map each work to a different project.</p>}
     {missingOwner && <p className="text-sm text-muted-foreground">Choose an invoice owner, or map projects with the same eligible creator to use their default ownership.</p>}

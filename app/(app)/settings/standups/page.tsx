@@ -17,9 +17,9 @@ export default async function StandupsSettingsPage() {
   const [list, workspace] = await Promise.all([listStandups(), getWorkspaceSettings()]);
 
   return (
-    <div className="space-y-5">
+    <div className="grid items-start gap-5 @[64rem]/settings:grid-cols-[minmax(24rem,32rem)_minmax(0,1fr)]">
       <StandupCreateForm defaultTimezone={workspace.timezone} />
-      <div className="space-y-2">
+      <div className="min-w-0 space-y-2">
         {list.length === 0 ? (
           <p className="text-sm text-muted-foreground">No standups yet.</p>
         ) : (

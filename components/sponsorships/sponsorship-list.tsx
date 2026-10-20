@@ -18,14 +18,16 @@ export function SponsorshipList({ records }: { records: SponsorshipListItem[] })
   return <div className="space-y-4">
     <div className="relative max-w-md"><Search aria-hidden className="absolute left-3 top-3 size-4 text-muted-foreground" />
       <Input aria-label="Search sponsorships" placeholder="Search title, partner, or invoice number" value={query} onChange={event => setQuery(event.target.value)} className="min-h-11 pl-9" /></div>
+    <div className="@container/sponsor min-w-0">
     <ul className="divide-y rounded-xl border bg-card">
       {visible.map(record => <li key={record.id}>
-        <Link href={`/sponsorships/${record.id}`} className="flex min-h-24 items-center gap-3 rounded-lg p-4 outline-none hover:bg-muted/35 focus-visible:ring-2 focus-visible:ring-ring sm:gap-6">
+        <Link href={`/sponsorships/${record.id}`} className="flex min-h-24 items-center gap-3 rounded-lg p-4 outline-none hover:bg-muted/35 focus-visible:ring-2 focus-visible:ring-ring sm:gap-6 @[56rem]/sponsor:grid @[56rem]/sponsor:grid-cols-[minmax(0,1fr)_12rem_9rem_1rem]">
           <div className="min-w-0 flex-1 space-y-1">
             <p className="break-words font-semibold">{record.title}</p>
             <p className="break-words text-sm text-muted-foreground">{record.recipientName} · {record.copies.toLocaleString("en-US")} copies{record.invoiceNumber ? ` · Invoice ${record.invoiceNumber}` : ""}</p>
-            <Badge variant="secondary">{sponsorshipStatus(record.status, record.invoiceStatus, record.received)}</Badge>
+            <Badge variant="secondary" className="@[56rem]/sponsor:hidden">{sponsorshipStatus(record.status, record.invoiceStatus, record.received)}</Badge>
           </div>
+          <div className="hidden @[56rem]/sponsor:block"><Badge variant="secondary">{sponsorshipStatus(record.status, record.invoiceStatus, record.received)}</Badge></div>
           <div className="shrink-0 text-right text-sm tabular-nums">
             <p className="font-semibold">{sponsorshipMoney(record.total, record.currency)}</p>
             {record.status === "invoiced" && <p className="mt-1 text-xs text-muted-foreground">{sponsorshipMoney(Number(record.total) - Number(record.received), record.currency)} due</p>}
@@ -34,6 +36,7 @@ export function SponsorshipList({ records }: { records: SponsorshipListItem[] })
         </Link>
       </li>)}
     </ul>
+    </div>
     {!visible.length && <p role="status" className="py-6 text-sm text-muted-foreground">No sponsorships match your search. Try another name.</p>}
   </div>;
 }

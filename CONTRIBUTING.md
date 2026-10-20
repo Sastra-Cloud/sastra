@@ -42,6 +42,12 @@ pnpm dev                      # http://localhost:3243
 - After changing routes, exported symbols, or schema, run `pnpm ai:map` and
   commit the regenerated `.ai/` files.
 
+Add tests when they protect against a meaningful production failure. Reuse or
+update existing coverage first; copy, styling, documentation, and mechanically
+equivalent changes do not require new tests on their own. Follow the
+[test-value policy](.claude/rules/testing.md) when choosing or pruning coverage.
+The pre-PR checks above still apply.
+
 ## Pull requests
 
 Describe what changed and why, how you verified it, and any migration or

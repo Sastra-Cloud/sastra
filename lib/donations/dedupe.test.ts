@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { classifyDonationRow, type DonationDedupeState } from "./dedupe";
+import {
+  classifyDonationRow,
+  lookalikeDonorKey,
+  type DonationDedupeState,
+} from "./dedupe";
 
 function state(): DonationDedupeState {
   return {
@@ -46,5 +50,39 @@ describe("donation import dedupe", () => {
         "second"
       )
     ).toEqual({ kind: "new", duplicateOfId: "first" });
+  });
+
+  it("matches lookalikes across export formats with different donor spellings", () => {
+    const tracker = state();
+    classifyDonationRow(
+      tracker,
+      {
+        rowFingerprint: "giving-platform-row",
+        donorKey: "anonymous donor",
+        amountCents: 1_450_000,
+        donationDate: "2026-06-23",
+      },
+      "earlier"
+    );
+    expect(
+      classifyDonationRow(
+        tracker,
+        {
+          rowFingerprint: "fund-manager-row",
+          donorKey: "anonymous",
+          amountCents: 1_450_000,
+          donationDate: "2026-06-23",
+        },
+        "later"
+      )
+    ).toEqual({ kind: "new", duplicateOfId: "earlier" });
+  });
+
+  it("ignores ampersands and the word and in donor names", () => {
+    expect(lookalikeDonorKey("jeff kristie example")).toBe(
+      lookalikeDonorKey("jeff and kristie example")
+    );
+    expect(lookalikeDonorKey("anonymous giver")).toBe("anonymous");
+    expect(lookalikeDonorKey("anonymous foundation")).toBe("anonymous foundation");
   });
 });

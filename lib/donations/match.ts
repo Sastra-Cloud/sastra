@@ -1,4 +1,5 @@
 import { normalizeDonationText } from "./csv";
+import { matchDonationInvoices, type DonationInvoiceCandidate } from "./invoice-match";
 import type {
   DonationAllocationDraft,
   DonationSuggestion,
@@ -9,6 +10,7 @@ export type MatchDonation = {
   donor: string;
   amountCents: number;
   notes: string | null;
+  currency?: string;
 };
 
 export type MatchProject = {
@@ -147,6 +149,7 @@ export function buildDonationSuggestion(input: {
   projects: MatchProject[];
   receivables: MatchReceivable[];
   sharedReceivables: MatchSharedReceivable[];
+  invoices?: DonationInvoiceCandidate[];
 }): DonationSuggestion {
   const { donation, projects, receivables, sharedReceivables } = input;
   if (donation.amountCents < 0) {
@@ -168,6 +171,8 @@ export function buildDonationSuggestion(input: {
       candidateProjectIds: related.map((project) => project.id),
     };
   }
+  const invoiceMatch = donation.currency ? matchDonationInvoices({ ...donation, currency: donation.currency }, input.invoices ?? []) : null;
+  if (invoiceMatch) return invoiceMatch;
   const shared = sharedReceivables.find(
     (row) =>
       row.amountCents === donation.amountCents &&

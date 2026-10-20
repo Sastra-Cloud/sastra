@@ -2,9 +2,9 @@
 title: "Save and resume email drafts"
 category: "Communication"
 roles: [manager, admin]
-keywords: [email draft, save draft, saved email, resume draft, unsaved changes, discard draft, proposal draft, invoice email draft, rfq draft, wire email draft, reply draft, close email, review before send, default cc, cc recipients, sending email, sent email]
+keywords: [email draft, save draft, saved email, resume draft, unsaved changes, discard draft, proposal draft, invoice email draft, project context, email branding, sender name, rfq draft, wire email draft, reply draft, close email, review before send, default cc, cc recipients, sending email, sent email]
 order: 105
-summary: "Save unfinished proposal, invoice, print, finance, and correspondence emails without sending them."
+summary: "Save project-specific email drafts, review recipients and attachments, and send from your workspace identity."
 ---
 
 Managers and admins can save unfinished email wording and return to it later.
@@ -15,6 +15,15 @@ Drafts are available in the review-before-send composers for:
 - printer quote requests;
 - finance / wire requests; and
 - correspondence replies.
+
+New invoice drafts name the project or covered projects in the subject and
+message. They identify the installment and amount, include delivery evidence
+when available, and close with your name and workspace name. Saved drafts keep
+your own wording. Generated proposal, print, and finance drafts also use the
+supplied project details and sender identity. Review these details before sending.
+Outbound correspondence uses the workspace name as its sender display name when
+configured in **Settings → Workspace**, with the correspondence address as the
+sending address.
 
 Every new composer prefills the workspace's **Default CC recipients for
 outbound email**. The list remains visible during review, and the sender can add

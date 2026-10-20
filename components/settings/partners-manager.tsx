@@ -78,7 +78,7 @@ export function PartnersManager({
 
   return (
     <div className="space-y-5">
-      <Card>
+      <Card className="max-w-3xl">
         <CardContent className="py-4">
           <p className="mb-2 text-sm font-medium">Add a funding partner</p>
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -116,7 +116,8 @@ export function PartnersManager({
           document import fill one in.
         </p>
       ) : (
-        partners.map((partner) => (
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,36rem),1fr))] items-start gap-5">
+        {partners.map((partner) => (
           <PartnerCard
             key={partner.id}
             partner={partner}
@@ -124,7 +125,8 @@ export function PartnersManager({
             pending={pending}
             run={run}
           />
-        ))
+        ))}
+        </div>
       )}
     </div>
   );
@@ -433,7 +435,7 @@ function ContactForm({
     values.firstName.trim() || values.lastName.trim() || values.email.trim();
 
   return (
-    <div className="grid gap-2 rounded-lg border bg-muted/20 p-2 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,13rem),1fr))] gap-2 rounded-lg border bg-muted/20 p-2">
       <Input placeholder="First name" value={values.firstName} onChange={set("firstName")} className={inputBase} />
       <Input placeholder="Last name" value={values.lastName} onChange={set("lastName")} className={inputBase} />
       <Input placeholder="Email" value={values.email} onChange={set("email")} className={inputBase} />

@@ -2,7 +2,7 @@
 title: "AI planner & document import"
 category: "AI & assistant"
 roles: [manager, admin]
-keywords: [ai planner, plan with ai, import, document, mou, pdf, extract, draft, interview, duplicate, retry parse, parsing failed, provider error, enter details manually, failed upload, document type, teaching example, mixed projects, shared payments, shared mou, completion group, allocation shares, collective completion, shared fees, currency conversion, exchange rate, GBP, pounds, podcast, video series, videos, testimony videos, article collection, grant, grant application, grant proposal, funding proposal, grant id, one project per line item, budget line items, budget arithmetic, imported total, flat amount, unsigned proposal, not yet raised, attach mou, attach agreement, link mou to existing projects, signed mou, umbrella agreement, existing projects, update from document, update project, add document to project, multiple documents, several documents, layer license, review each in turn, paid invoice, upload invoice, past invoice, invoice extraction, record receipt]
+keywords: [mobile, keyboard, newline, conversation details, latest messages, ai planner, plan with ai, import, document, mou, pdf, extract, draft, interview, duplicate, retry parse, parsing failed, provider error, enter details manually, failed upload, document type, teaching example, mixed projects, shared payments, shared mou, completion group, allocation shares, collective completion, shared fees, currency conversion, exchange rate, GBP, pounds, podcast, video series, videos, testimony videos, article collection, grant, grant application, grant proposal, funding proposal, grant id, one project per line item, budget line items, budget arithmetic, imported total, flat amount, unsigned proposal, not yet raised, attach mou, attach agreement, link mou to existing projects, signed mou, umbrella agreement, existing projects, update from document, update project, add document to project, multiple documents, several documents, layer license, review each in turn, paid invoice, upload invoice, past invoice, invoice extraction, record receipt]
 order: 120
 summary: "Draft a project with the AI planner, or import one from a document."
 ---
@@ -192,3 +192,21 @@ In AI planning, returning to the conversation keeps your review edits. Choose **
 Document extraction updates automatically while you wait. Retry is available after failure; your original upload stays saved. Choose **Enter details manually** to open the same review editor when extraction fails. Select the document type, enter the fields, and commit through the usual review. An AI provider outage may require retrying later; a teaching example only helps future extraction when the provider is available.
 
 If the suggested type is wrong, change **Document type** in the review. A standalone invoice can be matched to an existing project before the payment review. **Save teaching example only** records corrected fields without committing a project or payment. **Use this document to improve future intake** controls whether a committed review becomes a local example.
+
+## On wide screens
+
+When a plan has been generated, **Plan with AI** shows the plan review beside the
+conversation on a wide screen. On a narrow screen you switch between them, and
+your answers and edits are kept. In **Generate task plan**, the stages and the
+coordinator panel sit side by side in the review step. On the import page,
+**Recent imports** sit beside the upload area.
+
+## Planning on a phone
+
+The planning interview fills the screen with a compact header and a message
+box above the keyboard. **Back** returns to the planning entry page.
+**Conversation details** includes workspace links. The conversation scrolls
+independently, and **Latest messages** returns to the end when reading history.
+Touch **Return** adds a line; select **Send** to answer. On desktop, **Enter**
+sends and **Shift+Enter** adds a line. **Generate plan** stays below the message
+box. Generating shows progress; review and create the project separately.

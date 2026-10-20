@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/format";
+import { useNavigationBadgeAdjustment } from "@/components/navigation-badges-provider";
 
 function dueInLabel(value: Date, now: number) {
   const minutes = Math.max(1, Math.ceil((value.getTime() - now) / 60_000));
@@ -45,10 +46,12 @@ export function ExternalFollowUpCard({
   followUp,
   showProject = false,
   allowProjectUpdate = false,
+  syncNavigationBadge = false,
 }: {
   followUp: ExternalFollowUp;
   showProject?: boolean;
   allowProjectUpdate?: boolean;
+  syncNavigationBadge?: boolean;
 }) {
   const router = useRouter();
   const [hidden, setHidden] = useState(false);
@@ -59,6 +62,7 @@ export function ExternalFollowUpCard({
   const [renderedAt] = useState(() => Date.now());
   const effectiveDue = followUp.snoozedUntil ?? followUp.dueAt;
   const due = effectiveDue.getTime() <= renderedAt;
+  useNavigationBadgeAdjustment("followUps", syncNavigationBadge && due && (hidden || snoozeLabel !== null) ? -1 : 0);
 
   if (hidden) return null;
 
@@ -107,8 +111,8 @@ export function ExternalFollowUpCard({
   };
 
   return (
-    <div className="rounded-xl border bg-card px-4 py-3">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+    <div className="@container/follow-up rounded-xl border bg-card px-4 py-3">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 @[44rem]/follow-up:grid-cols-[auto_minmax(0,1fr)_auto]">
         <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-warning/15 text-warning-text">
           <Mail className="size-4" />
         </span>
@@ -145,7 +149,7 @@ export function ExternalFollowUpCard({
             </span>
           </div>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div className="col-span-2 flex flex-wrap items-center gap-2 @[44rem]/follow-up:col-span-1">
           <Link
             href={`/correspondence/${followUp.threadId}`}
             className={buttonVariants({ variant: "outline", size: "sm" })}

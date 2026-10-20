@@ -9,16 +9,18 @@ import type { EmailDraftDTO } from "@/lib/email/draft-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { invoiceEmailFallback, type DraftIdentity } from "@/lib/email/operational-drafts";
 
-export function AgreementInvoiceSend({ invoiceId, invoiceFileId, invoiceNumber, recipient, projectId, defaultCc, draft, evidence, enabled }: {
+export function AgreementInvoiceSend({ invoiceId, invoiceFileId, invoiceNumber, recipient, projectId, defaultCc, draft, evidence, enabled, projectTitles, agreementName, amountLabel, paymentTrigger, emailIdentity }: {
   invoiceId: string; invoiceFileId: string | null; invoiceNumber: string; recipient: string; projectId: string; defaultCc: string[];
   draft: EmailDraftDTO | null; evidence: Array<{ requirement: string; url: string; fileId?: string }>; enabled: boolean;
+  projectTitles: string[]; agreementName: string; amountLabel: string; paymentTrigger: string; emailIdentity: DraftIdentity;
 }) {
   const router = useRouter(); const [pending, start] = useTransition();
   const [to, setTo] = useState(draft?.toAddresses.join(", ") ?? recipient);
   const [cc, setCc] = useState((draft?.ccAddresses ?? defaultCc).join(", "));
-  const [subject, setSubject] = useState(draft?.subject ?? `Invoice ${invoiceNumber}`);
-  const [body, setBody] = useState(draft?.body ?? `Please find invoice ${invoiceNumber} attached.${evidence.length ? "\n\nDelivery evidence:\n" + evidence.filter((item) => item.url).map((item) => `${item.requirement}: ${item.url}`).join("\n") : ""}`);
+  const [subject, setSubject] = useState(() => draft?.subject ?? invoiceEmailFallback({ ...emailIdentity, invoiceNumber, projectTitles, agreementName, amountLabel, paymentTrigger, evidence }).subject);
+  const [body, setBody] = useState(() => draft?.body ?? invoiceEmailFallback({ ...emailIdentity, invoiceNumber, projectTitles, agreementName, amountLabel, paymentTrigger, evidence }).body);
   const [reviewedFile, setReviewedFile] = useState<string | null>(null);
   const reviewed = !!invoiceFileId && reviewedFile === invoiceFileId;
   const addresses = (value: string) => value.split(/[,;\n]/).map((item) => item.trim()).filter(Boolean);

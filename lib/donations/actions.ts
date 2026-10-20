@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -11,28 +11,32 @@ import { requireDonationAdmin } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import {
   donationAllocations,
-  donationImports,
   donationReviews,
   donations,
-  files,
   fundingReceipts,
+  invoices,
   mouPayments,
   projects,
-  securityEvents,
   sharedMouGroups,
   sharedMouMemberships,
   sharedMouReceiptAllocations,
   sharedMouReceipts,
+  sponsorships,
+  sponsorshipReceipts,
+  sponsorshipReceiptAllocations,
 } from "@/lib/db/schema";
-import { deleteObject, getObjectBuffer, headObject } from "@/lib/r2";
-import { getWorkspaceSettings } from "@/lib/workspace/queries";
+import { parseDonationTable } from "./csv";
 import {
-  donationFileHash,
-  MAX_DONATION_CSV_BYTES,
-  parseDonationCsv,
-  SensitiveDonationColumnsError,
-} from "./csv";
-import { classifyDonationRow, donationCandidateKey } from "./dedupe";
+  buildDonationCsvProposal,
+  donationCsvErrorResult,
+  findDonationCsvFormat,
+  isLoadedDonationCsv,
+  loadDonationCsv,
+  markDonationCsvFormatUsed,
+  recordDonationImport,
+} from "./import-ledger";
+import { prepareDonationInvoicePosting, restoreDonationInvoiceStatus } from "./invoice-posting";
+import type { DonationImportResult } from "./types";
 
 const allocationInput = z.object({
   projectId: z.string().uuid(),
@@ -42,6 +46,8 @@ const allocationInput = z.object({
     .refine((value) => value !== 0),
   mouPaymentId: z.string().uuid().nullable().optional(),
   sharedMouGroupId: z.string().uuid().nullable().optional(),
+  invoiceId: z.string().uuid().nullable().optional(),
+  actualNetAmount: z.coerce.number().finite().nonnegative().nullable().optional(),
   note: z.string().trim().max(500).nullable().optional(),
 });
 
@@ -56,11 +62,33 @@ const unallocatedInput = z.object({
   reason: z.string().trim().max(500).nullable().optional(),
 });
 
-const duplicateInput = z.object({
-  donationId: z.string().uuid(),
-  resolution: z.enum(["distinct", "duplicate"]),
-  reason: z.string().trim().min(3).max(500),
+const duplicateInput = z
+  .object({
+    donationId: z.string().uuid(),
+    resolution: z.enum(["distinct", "duplicate"]),
+    reason: z.string().trim().max(500).optional(),
+  })
+  // A repeat gift is rare, so only keeping the row as a new gift needs a reason.
+  .refine(
+    (input) =>
+      input.resolution === "duplicate" || (input.reason ?? "").length >= 3,
+    { path: ["reason"] }
+  );
+
+const bulkDonationIds = z.array(z.string().uuid()).min(1).max(500);
+
+const bulkDuplicateInput = z.object({
+  donationIds: bulkDonationIds,
+  reason: z.string().trim().max(500).optional(),
 });
+
+const bulkUnallocatedInput = z.object({
+  donationIds: bulkDonationIds,
+  reason: z.string().trim().max(500).nullable().optional(),
+});
+
+const DEFAULT_DUPLICATE_REASON =
+  "Same donor, amount, and date as a donation already in Sastra.";
 
 const donationMouMatchInput = z.object({
   allocationId: z.string().uuid(),
@@ -96,259 +124,48 @@ async function revalidateDonationData(
   }
 }
 
-export type DonationImportResult = {
-  importId?: string;
-  newRows?: number;
-  exactDuplicateRows?: number;
-  possibleDuplicateRows?: number;
-  failedRows?: number;
-  alreadyImported?: boolean;
-  error?: string;
-};
-
-/** Parse one uploaded monthly CSV and add only rows not seen before. */
+/** Parse one uploaded CSV and add only rows not seen before. */
 export async function createDonationImportFromFile(
   fileId: string
 ): Promise<DonationImportResult> {
   const { user } = await requireDonationAdmin();
-  const [file] = await db
-    .select()
-    .from(files)
-    .where(eq(files.id, fileId))
-    .limit(1);
-  if (
-    !file ||
-    file.status !== "ready" ||
-    file.purpose !== "donation_import" ||
-    file.uploadedBy !== user.id
-  ) {
-    return { error: "The uploaded file is not ready. Try again." };
-  }
-  if (!file.originalName.toLowerCase().endsWith(".csv")) {
-    return { error: "Choose a CSV file." };
-  }
-  if (
-    file.sizeBytes <= 0 ||
-    file.sizeBytes > MAX_DONATION_CSV_BYTES ||
-    !["text/csv", "application/vnd.ms-excel"].includes(file.mimeType)
-  ) {
-    return { error: "The CSV is larger than 5 MB. Split it and try again." };
-  }
+  const loaded = await loadDonationCsv(fileId, user.id);
+  if (!isLoadedDonationCsv(loaded)) return loaded;
 
   try {
-    const actual = await headObject(file.r2Key);
-    const actualType =
-      actual.contentType?.split(";", 1)[0]?.trim().toLowerCase() ?? "";
-    if (
-      actual.size <= 0 ||
-      actual.size > MAX_DONATION_CSV_BYTES ||
-      !["text/csv", "application/vnd.ms-excel"].includes(actualType) ||
-      actualType !== file.mimeType
-    ) {
-      return { error: "The uploaded CSV could not be verified." };
+    const format = await findDonationCsvFormat(loaded.table.headers);
+    if (!format) {
+      return { needsFormat: await buildDonationCsvProposal(loaded) };
     }
-    const buffer = await getObjectBuffer(file.r2Key, {
-      maxBytes: MAX_DONATION_CSV_BYTES,
+    const parsed = parseDonationTable(loaded.table, format.mapping, {
+      currency: loaded.currency,
     });
-    const fileHash = donationFileHash(buffer);
-    const [existingImport] = await db
-      .select({ id: donationImports.id })
-      .from(donationImports)
-      .where(eq(donationImports.fileHash, fileHash))
-      .limit(1);
-    if (existingImport) {
-      return {
-        importId: existingImport.id,
-        alreadyImported: true,
-        error: "This exact file was already imported. No rows were added.",
-      };
-    }
-
-    const parsed = parseDonationCsv(buffer.toString("utf8"));
-    const workspace = await getWorkspaceSettings();
-    const existing = await db
-      .select({
-        id: donations.id,
-        rowFingerprint: donations.rowFingerprint,
-        donorKey: donations.donorKey,
-        amount: donations.amount,
-        donationDate: donations.donationDate,
-      })
-      .from(donations);
-    const dedupeState = {
-      exactFingerprints: new Set(existing.map((row) => row.rowFingerprint)),
-      possibleByDonorAmountDate: new Map<string, string>(
-        existing.map((row) => [
-          donationCandidateKey({
-            rowFingerprint: row.rowFingerprint,
-            donorKey: row.donorKey,
-            amountCents: cents(row.amount),
-            donationDate: row.donationDate,
-          }),
-          row.id,
-        ])
-      ),
-    };
-
-    let exactDuplicateRows = 0;
-    let possibleDuplicateRows = 0;
-    const newRows: Array<
-      (typeof donations)["$inferInsert"] & { duplicateOfId: string | null }
-    > = [];
-    for (const row of parsed.successfulRows) {
-      const id = randomUUID();
-      const classification = classifyDonationRow(dedupeState, row, id);
-      if (classification.kind === "exact_duplicate") {
-        exactDuplicateRows += 1;
-        continue;
-      }
-      const duplicateOfId = classification.duplicateOfId;
-      if (duplicateOfId) possibleDuplicateRows += 1;
-      newRows.push({
-        id,
-        importId: "",
-        sourceRowNumber: row.sourceRowNumber,
-        rowFingerprint: row.rowFingerprint,
-        campaignExternalId: row.campaignExternalId,
-        donor: row.donor,
-        donorKey: row.donorKey,
-        campaign: row.campaign,
-        recurring: row.recurring,
-        amount: money(row.amount),
-        currency: workspace.defaultCurrency,
-        paymentMethod: row.paymentMethod,
-        sourceStatus: row.sourceStatus,
-        donationDate: row.donationDate,
-        sourceDateTime: row.sourceDateTime,
-        notes: row.notes,
-        reviewStatus: duplicateOfId ? "possible_duplicate" : "needs_review",
-        duplicateOfId,
-      });
-    }
-
-    const imported = await db.transaction(async (tx) => {
-      await tx.execute(
-        sql`select pg_advisory_xact_lock(hashtext(${`donation-file:${file.id}`}))`
-      );
-      const [lockedFile] = await tx
-        .select({ id: files.id })
-        .from(files)
-        .where(
-          and(
-            eq(files.id, file.id),
-            eq(files.status, "ready"),
-            eq(files.purpose, "donation_import"),
-            eq(files.uploadedBy, user.id)
-          )
-        )
-        .limit(1);
-      if (!lockedFile) throw new Error("donation file unavailable");
-
-      const [existingLocked] = await tx
-        .select({ id: donationImports.id })
-        .from(donationImports)
-        .where(
-          or(
-            eq(donationImports.fileId, file.id),
-            eq(donationImports.fileHash, fileHash)
-          )
-        )
-        .limit(1);
-      if (existingLocked) {
-        return { batch: existingLocked, alreadyImported: true };
-      }
-
-      const [batch] = await tx
-        .insert(donationImports)
-        .values({
-          fileId: file.id,
-          sourceFilename: file.originalName,
-          fileHash,
-          currency: workspace.defaultCurrency,
-          rowCount: parsed.rowCount,
-          successfulRows: parsed.successfulRows.length,
-          failedRows: parsed.failedRows,
-          newRows: newRows.length,
-          exactDuplicateRows,
-          possibleDuplicateRows,
-          successfulAmount: money(parsed.successfulAmount),
-          createdBy: user.id,
-          sourceRetentionUntil: new Date(
-            Date.now() +
-              workspace.donationSourceRetentionDays * 24 * 60 * 60 * 1000
-          ),
-        })
-        .returning({ id: donationImports.id });
-      if (newRows.length > 0) {
-        await tx.insert(donations).values(
-          newRows.map((row) => ({
-            ...row,
-            importId: batch.id,
-          }))
-        );
-      }
-      return { batch, alreadyImported: false };
+    const result = await recordDonationImport({
+      loaded,
+      parsed,
+      formatName: format.name,
+      userId: user.id,
     });
-    if (imported.alreadyImported) {
-      return {
-        importId: imported.batch.id,
-        alreadyImported: true,
-        error: "This exact file was already imported. No rows were added.",
-      };
+    if (format.id && !result.error) {
+      await markDonationCsvFormatUsed(format.id);
     }
-    revalidatePath("/donations");
-    return {
-      importId: imported.batch.id,
-      newRows: newRows.length,
-      exactDuplicateRows,
-      possibleDuplicateRows,
-      failedRows: parsed.failedRows,
-    };
+    return result;
   } catch (error) {
-    if (error instanceof SensitiveDonationColumnsError) {
-      let objectDeleted = false;
-      try {
-        await deleteObject(file.r2Key);
-        objectDeleted = true;
-      } catch {
-        // Keep the failed record so the daily cleanup can retry the deletion.
-      }
-      await db.transaction(async (tx) => {
-        await tx.insert(securityEvents).values({
-          actorId: user.id,
-          event: "donation_upload_rejected_sensitive_columns",
-          method: error.headers.join(", ").slice(0, 500),
-        });
-        if (objectDeleted) {
-          await tx.delete(files).where(eq(files.id, file.id));
-        } else {
-          await tx
-            .update(files)
-            .set({ status: "failed" })
-            .where(eq(files.id, file.id));
-        }
-      });
-      return {
-        error:
-          "This CSV contains payment or identity columns Sastra does not accept. Export a reduced donation report and try again.",
-      };
-    }
-    return {
-      error: "Sastra could not read this CSV. Check the file and try again.",
-    };
+    return donationCsvErrorResult(error);
   }
 }
 
 type AllocationValue = z.infer<typeof allocationInput>;
 
-async function currentAllocationSnapshot(donationId: string) {
-  const rows = await db
+async function currentAllocationSnapshot(donationId: string, client: Pick<typeof db, "select"> = db) {
+  const rows = await client
     .select({
       projectId: donationAllocations.projectId,
       projectTitle: projects.title,
       amount: donationAllocations.amount,
       mouPaymentId: donationAllocations.mouPaymentId,
       sharedMouGroupId: donationAllocations.sharedMouGroupId,
+      invoiceId: donationAllocations.invoiceId,
     })
     .from(donationAllocations)
     .innerJoin(projects, eq(projects.id, donationAllocations.projectId))
@@ -362,201 +179,206 @@ async function replaceDonationAllocations(input: {
   reason: string | null;
   actorId: string;
 }) {
-  const [donation] = await db
-    .select()
-    .from(donations)
-    .where(eq(donations.id, input.donationId))
-    .limit(1);
-  if (!donation) return { error: "Donation not found." };
-  if (
-    donation.reviewStatus === "possible_duplicate" ||
-    donation.reviewStatus === "duplicate"
-  ) {
-    return { error: "Resolve the duplicate warning before allocating this donation." };
-  }
+  const result = await db.transaction(async (tx) => {
+    const [donation] = await tx
+      .select()
+      .from(donations)
+      .where(eq(donations.id, input.donationId))
+      .limit(1).for("update");
+    if (!donation) return { error: "Donation not found." };
+    if (
+      donation.reviewStatus === "possible_duplicate" ||
+      donation.reviewStatus === "duplicate"
+    ) {
+      return { error: "Resolve the duplicate warning before allocating this donation." };
+    }
 
-  const previous = await currentAllocationSnapshot(input.donationId);
-  if (previous.length > 0 && !input.reason?.trim()) {
-    return { error: "Add a reason before changing a posted allocation." };
-  }
-  const donationCents = cents(donation.amount);
-  const nextCents = input.allocations.reduce(
-    (sum, allocation) => sum + cents(allocation.amount),
-    0
-  );
-  const hasWrongSign = input.allocations.some(
-    (allocation) =>
-      Math.sign(cents(allocation.amount)) !== Math.sign(donationCents)
-  );
-  if (hasWrongSign || Math.abs(nextCents) > Math.abs(donationCents)) {
-    return {
-      error:
-        "Project amounts must use the donation's sign and cannot exceed its total.",
-    };
-  }
+    const previous = await currentAllocationSnapshot(input.donationId, tx);
+    if (previous.length > 0 && !input.reason?.trim()) {
+      return { error: "Add a reason before changing a posted allocation." };
+    }
+    const donationCents = cents(donation.amount);
+    const nextCents = input.allocations.reduce(
+      (sum, allocation) => sum + cents(allocation.amount),
+      0
+    );
+    const hasWrongSign = input.allocations.some(
+      (allocation) =>
+        Math.sign(cents(allocation.amount)) !== Math.sign(donationCents)
+    );
+    if (hasWrongSign || Math.abs(nextCents) > Math.abs(donationCents)) {
+      return {
+        error:
+          "Project amounts must use the donation's sign and cannot exceed its total.",
+      };
+    }
 
-  const projectIds = [...new Set(input.allocations.map((row) => row.projectId))];
-  const projectRows =
-    projectIds.length === 0
-      ? []
-      : await db
-          .select({ id: projects.id, title: projects.title })
-          .from(projects)
-          .where(inArray(projects.id, projectIds));
-  if (projectRows.length !== projectIds.length) {
-    return { error: "One of the selected projects no longer exists." };
-  }
-  const projectTitle = new Map(projectRows.map((row) => [row.id, row.title]));
+    const projectIds = [...new Set(input.allocations.map((row) => row.projectId))];
+    const projectRows =
+      projectIds.length === 0
+        ? []
+        : await tx
+            .select({ id: projects.id, title: projects.title })
+            .from(projects)
+            .where(inArray(projects.id, projectIds));
+    if (projectRows.length !== projectIds.length) {
+      return { error: "One of the selected projects no longer exists." };
+    }
+    const projectTitle = new Map(projectRows.map((row) => [row.id, row.title]));
 
-  const oldAllocations = await db
-    .select({
-      fundingReceiptId: donationAllocations.fundingReceiptId,
-      projectId: donationAllocations.projectId,
-      mouPaymentId: donationAllocations.mouPaymentId,
-      sharedMouGroupId: donationAllocations.sharedMouGroupId,
-    })
-    .from(donationAllocations)
-    .where(eq(donationAllocations.donationId, input.donationId));
-  const oldPaymentIds = new Set(
-    oldAllocations
-      .map((row) => row.mouPaymentId)
-      .filter((id): id is string => Boolean(id))
-  );
-  const nextPaymentIds = [
-    ...new Set(
-      input.allocations
+    const oldAllocations = await tx
+      .select({
+        fundingReceiptId: donationAllocations.fundingReceiptId,
+        sponsorshipReceiptId: donationAllocations.sponsorshipReceiptId,
+        invoiceId: donationAllocations.invoiceId,
+        projectId: donationAllocations.projectId,
+        mouPaymentId: donationAllocations.mouPaymentId,
+        sharedMouGroupId: donationAllocations.sharedMouGroupId,
+      })
+      .from(donationAllocations)
+      .where(eq(donationAllocations.donationId, input.donationId));
+    const invoicePlan = await prepareDonationInvoicePosting(tx, donation.currency, input.allocations, oldAllocations);
+    if ("error" in invoicePlan) return { error: invoicePlan.error };
+    const oldPaymentIds = new Set(
+      oldAllocations
         .map((row) => row.mouPaymentId)
         .filter((id): id is string => Boolean(id))
-    ),
-  ];
-  const payments =
-    nextPaymentIds.length === 0
-      ? []
-      : await db
-          .select()
-          .from(mouPayments)
-          .where(inArray(mouPayments.id, nextPaymentIds));
-  if (payments.length !== nextPaymentIds.length) {
-    return { error: "One of the matched MoU payments no longer exists." };
-  }
-  const paymentById = new Map(payments.map((payment) => [payment.id, payment]));
-  for (const payment of payments.filter((row) => !row.sharedMouGroupId)) {
-    if (
-      input.allocations.filter(
-        (allocation) => allocation.mouPaymentId === payment.id
-      ).length !== 1
-    ) {
-      return { error: "Each project MoU payment can settle only one allocation." };
+    );
+    const nextPaymentIds = [
+      ...new Set(
+        input.allocations
+          .map((row) => row.mouPaymentId)
+          .filter((id): id is string => Boolean(id))
+      ),
+    ];
+    const payments =
+      nextPaymentIds.length === 0
+        ? []
+        : await tx
+            .select()
+            .from(mouPayments)
+            .where(inArray(mouPayments.id, nextPaymentIds)).orderBy(asc(mouPayments.id)).for("update");
+    if (payments.length !== nextPaymentIds.length) {
+      return { error: "One of the matched MoU payments no longer exists." };
     }
-  }
-  for (const allocation of input.allocations) {
-    if (!allocation.mouPaymentId) continue;
-    const payment = paymentById.get(allocation.mouPaymentId)!;
-    if (payment.paidAt && !oldPaymentIds.has(payment.id)) {
-      return { error: "One of the matched MoU payments is already received." };
-    }
-    if (payment.currency !== donation.currency) {
-      return { error: "The donation and matched MoU payment use different currencies." };
-    }
-    if (payment.sharedMouGroupId) {
-      if (allocation.sharedMouGroupId !== payment.sharedMouGroupId) {
-        return { error: "The shared MoU match is no longer valid." };
-      }
-    } else {
-      if (allocation.sharedMouGroupId) {
-        return { error: "This project payment is not part of a shared MoU." };
-      }
+    const paymentById = new Map(payments.map((payment) => [payment.id, payment]));
+    for (const payment of payments.filter((row) => !row.sharedMouGroupId)) {
       if (
-        payment.projectId !== allocation.projectId ||
-        cents(payment.amount) !== cents(allocation.amount)
+        input.allocations.filter(
+          (allocation) => allocation.mouPaymentId === payment.id
+        ).length !== 1
       ) {
-        return { error: "The allocation no longer matches the scheduled payment." };
+        return { error: "Each project MoU payment can settle only one allocation." };
       }
     }
-  }
-
-  const sharedPaymentIds = payments
-    .filter((payment) => payment.sharedMouGroupId)
-    .map((payment) => payment.id);
-  const sharedMemberships =
-    sharedPaymentIds.length === 0
-      ? []
-      : await db
-          .select({
-            id: sharedMouMemberships.id,
-            groupId: sharedMouMemberships.groupId,
-            projectId: sharedMouMemberships.projectId,
-            amount: sharedMouMemberships.allocationAmount,
-          })
-          .from(sharedMouMemberships)
-          .where(
-            and(
-              inArray(
-                sharedMouMemberships.groupId,
-                payments
-                  .map((payment) => payment.sharedMouGroupId)
-                  .filter((id): id is string => Boolean(id))
-              ),
-              eq(sharedMouMemberships.active, true)
-            )
-          );
-  const membershipByGroup = new Map<string, typeof sharedMemberships>();
-  for (const membership of sharedMemberships) {
-    const list = membershipByGroup.get(membership.groupId) ?? [];
-    list.push(membership);
-    membershipByGroup.set(membership.groupId, list);
-  }
-  for (const paymentId of sharedPaymentIds) {
-    const payment = paymentById.get(paymentId)!;
-    const groupId = payment.sharedMouGroupId!;
-    const memberships = membershipByGroup.get(groupId) ?? [];
-    const expected = allocateSharedReceipt(
-      payment.amount,
-      memberships.map((membership) => ({
-        projectId: membership.projectId,
-        membershipId: membership.id,
-        amount: membership.amount,
-      }))
-    );
-    const provided = input.allocations.filter(
-      (allocation) => allocation.mouPaymentId === paymentId
-    );
-    if (
-      provided.length !== expected.length ||
-      expected.some((row) => {
-        const match = provided.find(
-          (allocation) => allocation.projectId === row.projectId
-        );
-        return !match || cents(match.amount) !== cents(row.amount);
-      })
-    ) {
-      return { error: "Use the reviewed project split for this shared MoU payment." };
+    for (const allocation of input.allocations) {
+      if (!allocation.mouPaymentId) continue;
+      const payment = paymentById.get(allocation.mouPaymentId)!;
+      if (payment.paidAt && !oldPaymentIds.has(payment.id)) {
+        return { error: "One of the matched MoU payments is already received." };
+      }
+      if (payment.currency !== donation.currency) {
+        return { error: "The donation and matched MoU payment use different currencies." };
+      }
+      if (payment.sharedMouGroupId) {
+        if (allocation.sharedMouGroupId !== payment.sharedMouGroupId) {
+          return { error: "The shared MoU match is no longer valid." };
+        }
+      } else {
+        if (allocation.sharedMouGroupId) {
+          return { error: "This project payment is not part of a shared MoU." };
+        }
+        if (
+          payment.projectId !== allocation.projectId ||
+          cents(payment.amount) !== cents(allocation.amount)
+        ) {
+          return { error: "The allocation no longer matches the scheduled payment." };
+        }
+      }
     }
-  }
 
-  const nextSnapshot = input.allocations.map((allocation) => ({
-    projectId: allocation.projectId,
-    projectTitle: projectTitle.get(allocation.projectId) ?? "Project",
-    amount: money(allocation.amount),
-    mouPaymentId: allocation.mouPaymentId ?? null,
-    sharedMouGroupId: allocation.sharedMouGroupId ?? null,
-  }));
-  const affectedProjectIds = [
-    ...new Set([
-      ...oldAllocations.map((row) => row.projectId),
-      ...input.allocations.map((row) => row.projectId),
-    ]),
-  ];
-  const affectedGroupIds = [
-    ...new Set(
-      [
-        ...oldAllocations.map((row) => row.sharedMouGroupId),
-        ...input.allocations.map((row) => row.sharedMouGroupId),
-      ].filter((id): id is string => Boolean(id))
-    ),
-  ];
+    const sharedPaymentIds = payments
+      .filter((payment) => payment.sharedMouGroupId)
+      .map((payment) => payment.id);
+    const sharedMemberships =
+      sharedPaymentIds.length === 0
+        ? []
+        : await tx
+            .select({
+              id: sharedMouMemberships.id,
+              groupId: sharedMouMemberships.groupId,
+              projectId: sharedMouMemberships.projectId,
+              amount: sharedMouMemberships.allocationAmount,
+            })
+            .from(sharedMouMemberships)
+            .where(
+              and(
+                inArray(
+                  sharedMouMemberships.groupId,
+                  payments
+                    .map((payment) => payment.sharedMouGroupId)
+                    .filter((id): id is string => Boolean(id))
+                ),
+                eq(sharedMouMemberships.active, true)
+              )
+            );
+    const membershipByGroup = new Map<string, typeof sharedMemberships>();
+    for (const membership of sharedMemberships) {
+      const list = membershipByGroup.get(membership.groupId) ?? [];
+      list.push(membership);
+      membershipByGroup.set(membership.groupId, list);
+    }
+    for (const paymentId of sharedPaymentIds) {
+      const payment = paymentById.get(paymentId)!;
+      const groupId = payment.sharedMouGroupId!;
+      const memberships = membershipByGroup.get(groupId) ?? [];
+      const expected = allocateSharedReceipt(
+        payment.amount,
+        memberships.map((membership) => ({
+          projectId: membership.projectId,
+          membershipId: membership.id,
+          amount: membership.amount,
+        }))
+      );
+      const provided = input.allocations.filter(
+        (allocation) => allocation.mouPaymentId === paymentId
+      );
+      if (
+        provided.length !== expected.length ||
+        expected.some((row) => {
+          const match = provided.find(
+            (allocation) => allocation.projectId === row.projectId
+          );
+          return !match || cents(match.amount) !== cents(row.amount);
+        })
+      ) {
+        return { error: "Use the reviewed project split for this shared MoU payment." };
+      }
+    }
 
-  await db.transaction(async (tx) => {
+    const nextSnapshot = input.allocations.map((allocation) => ({
+      projectId: allocation.projectId,
+      projectTitle: projectTitle.get(allocation.projectId) ?? "Project",
+      amount: money(allocation.amount),
+      mouPaymentId: allocation.mouPaymentId ?? null,
+      sharedMouGroupId: allocation.sharedMouGroupId ?? null,
+      invoiceId: allocation.invoiceId ?? null,
+    }));
+    const affectedProjectIds = [
+      ...new Set([
+        ...oldAllocations.map((row) => row.projectId),
+        ...input.allocations.map((row) => row.projectId),
+      ]),
+    ];
+    const affectedGroupIds = [
+      ...new Set(
+        [
+          ...oldAllocations.map((row) => row.sharedMouGroupId),
+          ...input.allocations.map((row) => row.sharedMouGroupId),
+        ].filter((id): id is string => Boolean(id))
+      ),
+    ];
+
     const oldSharedPaymentIds = [
       ...new Set(
         oldAllocations
@@ -583,13 +405,13 @@ async function replaceDonationAllocations(input: {
         .where(inArray(sharedMouReceiptAllocations.receiptId, ids));
       await tx.delete(sharedMouReceipts).where(inArray(sharedMouReceipts.id, ids));
     }
-    if (oldAllocations.length > 0) {
+    if (oldAllocations.some(row => row.fundingReceiptId)) {
       await tx
         .delete(fundingReceipts)
         .where(
           inArray(
             fundingReceipts.id,
-            oldAllocations.map((row) => row.fundingReceiptId)
+            oldAllocations.map((row) => row.fundingReceiptId).filter((id): id is string => Boolean(id))
           )
         );
     }
@@ -604,6 +426,21 @@ async function replaceDonationAllocations(input: {
           readinessEvaluatedAt: new Date(),
         })
         .where(inArray(mouPayments.id, [...oldPaymentIds]));
+    }
+    for (const receipt of invoicePlan.oldReceipts) {
+      await tx.update(sponsorshipReceipts).set({ reversedAt: new Date(), reversedBy: input.actorId, reversalReason: input.reason }).where(eq(sponsorshipReceipts.id, receipt.id));
+    }
+    await restoreDonationInvoiceStatus(tx, oldAllocations.map(row => row.invoiceId).filter((id): id is string => Boolean(id)));
+    const sponsorReceiptByInvoice = new Map<string, string>();
+    for (const invoice of invoicePlan.invoices.filter(row => row.sponsorshipId)) {
+      const rows = input.allocations.filter(row => row.invoiceId === invoice.id);
+      if (!rows.length) continue;
+      const receiptId = randomUUID();
+      await tx.insert(sponsorshipReceipts).values({ id: receiptId, sponsorshipId: invoice.sponsorshipId!, invoiceId: invoice.id,
+        amount: money(rows.reduce((sum, row) => sum + row.amount, 0)),
+        actualNetAmount: money(rows.reduce((sum, row) => sum + (row.actualNetAmount ?? row.amount), 0)),
+        receivedDate: donation.donationDate, note: donation.notes, recordedBy: input.actorId });
+      sponsorReceiptByInvoice.set(invoice.id, receiptId);
     }
 
     const groupRows =
@@ -646,6 +483,13 @@ async function replaceDonationAllocations(input: {
     }
 
     for (const allocation of input.allocations) {
+      const sponsorReceiptId = allocation.invoiceId ? sponsorReceiptByInvoice.get(allocation.invoiceId) : null;
+      if (sponsorReceiptId) {
+        await tx.insert(sponsorshipReceiptAllocations).values({ receiptId: sponsorReceiptId, projectId: allocation.projectId, amount: money(allocation.amount), actualNetAmount: money(allocation.actualNetAmount ?? allocation.amount) });
+        await tx.insert(donationAllocations).values({ donationId: donation.id, projectId: allocation.projectId, sponsorshipReceiptId: sponsorReceiptId, invoiceId: allocation.invoiceId,
+          amount: money(allocation.amount), note: allocation.note ?? null, createdBy: input.actorId });
+        continue;
+      }
       const [receipt] = await tx
         .insert(fundingReceipts)
         .values({
@@ -668,6 +512,7 @@ async function replaceDonationAllocations(input: {
         fundingReceiptId: receipt.id,
         mouPaymentId: allocation.mouPaymentId ?? null,
         sharedMouGroupId: allocation.sharedMouGroupId ?? null,
+        invoiceId: allocation.invoiceId ?? null,
         amount: money(allocation.amount),
         note: allocation.note ?? null,
         createdBy: input.actorId,
@@ -712,6 +557,11 @@ async function replaceDonationAllocations(input: {
         })
         .where(inArray(mouPayments.id, sharedPaymentIds));
     }
+    const receivedInvoiceIds = invoicePlan.candidates.filter(invoice => input.allocations.filter(row => row.invoiceId === invoice.id).reduce((sum, row) => sum + cents(row.amount), 0) === invoice.amountCents).map(invoice => invoice.id);
+    if (receivedInvoiceIds.length) await tx.update(invoices).set({ status: "received" }).where(inArray(invoices.id, receivedInvoiceIds));
+    for (const invoice of invoicePlan.invoices.filter(row => row.sponsorshipId)) {
+      await tx.update(sponsorships).set({ updatedAt: new Date() }).where(eq(sponsorships.id, invoice.sponsorshipId!));
+    }
 
     const nextStatus =
       nextCents === 0
@@ -741,9 +591,12 @@ async function replaceDonationAllocations(input: {
       reason: input.reason,
       actorId: input.actorId,
     });
+    return { affectedProjectIds, affectedGroupIds, sponsorshipIds: invoicePlan.invoices.map(row => row.sponsorshipId).filter((id): id is string => Boolean(id)) };
   });
-
-  await revalidateDonationData(affectedProjectIds, affectedGroupIds);
+  if ("error" in result) return { error: result.error };
+  await revalidateDonationData(result.affectedProjectIds, result.affectedGroupIds);
+  revalidatePath("/sponsorships");
+  for (const id of result.sponsorshipIds) revalidatePath(`/sponsorships/${id}`);
   return {};
 }
 
@@ -935,7 +788,7 @@ export async function resolveDonationDuplicate(
   const { user } = await requireDonationAdmin();
   const parsed = duplicateInput.safeParse(input);
   if (!parsed.success) {
-    return { error: "Add a short reason for this duplicate decision." };
+    return { error: "Add a short reason why this is a separate gift." };
   }
   const [donation] = await db
     .select({
@@ -947,6 +800,7 @@ export async function resolveDonationDuplicate(
     .limit(1);
   if (!donation) return { error: "Donation not found." };
   if (donation.status !== "possible_duplicate") return {};
+  const reason = parsed.data.reason || DEFAULT_DUPLICATE_REASON;
 
   await db.transaction(async (tx) => {
     await tx
@@ -954,7 +808,7 @@ export async function resolveDonationDuplicate(
       .set({
         reviewStatus:
           parsed.data.resolution === "distinct" ? "needs_review" : "duplicate",
-        duplicateResolutionNote: parsed.data.reason,
+        duplicateResolutionNote: reason,
         reviewedBy: user.id,
         reviewedAt: new Date(),
         updatedAt: new Date(),
@@ -966,10 +820,132 @@ export async function resolveDonationDuplicate(
         parsed.data.resolution === "distinct"
           ? "duplicate_dismissed"
           : "confirmed_duplicate",
-      reason: parsed.data.reason,
+      reason,
       actorId: user.id,
     });
   });
   revalidatePath("/donations");
   return {};
+}
+
+/**
+ * Confirm many possible duplicates at once. Rows that are no longer possible
+ * duplicates are skipped, so a stale selection cannot change other rows.
+ */
+export async function resolveDonationDuplicates(
+  input: z.input<typeof bulkDuplicateInput>
+): Promise<{ resolved?: number; skipped?: number; error?: string }> {
+  const { user } = await requireDonationAdmin();
+  const parsed = bulkDuplicateInput.safeParse(input);
+  if (!parsed.success) return { error: "Choose the donations again." };
+  const ids = [...new Set(parsed.data.donationIds)];
+  const reason = parsed.data.reason || DEFAULT_DUPLICATE_REASON;
+  const now = new Date();
+  const resolved = await db.transaction(async (tx) => {
+    const rows = await tx
+      .update(donations)
+      .set({
+        reviewStatus: "duplicate",
+        duplicateResolutionNote: reason,
+        reviewedBy: user.id,
+        reviewedAt: now,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          inArray(donations.id, ids),
+          eq(donations.reviewStatus, "possible_duplicate")
+        )
+      )
+      .returning({ id: donations.id });
+    if (rows.length > 0) {
+      await tx.insert(donationReviews).values(
+        rows.map((row) => ({
+          donationId: row.id,
+          action: "confirmed_duplicate",
+          reason,
+          actorId: user.id,
+        }))
+      );
+    }
+    return rows.length;
+  });
+  revalidatePath("/donations");
+  return { resolved, skipped: ids.length - resolved };
+}
+
+/** Undo confirmed duplicates: they return to the duplicate review queue. */
+export async function reopenDonationDuplicates(
+  input: z.input<typeof bulkDuplicateInput>
+): Promise<{ reopened?: number; error?: string }> {
+  const { user } = await requireDonationAdmin();
+  const parsed = bulkDuplicateInput.safeParse(input);
+  if (!parsed.success) return { error: "Choose the donations again." };
+  const ids = [...new Set(parsed.data.donationIds)];
+  const now = new Date();
+  const reopened = await db.transaction(async (tx) => {
+    const rows = await tx
+      .update(donations)
+      .set({
+        reviewStatus: "possible_duplicate",
+        duplicateResolutionNote: null,
+        reviewedBy: user.id,
+        reviewedAt: now,
+        updatedAt: now,
+      })
+      .where(
+        and(inArray(donations.id, ids), eq(donations.reviewStatus, "duplicate"))
+      )
+      .returning({ id: donations.id });
+    if (rows.length > 0) {
+      await tx.insert(donationReviews).values(
+        rows.map((row) => ({
+          donationId: row.id,
+          action: "duplicate_reopened",
+          reason: "Duplicate decision undone.",
+          actorId: user.id,
+        }))
+      );
+    }
+    return rows.length;
+  });
+  revalidatePath("/donations");
+  return { reopened };
+}
+
+/**
+ * Keep many unreviewed donations as received money without a project. Only
+ * rows still waiting for review with no project links change.
+ */
+export async function setDonationsUnallocated(
+  input: z.input<typeof bulkUnallocatedInput>
+): Promise<{ updated?: number; skipped?: number; error?: string }> {
+  const { user } = await requireDonationAdmin();
+  const parsed = bulkUnallocatedInput.safeParse(input);
+  if (!parsed.success) return { error: "Choose the donations again." };
+  const ids = [...new Set(parsed.data.donationIds)];
+  const linked = await db
+    .select({ donationId: donationAllocations.donationId })
+    .from(donationAllocations)
+    .where(inArray(donationAllocations.donationId, ids));
+  const linkedIds = new Set(linked.map((row) => row.donationId));
+  const waiting = await db
+    .select({ id: donations.id })
+    .from(donations)
+    .where(
+      and(inArray(donations.id, ids), eq(donations.reviewStatus, "needs_review"))
+    );
+  let updated = 0;
+  for (const row of waiting) {
+    if (linkedIds.has(row.id)) continue;
+    const result = await replaceDonationAllocations({
+      donationId: row.id,
+      allocations: [],
+      reason: parsed.data.reason ?? null,
+      actorId: user.id,
+    });
+    if (!result.error) updated += 1;
+  }
+  revalidatePath("/donations");
+  return { updated, skipped: ids.length - updated };
 }

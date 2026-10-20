@@ -7,6 +7,8 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { emailMessages, emailThreads } from "@/lib/db/schema";
 import { sendMail } from "@/lib/email/send";
+import { correspondenceFrom } from "@/lib/email/identity";
+import { getWorkspaceSettings } from "@/lib/workspace/queries";
 
 import {
   canSendAsCorrespondenceAddress,
@@ -98,10 +100,11 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
 
   const references =
     buildReferencesHeader(input.references, input.inReplyTo) ?? undefined;
+  const workspace = await getWorkspaceSettings();
 
   const sent = await sendMail(
     {
-      from: mailbox,
+      from: correspondenceFrom(mailbox, workspace.orgName),
       to: input.to,
       cc: input.cc,
       subject: input.subject,

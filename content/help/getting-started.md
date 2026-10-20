@@ -2,7 +2,7 @@
 title: "Getting started & roles"
 category: "Getting started"
 roles: [member, manager, admin]
-keywords: [daily work, team planning, publishing, home, your next tasks, onboarding outcomes, next step, hidden tips, invite, invitation, seven days, sign in, login, magic link, 5 minutes, one-time link, password, password reset, one hour, roles, member, manager, admin, super admin, timezone, profile, account, save, saving, sync, retry, page error, page not found, spinner, mobile menu, navigation, today, work, management, workspace, pull to refresh, refresh, guidance, guided setup, tips, dismiss tip, coaching, checklist, across browsers, show helpful guidance, learn the app, passkey, fingerprint, two factor, security code]
+keywords: [daily work, ask the assistant, assistant tip, team planning, publishing, home, your next tasks, onboarding outcomes, next step, hidden tips, invite, invitation, seven days, sign in, login, magic link, 5 minutes, one-time link, password, password reset, one hour, roles, member, manager, admin, super admin, timezone, profile, account, save, saving, sync, retry, page error, page not found, spinner, mobile menu, navigation, today, work, management, workspace, pull to refresh, refresh, guidance, guided setup, tips, dismiss tip, coaching, checklist, across browsers, show helpful guidance, learn the app, passkey, fingerprint, two factor, security code]
 order: 10
 summary: "Start with Home, complete role-appropriate setup, find assigned work, and restore your personal guidance."
 ---
@@ -108,8 +108,11 @@ The left sidebar is grouped by the kind of work you are doing:
 
 **Team planning** opens Overview; its **Schedule** and **Workload** views remain one
 click away. Home shows every task **Due today**, then previews three other tasks
-under **Your next tasks**, up to three manager attention items, and six active
-projects. The setup card shows only the next step and a
+under **Your next tasks**, up to three manager attention items, and three active
+projects. **View all** opens each complete list. On wide screens, personal tasks
+stay in the main column; manager reviews and project updates share one side
+column. Empty task groups are omitted, with a short note when nothing is due.
+The setup card shows only the next step and a
 completion count; **Show all steps** reveals the rest.
 
 At compact desktop widths the sidebar becomes an icon rail; pause over an icon
@@ -123,7 +126,9 @@ between guides without scrolling back to the top.
 While you are learning, Sastra shows extra help: short **tips** on a screen and
 **guided setup** steps that walk you through big tasks like starting a project,
 a budget, or a print run. Guided setup always has a **Skip** link, and every tip
-has a close button, so they never get in your way. When you know the app well,
+has a close button, so they never get in your way. On your first visits, a tip
+above the round sparkle button in the bottom corner shows where to ask the
+assistant for help. When you know the app well,
 turn all of it off in one place: **Settings ▸ Profile ▸ Show helpful guidance**.
 
 If a page cannot load, **Try again** retries it without making you hunt for the
@@ -155,3 +160,9 @@ Administrators start with workspace defaults, a project, a teammate, and assigne
 In **Settings → Profile**, choose **Show hidden tips again** to restore your dismissed guidance and checklist. This affects only your account; saved work and visited steps are preserved.
 
 Password sign-in and email-link requests show separate progress. After requesting a link, **Check your email** stays visible on the sign-in page.
+
+## Screen size
+
+Sastra uses the width of your screen. On a wide screen you see more at once, such
+as your work next to project updates on Home. Text and buttons stay the same
+size. On a phone, sections stack in one column.

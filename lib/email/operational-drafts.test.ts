@@ -5,6 +5,7 @@ import {
   buildOperationalDraftSystemPrompt,
   establishedThreadClosing,
   fundingProposalFallback,
+  invoiceEmailFallback,
   printRfqFallback,
   wireRequestFallback,
 } from "./operational-drafts";
@@ -15,6 +16,24 @@ const identity = {
 };
 
 describe("operational email drafts", () => {
+  it("makes shared invoice drafts self-contained without inventing payment terms", () => {
+    const draft = invoiceEmailFallback({ ...identity, invoiceNumber: "INV-42", projectTitles: ["Article series", "Video series"], agreementName: "2026 Publishing MoU", amountLabel: "USD 4,200.00", paymentTrigger: "on_signing", evidence: [{ requirement: "Delivery list", url: "https://example.test/delivery" }, { requirement: "Missing", url: "" }] });
+    expect(draft.subject).toBe("Invoice INV-42: Article series; Video series");
+    expect(draft.body).toContain("invoice INV-42 for USD 4,200.00");
+    expect(draft.body).toContain("signing installment for Article series; Video series under 2026 Publishing MoU");
+    expect(draft.body).toContain("Delivery list: https://example.test/delivery");
+    expect(draft.body).not.toContain("Missing");
+    expect(draft.body).toContain("Sokha Chan\nExample Publishing");
+    expect(draft.body).not.toContain("due");
+  });
+
+  it("keeps optional invoice details out when not supplied", () => {
+    const draft = invoiceEmailFallback({ ...identity, invoiceNumber: "INV-43", projectTitles: ["The Trinity"], paymentTrigger: "on_completion" });
+    expect(draft.body).toContain("final installment for The Trinity");
+    expect(draft.body).not.toContain("undefined");
+    expect(draft.body).not.toContain("Delivery evidence");
+    expect(draft.body).not.toContain("under ");
+  });
   it("front-loads the funding amount, attachment, optional date, and next step", () => {
     const draft = fundingProposalFallback({
       ...identity,

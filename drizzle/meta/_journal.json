@@ -1051,6 +1051,27 @@
       "when": 1792363956389,
       "tag": "0149_small_scream",
       "breakpoints": true
+    },
+    {
+      "idx": 150,
+      "version": "7",
+      "when": 1792364014980,
+      "tag": "0150_refresh_ai_model_defaults",
+      "breakpoints": true
+    },
+    {
+      "idx": 151,
+      "version": "7",
+      "when": 1792433390675,
+      "tag": "0151_furry_alex_power",
+      "breakpoints": true
+    },
+    {
+      "idx": 152,
+      "version": "7",
+      "when": 1792437943943,
+      "tag": "0152_peaceful_black_widow",
+      "breakpoints": true
     }
   ]
 }

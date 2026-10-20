@@ -58,6 +58,18 @@ function clientActionImports() {
 }
 
 describe("client action interaction policy", () => {
+  it("keeps gesture and picker reactions optimistic, with truthful clipboard feedback", () => {
+    expect(interactionModeFor("toggleReaction")).toBe("optimistic");
+    expect(interactionModeFor("editMessage")).toBe("optimistic");
+    expect(interactionModeFor("copyMessageText")).toBe("progress");
+  });
+  it("keeps chat read receipts as silent background reconciliation", () => {
+    expect(interactionModeFor("markChannelRead")).toBe("read");
+  });
+  it("keeps chat delivery optimistic and picked, pasted, or dropped uploads progress-based", () => {
+    expect(interactionModeFor("postMessage")).toBe("optimistic");
+    expect(interactionModeFor("uploadToMessage")).toBe("progress");
+  });
   it("keeps shared Next up selection and ordering optimistic", () => {
     expect(interactionModeFor("setTaskNextUp")).toBe("optimistic");
     expect(interactionModeFor("reorderUserTasks")).toBe("optimistic");
@@ -145,6 +157,10 @@ describe("client action interaction policy", () => {
   });
 
   it("classifies the push device actions", () => {
+    // Browser/OS permission and subscription work need truthful pending UI.
+    expect(interactionModeFor("enablePush")).toBe("progress");
+    expect(interactionModeFor("disablePush")).toBe("progress");
+    expect(interactionModeFor("promptInstall")).toBe("progress");
     // External delivery — pending label, never assume success.
     expect(interactionModeFor("sendTestPush")).toBe("progress");
     // Forgetting a device is destructive — confirm first.
@@ -263,6 +279,18 @@ describe("client action interaction policy", () => {
     );
     expect(interactionModeFor("setDonationUnallocated")).toBe("progress");
     expect(interactionModeFor("resolveDonationDuplicate")).toBe("progress");
+    expect(interactionModeFor("resolveDonationDuplicates")).toBe("progress");
+    expect(interactionModeFor("reopenDonationDuplicates")).toBe("progress");
+    expect(interactionModeFor("setDonationsUnallocated")).toBe("progress");
+  });
+
+  it("previews new donation CSV formats and saves them with progress", () => {
+    expect(interactionModeFor("getDonationCsvPreview")).toBe("read");
+    expect(interactionModeFor("generateDonationCsvMapping")).toBe("progress");
+    expect(interactionModeFor("learnDonationCsvFormat")).toBe("progress");
+    expect(interactionModeFor("deleteDonationCsvFormat")).toBe(
+      "confirmed-destructive"
+    );
   });
 
   it("keeps admin assurance truthful and revocation confirmed", () => {
@@ -303,6 +331,12 @@ describe("client action interaction policy", () => {
   });
 
   it("classifies chat message pins as optimistic, not destructive", () => {
+    expect(interactionModeFor("postMessage")).toBe("optimistic");
+    expect(interactionModeFor("toggleReaction")).toBe("optimistic");
+    expect(interactionModeFor("markChannelRead")).toBe("read");
+    expect(interactionModeFor("uploadToMessage")).toBe("progress");
+    expect(interactionModeFor("sendAssistantMessage")).toBe("progress");
+    expect(interactionModeFor("clearAssistantThread")).toBe("confirmed-destructive");
     expect(interactionModeFor("pinMessage")).toBe("optimistic");
     // Unpinning is reversible (pin again), so it never asks for confirmation.
     expect(interactionModeFor("unpinMessage")).toBe("optimistic");

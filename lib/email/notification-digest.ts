@@ -6,6 +6,8 @@ import { baseLayout, ctaButton } from "./baseLayout";
 import { appUrl, from } from "./transport";
 import { sendMail } from "./send";
 import { escapeHtml } from "./renderTemplate";
+import { notificationAction, notificationSubject } from "./notification-presentation";
+import { getWorkspaceSettings } from "@/lib/workspace/queries";
 import type {
   EmailDeliveryMode,
   NotificationEmailCategory,
@@ -25,15 +27,13 @@ export type NotificationEmailItem = {
 };
 
 function absoluteUrl(path: string | null): string {
-  try {
-    return new URL(path || "/notifications", appUrl).toString();
-  } catch {
-    return new URL("/notifications", appUrl).toString();
-  }
+  return notificationAction(path, "").url;
 }
 
-function digestSubject(items: readonly NotificationEmailItem[], mode: EmailDeliveryMode) {
-  if (items.length === 1) return items[0].title;
+function digestSubject(items: readonly NotificationEmailItem[], mode: EmailDeliveryMode, workspaceName?: string | null) {
+  if (items.length === 1) return notificationSubject(items[0].title, items[0].project);
+  const workspace = workspaceName?.trim();
+  if (workspace) return mode === "daily" ? `${workspace} · Daily digest: ${items.length} updates` : `${workspace} · ${items.length} new updates`;
   if (mode === "daily") return `Your Sastra digest: ${items.length} updates`;
   return `${items.length} new Sastra updates`;
 }
@@ -140,10 +140,12 @@ export function renderNotificationEmail({
   items,
   mode,
   unsubscribeToken,
+  workspaceName,
 }: {
   items: readonly NotificationEmailItem[];
   mode: EmailDeliveryMode;
   unsubscribeToken: string;
+  workspaceName?: string | null;
 }) {
   const sorted = [...items].sort(
     (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
@@ -159,10 +161,13 @@ export function renderNotificationEmail({
   const oneClickUrl = `${appUrl}/api/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}&category=${unsubscribeCategory}`;
   const preferencesUrl = `${appUrl}/settings/notifications`;
   const notificationsUrl = `${appUrl}/notifications`;
-  const subject = digestSubject(sorted, mode);
-  const preheader = notificationPreheader(sorted);
+  const subject = digestSubject(sorted, mode, workspaceName);
+  const single = sorted.length === 1;
+  const singleItem = single ? detailed[0] : undefined;
+  const preheader = singleItem
+    ? [singleItem.project, singleItem.body || singleItem.title].filter(Boolean).join(" · ")
+    : notificationPreheader(sorted);
   const groups = groupedItems(detailed);
-  const single = detailed.length === 1;
 
   const sections = groups
     .map((group) => {
@@ -179,7 +184,6 @@ export function renderNotificationEmail({
     })
     .join("");
 
-  const singleItem = detailed[0];
   const detailHtml = single && singleItem
     ? `${singleItem.project ? `<p class="email-muted" style="margin:0 0 4px;color:#52525b;font-size:14px;">${escapeHtml(singleItem.project)}</p>` : ""}
        ${singleItem.body ? `<p style="margin:0;">${escapeHtml(singleItem.body)}</p>` : ""}`
@@ -187,14 +191,16 @@ export function renderNotificationEmail({
   const remainderHtml = remainder > 0
     ? `<p class="email-muted" style="margin:18px 0 0;color:#52525b;">Plus ${remainder} more. View all notifications for the full list.</p>`
     : "";
+  const action = singleItem ? notificationAction(singleItem.link, singleItem.type) : { label: "View all notifications", url: notificationsUrl };
   const content = `
-    <h1 style="font-size:22px;line-height:1.3;color:#18181b;margin:8px 0 10px;">${escapeHtml(subject)}</h1>
+    <h1 style="font-size:22px;line-height:1.3;color:#18181b;margin:8px 0 10px;">${escapeHtml(singleItem?.title ?? subject)}</h1>
     ${detailHtml}
     ${remainderHtml}
-    ${ctaButton("View all notifications", notificationsUrl)}
+    ${ctaButton(action.label, action.url)}
   `;
   const html = baseLayout(content, {
     preheader,
+    workspaceName: workspaceName?.trim() || undefined,
     unsubscribeUrl,
     unsubscribeLabel: unsubscribeCopy(unsubscribeCategory),
     managePreferencesUrl: preferencesUrl,
@@ -215,10 +221,11 @@ export function renderNotificationEmail({
         ].join("\n"))
         .join("\n\n");
   const text = [
+    workspaceName?.trim(),
     subject,
     textDetails,
     remainder > 0 ? `Plus ${remainder} more: ${notificationsUrl}` : "",
-    `View all notifications: ${notificationsUrl}`,
+    `${action.label}: ${action.url}`,
     `Manage notification settings: ${preferencesUrl}`,
     `${unsubscribeCopy(unsubscribeCategory)}: ${unsubscribeUrl}`,
   ]
@@ -250,7 +257,8 @@ export async function sendNotificationEmail({
   unsubscribeToken: string;
   batchId: string;
 }) {
-  const rendered = renderNotificationEmail({ items, mode, unsubscribeToken });
+  const workspace = await getWorkspaceSettings();
+  const rendered = renderNotificationEmail({ items, mode, unsubscribeToken, workspaceName: workspace.orgName });
   const hostname = appHostname();
   const safeBatchId = batchId.replace(/[^a-zA-Z0-9_.-]/g, "-");
   await sendMail({

@@ -1355,446 +1355,448 @@ export function PrintManager({
         </Card>
       ) : null}
 
-      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.65fr)]">
-        <div className="min-w-0 space-y-5">
-          {canEdit && extractionIssues.length > 0 ? (
-            <Card className="border-amber-300 dark:border-amber-900/60">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
-                  <AlertTriangle className="size-4" />
-                  Extraction issues
-                </CardTitle>
-                <CardDescription>
-                  These attachments or emails couldn&apos;t be read into a quote.
-                  Retry to try again, or add the quote manually.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {extractionIssues.map((issue) => (
-                  <div
-                    key={issue.id}
-                    className="flex flex-wrap items-start justify-between gap-2 rounded-lg border bg-amber-50/60 px-3 py-2 dark:bg-amber-950/20"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium">
-                        {issue.kind === "pdf"
-                          ? issue.fileName || "Invoice PDF"
-                          : issue.threadSubject || "Email quote"}
-                        {issue.runTitle ? (
-                          <span className="text-muted-foreground">
-                            {" "}
-                            · {issue.runTitle}
-                          </span>
-                        ) : null}
-                      </p>
-                      {issue.error ? (
-                        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-                          {issue.error}
-                        </p>
-                      ) : null}
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {issue.attempts} attempt{issue.attempts === 1 ? "" : "s"}
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="xs"
-                      onClick={() =>
-                        runAction(async () => {
-                          const res = await retryExtraction(issue.id);
-                          if (!res?.error) toast.success("Retrying extraction…");
-                          return res;
-                        })
-                      }
-                      disabled={pending}
+      <div className="@container/print min-w-0">
+        <div className="grid min-w-0 items-start gap-5 @[64rem]/print:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)]">
+          <div className="min-w-0 space-y-5">
+            {canEdit && extractionIssues.length > 0 ? (
+              <Card className="border-amber-300 dark:border-amber-900/60">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                    <AlertTriangle className="size-4" />
+                    Extraction issues
+                  </CardTitle>
+                  <CardDescription>
+                    These attachments or emails couldn&apos;t be read into a quote.
+                    Retry to try again, or add the quote manually.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {extractionIssues.map((issue) => (
+                    <div
+                      key={issue.id}
+                      className="flex flex-wrap items-start justify-between gap-2 rounded-lg border bg-amber-50/60 px-3 py-2 dark:bg-amber-950/20"
                     >
-                      <RotateCcw className="size-3.5" />
-                      Retry
-                    </Button>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium">
+                          {issue.kind === "pdf"
+                            ? issue.fileName || "Invoice PDF"
+                            : issue.threadSubject || "Email quote"}
+                          {issue.runTitle ? (
+                            <span className="text-muted-foreground">
+                              {" "}
+                              · {issue.runTitle}
+                            </span>
+                          ) : null}
+                        </p>
+                        {issue.error ? (
+                          <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                            {issue.error}
+                          </p>
+                        ) : null}
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {issue.attempts} attempt{issue.attempts === 1 ? "" : "s"}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="xs"
+                        onClick={() =>
+                          runAction(async () => {
+                            const res = await retryExtraction(issue.id);
+                            if (!res?.error) toast.success("Retrying extraction…");
+                            return res;
+                          })
+                        }
+                        disabled={pending}
+                      >
+                        <RotateCcw className="size-3.5" />
+                        Retry
+                      </Button>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            ) : null}
+            {runs.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+                  <div className="max-w-xl space-y-1.5">
+                    <h3 className="font-medium">No print run yet</h3>
+                    <p className="text-pretty text-sm text-muted-foreground">
+                      {canEdit
+                        ? "A print run is one order to print copies of this book. Use “Set up print run” below — give it a title, choose the printer, and list the copy amounts you want prices for. Saving it does not email anyone."
+                        : "A manager hasn’t set up a print run for this book yet."}
+                    </p>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-          ) : null}
-          {runs.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-                <div className="max-w-xl space-y-1.5">
-                  <h3 className="font-medium">No print run yet</h3>
-                  <p className="text-pretty text-sm text-muted-foreground">
-                    {canEdit
-                      ? "A print run is one order to print copies of this book. Use “Set up print run” below — give it a title, choose the printer, and list the copy amounts you want prices for. Saving it does not email anyone."
-                      : "A manager hasn’t set up a print run for this book yet."}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            displayRuns.map((run) => (
-              <RunPanel
-                key={[
-                  run.id,
-                  run.id === latestRun?.id ? "active" : "history",
-                  run.status,
-                  run.contactId,
-                  run.quantityTarget,
-                  run.trimWidthIn,
-                  run.trimHeightIn,
-                  preferredMeasurementUnit,
-                  run.quotedTextPages,
-                  run.coverPages,
-                  run.textPaper,
-                  run.coverPaper,
-                  run.binding,
-                  run.deliveryLocation,
-                ].join(":")}
-                run={run}
-                measurementUnit={preferredMeasurementUnit}
-                isHistorical={run.id !== latestRun?.id && ["completed", "cancelled"].includes(run.status)}
-                projectSlug={projectSlug}
-                finance={financeByRun.get(run.id) ?? null}
-                canEdit={canEdit}
-                contacts={contacts}
-                pending={pending}
-                quotes={quotesByRun.get(run.id) ?? []}
-                payments={paymentsByRun.get(run.id) ?? []}
-                quoteAttachments={quoteAttachments}
-                paymentAttachments={paymentAttachments}
-                proof={proofsByRun.get(run.id) ?? null}
-                isPaymentPending={paymentChanges.isPending}
-                hasRfqDraft={emailDrafts.some(
-                  (draft) =>
-                    draft.kind === "print_rfq" && draft.contextId === run.id
-                )}
-                hasWireDraft={(paymentId) =>
-                  emailDrafts.some(
+                </CardContent>
+              </Card>
+            ) : (
+              displayRuns.map((run) => (
+                <RunPanel
+                  key={[
+                    run.id,
+                    run.id === latestRun?.id ? "active" : "history",
+                    run.status,
+                    run.contactId,
+                    run.quantityTarget,
+                    run.trimWidthIn,
+                    run.trimHeightIn,
+                    preferredMeasurementUnit,
+                    run.quotedTextPages,
+                    run.coverPages,
+                    run.textPaper,
+                    run.coverPaper,
+                    run.binding,
+                    run.deliveryLocation,
+                  ].join(":")}
+                  run={run}
+                  measurementUnit={preferredMeasurementUnit}
+                  isHistorical={run.id !== latestRun?.id && ["completed", "cancelled"].includes(run.status)}
+                  projectSlug={projectSlug}
+                  finance={financeByRun.get(run.id) ?? null}
+                  canEdit={canEdit}
+                  contacts={contacts}
+                  pending={pending}
+                  quotes={quotesByRun.get(run.id) ?? []}
+                  payments={paymentsByRun.get(run.id) ?? []}
+                  quoteAttachments={quoteAttachments}
+                  paymentAttachments={paymentAttachments}
+                  proof={proofsByRun.get(run.id) ?? null}
+                  isPaymentPending={paymentChanges.isPending}
+                  hasRfqDraft={emailDrafts.some(
                     (draft) =>
-                      draft.kind === "print_wire" &&
-                      draft.contextId === paymentId
-                  )
-                }
-                onDraftRfq={() => draftRfq(run.id)}
-                onUpdate={(fields) =>
-                  (() => {
+                      draft.kind === "print_rfq" && draft.contextId === run.id
+                  )}
+                  hasWireDraft={(paymentId) =>
+                    emailDrafts.some(
+                      (draft) =>
+                        draft.kind === "print_wire" &&
+                        draft.contextId === paymentId
+                    )
+                  }
+                  onDraftRfq={() => draftRfq(run.id)}
+                  onUpdate={(fields) =>
+                    (() => {
+                      const previous = runs;
+                      setRuns((current) =>
+                        current.map((item) =>
+                          item.id === run.id ? { ...item, ...fields } : item
+                        )
+                      );
+                      runAction(
+                        () => updatePrintRun(run.id, fields),
+                        () => setRuns(previous)
+                      );
+                    })()
+                  }
+                  onDelete={() => {
                     const previous = runs;
-                    setRuns((current) =>
-                      current.map((item) =>
-                        item.id === run.id ? { ...item, ...fields } : item
+                    setRuns((current) => current.filter((item) => item.id !== run.id));
+                    runAction(() => deletePrintRun(run.id), () => setRuns(previous));
+                  }}
+                  onAcceptQuote={(id, learnFromReview) => {
+                    const previousQuotes = quotes;
+                    const previousRuns = runs;
+                    const previousSettingsDraft = settingsDraft;
+                    const accepted = quotes.find((quote) => quote.id === id);
+                    const acceptedRun = accepted
+                      ? runs.find((run) => run.id === accepted.runId)
+                      : null;
+                    const specPatch = accepted
+                      ? quoteRunSpecPatch(accepted)
+                      : {};
+                    const isFinalPaymentDocument =
+                      accepted?.kind === "final_invoice";
+                    const targetPayment = accepted
+                      ? payments.find(
+                          (payment) =>
+                            payment.runId === accepted.runId &&
+                            invoiceFilePaymentKinds(accepted.kind).includes(
+                              payment.kind as "deposit" | "final" | "full"
+                            )
+                        )
+                      : null;
+                    setQuotes((current) =>
+                      current.map((quote) =>
+                        quote.id === id
+                          ? { ...quote, reviewStatus: "accepted" }
+                          : quote
+                      )
+                    );
+                    if (accepted && acceptedRun && !isFinalPaymentDocument) {
+                      const contactId =
+                        accepted.contactId ??
+                        acceptedRun.contactId ??
+                        (settingsDraft.contactId || null);
+                      setRuns((current) =>
+                        current.map((run) =>
+                          run.id === accepted.runId
+                            ? {
+                                ...run,
+                                ...specPatch,
+                                status: "quote_received",
+                                quantityTarget:
+                                  run.quantityTarget ??
+                                  accepted.quantityCps ??
+                                  null,
+                                contactId,
+                              }
+                            : run
+                        )
+                      );
+                      setSettingsDraft((draft) => ({
+                        ...draft,
+                        ...(specPatch.trimWidthIn
+                          ? {
+                              trimWidth: measurementInputFromInches(
+                                specPatch.trimWidthIn,
+                                draft.measurementUnit
+                              ),
+                            }
+                          : {}),
+                        ...(specPatch.trimHeightIn
+                          ? {
+                              trimHeight: measurementInputFromInches(
+                                specPatch.trimHeightIn,
+                                draft.measurementUnit
+                              ),
+                            }
+                          : {}),
+                        ...(contactId ? { contactId } : {}),
+                      }));
+                    }
+                    runAction(
+                      async () => {
+                        const result = await acceptPrintQuote(id, learnFromReview);
+                        if (!result?.error && isFinalPaymentDocument) {
+                          toast.success(
+                            targetPayment
+                              ? `Final invoice attached to ${targetPayment.kind} payment`
+                              : "Final invoice accepted"
+                          );
+                        }
+                        return result;
+                      },
+                      () => {
+                        setQuotes(previousQuotes);
+                        setRuns(previousRuns);
+                        setSettingsDraft(previousSettingsDraft);
+                      }
+                    );
+                  }}
+                  onRejectQuote={(id) => {
+                    const previous = quotes;
+                    setQuotes((current) => current.map((quote) => quote.id === id ? { ...quote, reviewStatus: "rejected" } : quote));
+                    runAction(() => rejectPrintQuote(id), () => setQuotes(previous));
+                  }}
+                  onReopenQuote={(id) => {
+                    const previous = quotes;
+                    setQuotes((current) => current.map((quote) => quote.id === id ? { ...quote, reviewStatus: "suggested" } : quote));
+                    runAction(() => reopenPrintQuote(id), () => setQuotes(previous));
+                  }}
+                  onEditQuote={(id, fields) => {
+                    const previous = quotes;
+                    setQuotes((current) =>
+                      current.map((quote) =>
+                        quote.id === id ? { ...quote, ...fields } : quote
                       )
                     );
                     runAction(
-                      () => updatePrintRun(run.id, fields),
-                      () => setRuns(previous)
+                      () => updatePrintQuote(id, fields),
+                      () => setQuotes(previous)
                     );
-                  })()
-                }
-                onDelete={() => {
-                  const previous = runs;
-                  setRuns((current) => current.filter((item) => item.id !== run.id));
-                  runAction(() => deletePrintRun(run.id), () => setRuns(previous));
-                }}
-                onAcceptQuote={(id, learnFromReview) => {
-                  const previousQuotes = quotes;
-                  const previousRuns = runs;
-                  const previousSettingsDraft = settingsDraft;
-                  const accepted = quotes.find((quote) => quote.id === id);
-                  const acceptedRun = accepted
-                    ? runs.find((run) => run.id === accepted.runId)
-                    : null;
-                  const specPatch = accepted
-                    ? quoteRunSpecPatch(accepted)
-                    : {};
-                  const isFinalPaymentDocument =
-                    accepted?.kind === "final_invoice";
-                  const targetPayment = accepted
-                    ? payments.find(
-                        (payment) =>
-                          payment.runId === accepted.runId &&
-                          invoiceFilePaymentKinds(accepted.kind).includes(
-                            payment.kind as "deposit" | "final" | "full"
-                          )
-                      )
-                    : null;
-                  setQuotes((current) =>
-                    current.map((quote) =>
-                      quote.id === id
-                        ? { ...quote, reviewStatus: "accepted" }
-                        : quote
-                    )
-                  );
-                  if (accepted && acceptedRun && !isFinalPaymentDocument) {
-                    const contactId =
-                      accepted.contactId ??
-                      acceptedRun.contactId ??
-                      (settingsDraft.contactId || null);
-                    setRuns((current) =>
-                      current.map((run) =>
-                        run.id === accepted.runId
-                          ? {
-                              ...run,
-                              ...specPatch,
-                              status: "quote_received",
-                              quantityTarget:
-                                run.quantityTarget ??
-                                accepted.quantityCps ??
-                                null,
-                              contactId,
-                            }
-                          : run
-                      )
-                    );
-                    setSettingsDraft((draft) => ({
-                      ...draft,
-                      ...(specPatch.trimWidthIn
-                        ? {
-                            trimWidth: measurementInputFromInches(
-                              specPatch.trimWidthIn,
-                              draft.measurementUnit
-                            ),
-                          }
-                        : {}),
-                      ...(specPatch.trimHeightIn
-                        ? {
-                            trimHeight: measurementInputFromInches(
-                              specPatch.trimHeightIn,
-                              draft.measurementUnit
-                            ),
-                          }
-                        : {}),
-                      ...(contactId ? { contactId } : {}),
-                    }));
+                  }}
+                  onAddPayment={(fields) =>
+                    runAction(() => addPrintPayment(run.id, fields))
                   }
-                  runAction(
-                    async () => {
-                      const result = await acceptPrintQuote(id, learnFromReview);
-                      if (!result?.error && isFinalPaymentDocument) {
-                        toast.success(
-                          targetPayment
-                            ? `Final invoice attached to ${targetPayment.kind} payment`
-                            : "Final invoice accepted"
-                        );
+                  onPaid={(id) => {
+                    paymentChanges.run(
+                      { type: "paid", id, paidAt: new Date().toISOString() },
+                      () => markPrintPaymentPaid(id),
+                      {
+                        errorMessage: "The payment could not be marked paid.",
+                        onSuccess: () => router.refresh(),
                       }
-                      return result;
-                    },
-                    () => {
-                      setQuotes(previousQuotes);
-                      setRuns(previousRuns);
-                      setSettingsDraft(previousSettingsDraft);
-                    }
-                  );
-                }}
-                onRejectQuote={(id) => {
-                  const previous = quotes;
-                  setQuotes((current) => current.map((quote) => quote.id === id ? { ...quote, reviewStatus: "rejected" } : quote));
-                  runAction(() => rejectPrintQuote(id), () => setQuotes(previous));
-                }}
-                onReopenQuote={(id) => {
-                  const previous = quotes;
-                  setQuotes((current) => current.map((quote) => quote.id === id ? { ...quote, reviewStatus: "suggested" } : quote));
-                  runAction(() => reopenPrintQuote(id), () => setQuotes(previous));
-                }}
-                onEditQuote={(id, fields) => {
-                  const previous = quotes;
-                  setQuotes((current) =>
-                    current.map((quote) =>
-                      quote.id === id ? { ...quote, ...fields } : quote
-                    )
-                  );
-                  runAction(
-                    () => updatePrintQuote(id, fields),
-                    () => setQuotes(previous)
-                  );
-                }}
-                onAddPayment={(fields) =>
-                  runAction(() => addPrintPayment(run.id, fields))
-                }
-                onPaid={(id) => {
-                  paymentChanges.run(
-                    { type: "paid", id, paidAt: new Date().toISOString() },
-                    () => markPrintPaymentPaid(id),
-                    {
-                      errorMessage: "The payment could not be marked paid.",
-                      onSuccess: () => router.refresh(),
-                    }
-                  );
-                }}
-                onUnpaid={(id) => {
-                  paymentChanges.run(
-                    { type: "unpaid", id },
-                    () => markPrintPaymentUnpaid(id),
-                    {
-                      errorMessage: "The payment could not be marked unpaid.",
-                      onSuccess: () => router.refresh(),
-                    }
-                  );
-                }}
-                onDeletePayment={async (id) => {
-                  if (!(await confirmDialog("Delete this print payment? This cannot be undone."))) return;
-                  paymentChanges.run(
-                    { type: "delete", id },
-                    () => deletePrintPayment(id),
-                    {
-                      errorMessage: "The payment could not be deleted.",
-                      onSuccess: () => router.refresh(),
-                    }
-                  );
-                }}
-                onDraftWire={draftWire}
-              />
-            ))
-          )}
-        </div>
+                    );
+                  }}
+                  onUnpaid={(id) => {
+                    paymentChanges.run(
+                      { type: "unpaid", id },
+                      () => markPrintPaymentUnpaid(id),
+                      {
+                        errorMessage: "The payment could not be marked unpaid.",
+                        onSuccess: () => router.refresh(),
+                      }
+                    );
+                  }}
+                  onDeletePayment={async (id) => {
+                    if (!(await confirmDialog("Delete this print payment? This cannot be undone."))) return;
+                    paymentChanges.run(
+                      { type: "delete", id },
+                      () => deletePrintPayment(id),
+                      {
+                        errorMessage: "The payment could not be deleted.",
+                        onSuccess: () => router.refresh(),
+                      }
+                    );
+                  }}
+                  onDraftWire={draftWire}
+                />
+              ))
+            )}
+          </div>
 
-        <aside className="min-w-0 space-y-5">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="size-4" />
-                Parse quote text
-              </CardTitle>
-              <CardDescription>
-                Paste copied PDF or email text; review before accepting.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <select
-                className={selectClass}
-                value={quoteRunId}
-                onChange={(e) => setQuoteRunId(e.target.value)}
-              >
-                <option value="">Choose run</option>
-                {runs.map((run) => (
-                  <option key={run.id} value={run.id}>
-                    {run.title}
-                  </option>
-                ))}
-              </select>
-              <Textarea
-                value={quoteText}
-                rows={9}
-                placeholder="Paste printer quote or invoice text..."
-                onChange={(e) => setQuoteText(e.target.value)}
-              />
-              <Button
-                variant="outline"
-                onClick={parseQuote}
-                disabled={pending || !quoteRunId || !quoteText.trim()}
-              >
-                <Sparkles className="size-4" />
-                Save for review
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="size-4" />
-                Extract from file
-              </CardTitle>
-              <CardDescription>
-                Upload an invoice PDF or a photo/screenshot; AI fills in quantity
-                and pricing for review.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <select
-                className={selectClass}
-                value={extractRunId}
-                onChange={(e) => setExtractRunId(e.target.value)}
-              >
-                <option value="">Choose run</option>
-                {runs.map((run) => (
-                  <option key={run.id} value={run.id}>
-                    {run.title}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="file"
-                accept="application/pdf,image/*"
-                disabled={extracting || pending || !extractRunId}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  e.target.value = "";
-                  if (file) extractFromFile(file);
-                }}
-                className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-input file:bg-transparent file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-muted/50"
-              />
-              {extracting ? (
-                <p className="text-xs text-muted-foreground">
-                  Reading the invoice…
-                </p>
-              ) : null}
-            </CardContent>
-          </Card>
-
-          {proofs.length > 0 ? (
+          <aside className="min-w-0 space-y-5">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Download className="size-4" />
-                  Proof files
+                  <Sparkles className="size-4" />
+                  Parse quote text
                 </CardTitle>
                 <CardDescription>
-                  PDF proofs received from the printer, newest first.
+                  Paste copied PDF or email text; review before accepting.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <ul className="divide-y rounded-lg border">
-                  {proofs.map((proof) => (
-                    <li
-                      key={proof.attachmentId}
-                      className="flex min-h-14 items-center gap-2 px-3 py-1.5 transition-colors hover:bg-muted/50"
-                    >
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium">
-                          {proof.originalName}
+              <CardContent className="space-y-3">
+                <select
+                  className={selectClass}
+                  value={quoteRunId}
+                  onChange={(e) => setQuoteRunId(e.target.value)}
+                >
+                  <option value="">Choose run</option>
+                  {runs.map((run) => (
+                    <option key={run.id} value={run.id}>
+                      {run.title}
+                    </option>
+                  ))}
+                </select>
+                <Textarea
+                  value={quoteText}
+                  rows={9}
+                  placeholder="Paste printer quote or invoice text..."
+                  onChange={(e) => setQuoteText(e.target.value)}
+                />
+                <Button
+                  variant="outline"
+                  onClick={parseQuote}
+                  disabled={pending || !quoteRunId || !quoteText.trim()}
+                >
+                  <Sparkles className="size-4" />
+                  Save for review
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Upload className="size-4" />
+                  Extract from file
+                </CardTitle>
+                <CardDescription>
+                  Upload an invoice PDF or a photo/screenshot; AI fills in quantity
+                  and pricing for review.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <select
+                  className={selectClass}
+                  value={extractRunId}
+                  onChange={(e) => setExtractRunId(e.target.value)}
+                >
+                  <option value="">Choose run</option>
+                  {runs.map((run) => (
+                    <option key={run.id} value={run.id}>
+                      {run.title}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="file"
+                  accept="application/pdf,image/*"
+                  disabled={extracting || pending || !extractRunId}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (file) extractFromFile(file);
+                  }}
+                  className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-input file:bg-transparent file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-muted/50"
+                />
+                {extracting ? (
+                  <p className="text-xs text-muted-foreground">
+                    Reading the invoice…
+                  </p>
+                ) : null}
+              </CardContent>
+            </Card>
+
+            {proofs.length > 0 ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Download className="size-4" />
+                    Proof files
+                  </CardTitle>
+                  <CardDescription>
+                    PDF proofs received from the printer, newest first.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="divide-y rounded-lg border">
+                    {proofs.map((proof) => (
+                      <li
+                        key={proof.attachmentId}
+                        className="flex min-h-14 items-center gap-2 px-3 py-1.5 transition-colors hover:bg-muted/50"
+                      >
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium">
+                            {proof.originalName}
+                          </span>
+                          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                            {[proof.runTitle, proof.receivedAt ? nowDate(proof.receivedAt) : null]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </span>
                         </span>
-                        <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                          {[proof.runTitle, proof.receivedAt ? nowDate(proof.receivedAt) : null]
-                            .filter(Boolean)
-                            .join(" · ")}
+                        <span className="hidden shrink-0 text-xs tabular-nums text-muted-foreground md:inline">
+                          {formatBytes(proof.sizeBytes)}
                         </span>
-                      </span>
-                      <span className="hidden shrink-0 text-xs tabular-nums text-muted-foreground md:inline">
-                        {formatBytes(proof.sizeBytes)}
-                      </span>
-                      <span className="flex shrink-0 items-center gap-1">
-                        {canEdit ? (
-                          <Link
-                            href={`/correspondence/${proof.threadId}`}
+                        <span className="flex shrink-0 items-center gap-1">
+                          {canEdit ? (
+                            <Link
+                              href={`/correspondence/${proof.threadId}`}
+                              className={cn(
+                                buttonVariants({ variant: "ghost", size: "sm" }),
+                                "min-h-11 px-2 sm:px-3"
+                              )}
+                              aria-label={`Open the email for ${proof.originalName}`}
+                            >
+                              <Mail className="size-4" />
+                              <span className="hidden sm:inline">Email</span>
+                            </Link>
+                          ) : null}
+                          <a
+                            href={`/api/files/${proof.fileId}/download`}
                             className={cn(
                               buttonVariants({ variant: "ghost", size: "sm" }),
                               "min-h-11 px-2 sm:px-3"
                             )}
-                            aria-label={`Open the email for ${proof.originalName}`}
+                            aria-label={`Download ${proof.originalName}`}
                           >
-                            <Mail className="size-4" />
-                            <span className="hidden sm:inline">Email</span>
-                          </Link>
-                        ) : null}
-                        <a
-                          href={`/api/files/${proof.fileId}/download`}
-                          className={cn(
-                            buttonVariants({ variant: "ghost", size: "sm" }),
-                            "min-h-11 px-2 sm:px-3"
-                          )}
-                          aria-label={`Download ${proof.originalName}`}
-                        >
-                          <Download className="size-4" />
-                          <span className="hidden sm:inline">Download</span>
-                        </a>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          ) : null}
+                            <Download className="size-4" />
+                            <span className="hidden sm:inline">Download</span>
+                          </a>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            ) : null}
 
-          {canEdit ? <PrintCorrespondenceCard threads={threads} /> : null}
-        </aside>
+            {canEdit ? <PrintCorrespondenceCard threads={threads} /> : null}
+          </aside>
+        </div>
       </div>
       {canEdit ? (
         <SectionDisclosure id="print-setup" title="Set up print run" description="Save a run before requesting a quote" defaultOpen={runs.length === 0}>

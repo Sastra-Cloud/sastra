@@ -119,7 +119,7 @@ export function DictionaryManager({ terms }: { terms: DictionaryTerm[] }) {
   }
 
   return (
-    <Card>
+    <Card className="max-w-5xl">
       <CardContent className="space-y-4 py-4">
         <div>
           <p className="flex items-center gap-2 text-sm font-medium">

@@ -23,6 +23,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/assistant/budget.ts`
 - `lib/assistant/context.ts`
 - `lib/assistant/evals.ts`
+- `lib/assistant/launcher.test.ts`
 - `lib/assistant/launcher.ts`
 - `lib/assistant/learning-actions.ts`
 - `lib/assistant/learning-queries.ts`

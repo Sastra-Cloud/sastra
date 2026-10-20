@@ -310,123 +310,125 @@ export function TaskBoard({
         onDragEnd={onDragEnd}
         onDragCancel={() => setActiveId(null)}
       >
-        <div
-          className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
-          aria-busy={pending || taskCreation.pending}
-        >
-          {columns.map((col) => (
-            <Column
-              key={col.status}
-              status={col.status}
-              label={col.label}
-              count={col.items.length}
-              activeCount={col.activeCount}
-              staleReviewCount={col.staleReviewCount}
-            >
-              {col.items.map((t) => (
-                <DraggableCard
-                  key={t.id}
-                  id={t.id}
-                  dragging={t.id === activeId}
-                  disabled={
-                    isSourceControlledTask(t) ||
-                    taskCreation.isPending(t.id)
-                  }
-                  saving={taskCreation.isPending(t.id)}
-                >
-                  <CardBody
-                    task={t}
-                    blocked={blocked.has(t.id)}
-                    saving={taskCreation.isPending(t.id)}
-                    onOpen={
+        <div className="@container/tasks min-w-0">
+          <div
+            className="grid gap-4 @[44rem]/tasks:grid-cols-2 @[60rem]/tasks:grid-cols-4"
+            aria-busy={pending || taskCreation.pending}
+          >
+            {columns.map((col) => (
+              <Column
+                key={col.status}
+                status={col.status}
+                label={col.label}
+                count={col.items.length}
+                activeCount={col.activeCount}
+                staleReviewCount={col.staleReviewCount}
+              >
+                {col.items.map((t) => (
+                  <DraggableCard
+                    key={t.id}
+                    id={t.id}
+                    dragging={t.id === activeId}
+                    disabled={
+                      isSourceControlledTask(t) ||
                       taskCreation.isPending(t.id)
-                        ? undefined
-                        : () => setDetailTask(t)
                     }
-                    onTitle={
-                      taskCreation.isPending(t.id)
-                        ? undefined
-                        : (title) =>
-                            run(
-                              async () => {
-                                await updateTaskFields(t.id, { title });
-                                offerToLearnTerms(t.title, title);
-                              },
-                              {
+                    saving={taskCreation.isPending(t.id)}
+                  >
+                    <CardBody
+                      task={t}
+                      blocked={blocked.has(t.id)}
+                      saving={taskCreation.isPending(t.id)}
+                      onOpen={
+                        taskCreation.isPending(t.id)
+                          ? undefined
+                          : () => setDetailTask(t)
+                      }
+                      onTitle={
+                        taskCreation.isPending(t.id)
+                          ? undefined
+                          : (title) =>
+                              run(
+                                async () => {
+                                  await updateTaskFields(t.id, { title });
+                                  offerToLearnTerms(t.title, title);
+                                },
+                                {
+                                  type: "patch",
+                                  taskId: t.id,
+                                  fields: { title },
+                                }
+                              )
+                      }
+                      menu={
+                        taskCreation.isPending(t.id) ? undefined : (
+                          <TaskMenu
+                            task={t}
+                            assignees={assignees}
+                            allTasks={tasks}
+                            dependsOn={dependencies[t.id] ?? []}
+                            onOpen={() => setDetailTask(t)}
+                            onStatus={(s) => moveTo(t.id, s)}
+                            onAssign={(u) =>
+                              run(() => assignTask(t.id, u), {
                                 type: "patch",
                                 taskId: t.id,
-                                fields: { title },
-                              }
-                            )
-                    }
-                    menu={
-                      taskCreation.isPending(t.id) ? undefined : (
-                        <TaskMenu
-                          task={t}
-                          assignees={assignees}
-                          allTasks={tasks}
-                          dependsOn={dependencies[t.id] ?? []}
-                          onOpen={() => setDetailTask(t)}
-                          onStatus={(s) => moveTo(t.id, s)}
-                          onAssign={(u) =>
-                            run(() => assignTask(t.id, u), {
-                              type: "patch",
-                              taskId: t.id,
-                              fields: {
-                                assignedTo: u,
-                                assigneeName:
-                                  assignees.find((item) => item.id === u)
-                                    ?.name ?? null,
-                              },
-                            })
-                          }
-                          onStartTimer={() => startTaskTimer(t)}
-                          onToggleDep={(depId, checked) => {
-                            const previous = dependencies[t.id] ?? [];
-                            const cur = dependencies[t.id] ?? [];
-                            const next = checked
-                              ? [...cur, depId]
-                              : cur.filter((x) => x !== depId);
-                            setDependencies((current) => ({
-                              ...current,
-                              [t.id]: next,
-                            }));
-                            start(async () => {
-                              try {
-                                await setTaskDependencies(t.id, next);
-                                router.refresh();
-                              } catch (error) {
-                                setDependencies((current) => ({
-                                  ...current,
-                                  [t.id]: previous,
-                                }));
-                                toast.error(
-                                  error instanceof Error
-                                    ? error.message
-                                    : "Could not update task dependencies."
-                                );
-                              }
-                            });
-                          }}
-                          onDelete={() =>
-                            run(() => deleteTask(t.id), {
-                              type: "delete",
-                              taskId: t.id,
-                            })
-                          }
-                        />
-                      )
-                    }
-                  />
-                </DraggableCard>
-              ))}
-              {col.items.length === 0 ? (
-                <p className="px-1 py-3 text-center text-xs text-muted-foreground">
-                  Drop tasks here
-                </p>
-              ) : null}
-            </Column>
-          ))}
+                                fields: {
+                                  assignedTo: u,
+                                  assigneeName:
+                                    assignees.find((item) => item.id === u)
+                                      ?.name ?? null,
+                                },
+                              })
+                            }
+                            onStartTimer={() => startTaskTimer(t)}
+                            onToggleDep={(depId, checked) => {
+                              const previous = dependencies[t.id] ?? [];
+                              const cur = dependencies[t.id] ?? [];
+                              const next = checked
+                                ? [...cur, depId]
+                                : cur.filter((x) => x !== depId);
+                              setDependencies((current) => ({
+                                ...current,
+                                [t.id]: next,
+                              }));
+                              start(async () => {
+                                try {
+                                  await setTaskDependencies(t.id, next);
+                                  router.refresh();
+                                } catch (error) {
+                                  setDependencies((current) => ({
+                                    ...current,
+                                    [t.id]: previous,
+                                  }));
+                                  toast.error(
+                                    error instanceof Error
+                                      ? error.message
+                                      : "Could not update task dependencies."
+                                  );
+                                }
+                              });
+                            }}
+                            onDelete={() =>
+                              run(() => deleteTask(t.id), {
+                                type: "delete",
+                                taskId: t.id,
+                              })
+                            }
+                          />
+                        )
+                      }
+                    />
+                  </DraggableCard>
+                ))}
+                {col.items.length === 0 ? (
+                  <p className="px-1 py-3 text-center text-xs text-muted-foreground">
+                    Drop tasks here
+                  </p>
+                ) : null}
+              </Column>
+            ))}
+          </div>
         </div>
 
         <DragOverlay dropAnimation={null}>

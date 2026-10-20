@@ -12,7 +12,7 @@ import { ImportUploader } from "@/components/imports/import-uploader";
 import { ImportListRefresh } from "@/components/imports/import-list-refresh";
 import { RetryImportButton } from "@/components/imports/retry-import-button";
 import { DiscardImportButton } from "@/components/imports/discard-import-button";
-import { ContentColumn, PageShell } from "@/components/cockpit";
+import { PageShell } from "@/components/cockpit";
 
 export const metadata = { title: "Import from document" };
 export const dynamic = "force-dynamic";
@@ -83,14 +83,16 @@ export default async function ImportPage() {
         </p>
       </div>
 
-      <ContentColumn width="focused" className="space-y-6">
+      {/* The upload stays a bounded form; recent imports and warnings sit beside it when there is room. */}
+      <div className="@container/import min-w-0">
+      <div className="mx-auto grid max-w-3xl gap-6 @[64rem]/import:mx-0 @[64rem]/import:max-w-none @[64rem]/import:grid-cols-[minmax(24rem,40rem)_minmax(0,48rem)] @[64rem]/import:items-start">
         <Card>
           <CardContent className="py-6">
             {aiReady ? <ImportUploader /> : <AiSetupGuidance role={user.role} />}
           </CardContent>
         </Card>
 
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2">
           <h2 className="text-sm font-medium text-muted-foreground">
             Recent imports
           </h2>
@@ -196,7 +198,8 @@ export default async function ImportPage() {
             </ul>
           )}
         </div>
-      </ContentColumn>
+      </div>
+      </div>
     </PageShell>
   );
 }

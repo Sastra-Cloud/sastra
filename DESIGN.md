@@ -25,9 +25,20 @@ control or data surface.
 
 ## Page geometry and breakpoints
 
-- The authenticated app shell owns one centered `88rem` content canvas inside
-  its responsive page padding. Route pages and nested layouts must not add a
-  competing outer `mx-auto` or `max-w-*` container.
+- The authenticated app shell owns one fluid content canvas: it fills the space
+  left after navigation and the responsive page padding, with no global maximum
+  width. Route pages and nested layouts must not add a competing outer
+  `mx-auto` or `max-w-*` container.
+- Wide screens show more useful work, not bigger type. Dense data (tables,
+  boards, schedules, matrices) uses the full canvas; collections add columns by
+  container width; reading, writing, and forms keep readable inner widths
+  (prose about 65–75ch, forms about 32–48rem); side rails stay bounded at
+  roughly 22–28rem.
+- Prefer CSS grid and container queries (`@container/name` with
+  `@[76rem]/name:` variants) for layout inside the canvas, as the Wiki
+  workspace does. Viewport breakpoints stay for global navigation. Render a
+  stateful form once and reposition it with CSS rather than mounting separate
+  breakpoint copies.
 - Use `PageShell` for vertical rhythm. Use `ContentColumn` inside that shell
   when a form, thread, chat, or reading surface benefits from a narrower line
   length; keep page heroes and primary headers on the full app canvas.

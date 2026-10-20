@@ -167,8 +167,8 @@ async function main() {
   }[] = [
     {
       taskKey: "assistant",
-      model: "openai/gpt-5-mini",
-      fallbackModels: ["anthropic/claude-haiku-4.5"],
+      model: "openai/gpt-5.4-mini",
+      fallbackModels: ["anthropic/claude-haiku-5.5"],
     },
     {
       taskKey: "assistant_complex",
@@ -177,8 +177,8 @@ async function main() {
     },
     {
       taskKey: "assistant_summary",
-      model: "openai/gpt-5-mini",
-      fallbackModels: ["anthropic/claude-haiku-4.5"],
+      model: "openai/gpt-5.4-mini",
+      fallbackModels: ["anthropic/claude-haiku-5.5"],
     },
     {
       taskKey: "assistant_reflection",
@@ -187,28 +187,28 @@ async function main() {
     },
     {
       taskKey: "project_update_review",
-      model: "openai/gpt-5-mini",
-      fallbackModels: ["anthropic/claude-haiku-4.5"],
+      model: "openai/gpt-5.4-mini",
+      fallbackModels: ["anthropic/claude-haiku-5.5"],
     },
     {
       taskKey: "email_project_signal",
-      model: "openai/gpt-5-mini",
-      fallbackModels: ["anthropic/claude-haiku-4.5"],
+      model: "openai/gpt-5.4-mini",
+      fallbackModels: ["anthropic/claude-haiku-5.5"],
     },
     {
       taskKey: "email_task_signal",
-      model: "openai/gpt-5-mini",
-      fallbackModels: ["anthropic/claude-haiku-4.5"],
+      model: "openai/gpt-5.4-mini",
+      fallbackModels: ["anthropic/claude-haiku-5.5"],
     },
     {
       taskKey: "email_follow_up_summary",
-      model: "openai/gpt-5-mini",
-      fallbackModels: ["anthropic/claude-haiku-4.5"],
+      model: "openai/gpt-5.4-mini",
+      fallbackModels: ["anthropic/claude-haiku-5.5"],
     },
     {
       taskKey: "email_rights_document",
-      model: "openai/gpt-5-mini",
-      fallbackModels: ["anthropic/claude-haiku-4.5"],
+      model: "openai/gpt-5.4-mini",
+      fallbackModels: ["anthropic/claude-haiku-5.5"],
     },
     {
       taskKey: "assistant_eval",
@@ -222,13 +222,18 @@ async function main() {
     },
     { taskKey: "planner", model: "anthropic/claude-sonnet-5.5" },
     { taskKey: "doc_import", model: "anthropic/claude-sonnet-5.5" },
-    { taskKey: "agreement_ocr", model: "openai/gpt-5-mini" },
+    { taskKey: "agreement_ocr", model: "openai/gpt-5.4-mini" },
     {
       taskKey: "agreement_qa",
       model: "anthropic/claude-sonnet-5.5",
-      fallbackModels: ["openai/gpt-5.4"],
+      fallbackModels: ["openai/gpt-5.6-sol"],
     },
-    { taskKey: "standup_insights", model: "anthropic/claude-haiku-4.5" },
+    { taskKey: "standup_insights", model: "anthropic/claude-haiku-5.5" },
+    {
+      taskKey: "donation_csv_format",
+      model: "openai/gpt-5.4-mini",
+      fallbackModels: ["anthropic/claude-haiku-5.5"],
+    },
   ];
   for (const m of AI_MODELS) {
     await db

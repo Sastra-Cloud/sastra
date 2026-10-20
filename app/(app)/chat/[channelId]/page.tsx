@@ -13,12 +13,14 @@ import {
   listProjectChannels,
 } from "@/lib/chat/queries";
 import { listChannelPins } from "@/lib/chat/pins";
+import { CHAT_LIST_HREF } from "@/lib/chat/navigation";
 import {
   listAllMentionTargets,
   listMentionTargetsByIds,
   listProjectMentionTargets,
 } from "@/lib/mentions/roster";
 import { ChannelMembersSheet } from "@/components/chat/channel-members-sheet";
+import { ConversationHeader } from "@/components/chat/conversation-header";
 import { ChatThread } from "@/components/chat/chat-thread";
 import {
   MessagePinsProvider,
@@ -26,6 +28,7 @@ import {
 } from "@/components/chat/message-pins";
 import { ProjectChannelTabs } from "@/components/chat/project-channel-tabs";
 import { ConversationLoadingSkeleton } from "@/components/page-skeleton";
+import { getWorkspaceSettings } from "@/lib/workspace/queries";
 import { avatarSrc } from "@/lib/users/avatar";
 
 export const metadata = { title: "Chat" };
@@ -39,12 +42,14 @@ export default async function ChatChannelPage({
   const { channelId } = await params;
   const { user } = await requireUser();
 
-  const channel = await getChannelById(channelId, user.id);
+  const [channel, workspace] = await Promise.all([getChannelById(channelId, user.id), getWorkspaceSettings()]);
+  const timeZone = user.timezone ?? workspace.timezone;
   if (!channel) notFound();
 
   const isProject = channel.kind === "project";
   const isDirect = channel.kind === "direct";
   const isCustom = channel.kind === "custom";
+  const isStandup = channel.kind === "standup";
   const [projectChannels, directCandidates, pins] = await Promise.all([
     isProject && channel.projectId
       ? listProjectChannels(channel.projectId, user.id)
@@ -69,7 +74,33 @@ export default async function ChatChannelPage({
       ? "Private conversation"
       : isCustom
         ? "Private team channel"
-        : "Workspace channel";
+        : isStandup ? "Private standup conversation" : "Workspace channel";
+
+  const channelActions = (
+          <div className="flex shrink-0 items-center gap-2">
+            <AssistantShortcut />
+            <PinnedMessagesButton />
+            {isCustom ? (
+              <ChannelMembersSheet
+                channelId={channel.id}
+                channelName={channel.name}
+                members={channel.channelMembers}
+                candidates={directCandidates}
+                currentUserId={user.id}
+                canManage={canManageMembers}
+              />
+            ) : null}
+            {isProject && projectSlug ? (
+              <Link
+                href={`/projects/${projectSlug}`}
+                className="inline-flex size-10 shrink-0 items-center justify-center gap-1.5 rounded-lg border bg-background text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:w-auto lg:px-3"
+              >
+                <span className="sr-only lg:not-sr-only">View project</span>
+                <ArrowRight className="size-4 lg:size-3.5" />
+              </Link>
+            ) : null}
+          </div>
+  );
 
   return (
     <MessagePinsProvider
@@ -78,12 +109,15 @@ export default async function ChatChannelPage({
       currentUserName={user.name}
       initialPins={pins}
     >
-      <div className="flex h-full min-w-0 min-h-0 flex-col gap-2 lg:gap-3">
-        <div className="surface-shadow flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-xl border bg-card p-2 lg:gap-3 lg:p-4">
+      <div className="flex h-full min-w-0 min-h-0 flex-col lg:gap-3">
+        <div className="shrink-0 lg:hidden">
+          <ConversationHeader title={mobileTitle ?? channel.name} subtitle={mobileContext} backHref={CHAT_LIST_HREF} actions={channelActions} />
+        </div>
+        <div className="surface-shadow hidden shrink-0 flex-wrap lg:flex items-center justify-between gap-2 rounded-xl border bg-card p-2 lg:gap-3 lg:p-4">
           <div className="flex min-w-0 flex-1 items-center gap-2 lg:block">
             <div className="flex min-w-0 items-center lg:hidden">
               <Link
-                href="/chat"
+                href={CHAT_LIST_HREF}
                 className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
                 <ArrowLeft className="size-5" />
@@ -95,7 +129,7 @@ export default async function ChatChannelPage({
                 aria-label="Chat breadcrumb"
                 className="mb-2 hidden min-w-0 items-center gap-1 text-xs font-medium text-muted-foreground lg:flex"
               >
-                <Link href="/chat" className="hover:text-foreground">
+                <Link href={CHAT_LIST_HREF} className="hover:text-foreground">
                   Chat
                 </Link>
                 <ChevronRight className="size-3.5" />
@@ -149,29 +183,7 @@ export default async function ChatChannelPage({
               </p>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <AssistantShortcut />
-            <PinnedMessagesButton />
-            {isCustom ? (
-              <ChannelMembersSheet
-                channelId={channel.id}
-                channelName={channel.name}
-                members={channel.channelMembers}
-                candidates={directCandidates}
-                currentUserId={user.id}
-                canManage={canManageMembers}
-              />
-            ) : null}
-            {isProject && projectSlug ? (
-              <Link
-                href={`/projects/${projectSlug}`}
-                className="inline-flex size-10 shrink-0 items-center justify-center gap-1.5 rounded-lg border bg-background text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:w-auto lg:px-3"
-              >
-                <span className="sr-only lg:not-sr-only">View project</span>
-                <ArrowRight className="size-4 lg:size-3.5" />
-              </Link>
-            ) : null}
-          </div>
+          {channelActions}
         </div>
         {isProject && projectSlug && projectChannels.length > 0 ? (
           <ProjectChannelTabs
@@ -190,7 +202,7 @@ export default async function ChatChannelPage({
             />
           }
         >
-          <ChannelConversation channel={channel} user={user} />
+          <ChannelConversation channel={channel} user={user} timeZone={timeZone} />
         </Suspense>
       </div>
     </MessagePinsProvider>
@@ -200,7 +212,9 @@ export default async function ChatChannelPage({
 async function ChannelConversation({
   channel,
   user,
+  timeZone,
 }: {
+  timeZone: string;
   channel: NonNullable<Awaited<ReturnType<typeof getChannelById>>>;
   user: Awaited<ReturnType<typeof requireUser>>["user"];
 }) {
@@ -245,6 +259,8 @@ async function ChannelConversation({
             : undefined
       }
       fillAvailable
+      direct={isDirect || channel.kind === "standup"}
+      timeZone={timeZone}
     />
   );
 }

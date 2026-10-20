@@ -76,6 +76,7 @@ import {
 } from "@/components/portfolio/portfolio-table";
 import { Timeline } from "@/components/timeline/timeline";
 import { activeProjectCoordinationLimit } from "@/lib/flow";
+import { PageShell } from "@/components/cockpit";
 
 const HEALTH_BAR: Record<string, string> = {
   red: "var(--destructive)",
@@ -254,7 +255,7 @@ export default async function OverviewPage() {
   const velocity = velocityWeeks.map((w) => ({ label: w.week, value: w.count }));
 
   return (
-    <div className="w-full space-y-6">
+    <PageShell>
       <Reveal className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-heading text-3xl font-semibold tracking-tight text-balance">
@@ -274,7 +275,7 @@ export default async function OverviewPage() {
         </a>
       </Reveal>
 
-      <ManagerReviewQueue items={reviewItems} />
+      <ManagerReviewQueue items={reviewItems} collapsed />
 
       {projects.length === 0 ? (
         <Card>
@@ -285,9 +286,14 @@ export default async function OverviewPage() {
       ) : (
         <>
           {hasAttention ? (
-            <section className="space-y-3">
-              <h2 className="text-lg font-semibold">Attention needed</h2>
-              <StaggerGroup className="grid gap-4 md:grid-cols-3" inView>
+            <SectionDisclosure id="attention-needed" title="Attention needed" description={
+              <span className="flex flex-wrap gap-x-3 gap-y-1">
+                {criticalList.length > 0 ? <span className="font-medium text-destructive">{criticalList.length} critical {criticalList.length === 1 ? "blocker" : "blockers"}</span> : null}
+                {overdueList.length > 0 ? <span>{overdueList.length} overdue {overdueList.length === 1 ? "project" : "projects"}</span> : null}
+                {atRisk.length > 0 ? <span>{atRisk.length} {atRisk.length === 1 ? "person" : "people"} at risk</span> : null}
+              </span>
+            }>
+              <StaggerGroup className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),1fr))] gap-4" inView>
                 {criticalList.length > 0 ? (
                 <StaggerItem className="h-full">
                 <AttentionCard
@@ -361,11 +367,17 @@ export default async function OverviewPage() {
                 </StaggerItem>
                 ) : null}
               </StaggerGroup>
-            </section>
+            </SectionDisclosure>
           ) : null}
 
           <Reveal inView>
-            <PortfolioTable rows={rows} />
+            <section aria-labelledby="portfolio-heading" className="space-y-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-3">
+                <h2 id="portfolio-heading" className="text-lg font-semibold">Projects</h2>
+                <span className="text-xs tabular-nums text-muted-foreground">{rows.length} total · {active} active or planning</span>
+              </div>
+              <PortfolioTable rows={rows} />
+            </section>
           </Reveal>
 
           <SectionDisclosure id="portfolio-summary" title="Portfolio summary" description="Health, funding totals, and project counts">
@@ -438,14 +450,8 @@ export default async function OverviewPage() {
           </SectionDisclosure>
 
           {comingDue.length > 0 ? (
-            <Reveal inView className="block">
-              <Card>
-                <CardContent className="space-y-1 py-4">
-                  <div className="flex items-center justify-between">
-                    <p className="flex items-center gap-1.5 text-sm font-medium">
-                      <CalendarClock className="size-4 text-muted-foreground" />
-                      Coming due
-                    </p>
+            <SectionDisclosure id="coming-due" title="Coming due" summary={comingDue.length} description="Money and rights deadlines">
+                  <div className="flex justify-end">
                     <Link
                       href="/tasks?view=agenda"
                       className="text-xs text-muted-foreground hover:text-foreground hover:underline"
@@ -460,9 +466,7 @@ export default async function OverviewPage() {
                       </li>
                     ))}
                   </ul>
-                </CardContent>
-              </Card>
-            </Reveal>
+            </SectionDisclosure>
           ) : null}
 
           <div className="flex flex-wrap gap-3 text-sm">
@@ -595,7 +599,7 @@ export default async function OverviewPage() {
           </SectionDisclosure>
         </>
       )}
-    </div>
+    </PageShell>
   );
 }
 
@@ -631,19 +635,17 @@ function AttentionCard({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="h-full">
-      <CardContent className="space-y-2 py-4">
-        <p className="flex items-center gap-1.5 text-sm font-medium">
+    <section className="min-w-0 space-y-3">
+        <h3 className="flex items-center gap-1.5 text-sm font-medium">
           <Icon className="size-4 text-muted-foreground" />
           {title}
           <span className="ml-auto tabular-nums text-muted-foreground">{count}</span>
-        </p>
+        </h3>
         {count === 0 ? (
           <p className="text-sm text-muted-foreground">{empty}</p>
         ) : (
           <ul className="space-y-1.5">{children}</ul>
         )}
-      </CardContent>
-    </Card>
+    </section>
   );
 }

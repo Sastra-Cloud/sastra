@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/lib/dialog-requests";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -40,11 +41,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { AnimatedBar } from "@/components/motion/animated-bar";
 import { Reveal } from "@/components/motion/reveal";
 import { cn } from "@/lib/utils";
+import { ConversationHeader } from "@/components/chat/conversation-header";
+import { ConversationJump } from "@/components/chat/conversation-jump";
+import { useConversationViewport } from "@/hooks/use-conversation-viewport";
+import { useConversationScroll } from "@/hooks/use-conversation-scroll";
+import { sendOnConversationKey } from "@/lib/chat/composer-key";
 import { usePropState } from "@/hooks/use-prop-state";
 
+// Generic prompts work for every organization.
 const EXAMPLES = [
+  "What can you help me with?",
   "What are my open tasks?",
-  "Create a task “Draft chapter 1” in The Trinity, due Friday, and assign it to me.",
+  "Help me create a task for my project.",
   "Show me everything blocked in my projects.",
 ];
 
@@ -86,7 +94,7 @@ export function AssistantWorkspace({
   onClose?: () => void;
 }) {
   const router = useRouter();
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(initialComposerText ?? "");
   const [busy, startBusy] = useTransition();
   const [visibleMessages, setVisibleMessages] = usePropState(messages);
   const [visiblePending, setVisiblePending] = usePropState(pending);
@@ -97,7 +105,8 @@ export function AssistantWorkspace({
   const [editValues, setEditValues] = useState<Record<string, string>>({});
   const [feedbackId, setFeedbackId] = useState<string | null>(null);
   const [feedbackComment, setFeedbackComment] = useState("");
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useConversationViewport<HTMLDivElement>(variant === "page");
+  const { scrollRef, onScroll, canJump, scrollToLatest } = useConversationScroll(`${visibleMessages.length}:${visiblePending.length}:${busy}`);
 
   const actionOpts =
     projectSlug || runScope
@@ -115,9 +124,9 @@ export function AssistantWorkspace({
   // Adjusting state during render (keyed on the seed) is React's recommended
   // pattern for "react to a prop change" and refills even when the same text is
   // sent twice. We never auto-send — the user reviews, edits, or speaks first.
-  const lastSeedRef = useRef<number | undefined>(undefined);
-  if (composerSeed !== undefined && composerSeed !== lastSeedRef.current) {
-    lastSeedRef.current = composerSeed;
+  const [lastComposerSeed, setLastComposerSeed] = useState(composerSeed);
+  if (composerSeed !== undefined && composerSeed !== lastComposerSeed) {
+    setLastComposerSeed(composerSeed);
     if (initialComposerText) setInput(initialComposerText);
   }
   // Mirror the input so the recorder's onstop closure can read the latest value.
@@ -128,13 +137,11 @@ export function AssistantWorkspace({
   // Mirror the current project so a send (esp. voice, whose onstop closure is
   // created when recording starts) always targets the page you're on NOW.
   const projectSlugRef = useRef(projectSlug);
-  projectSlugRef.current = projectSlug;
   const runScopeRef = useRef(runScope);
-  runScopeRef.current = runScope;
-
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [visibleMessages.length, visiblePending.length, busy, transcribing]);
+    projectSlugRef.current = projectSlug;
+    runScopeRef.current = runScope;
+  }, [projectSlug, runScope]);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -181,10 +188,9 @@ export function AssistantWorkspace({
           const data = (await res.json()) as { text?: string };
           const text = (data.text ?? "").trim();
           if (text) {
-            // Auto-submit: stopping the mic sends the transcript right away,
-            // combined with anything already typed.
+            // Keep the transcript in the composer so it can be reviewed first.
             const typed = inputRef.current.trim();
-            sendText(typed ? `${typed} ${text}` : text);
+            setInput(typed ? `${typed} ${text}` : text);
           } else {
             toast.error("Didn't catch that — try again.");
           }
@@ -231,6 +237,7 @@ export function AssistantWorkspace({
   function sendText(raw: string) {
     const text = raw.trim();
     if (!text || busy) return;
+    scrollToLatest();
     setInput("");
     // Read project + scope from refs so a voice send uses the current page/view.
     const opts =
@@ -353,30 +360,12 @@ export function AssistantWorkspace({
     });
   }
 
-  return (
-    <div
-      className={cn(
-        "flex w-full flex-col gap-3",
-        variant === "embedded"
-          ? "h-full"
-          : "mx-auto h-[calc(100dvh-7.5rem)] max-w-3xl"
-      )}
-    >
-      {/* Header + budget meter */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
-            <Sparkles className="size-5" />
-          </span>
-          <div className="min-w-0">
-            <h1 className="font-heading text-lg font-semibold leading-tight">
-              Assistant
-            </h1>
-            <p className="line-clamp-2 text-xs text-muted-foreground">
-              Your in-app helper — it previews any change before it runs.
-            </p>
-          </div>
-        </div>
+  const page = variant !== "embedded";
+  const wideHeader = page ? "@[72rem]/assistant:col-start-1 @[72rem]/assistant:row-start-1" : "";
+  const wideMeter = page ? "@[72rem]/assistant:col-start-2 @[72rem]/assistant:row-start-1 @[72rem]/assistant:self-start" : "";
+  const wideTranscript = page ? "@[72rem]/assistant:col-start-1 @[72rem]/assistant:row-start-2 @[72rem]/assistant:mx-auto @[72rem]/assistant:w-full @[72rem]/assistant:max-w-4xl" : "";
+  const wideComposer = page ? "@[72rem]/assistant:col-start-1 @[72rem]/assistant:row-start-3 @[72rem]/assistant:mx-auto @[72rem]/assistant:w-full @[72rem]/assistant:max-w-4xl" : "";
+  const headerActions = (
         <div className="flex shrink-0 items-center gap-1">
           {memory ? <MemoryManager state={memory} /> : null}
           {visibleMessages.length > 0 ? (
@@ -386,7 +375,8 @@ export function AssistantWorkspace({
               aria-label="Clear chat"
               title="Clear chat"
               disabled={busy}
-              onClick={() => {
+              onClick={async () => {
+                if (!(await confirmDialog("Clear this conversation? This cannot be undone."))) return;
                 const previous = visibleMessages;
                 setVisibleMessages([]);
                 startBusy(async () => {
@@ -403,21 +393,9 @@ export function AssistantWorkspace({
               <Trash2 className="size-4" />
             </Button>
           ) : null}
-          {onClose ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Close assistant"
-              title="Close assistant"
-              onClick={onClose}
-            >
-              <X className="size-4" />
-            </Button>
-          ) : null}
         </div>
-      </div>
-
+  );
+  const usagePanel = (
       <div className="rounded-lg border bg-card px-3 py-2">
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground">Monthly AI usage</span>
@@ -429,14 +407,28 @@ export function AssistantWorkspace({
           trackClassName="mt-1.5 h-1.5"
         />
       </div>
+  );
+
+  const content = (
+    <div ref={viewportRef} data-mobile-conversation={variant === "page" ? "" : undefined}
+      className={cn(
+        "flex min-h-0 w-full flex-col lg:gap-3",
+        variant === "embedded"
+          ? "h-full"
+          : "conversation-route h-[var(--conversation-height,calc(100dvh-7.5rem))] @[72rem]/assistant:grid @[72rem]/assistant:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] @[72rem]/assistant:grid-rows-[auto_minmax(0,1fr)_auto] @[72rem]/assistant:gap-x-8"
+      )}
+    >
+      <div className={wideHeader}><ConversationHeader title="Assistant" subtitle="Private to you · Review changes before saving" backHref="/dashboard" onClose={onClose} actions={headerActions}>
+        {usagePanel}
+      </ConversationHeader></div>
+      <div className={cn("hidden shrink-0 lg:block", wideMeter)}>{usagePanel}</div>
 
       {/* Transcript */}
-      <div
-        ref={scrollRef}
-        className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain rounded-xl border bg-background/40 p-3 sm:p-4"
-      >
+      <div className={cn("relative flex min-h-0 flex-1 flex-col", wideTranscript)}>
+      <div ref={scrollRef} onScroll={onScroll} data-conversation-scroll role="region" aria-label="Messages" tabIndex={0} className="conversation-transcript min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-3 lg:rounded-xl lg:border lg:p-4">
+      <div className="flex min-h-full flex-col justify-end gap-3">
         {visibleMessages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 py-6 text-center">
             <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/12 text-primary">
               <Sparkles className="size-6" />
             </span>
@@ -456,7 +448,7 @@ export function AssistantWorkspace({
                   type="button"
                   disabled={busy || blocked}
                   onClick={() => setInput(ex)}
-                  className="rounded-full border px-3 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+                  className="min-h-11 rounded-full border px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
                 >
                   {ex}
                 </button>
@@ -474,15 +466,15 @@ export function AssistantWorkspace({
             >
               <div
                 className={cn(
-                  "flex max-w-[85%] flex-col gap-1",
+                  "flex min-w-0 max-w-[92%] flex-col gap-1 lg:max-w-[85%]",
                   m.role === "user" ? "items-end" : "items-start"
                 )}
               >
                 <div
                   className={cn(
-                    "whitespace-pre-wrap rounded-2xl px-3.5 py-2 text-sm",
+                    "max-w-[65ch] whitespace-pre-wrap rounded-xl px-3.5 py-2 text-[15px] leading-relaxed lg:text-sm",
                     m.role === "user"
-                      ? "rounded-br-sm bg-primary text-primary-foreground"
+                      ? "rounded-br-sm conversation-own-bubble bg-primary text-primary-foreground"
                       : "rounded-bl-sm bg-muted text-foreground"
                   )}
                 >
@@ -554,7 +546,7 @@ export function AssistantWorkspace({
         )}
 
         {busy ? (
-          <div className="flex items-center gap-2 px-1 text-sm text-muted-foreground">
+          <div role="status" aria-live="polite" className="flex items-center gap-2 px-1 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" /> Assistant is working…
           </div>
         ) : null}
@@ -562,7 +554,7 @@ export function AssistantWorkspace({
 
       {/* Pending approvals */}
       {visiblePending.length > 0 ? (
-        <Reveal className="max-h-[38dvh] space-y-2 overflow-y-auto rounded-xl border border-primary/30 bg-primary/5 p-3 shadow-sm">
+        <Reveal className="space-y-2 rounded-xl border border-primary/30 bg-primary/5 p-3">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium">
               {visiblePending.length === 1
@@ -708,25 +700,29 @@ export function AssistantWorkspace({
         </Reveal>
       ) : null}
 
+      </div>
+      <ConversationJump visible={canJump} onClick={scrollToLatest} />
+      </div>
+
       {/* Composer */}
       {blocked ? (
-        <p className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning-text">
+        <p className={cn("rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning-text", wideComposer)}>
           {budget.enabled
             ? "You've reached your monthly AI limit. Ask an admin to raise it."
             : "Your AI assistant is disabled. Ask an admin to enable it."}
         </p>
       ) : (
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5 px-0.5 text-[11px] text-muted-foreground">
+        <div className={cn("conversation-composer space-y-2 border-t bg-background px-2 pt-2 lg:border-0", wideComposer)}>
+          <div className="flex min-w-0 items-center gap-1.5 px-0.5 text-[11px] text-muted-foreground">
             <span
               className={cn(
                 "inline-block size-1.5 rounded-full",
                 projectSlug ? "bg-primary" : "bg-muted-foreground/50"
               )}
             />
-            {projectSlug
-              ? `Acting on ${projectTitle ?? projectSlug}`
-              : "General — tasks won’t be tied to a project"}
+            <span className="min-w-0 truncate" title={projectSlug ? `Acting on ${projectTitle ?? projectSlug}` : "General — tasks won’t be tied to a project"}>
+              {projectSlug ? `Acting on ${projectTitle ?? projectSlug}` : "General — tasks won’t be tied to a project"}
+            </span>
           </div>
           {recording || transcribing ? (
             <div
@@ -747,7 +743,7 @@ export function AssistantWorkspace({
                   </span>
                   <span className="font-medium">Recording…</span>
                   <span className="text-destructive/80">
-                    tap the mic to stop &amp; send
+                    tap the mic to stop and review
                   </span>
                 </>
               ) : (
@@ -764,13 +760,10 @@ export function AssistantWorkspace({
             disabled={busy || recording}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send();
-              }
+              sendOnConversationKey(e, send);
             }}
             placeholder="Ask your assistant to find or do something…"
-            className="min-h-11 max-h-40 flex-1 resize-none"
+            className="min-h-11 max-h-32 flex-1 resize-none rounded-xl"
             rows={1}
           />
           {micSupported ? (
@@ -782,7 +775,7 @@ export function AssistantWorkspace({
               title={recording ? "Stop recording" : "Record voice"}
               disabled={busy || transcribing}
               onClick={toggleMic}
-              className={cn(recording && "animate-pulse")}
+              className={cn("size-11 shrink-0", recording && "animate-pulse")}
             >
               {transcribing ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -794,6 +787,7 @@ export function AssistantWorkspace({
           <Button
             size="icon"
             aria-label="Send"
+            className="conversation-send size-11 shrink-0"
             disabled={busy || recording || transcribing || !input.trim()}
             onClick={send}
           >
@@ -804,4 +798,5 @@ export function AssistantWorkspace({
       )}
     </div>
   );
+  return page ? <div className="@container/assistant min-w-0">{content}</div> : content;
 }

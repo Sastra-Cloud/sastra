@@ -60,3 +60,19 @@ The **Agenda** view gathers everything with a date attached to you — tasks,
 payments, project deadlines, and rights deadlines — into four buckets:
 **Overdue**, **This week**, **Next two weeks**, and **Later**. Use the filter to
 focus on your tasks, deadlines, rights, or finance without opening each project.
+
+## On wide screens
+
+The app uses the width of your screen. The same sections
+sit side by side when there is room.
+
+- **Home** keeps your work first. **Manager attention** and **Active projects**
+  appear beside it on a wide screen. On a very wide screen all three sit in
+  their own columns. A section with nothing in it does not leave an empty column.
+- **Focus** shows your main queue (Next up and Due today) on the left. **Needs
+  attention**, **Waiting on confirmation**, **Later**, and **Completed today**
+  move to columns beside it. The order inside every section stays the same.
+- **Board** shows four columns when there is room, two on a medium screen, and
+  one status at a time on a phone.
+- **Agenda** puts its date groups in columns when there is room. The groups stay
+  in date order, from left to right and top to bottom.

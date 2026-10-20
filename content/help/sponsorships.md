@@ -2,7 +2,7 @@
 title: "Sponsorships"
 category: "Publishing"
 roles: [manager, admin]
-keywords: [sponsorship, sponsored books, search books, book picker, untyped projects, sponsor, partner invoice, individual partner, module, modules, enable sponsorships, disable sponsorships, sponsorship funds, reserve, reprint reserve, funds available, funds used, partial payment, partial use, invoice, payment correction]
+keywords: [sponsorship, sponsored books, search books, book picker, untyped projects, sponsor, partner invoice, individual partner, module, modules, enable sponsorships, disable sponsorships, sponsorship funds, reserve, reprint reserve, funds available, funds used, donation imports, donation match, partial payment, partial use, invoice, payment correction]
 order: 66
 summary: "Enable book sponsorships, invoice partners, and track separate book funds with partial uses and a correction history."
 ---
@@ -68,6 +68,11 @@ You can record part of a payment and add the rest later. The payment is allocate
 across the books' remaining invoice shares. Allocations add up exactly, including
 odd cents. The invoice is paid when its full gross amount has been recorded.
 
+Admins can also match imported donations to sent sponsorship invoices on
+**Donations**. Invoice matches keep the book split and record money as separate
+sponsorship funds. Review the available amount before confirming. Correct these
+imported payments from **Donations**, where the donation and receipt stay linked.
+
 ## Use sponsorship funds bit by bit
 
 Each book has its own **Funds received**, **Used**, and **Available** balance.
@@ -93,3 +98,10 @@ the corrected entry. Reversing a use restores the available balance.
 A payment cannot be reversed if that would leave a book's received funds below
 the amount already used. Reverse the related uses first. Repeated saves of the
 same request do not add another payment or use.
+
+## On wide screens
+
+The sponsorship list lines up the partner, status, and amount in columns when
+there is room. On a sponsorship, the invoice sits beside the funding section on
+a wide screen. The create form shows partner details and books side by side. On
+a phone, everything stacks.

@@ -7,8 +7,9 @@ import { getThread, listPendingProjectSuggestions } from "@/lib/email/queries";
 import { listProjectsForImportMatch } from "@/lib/imports/queries";
 import { matchGrantProjects } from "@/lib/imports/match";
 import { getPossibleCounterpartySuggestion } from "@/lib/notifications/queries";
-import { ContentColumn, PageHero, PageShell } from "@/components/cockpit";
+import { PageHero, PageShell } from "@/components/cockpit";
 import { ProjectSuggestionReview } from "@/components/correspondence/project-suggestion-review";
+import { ThreadMessageList } from "@/components/correspondence/thread-message-list";
 
 export const metadata = { title: "Review new projects" };
 export const dynamic = "force-dynamic";
@@ -27,7 +28,7 @@ export default async function ReviewProjectsPage({
     getPossibleCounterpartySuggestion(user.id, threadId),
   ]);
   if (!data) notFound();
-  const { thread } = data;
+  const { thread, messages } = data;
 
   // If this email is from a funder who already funds existing projects, those
   // "new projects" are almost certainly that grant's existing work — warn.
@@ -66,14 +67,26 @@ export default async function ReviewProjectsPage({
         }
       />
 
-      <ContentColumn width="reading">
-        <ProjectSuggestionReview
-          threadId={threadId}
-          suggestions={suggestions}
-          existingProjects={existingProjects}
-          grantMatch={grantMatch}
-        />
-      </ContentColumn>
+      {/* The source email sits beside the editable suggestions on wide screens,
+          so every field can be checked against the original text. */}
+      <div className="@container/review min-w-0">
+        <div className="mx-auto grid max-w-6xl gap-6 @[80rem]/review:mx-0 @[80rem]/review:max-w-none @[80rem]/review:grid-cols-[minmax(0,1fr)_minmax(26rem,34rem)] @[80rem]/review:items-start">
+          <div className="min-w-0">
+            <ProjectSuggestionReview
+              threadId={threadId}
+              suggestions={suggestions}
+              existingProjects={existingProjects}
+              grantMatch={grantMatch}
+            />
+          </div>
+          {messages.length > 0 ? (
+            <section className="min-w-0 space-y-2" aria-labelledby="review-source-heading">
+              <h2 id="review-source-heading" className="text-sm font-semibold">Source email</h2>
+              <ThreadMessageList messages={messages} threadId={threadId} />
+            </section>
+          ) : null}
+        </div>
+      </div>
     </PageShell>
   );
 }

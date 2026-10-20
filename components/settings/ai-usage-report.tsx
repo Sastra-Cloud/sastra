@@ -194,7 +194,7 @@ function UsageLimitControls({ report }: { report: UsageSettingsReport }) {
         <CardTitle>{credits ? "AI credits this month" : "Monthly limits"}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className={cn("grid gap-3", !credits && "lg:grid-cols-2")}>
+        <div className={cn("grid gap-3", !credits && "@[56rem]/settings:grid-cols-2")}>
           <BudgetMeter
             title={credits ? "AI credits" : "Workspace/admin AI"}
             status={report.workspaceBudget}
@@ -234,7 +234,7 @@ function UsageLimitControls({ report }: { report: UsageSettingsReport }) {
           </p>
         ) : null}
 
-        <div className={cn("grid gap-4 lg:items-end", credits ? "lg:grid-cols-[1fr_auto]" : "lg:grid-cols-[1fr_1fr_auto]")}>
+        <div className={cn("grid gap-4 @[56rem]/settings:items-end", credits ? "@[56rem]/settings:grid-cols-[1fr_auto]" : "@[56rem]/settings:grid-cols-[1fr_1fr_auto]")}>
           <div className="grid gap-1">
             {report.budgetManagedByPlan ? (
               <>
@@ -474,7 +474,7 @@ export function AiUsageReport({
       </div>
       )}
 
-      <div className={cn("grid gap-4 sm:grid-cols-2", credits ? "xl:grid-cols-4" : "xl:grid-cols-5")}>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,11rem),1fr))] gap-4">
         <StatCard
           icon={credits ? Coins : DollarSign}
           label={credits ? "Credits used" : "Tracked estimate"}
@@ -500,7 +500,7 @@ export function AiUsageReport({
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 @[60rem]/settings:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -525,8 +525,8 @@ export function AiUsageReport({
 
       <UsageLimitControls report={settingsReport} />
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="lg:col-span-2">
+      <div className="grid gap-4 @[60rem]/settings:grid-cols-2">
+        <Card className="@[60rem]/settings:col-span-2">
           <CardHeader>
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Workspace/admin tasks
@@ -614,7 +614,7 @@ export function AiUsageReport({
         </Card>
 
         {credits ? null : (
-        <Card className="lg:col-span-2">
+        <Card className="@[60rem]/settings:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
               <HardDrive className="size-4" />

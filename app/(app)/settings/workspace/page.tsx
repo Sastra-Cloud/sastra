@@ -28,15 +28,15 @@ export default async function WorkspaceSettingsPage() {
         <p className="max-w-2xl text-sm text-muted-foreground">Define how Sastra recognizes your organization and seeds new publishing work. Existing project overrides remain untouched.</p>
       </div>
       {seats && storage ? (
-        <HostedPlanCard
+        <div className="max-w-5xl"><HostedPlanCard
           people={seats.activeHumans + seats.pendingInvites}
           peopleLimit={seats.limit}
           usedBytes={storage.usedBytes}
           limitBytes={storage.limitBytes}
           accountUrl={hostedAccountUrl()}
-        />
+        /></div>
       ) : null}
-      <WorkspaceBrandingCard
+      <div className="max-w-5xl"><WorkspaceBrandingCard
         settings={{
           logoFileId: workspace.logoFileId,
           accentColor: workspace.accentColor,
@@ -45,9 +45,9 @@ export default async function WorkspaceSettingsPage() {
           internalEmailDomains: workspace.internalEmailDomains,
           preparedByNote: workspace.preparedByNote,
         }}
-      />
+      /></div>
       <WorkspaceSettingsForm settings={workspace} />
-      <InvoiceSequenceCard sequence={invoiceSequence} />
+      <div className="max-w-5xl"><InvoiceSequenceCard sequence={invoiceSequence} /></div>
     </div>
   );
 }

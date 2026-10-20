@@ -555,10 +555,10 @@ export function ProjectsBrowser({ projects }: { projects: ProjectListItem[] }) {
   ].filter((filter): filter is NonNullable<typeof filter> => filter !== null);
 
   return (
-    <div className="space-y-4">
+    <div className="@container/projects min-w-0 space-y-4">
       <Card className="surface-shadow">
         <CardContent className="space-y-3 p-3 sm:p-4">
-          <div className="space-y-3 2xl:hidden">
+          <div className="space-y-3 @[76rem]/projects:hidden">
             <ProjectSearch
               value={query}
               onValueChange={setQuery}
@@ -723,7 +723,7 @@ export function ProjectsBrowser({ projects }: { projects: ProjectListItem[] }) {
             ) : null}
           </div>
 
-          <div className="hidden gap-3 2xl:grid 2xl:grid-cols-[minmax(12.5rem,1fr)_7.75rem_8rem_11.25rem_9.25rem_13.75rem_auto]">
+          <div className="hidden gap-3 @[76rem]/projects:grid @[76rem]/projects:grid-cols-[minmax(12.5rem,1fr)_7.75rem_8rem_11.25rem_9.25rem_13.75rem_auto]">
             <ProjectSearch value={query} onValueChange={setQuery} />
             <StatusSelect
               value={status}
@@ -767,7 +767,7 @@ export function ProjectsBrowser({ projects }: { projects: ProjectListItem[] }) {
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="hidden h-8 sm:inline-flex 2xl:hidden"
+                className="hidden h-8 sm:inline-flex @[76rem]/projects:hidden"
                 onClick={clearFilters}
               >
                 Clear all
@@ -787,7 +787,7 @@ export function ProjectsBrowser({ projects }: { projects: ProjectListItem[] }) {
               {currentProjects.length} project{currentProjects.length === 1 ? "" : "s"}
             </span>
           </div>
-          <StaggerGroup className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <StaggerGroup className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,21rem),1fr))] gap-4">
             {currentProjects.map((project) => (
               <StaggerItem key={project.id} className="h-full">
                 <ProjectCard p={project} />
@@ -837,46 +837,48 @@ export function ProjectsBrowser({ projects }: { projects: ProjectListItem[] }) {
             <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
           </summary>
 
-          <div className="grid border-t sm:grid-cols-2">
-            {archivedProjects.map((project) => (
-              <Link
-                key={project.id}
-                href={`/projects/${project.slug}`}
-                transitionTypes={["project-detail"]}
-                className="group/archive-row flex min-h-16 items-center gap-3 border-b px-4 py-3 transition-colors last:border-b-0 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:[&:nth-last-child(-n+2)]:border-b-0 sm:[&:nth-child(odd)]:border-r"
-              >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/8 font-heading text-sm font-semibold text-primary/80">
-                  {project.title.slice(0, 1).toUpperCase()}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium group-hover/archive-row:text-primary">
-                    {project.title}
+          <div className="overflow-hidden border-t">
+            <div className="-mb-px -mr-px grid grid-cols-[repeat(auto-fill,minmax(min(100%,22rem),1fr))]">
+              {archivedProjects.map((project) => (
+                <Link
+                  key={project.id}
+                  href={`/projects/${project.slug}`}
+                  transitionTypes={["project-detail"]}
+                  className="group/archive-row flex min-h-16 items-center gap-3 border-b border-r px-4 py-3 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                >
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/8 font-heading text-sm font-semibold text-primary/80">
+                    {project.title.slice(0, 1).toUpperCase()}
                   </span>
-                  <span className="mt-1 flex flex-wrap items-center gap-1.5">
-                    <ProjectStatusBadge status={project.status} />
-                    {project.kind ? (
-                      <span className="text-xs text-muted-foreground">
-                        {PROJECT_KIND_LABELS[project.kind as ProjectKind]}
-                      </span>
-                    ) : null}
-                    {isBookProjectKind(project.kind) ? (
-                      <PrintFundingBadge
-                        status={project.printFundingStatus}
-                        compact
-                      />
-                    ) : null}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium group-hover/archive-row:text-primary">
+                      {project.title}
+                    </span>
+                    <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                      <ProjectStatusBadge status={project.status} />
+                      {project.kind ? (
+                        <span className="text-xs text-muted-foreground">
+                          {PROJECT_KIND_LABELS[project.kind as ProjectKind]}
+                        </span>
+                      ) : null}
+                      {isBookProjectKind(project.kind) ? (
+                        <PrintFundingBadge
+                          status={project.printFundingStatus}
+                          compact
+                        />
+                      ) : null}
+                    </span>
                   </span>
-                </span>
-                <span className="hidden shrink-0 items-center gap-1 text-xs font-medium text-muted-foreground sm:flex">
-                  {project.status === "completed" &&
-                  project.kind !== "podcast" &&
-                  project.kind !== "video_series"
-                    ? "Details & reprints"
-                    : "View details"}
-                  <ArrowRight className="size-3.5" />
-                </span>
-              </Link>
-            ))}
+                  <span className="hidden shrink-0 items-center gap-1 text-xs font-medium text-muted-foreground sm:flex">
+                    {project.status === "completed" &&
+                    project.kind !== "podcast" &&
+                    project.kind !== "video_series"
+                      ? "Details & reprints"
+                      : "View details"}
+                    <ArrowRight className="size-3.5" />
+                  </span>
+                </Link>
+              ))}
+            </div>
           </div>
         </details>
       ) : null}

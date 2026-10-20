@@ -11,6 +11,7 @@ export function applyUniqueExactMouMatch(
 ): DonationAllocationDraft {
   if (
     allocation.mouPaymentId ||
+    allocation.invoiceId ||
     allocation.sharedMouGroupId ||
     !allocation.projectId ||
     !allocation.amount

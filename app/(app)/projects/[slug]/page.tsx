@@ -336,6 +336,9 @@ export default async function ProjectOverviewPage({
     }
   }
   const attentionDestinations = [...destinationMap.values()];
+  // Brief, correspondence, and analytics sit beside current work on wide
+  // screens; with none of them, the work region simply uses the full width.
+  const hasContext = canViewCorrespondence || Boolean(band) || Boolean(project.description);
 
   return (
     <div className="space-y-8">
@@ -381,221 +384,237 @@ export default async function ProjectOverviewPage({
 
       <ProjectSponsorshipFunds funds={sponsorshipFunds} />
 
-      <section className="space-y-3" aria-labelledby="current-work-heading">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 id="current-work-heading" className="text-base font-semibold">Current work</h2>
-          <span className="text-xs tabular-nums text-muted-foreground">{done}/{total} tasks done · {pct}%</span>
-        </div>
-        {currentWork.stageNames.length > 0 ? <p className="text-sm text-muted-foreground">{currentWork.started ? `Work underway: ${currentWork.stageNames.join(" · ")}` : `${currentWork.stageNames.length} stages with open work`} · <a href="#work-plan" className="underline underline-offset-4">View stages and owners</a></p> : null}
-        {currentWork.nextTask ? <Link href={`/projects/${project.slug}/tasks?run=all&task=${currentWork.nextTask.id}`} className="flex min-h-14 flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3 hover:bg-muted/40">
-          <span className="min-w-0"><span className="block text-xs text-muted-foreground">{currentWork.nextTask.assignedTo === session?.user.id ? "Your next action" : "Next saved task"}</span><span className="text-sm font-medium">{currentWork.nextTask.title}</span><span className="mt-1 block text-xs text-muted-foreground">{owners.get(currentWork.nextTask.assignedTo ?? "") ?? (currentWork.nextTask.assignedTo ? "Assigned teammate" : "Unassigned")}{currentWork.nextTask.dueDate ? ` · Due ${formatDate(currentWork.nextTask.dueDate)}` : ""}{currentWork.blocked ? " · Waiting on prerequisites" : ""}</span></span>
-          <span className="inline-flex items-center gap-1 text-sm text-primary">Open task <ArrowRight className="size-4" /></span>
-        </Link> : <p className="text-sm text-muted-foreground">{total ? "All saved tasks are complete." : "No tasks saved yet."} <Link href={`/projects/${project.slug}/tasks`} className="text-primary underline">{isManager && !projectClosed ? "Assign the next work" : "View tasks"}</Link></p>}
-      </section>
-
-      <div className="space-y-3">
-        <OverdueReasonCard
-          dueDate={project.dueDate}
-          status={project.status}
-          totalTasks={total}
-          doneTasks={done}
-          overdueTasks={overdueTasks}
-          blockerCount={projectBlockers.length}
-        />
-
-      {projectBlockers.length > 0 ? (
+      <div className="@container/overview min-w-0">
         <div
           className={cn(
-            "overflow-hidden rounded-xl border",
-            criticalCount > 0
-              ? "border-destructive/40 bg-destructive/5"
-              : "border-warning/40 bg-warning/5"
+            "grid min-w-0 items-start gap-8",
+            hasContext &&
+              "@[80rem]/overview:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)]"
           )}
         >
-          <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start">
-            <span
-              className={cn(
-                "grid size-9 shrink-0 place-items-center rounded-lg border bg-background/80",
-                criticalCount > 0
-                  ? "border-destructive/30 text-destructive"
-                  : "border-warning/30 text-warning-text"
-              )}
-            >
-              <AlertTriangle className="size-4" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-sm font-semibold">Attention needed</h2>
-                {criticalCount > 0 ? (
-                  <Badge variant="destructive">
-                    {criticalCount} critical
-                  </Badge>
-                ) : null}
-                {warningCount > 0 ? (
-                  <Badge
-                    variant="outline"
-                    className="border-warning/40 bg-warning/10 text-warning-text"
-                  >
-                    {warningCount} warning{warningCount === 1 ? "" : "s"}
-                  </Badge>
-                ) : null}
-                <HelpTip title="What needs attention?" side="bottom" align="start">
-                  Root issues that need action, such as missing rights, budget
-                  shortfalls, overdue work, or stalled tasks. A later production
-                  stage waiting for an earlier stage is normal pipeline flow and
-                  does not count as a blocker.
-                </HelpTip>
+          <div className="min-w-0 space-y-8">
+            <section className="space-y-3" aria-labelledby="current-work-heading">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 id="current-work-heading" className="text-base font-semibold">Current work</h2>
+                <span className="text-xs tabular-nums text-muted-foreground">{done}/{total} tasks done · {pct}%</span>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Root issues only — normal production sequencing is shown as
-                waiting in the pipeline.
-              </p>
-            </div>
-            <span className="flex shrink-0 items-center gap-2 font-normal sm:ml-auto">
-              {project.healthComputedAt ? (
-                <span className="text-xs text-muted-foreground">
-                  Checked {timeAgo(project.healthComputedAt)}
-                </span>
-              ) : null}
-              {isManager ? <RefreshHealthButton projectId={project.id} /> : null}
-            </span>
-          </div>
-          <ul className="divide-y border-y bg-background/60">
-            {visibleAttention.map((blocker) => (
-              <li key={blocker.id}>
-                <Link
-                  href={blocker.href}
-                  className="group flex min-h-12 items-center gap-3 px-4 py-2.5 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-                >
+              {currentWork.stageNames.length > 0 ? <p className="text-sm text-muted-foreground">{currentWork.started ? `Work underway: ${currentWork.stageNames.join(" · ")}` : `${currentWork.stageNames.length} stages with open work`} · <a href="#work-plan" className="underline underline-offset-4">View stages and owners</a></p> : null}
+              {currentWork.nextTask ? <Link href={`/projects/${project.slug}/tasks?run=all&task=${currentWork.nextTask.id}`} className="flex min-h-14 flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3 hover:bg-muted/40">
+                <span className="min-w-0"><span className="block text-xs text-muted-foreground">{currentWork.nextTask.assignedTo === session?.user.id ? "Your next action" : "Next saved task"}</span><span className="text-sm font-medium">{currentWork.nextTask.title}</span><span className="mt-1 block text-xs text-muted-foreground">{owners.get(currentWork.nextTask.assignedTo ?? "") ?? (currentWork.nextTask.assignedTo ? "Assigned teammate" : "Unassigned")}{currentWork.nextTask.dueDate ? ` · Due ${formatDate(currentWork.nextTask.dueDate)}` : ""}{currentWork.blocked ? " · Waiting on prerequisites" : ""}</span></span>
+                <span className="inline-flex items-center gap-1 text-sm text-primary">Open task <ArrowRight className="size-4" /></span>
+              </Link> : <p className="text-sm text-muted-foreground">{total ? "All saved tasks are complete." : "No tasks saved yet."} <Link href={`/projects/${project.slug}/tasks`} className="text-primary underline">{isManager && !projectClosed ? "Assign the next work" : "View tasks"}</Link></p>}
+            </section>
+
+            <div className="space-y-3">
+              <OverdueReasonCard
+                dueDate={project.dueDate}
+                status={project.status}
+                totalTasks={total}
+                doneTasks={done}
+                overdueTasks={overdueTasks}
+                blockerCount={projectBlockers.length}
+              />
+
+            {projectBlockers.length > 0 ? (
+              <div
+                className={cn(
+                  "overflow-hidden rounded-xl border",
+                  criticalCount > 0
+                    ? "border-destructive/40 bg-destructive/5"
+                    : "border-warning/40 bg-warning/5"
+                )}
+              >
+                <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start">
                   <span
                     className={cn(
-                      "size-2 shrink-0 rounded-full",
-                      blocker.severity === "critical"
-                        ? "bg-destructive"
-                        : "bg-warning"
+                      "grid size-9 shrink-0 place-items-center rounded-lg border bg-background/80",
+                      criticalCount > 0
+                        ? "border-destructive/30 text-destructive"
+                        : "border-warning/30 text-warning-text"
                     )}
-                    aria-hidden
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium leading-snug">
-                      {blocker.title}
-                    </span>
-                    {blocker.downstreamCount > 0 ? (
-                      <span className="mt-0.5 block text-xs text-muted-foreground">
-                        {blocker.downstreamCount} later stage
-                        {blocker.downstreamCount === 1 ? " is" : "s are"} waiting
+                  >
+                    <AlertTriangle className="size-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-sm font-semibold">Attention needed</h2>
+                      {criticalCount > 0 ? (
+                        <Badge variant="destructive">
+                          {criticalCount} critical
+                        </Badge>
+                      ) : null}
+                      {warningCount > 0 ? (
+                        <Badge
+                          variant="outline"
+                          className="border-warning/40 bg-warning/10 text-warning-text"
+                        >
+                          {warningCount} warning{warningCount === 1 ? "" : "s"}
+                        </Badge>
+                      ) : null}
+                      <HelpTip title="What needs attention?" side="bottom" align="start">
+                        Root issues that need action, such as missing rights, budget
+                        shortfalls, overdue work, or stalled tasks. A later production
+                        stage waiting for an earlier stage is normal pipeline flow and
+                        does not count as a blocker.
+                      </HelpTip>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Root issues only — normal production sequencing is shown as
+                      waiting in the pipeline.
+                    </p>
+                  </div>
+                  <span className="flex shrink-0 items-center gap-2 font-normal sm:ml-auto">
+                    {project.healthComputedAt ? (
+                      <span className="text-xs text-muted-foreground">
+                        Checked {timeAgo(project.healthComputedAt)}
                       </span>
                     ) : null}
+                    {isManager ? <RefreshHealthButton projectId={project.id} /> : null}
                   </span>
-                  <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-                    <span className="hidden sm:inline">{blocker.label}</span>
-                    <ArrowRight className="size-3.5" />
+                </div>
+                <ul className="divide-y border-y bg-background/60">
+                  {visibleAttention.map((blocker) => (
+                    <li key={blocker.id}>
+                      <Link
+                        href={blocker.href}
+                        className="group flex min-h-12 items-center gap-3 px-4 py-2.5 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                      >
+                        <span
+                          className={cn(
+                            "size-2 shrink-0 rounded-full",
+                            blocker.severity === "critical"
+                              ? "bg-destructive"
+                              : "bg-warning"
+                          )}
+                          aria-hidden
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-medium leading-snug">
+                            {blocker.title}
+                          </span>
+                          {blocker.downstreamCount > 0 ? (
+                            <span className="mt-0.5 block text-xs text-muted-foreground">
+                              {blocker.downstreamCount} later stage
+                              {blocker.downstreamCount === 1 ? " is" : "s are"} waiting
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                          <span className="hidden sm:inline">{blocker.label}</span>
+                          <ArrowRight className="size-3.5" />
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                {attentionRows.length > ATTENTION_PREVIEW_LIMIT ? (
+                  <div className="flex flex-col gap-2 px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between">
+                    <span className="text-muted-foreground">
+                      +{attentionRows.length - ATTENTION_PREVIEW_LIMIT} more root issue
+                      {attentionRows.length - ATTENTION_PREVIEW_LIMIT === 1 ? "" : "s"}
+                    </span>
+                    <span className="flex flex-wrap gap-x-3 gap-y-1">
+                      {attentionDestinations.map((destination) => (
+                        <Link
+                          key={destination.href}
+                          href={destination.href}
+                          className="font-medium text-foreground underline-offset-4 hover:underline"
+                        >
+                          {destination.label} ({destination.count})
+                        </Link>
+                      ))}
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+            ) : isManager && !projectClosed ? (
+              <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
+                {project.healthComputedAt ? (
+                  <span>Health checked {timeAgo(project.healthComputedAt)}</span>
+                ) : (
+                  <span>Health not computed yet</span>
+                )}
+                <RefreshHealthButton projectId={project.id} />
+              </div>
+            ) : null}
+
+            {compliance.total > 0 ? (
+              <Link
+                href={`/projects/${slug}/rights#obligations`}
+                className="flex items-center gap-2 rounded-lg border border-info/30 bg-info/5 px-4 py-2.5 text-sm transition-colors hover:bg-info/10"
+              >
+                <ShieldCheck className="size-4 text-info" />
+                <span className="font-medium">
+                  {compliance.total} license obligation
+                  {compliance.total === 1 ? "" : "s"}
+                </span>
+                {compliance.openTaskCount > 0 ? (
+                  <span className="text-muted-foreground">
+                    · {compliance.openTaskCount} open task
+                    {compliance.openTaskCount === 1 ? "" : "s"}
                   </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-          {attentionRows.length > ATTENTION_PREVIEW_LIMIT ? (
-            <div className="flex flex-col gap-2 px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between">
-              <span className="text-muted-foreground">
-                +{attentionRows.length - ATTENTION_PREVIEW_LIMIT} more root issue
-                {attentionRows.length - ATTENTION_PREVIEW_LIMIT === 1 ? "" : "s"}
-              </span>
-              <span className="flex flex-wrap gap-x-3 gap-y-1">
-                {attentionDestinations.map((destination) => (
-                  <Link
-                    key={destination.href}
-                    href={destination.href}
-                    className="font-medium text-foreground underline-offset-4 hover:underline"
-                  >
-                    {destination.label} ({destination.count})
-                  </Link>
-                ))}
-              </span>
+                ) : null}
+                <span className="ml-auto text-xs text-muted-foreground">
+                  View on Rights →
+                </span>
+              </Link>
+            ) : null}
+
+              {externalFollowUps.length > 0 ? (
+                <section className="space-y-3" aria-labelledby="external-follow-ups-heading">
+                  <div>
+                    <h2 id="external-follow-ups-heading" className="text-sm font-semibold">
+                      External follow-up
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      Project-linked email currently waiting on someone outside the team.
+                    </p>
+                  </div>
+                  {externalFollowUps.map((followUp) => (
+                    <ExternalFollowUpCard
+                      key={followUp.id}
+                      followUp={followUp}
+                      allowProjectUpdate
+                    />
+                  ))}
+                </section>
+              ) : null}
+            </div>
+          </div>
+
+          {hasContext ? (
+            <div className="min-w-0 space-y-8">
+              {canViewCorrespondence ? (
+                <SectionDisclosure id="project-correspondence" title="Recent correspondence" summary={`${recentThreads.length} threads`}>
+                  <ProjectCorrespondencePreview
+                    threads={recentThreads}
+                    projectSlug={project.slug}
+                  />
+                </SectionDisclosure>
+              ) : null}
+
+            {band ? <SectionDisclosure id="manager-analytics" title="Project analytics" description="Funding, rights, forecast, and team capacity">{band}</SectionDisclosure> : null}
+
+            {project.description ? (
+              <section
+                className="border-l-2 border-primary/30 pl-4"
+                aria-labelledby="project-brief-heading"
+              >
+                <h2
+                  id="project-brief-heading"
+                  className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                >
+                  Project brief
+                </h2>
+                <p className="mt-1 max-w-4xl text-sm leading-relaxed text-foreground/80">
+                  {project.description}
+                </p>
+              </section>
+            ) : null}
             </div>
           ) : null}
         </div>
-      ) : isManager && !projectClosed ? (
-        <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
-          {project.healthComputedAt ? (
-            <span>Health checked {timeAgo(project.healthComputedAt)}</span>
-          ) : (
-            <span>Health not computed yet</span>
-          )}
-          <RefreshHealthButton projectId={project.id} />
-        </div>
-      ) : null}
-
-      {compliance.total > 0 ? (
-        <Link
-          href={`/projects/${slug}/rights#obligations`}
-          className="flex items-center gap-2 rounded-lg border border-info/30 bg-info/5 px-4 py-2.5 text-sm transition-colors hover:bg-info/10"
-        >
-          <ShieldCheck className="size-4 text-info" />
-          <span className="font-medium">
-            {compliance.total} license obligation
-            {compliance.total === 1 ? "" : "s"}
-          </span>
-          {compliance.openTaskCount > 0 ? (
-            <span className="text-muted-foreground">
-              · {compliance.openTaskCount} open task
-              {compliance.openTaskCount === 1 ? "" : "s"}
-            </span>
-          ) : null}
-          <span className="ml-auto text-xs text-muted-foreground">
-            View on Rights →
-          </span>
-        </Link>
-      ) : null}
-
-        {externalFollowUps.length > 0 ? (
-          <section className="space-y-3" aria-labelledby="external-follow-ups-heading">
-            <div>
-              <h2 id="external-follow-ups-heading" className="text-sm font-semibold">
-                External follow-up
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                Project-linked email currently waiting on someone outside the team.
-              </p>
-            </div>
-            {externalFollowUps.map((followUp) => (
-              <ExternalFollowUpCard
-                key={followUp.id}
-                followUp={followUp}
-                allowProjectUpdate
-              />
-            ))}
-          </section>
-        ) : null}
       </div>
-
-        {canViewCorrespondence ? (
-          <SectionDisclosure id="project-correspondence" title="Recent correspondence" summary={`${recentThreads.length} threads`}>
-            <ProjectCorrespondencePreview
-              threads={recentThreads}
-              projectSlug={project.slug}
-            />
-          </SectionDisclosure>
-        ) : null}
-
-      {band ? <SectionDisclosure id="manager-analytics" title="Project analytics" description="Funding, rights, forecast, and team capacity">{band}</SectionDisclosure> : null}
-
-      {project.description ? (
-        <section
-          className="border-l-2 border-primary/30 pl-4"
-          aria-labelledby="project-brief-heading"
-        >
-          <h2
-            id="project-brief-heading"
-            className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
-          >
-            Project brief
-          </h2>
-          <p className="mt-1 max-w-4xl text-sm leading-relaxed text-foreground/80">
-            {project.description}
-          </p>
-        </section>
-      ) : null}
 
       {phases.length > 0 || tasks.some((t) => t.dueDate) ? (
         <SectionDisclosure id="project-timeline" title="Timeline" summary={`${tasks.filter(t => t.dueDate).length} dated tasks`}>
@@ -629,7 +648,7 @@ export default async function ProjectOverviewPage({
       ) : null}
 
       <SectionDisclosure id="work-plan" title="Stages and team" summary={`${phases.length} stages · ${members.length} members`}>
-        <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="@container/plan min-w-0"><div className="grid min-w-0 items-start gap-6 @[56rem]/plan:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="min-w-0 space-y-4">
             <div>
               <h3 className="mb-3 text-sm font-semibold">Stages</h3>
@@ -812,6 +831,7 @@ export default async function ProjectOverviewPage({
               </div>
             </CardContent>
           </Card>
+        </div>
         </div>
       </SectionDisclosure>
 

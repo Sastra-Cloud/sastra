@@ -79,60 +79,62 @@ export function MembershipManager({
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 rounded-lg border bg-muted/20 p-3 sm:grid-cols-[1fr_9rem_1.4fr_auto] sm:items-end">
-        <div className="grid gap-1">
-          <Label>Add project</Label>
-          <select
-            className={selectClass}
-            value={projectId}
-            onChange={(event) => setProjectId(event.target.value)}
+      <div className="@container/add-project min-w-0">
+        <div className="grid gap-3 rounded-lg border bg-muted/20 p-3 @[36rem]/add-project:grid-cols-[1fr_9rem_1.4fr_auto] @[36rem]/add-project:items-end">
+          <div className="grid gap-1">
+            <Label>Add project</Label>
+            <select
+              className={selectClass}
+              value={projectId}
+              onChange={(event) => setProjectId(event.target.value)}
+            >
+              <option value="">Choose project</option>
+              {available.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.title}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="grid gap-1">
+            <Label>Allocation</Label>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={allocation}
+              onChange={(event) => setAllocation(event.target.value)}
+            />
+          </div>
+          <div className="grid gap-1">
+            <Label>Required reason</Label>
+            <Input
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder="Why the agreement roster is changing"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={pending || !projectId || !allocation || reason.trim().length < 5}
+            onClick={() =>
+              run(
+                () =>
+                  addSharedMouMember({
+                    groupId,
+                    projectId,
+                    allocationAmount: allocation,
+                    reason,
+                  }),
+                "Project added."
+              )
+            }
           >
-            <option value="">Choose project</option>
-            {available.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.title}
-              </option>
-            ))}
-          </select>
+            {pending ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+            Add
+          </Button>
         </div>
-        <div className="grid gap-1">
-          <Label>Allocation</Label>
-          <Input
-            type="number"
-            min="0"
-            step="0.01"
-            value={allocation}
-            onChange={(event) => setAllocation(event.target.value)}
-          />
-        </div>
-        <div className="grid gap-1">
-          <Label>Required reason</Label>
-          <Input
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-            placeholder="Why the agreement roster is changing"
-          />
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={pending || !projectId || !allocation || reason.trim().length < 5}
-          onClick={() =>
-            run(
-              () =>
-                addSharedMouMember({
-                  groupId,
-                  projectId,
-                  allocationAmount: allocation,
-                  reason,
-                }),
-              "Project added."
-            )
-          }
-        >
-          {pending ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
-          Add
-        </Button>
       </div>
 
       <div className="space-y-2">
@@ -166,100 +168,102 @@ function MemberMutationRow({
   const [reason, setReason] = useState("");
   const validReason = reason.trim().length >= 5;
   return (
-    <div className="grid gap-2 rounded-lg border p-3 lg:grid-cols-[minmax(12rem,1fr)_8rem_minmax(13rem,1.2fr)_minmax(12rem,1fr)_auto] lg:items-end">
-      <div>
-        <p className="text-sm font-medium">{member.title}</p>
-        <p className="text-xs text-muted-foreground">Audited membership</p>
-      </div>
-      <div className="grid gap-1">
-        <Label className="text-xs">Allocation</Label>
-        <Input
-          type="number"
-          min="0"
-          step="0.01"
-          value={amount}
-          onChange={(event) => setAmount(event.target.value)}
-        />
-      </div>
-      <div className="grid gap-1">
-        <Label className="text-xs">Replace with</Label>
-        <select
-          className={selectClass}
-          value={replacement}
-          onChange={(event) => setReplacement(event.target.value)}
-        >
-          <option value="">No replacement</option>
-          {available.map((project) => (
-            <option key={project.id} value={project.id}>
-              {project.title}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="grid gap-1">
-        <Label className="text-xs">Required reason</Label>
-        <Input
-          value={reason}
-          onChange={(event) => setReason(event.target.value)}
-          placeholder="Reason for this change"
-        />
-      </div>
-      <div className="flex flex-wrap gap-1 lg:justify-end">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon-sm"
-          aria-label={`Save ${member.title} allocation`}
-          disabled={disabled || !validReason || amount === member.allocationAmount}
-          onClick={() =>
-            run(
-              () =>
-                updateSharedMouAllocation({
-                  membershipId: member.id,
-                  allocationAmount: amount,
-                  reason,
-                }),
-              "Allocation updated."
-            )
-          }
-        >
-          <Save className="size-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon-sm"
-          aria-label={`Replace ${member.title}`}
-          disabled={disabled || !validReason || !replacement}
-          onClick={() =>
-            run(
-              () =>
-                replaceSharedMouMember({
-                  membershipId: member.id,
-                  projectId: replacement,
-                  reason,
-                }),
-              "Project replaced."
-            )
-          }
-        >
-          <ArrowRightLeft className="size-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          aria-label={`Remove ${member.title}`}
-          disabled={disabled || !validReason}
-          onClick={() =>
-            run(
-              () => removeSharedMouMember({ membershipId: member.id, reason }),
-              "Project removed."
-            )
-          }
-        >
-          <Trash2 className="size-4" />
-        </Button>
+    <div className="@container/member min-w-0">
+      <div className="grid gap-2 rounded-lg border p-3 @[28rem]/member:grid-cols-2 @[56rem]/member:grid-cols-[minmax(12rem,1fr)_8rem_minmax(13rem,1.2fr)_minmax(12rem,1fr)_auto] @[56rem]/member:items-end">
+        <div className="@[28rem]/member:col-span-2 @[56rem]/member:col-span-1">
+          <p className="text-sm font-medium">{member.title}</p>
+          <p className="text-xs text-muted-foreground">Audited membership</p>
+        </div>
+        <div className="grid gap-1">
+          <Label className="text-xs">Allocation</Label>
+          <Input
+            type="number"
+            min="0"
+            step="0.01"
+            value={amount}
+            onChange={(event) => setAmount(event.target.value)}
+          />
+        </div>
+        <div className="grid gap-1">
+          <Label className="text-xs">Replace with</Label>
+          <select
+            className={selectClass}
+            value={replacement}
+            onChange={(event) => setReplacement(event.target.value)}
+          >
+            <option value="">No replacement</option>
+            {available.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.title}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="grid gap-1 @[28rem]/member:col-span-2 @[56rem]/member:col-span-1">
+          <Label className="text-xs">Required reason</Label>
+          <Input
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            placeholder="Reason for this change"
+          />
+        </div>
+        <div className="flex flex-wrap gap-1 @[28rem]/member:col-span-2 @[56rem]/member:col-span-1 @[56rem]/member:justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            aria-label={`Save ${member.title} allocation`}
+            disabled={disabled || !validReason || amount === member.allocationAmount}
+            onClick={() =>
+              run(
+                () =>
+                  updateSharedMouAllocation({
+                    membershipId: member.id,
+                    allocationAmount: amount,
+                    reason,
+                  }),
+                "Allocation updated."
+              )
+            }
+          >
+            <Save className="size-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            aria-label={`Replace ${member.title}`}
+            disabled={disabled || !validReason || !replacement}
+            onClick={() =>
+              run(
+                () =>
+                  replaceSharedMouMember({
+                    membershipId: member.id,
+                    projectId: replacement,
+                    reason,
+                  }),
+                "Project replaced."
+              )
+            }
+          >
+            <ArrowRightLeft className="size-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={`Remove ${member.title}`}
+            disabled={disabled || !validReason}
+            onClick={() =>
+              run(
+                () => removeSharedMouMember({ membershipId: member.id, reason }),
+                "Project removed."
+              )
+            }
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -347,44 +351,46 @@ export function SharedPaymentControls({
     });
   return (
     <div className="space-y-3 border-t pt-3">
-      <div className="grid gap-2 sm:grid-cols-[10rem_12rem_1fr_auto] sm:items-end">
-        <div className="grid gap-1">
-          <Label className="text-xs">Earliest invoice date</Label>
-          <Input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} />
+      <div className="@container/schedule min-w-0">
+        <div className="grid gap-2 @[28rem]/schedule:grid-cols-2 @[48rem]/schedule:grid-cols-[10rem_12rem_1fr_auto] @[48rem]/schedule:items-end">
+          <div className="grid gap-1">
+            <Label className="text-xs">Earliest invoice date</Label>
+            <Input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} />
+          </div>
+          <div className="grid gap-1">
+            <Label className="text-xs">Invoice owner</Label>
+            <select className={selectClass} value={assignee} onChange={(event) => setAssignee(event.target.value)}>
+              <option value="">Unassigned</option>
+              {assignees.map((person) => (
+                <option key={person.id} value={person.id}>{person.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="grid gap-1">
+            <Label className="text-xs">Schedule notes</Label>
+            <Input value={notes} onChange={(event) => setNotes(event.target.value)} />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={pending}
+            onClick={() =>
+              act(
+                () =>
+                  updateSharedMouPayment({
+                    paymentId: payment.id,
+                    dueDate: dueDate || null,
+                    invoiceAssigneeId: assignee || null,
+                    notes,
+                  }),
+                "Payment schedule updated."
+              )
+            }
+          >
+            <Save className="size-4" /> Save
+          </Button>
         </div>
-        <div className="grid gap-1">
-          <Label className="text-xs">Invoice owner</Label>
-          <select className={selectClass} value={assignee} onChange={(event) => setAssignee(event.target.value)}>
-            <option value="">Unassigned</option>
-            {assignees.map((person) => (
-              <option key={person.id} value={person.id}>{person.name}</option>
-            ))}
-          </select>
-        </div>
-        <div className="grid gap-1">
-          <Label className="text-xs">Schedule notes</Label>
-          <Input value={notes} onChange={(event) => setNotes(event.target.value)} />
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={pending}
-          onClick={() =>
-            act(
-              () =>
-                updateSharedMouPayment({
-                  paymentId: payment.id,
-                  dueDate: dueDate || null,
-                  invoiceAssigneeId: assignee || null,
-                  notes,
-                }),
-              "Payment schedule updated."
-            )
-          }
-        >
-          <Save className="size-4" /> Save
-        </Button>
       </div>
       {(!payment.invoiceId || canRegenerate) && invoiceDefaults && <div className="space-y-2">
         <p className="text-sm">Bill To: {invoiceDefaults.recipientName || "Funding partner"}</p>

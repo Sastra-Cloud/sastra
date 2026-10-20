@@ -15,7 +15,7 @@ if (!apiKey) {
   process.exit(0);
 }
 
-const model = process.env.ASSISTANT_EVAL_MODEL ?? "openai/gpt-5-mini";
+const model = process.env.ASSISTANT_EVAL_MODEL ?? "openai/gpt-5.4-mini";
 const strict = process.argv.includes("--strict");
 const trialsArg = process.argv.find((arg) => arg.startsWith("--trials="));
 const trials = Math.max(1, Math.min(5, Number(trialsArg?.split("=")[1] ?? 1)));

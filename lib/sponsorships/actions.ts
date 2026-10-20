@@ -7,7 +7,7 @@ import { z } from "zod";
 import { requireRole } from "@/lib/auth/guards";
 import { requireWorkspaceModule } from "@/lib/workspace/module-guard";
 import { db } from "@/lib/db";
-import { activityLog, files, invoiceDeliveries, invoices, partners, projects, sponsorshipFundUses, sponsorshipLines, sponsorshipReceiptAllocations, sponsorshipReceipts, sponsorships } from "@/lib/db/schema";
+import { donationAllocations, activityLog, files, invoiceDeliveries, invoices, partners, projects, sponsorshipFundUses, sponsorshipLines, sponsorshipReceiptAllocations, sponsorshipReceipts, sponsorships } from "@/lib/db/schema";
 import { allocateSponsorshipCents, decimalAmount, fundUseInputSchema, moneyCents, receiptInputSchema, sponsorshipInputSchema, sponsorshipProjectShares, sponsorshipTotalCents, type SponsorshipFundUseInput, type SponsorshipInput, type SponsorshipReceiptInput } from "./compute";
 import { getInvoiceIssuerSnapshot } from "@/lib/workspace/queries";
 import { nextInvoiceNumber } from "@/lib/budget/invoice-number";
@@ -239,6 +239,8 @@ export async function reverseSponsorshipReceipt(id: string, receiptId: string, r
     await tx.select({ id: sponsorships.id }).from(sponsorships).where(eq(sponsorships.id, id)).for("update");
     const [receipt] = await tx.select().from(sponsorshipReceipts).where(and(eq(sponsorshipReceipts.id, receiptId), eq(sponsorshipReceipts.sponsorshipId, id))).for("update");
     if (!receipt || receipt.reversedAt) return { error: "This payment was already reversed. Refresh the funding history." };
+    const imported = await tx.select({ id: donationAllocations.id }).from(donationAllocations).where(eq(donationAllocations.sponsorshipReceiptId, receiptId)).limit(1);
+    if (imported.length) return { error: "This payment came from a donation import. Correct its allocations on the Donations page." };
     const [invoice] = await tx.select().from(invoices).where(eq(invoices.id, receipt.invoiceId)).for("update");
     const allocations = await tx.select().from(sponsorshipReceiptAllocations).where(eq(sponsorshipReceiptAllocations.receiptId, receiptId));
     const [allAllocations, uses] = await Promise.all([

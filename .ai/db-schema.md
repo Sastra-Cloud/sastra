@@ -112,6 +112,7 @@ Table and enum exports parsed from `lib/db/schema/`.
 ## `lib/db/schema/donations.ts`
 
 - `donationAllocations` (pgTable)
+- `donationCsvFormats` (pgTable)
 - `donationImports` (pgTable)
 - `donationReviews` (pgTable)
 - `donations` (pgTable)

@@ -1,4 +1,3 @@
-import { BriefcaseBusiness } from "lucide-react";
 import { fromZonedTime } from "date-fns-tz";
 
 import { requireUser } from "@/lib/auth/guards";
@@ -11,6 +10,7 @@ import { getActiveTimer, getUserTrackedSeconds } from "@/lib/tasks/time-queries"
 import { isAutoStartEnabled } from "@/lib/tasks/time-service";
 import { getWorkspaceSettings } from "@/lib/workspace/queries";
 import { MyWorkHub } from "@/components/tasks/my-work-hub";
+import { PageShell } from "@/components/cockpit";
 import { listPendingEmailTaskSuggestionsForUser } from "@/lib/email/task-suggestions";
 import { listEmailTaskRulesForUser } from "@/lib/email/task-rule-queries";
 import { projectOptionLabel } from "@/lib/projects/visibility";
@@ -82,22 +82,15 @@ export default async function TasksPage({
   const followUpNow = new Date().getTime();
 
   return (
-    <div className="w-full space-y-6">
-      <div className="surface-shadow flex flex-col gap-4 rounded-xl border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
-            <BriefcaseBusiness className="size-6" />
-          </span>
-          <div className="min-w-0">
-            <h1 className="font-heading text-3xl font-semibold tracking-tight">
-              My Work
-            </h1>
-            <p className="text-muted-foreground">
-              Start with assigned work, or use Board and Agenda to plan ahead.
-            </p>
-          </div>
-        </div>
-      </div>
+    <PageShell>
+      <header>
+        <h1 className="font-heading text-3xl font-semibold tracking-tight">
+          My Work
+        </h1>
+        <p className="mt-1 max-w-2xl text-pretty text-muted-foreground">
+          Start with assigned work, or use Board and Agenda to plan ahead.
+        </p>
+      </header>
 
       <MyWorkHub
         initialTasks={myTasks}
@@ -124,6 +117,6 @@ export default async function TasksPage({
           (item) => externalFollowUpEffectiveDueAt(item).getTime() <= followUpNow
         )}
       />
-    </div>
+    </PageShell>
   );
 }

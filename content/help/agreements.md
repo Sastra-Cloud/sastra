@@ -114,3 +114,11 @@ remain unchanged and require the reviewed void-and-replacement workflow.
 
 Invoice PDFs display issue and payment-due dates in U.S. order (MM/DD/YYYY).
 Use **Regenerate PDF** on an eligible unsent invoice to apply this formatting.
+
+## On wide screens
+
+The **Shared MoUs** list shows more agreements in each row on a wide screen. On
+an agreement, the covered projects and payments sit beside a side panel (source
+agreement, receipts, notes, and history) when there is room; otherwise they stack. In **Review MoU funding**, the covered
+projects and the installments sit side by side. You still confirm the review
+before funding is approved.

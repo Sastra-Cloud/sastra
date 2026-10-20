@@ -1,3 +1,5 @@
+import { appUrl } from "./transport";
+
 export type BaseLayoutOptions = {
   preheader?: string;
   workspaceName?: string;
@@ -31,6 +33,9 @@ export function baseLayout(content: string, options: BaseLayoutOptions = {}): st
   const workspaceLine = options.workspaceName?.trim()
     ? `Sent from ${escapeHtml(options.workspaceName.trim())} through Sastra.<br>`
     : "";
+  const workspaceHeading = options.workspaceName?.trim()
+    ? `<p class="email-muted" style="margin:12px 0 0;color:#52525b;font-size:14px;line-height:1.5;">${escapeHtml(options.workspaceName.trim())}</p>`
+    : "";
   const preheader = options.preheader?.trim()
     ? `<div class="email-preheader" style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;mso-hide:all;">${escapeHtml(options.preheader.trim())}&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;</div>`
     : "";
@@ -55,12 +60,10 @@ export function baseLayout(content: string, options: BaseLayoutOptions = {}): st
       .email-brand, .email-content, .email-content h1, .email-content h2,
       .email-content h3, .email-content p, .email-content li,
       .email-content a:not(.email-cta-link) { color: #f4f4f5 !important; }
-      .email-content .email-muted { color: #d4d4d8 !important; }
+      .email-muted { color: #d4d4d8 !important; }
       .email-content .email-divider { border-color: #3f3f46 !important; }
       .email-footer { background: #18181b !important; border-color: #3f3f46 !important; color: #d4d4d8 !important; }
       .email-footer a { color: #d4d4d8 !important; }
-      .email-cta-cell { background: #f4f4f5 !important; }
-      .email-cta-link { color: #18181b !important; }
     }
     @media (forced-colors: active) {
       .email-cta-cell { background: ButtonFace !important; border: 1px solid ButtonText !important; }
@@ -68,15 +71,19 @@ export function baseLayout(content: string, options: BaseLayoutOptions = {}): st
     }
   </style>
 </head>
-<body class="email-body" style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<body class="email-body" style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;overflow-wrap:break-word;word-wrap:break-word;">
   ${preheader}
   <table class="email-page" role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 12px;">
     <tr>
       <td align="center">
-        <table class="email-card" role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e4e4e7;">
+        <table class="email-card" role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;table-layout:fixed;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e4e4e7;">
           <tr>
             <td class="email-brand" style="padding:24px 32px 8px 32px;color:#18181b;">
-              <span style="font-size:18px;font-weight:700;letter-spacing:-0.01em;">Sastra</span>
+              <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+                <td width="44" style="vertical-align:middle;"><img src="${escapeHtml(new URL("/icons/icon-192.png", appUrl).toString())}" width="32" height="32" alt="" style="display:block;border:0;border-radius:8px;"></td>
+                <td style="vertical-align:middle;"><span style="font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:700;letter-spacing:-0.02em;">Sastra</span></td>
+              </tr></table>
+              ${workspaceHeading}
             </td>
           </tr>
           <tr>
@@ -100,7 +107,7 @@ export function baseLayout(content: string, options: BaseLayoutOptions = {}): st
 /** A consistent, touch-friendly primary CTA button. */
 export function ctaButton(label: string, url: string): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:22px 0;">
-    <tr><td class="email-cta-cell" style="border-radius:10px;background:#18181b;">
+    <tr><td class="email-cta-cell" style="border-radius:10px;background:#B65C3A;">
       <a class="email-cta-link" href="${escapeHtml(url)}" style="display:inline-block;padding:12px 22px;min-height:20px;color:#ffffff;text-decoration:none;font-size:16px;line-height:20px;font-weight:600;">${escapeHtml(label)}</a>
     </td></tr>
   </table>`;

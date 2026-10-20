@@ -115,15 +115,16 @@ export default async function HelpGuidePage({
           ) : undefined
         }
       />
-      <div className="grid items-start gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
-        <aside className="min-w-0 lg:sticky lg:top-24">
-          <div className="hidden rounded-xl border bg-card p-4 lg:block">
+      <div className="@container/guide min-w-0">
+      <div className="grid items-start gap-6 @[52rem]/guide:grid-cols-[16rem_minmax(0,68rem)]">
+        <aside className="min-w-0 @[52rem]/guide:sticky @[52rem]/guide:top-24">
+          <div className="hidden rounded-xl border bg-card p-4 @[52rem]/guide:block">
             <h2 className="py-2 text-sm font-semibold">
               More in {doc.category}
             </h2>
             {relatedLinks}
           </div>
-          <details className="rounded-xl border bg-card p-4 lg:hidden">
+          <details className="rounded-xl border bg-card p-4 @[52rem]/guide:hidden">
             <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold">
               Browse related guides
             </summary>
@@ -182,6 +183,7 @@ export default async function HelpGuidePage({
             )}
           </nav>
         </article>
+      </div>
       </div>
     </PageShell>
   );

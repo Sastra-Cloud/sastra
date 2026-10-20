@@ -52,9 +52,20 @@ describe("Home task preview", () => {
   it("moves a rescheduled task between sections and omits completed tasks", () => {
     const rows = [task("rescheduled-task", "2026-10-01"), task("completed-task", today)];
     const html = renderToStaticMarkup(<MyTasksList tasks={rows.map(t => t.id === "rescheduled-task" ? { ...t, dueDate: today } : { ...t, status: "done" })} homePreview todayIso={today} />);
-    expect(html.indexOf("rescheduled-task")).toBeLessThan(html.indexOf("Your next tasks"));
+    expect(html).toContain('data-task-id="rescheduled-task"');
+    expect(html).toContain("1 due today");
     expect(html).not.toContain("completed-task");
-    expect(html).toContain("No other tasks need attention right now");
+    expect(html).not.toContain("No other tasks need attention right now");
+    expect(html).not.toContain('id="home-next-tasks-heading"');
     expect(html).toContain("Due today");
+  });
+
+  it("shows one quiet state when all remaining work is planned for later", () => {
+    const html = renderToStaticMarkup(<MyTasksList tasks={[task("future-task", "2027-02-01")]} homePreview todayIso={today} />);
+    expect(html).toContain("No tasks due today.");
+    expect(html).toContain("No other tasks need attention right now");
+    expect(html).toContain("1 planned for later");
+    expect(html).not.toContain('id="home-due-today-heading"');
+    expect(html).not.toContain('id="home-next-tasks-heading"');
   });
 });

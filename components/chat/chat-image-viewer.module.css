@@ -1,0 +1,93 @@
+.viewer {
+  background: var(--background);
+  --yarl__portal_zindex: 70;
+  --yarl__color_backdrop: var(--background);
+  --yarl__color_button: var(--foreground);
+  --yarl__color_button_active: var(--foreground);
+  --yarl__color_button_disabled: var(--muted-foreground);
+  --yarl__button_filter: none;
+  --yarl__button_padding: 10px;
+  --yarl__icon_size: 24px;
+  --yarl__navigation_button_padding: 10px;
+}
+
+.viewer :global(.yarl__container) {
+  top: calc(4rem + env(safe-area-inset-top, 0px));
+  bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+.viewer :global(.yarl__toolbar) {
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  right: max(0.5rem, env(safe-area-inset-right, 0px));
+  gap: 0.25rem;
+  padding: 0.5rem;
+}
+
+.viewer :global(.yarl__button) {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  touch-action: manipulation;
+  transition: background-color 120ms ease-out;
+}
+
+.viewer :global(.yarl__button:focus-visible) {
+  background: var(--muted);
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+.viewer :global(.yarl__button:disabled) {
+  opacity: 0.45;
+}
+
+.viewer :global(.yarl__navigation_prev) {
+  background: var(--background);
+  left: max(0.25rem, env(safe-area-inset-left, 0px));
+}
+
+.viewer :global(.yarl__navigation_next) {
+  background: var(--background);
+  right: max(0.25rem, env(safe-area-inset-right, 0px));
+}
+
+.heading {
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  right: 13.5rem;
+  left: max(1rem, env(safe-area-inset-left, 0px));
+  display: flex;
+  height: 4rem;
+  align-items: center;
+  color: var(--foreground);
+  pointer-events: none;
+}
+
+.caption {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  left: max(1rem, env(safe-area-inset-left, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: var(--foreground);
+  text-align: center;
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .viewer :global(.yarl__button:hover:not(:disabled)) {
+    background: var(--muted);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .viewer :global(.yarl__button) {
+    transition: none;
+  }
+}

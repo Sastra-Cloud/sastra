@@ -89,7 +89,7 @@ export function AssistantLearningManager({ report }: { report: Report }) {
         </Button>
       </CardHeader>
       <CardContent className="space-y-5">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] gap-2">
           <Metric label="Runs (30d)" value={String(visibleReport.traceMetrics.runs)} />
           <Metric label="Errors" value={String(visibleReport.traceMetrics.errors)} />
           <Metric
@@ -281,7 +281,7 @@ export function AssistantLearningManager({ report }: { report: Report }) {
 
         <section className="space-y-2 border-t pt-4">
           <h3 className="text-sm font-semibold">Recent reflection runs</h3>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,12rem),1fr))] gap-2">
             {visibleReport.runs.slice(0, 6).map((runRow) => (
               <div key={runRow.id} className="rounded-lg border p-2 text-xs">
                 <div className="flex items-center justify-between gap-2">

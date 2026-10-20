@@ -2,9 +2,9 @@
 title: "Chat"
 category: "Communication"
 roles: [member, manager, admin]
-keywords: [chat, channel, message, mention, general, react, pin, pin message, pinned, pinned messages, unpin, unpin message, pin project, attachment, audio, voice message, microphone, recording, transcript, direct message, dm, private message, loading, unread, search, recent projects, members, add member, remove member, private channel, standup conversation]
+keywords: [chat, channel, message, edit message, edited, correct typo, delete message, cancel edit, save changes, mention, general, react, reactions, reaction summary, reaction counts, emoji, emoji picker, frequent emoji, frequently used, praying hands, skin tone, long press, touch and hold, haptic feedback, vibration, copy text, pin, pin message, pinned, pinned messages, unpin, unpin message, pin project, attachment, file, drag and drop, drop files, PowerPoint, ppt, pptx, image, screenshot, paste image, clipboard, inline image, image viewer, zoom, pinch to zoom, lightbox, swipe images, audio, voice message, microphone, recording, transcript, direct message, dm, private message, loading, unread, search, recent projects, members, add member, remove member, private channel, standup conversation, landscape, short screen, composer hidden, mobile, conversation details, message actions, keyboard, newline, grouped messages, last conversation, reopen chat, resume chat]
 order: 80
-summary: "Project chat, member-scoped team channels, direct messages, pinned messages, voice recordings, mentions, and attachments."
+summary: "Chat reopens your last conversation. Project chat, team channels, direct messages, voice recordings, mentions, mobile reaction gestures, optional haptic feedback, personal emoji suggestions, message editing and deletion, emoji search, pinned messages, drag-and-drop file attachments, and a zoomable image viewer."
 ---
 
 Chat is real-time messaging for the team. Every project has focused channels,
@@ -19,6 +19,11 @@ message deletes also update immediately and roll back if saving fails. Unread
 counts clear as soon as you open a conversation.
 
 ## Getting around
+
+Opening **Chat** returns to your last conversation that you can still access.
+This includes direct messages, team channels, and project channels. If you have
+no saved conversation, Chat shows the conversation list. On a phone, use
+**Back** to choose another conversation, or **Conversation details → All chats**.
 
 The chat sidebar lists **direct messages**, **team channels**, and active
 projects. Completed and cancelled projects are kept out of this working list.
@@ -59,7 +64,76 @@ cannot accidentally be sent to the previous channel.
 On a phone, an open conversation stays within the visible screen like a
 messaging app: the message history scrolls independently, while the compact
 conversation header and composer remain reachable. The composer follows the
-on-screen keyboard and leaves room for the device safe area.
+on-screen keyboard and leaves room for the device safe area. The conversation
+uses one compact header. Select **Conversation details** for pins, members,
+the assistant shortcut, theme, and workspace links. In a project's Chat tab,
+**Back** returns to the project.
+
+Nearby messages from the same teammate are grouped together. Day labels and
+group times use your saved timezone. Your own messages appear on the right,
+without repeating your name and photo. Select **Message actions** immediately
+beside a bubble to react, copy its text, pin, unpin, or delete that message.
+On a phone, you can also **touch and hold a message** to open the same menu.
+Scrolling cancels the hold. Supported phones give a brief haptic tap when the
+hold opens the menu; reduced motion disables it. Feedback depends on browser
+and device support. The selected message and menu also provide visual feedback.
+Choose a quick reaction or **More reactions** to
+search all emoji, browse categories, and choose a skin tone. Choosing a reaction
+closes the picker and updates the message immediately. Your reactions are
+highlighted in the menu and reaction details; select one again to remove it.
+Failed changes roll back with an error. You can delete your own messages after
+confirmation.
+
+Messages show one compact **reaction summary** slightly over the bubble's lower
+edge: up to three popular emoji and the total number of reactions. Tap it
+(**View reactions**) to see every emoji and its count. In these details, your
+reactions are marked **Yours**; tap an emoji to add or remove your reaction.
+Opening the summary only views the details and does not change a reaction.
+
+Quick reactions and the full picker's **Frequently used** row prioritize the
+emoji you have used most in saved reactions across your chats, with recent use
+breaking ties. This is personal to your account and works across devices.
+Until you have a history, suggestions include **👍 ❤️ 🙏 😂 🎉 ✅ 👀 🙌**.
+Unused slots keep these defaults, and your most-used skin tone is preserved.
+On very short screens, the full picker makes more room for search results;
+your personal quick reactions remain available in Message actions.
+Removing a reaction or deleting its message removes that use from the history.
+
+## Editing and deleting your messages
+
+Open **Message actions** beside one of your sent text messages, or touch and
+hold it on a phone, then choose **Edit message**. The composer switches to
+**Editing message**. Make your correction and select **Save changes**, or use
+**Cancel edit** (or **Escape**) to leave the message unchanged. Your normal
+new-message draft, selected files, and recorded voice draft stay separate and
+return when you finish editing.
+
+Saved corrections appear immediately for everyone and show **Edited** beside
+the original message time. Existing attachments, reactions, and pins stay with
+the message. You can correct the text accompanying attachments; this does not
+replace the attached files. Blank edits are not saved. If a save fails, the
+original text returns and your correction stays in the editor so you can retry.
+If another session changed the message first, cancel and reopen Edit to review
+the latest version before saving again.
+
+Choose **Delete message** to remove your message for everyone in that
+conversation. Confirm before it disappears. Its shared pin is removed too;
+failed deletions restore the message. Other people's messages can be copied,
+reacted to, or pinned, but you cannot edit or delete them.
+
+Corrections do not send a fresh chat or mention notification. Editing or
+deleting chat text does not resubmit a standup answer or rewrite saved standup
+reports.
+
+On a touch device, **Return** adds a new line; select **Send** to send.
+On desktop, **Enter** sends and **Shift+Enter** adds a new line.
+**Ctrl+Enter** or **Command+Enter** also sends. Choosing a mention or confirming
+text in another language does not send the message.
+
+On a short screen, such as a phone turned sideways, the project header, tabs,
+and channel tabs can use most of the height. The project chat area then scrolls
+on its own, so you can scroll down to the message box and **Send**. Your draft
+stays in place.
 
 ## In a channel
 
@@ -68,6 +142,20 @@ on-screen keyboard and leaves room for the device safe area.
   **@mentions**.
 - Attach files inline, add **reactions**, and **pin** important messages so
   everyone can find them again. See **Pinned messages** below.
+- **Drag files into the conversation** or select **Attach files** to add them
+  to your draft. You can drop several files, including PowerPoint presentations
+  (`.ppt` and `.pptx`), documents, and images. Each file can be up to 50 MB.
+  Review the file names, add a message, or remove files before selecting
+  **Send**. Dropping files does not upload or send them. Files cannot be added
+  while messages are loading, an upload is running, or you are recording audio.
+- **Paste an image or screenshot** into the message box, or select **Attach
+  files**. Images appear as previews before sending. You can add text or remove
+  an image, then select **Send** to upload it. Sending shows progress; failed
+  uploads stay in the composer for retry. Sent images appear directly in the
+  conversation, with larger previews when space allows. Small images keep their
+  original size, and portrait images fit without cropping. Use the download
+  button to save a copy. If a preview cannot load, the file remains available
+  to open or download.
 - Select the **microphone** to record a voice message of up to ten minutes.
   Stop the recording to review it, listen before sending, record it again, or
   discard it. You can add a short note or transcript before sending so the
@@ -97,14 +185,35 @@ they feed the standup summary on the **Standups** page.
 
 Creating channels and changing their membership are manager actions.
 
+## Viewing images
+
+Select a sent image to open the **image viewer** without leaving the chat.
+Use the zoom buttons, or **pinch** or **double-tap** on a phone. On a computer,
+scroll or double-click to zoom. Drag a zoomed image to read another part.
+Zooming affects the image only; it does not change the saved file.
+
+If a message has several images, swipe between them or use the previous and
+next buttons. The viewer shows the filename and your position in that message.
+It only browses images from that message. A single image has no navigation
+arrows.
+
+Keyboard users can use **+** and **−** to zoom. Arrow keys change images at
+normal size and pan when zoomed. **Escape** or **Close image viewer** closes
+the viewer and returns focus to the image in chat. On a phone, you can also
+swipe down to close an image at normal size.
+
+The download button saves the image currently shown. If an image cannot load,
+use **Open original image** or download it. If the viewer itself cannot load,
+you can cancel, reload the page, or open the original image.
+
 ## Pinned messages
 
 Pin a message when the whole conversation should be able to find it again, for
 example a decision, a final file, or an important date.
 
-- **Pin a message:** select the **pin** button under the message (**Pin
-  message**). On a computer, point at the message to show its buttons. On a
-  phone, the buttons are always shown under each message.
+- **Pin a message:** open **Message actions** beside the message, then select
+  **Pin message**. On a phone, you can also touch and hold the message to open
+  these actions.
 - A pinned message shows **Pinned by** and the teammate's name, or **Pinned by
   you**.
 - **Unpin a message:** select the same button again (**Unpin message**), or use
@@ -134,4 +243,13 @@ messages for you; use the pin button on the message.
 
 ## Assistant shortcut
 
-In a conversation, use the assistant shortcut in the header. The assistant launcher does not float over Send. Project chat keeps the conversation and composer inside the available screen height.
+In a conversation, use the assistant shortcut in the header or in **Conversation details** on a phone. The assistant launcher does not float over Send. Project chat keeps the conversation and composer inside the available screen height.
+
+On a phone, open **Conversation details** to find the **Pinned** button and
+private channel membership controls.
+
+## On wide screens
+
+On a wide screen, messages and the message box stay in a centered column of
+comfortable width, so replies are easy to follow. The channel list stays on the
+left.

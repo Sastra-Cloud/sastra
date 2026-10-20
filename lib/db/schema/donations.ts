@@ -1,5 +1,6 @@
 import {
   boolean,
+  check,
   date,
   index,
   integer,
@@ -11,10 +12,12 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 import { user } from "./auth";
 import { files } from "./files";
-import { fundingReceipts, mouPayments } from "./budget";
+import { fundingReceipts, invoices, mouPayments } from "./budget";
+import { sponsorshipReceipts } from "./sponsorships";
 import { projects } from "./projects";
 import { sharedMouGroups } from "./agreements";
 
@@ -32,7 +35,53 @@ export type DonationAllocationSnapshot = {
   amount: string;
   mouPaymentId: string | null;
   sharedMouGroupId: string | null;
+  invoiceId?: string | null;
 };
+
+export type DonationCsvField =
+  | "date"
+  | "donor"
+  | "amount"
+  | "status"
+  | "currency"
+  | "campaign"
+  | "campaignExternalId"
+  | "recurring"
+  | "paymentMethod"
+  | "notes";
+
+/** How one giving-platform export's columns map onto donation fields. */
+export type DonationCsvMapping = {
+  /** Original header text for each field; null when the file has no such column. */
+  columns: Record<DonationCsvField, string | null>;
+  /** Status values that mean the money was received. Unused without a status column. */
+  successStatuses: string[];
+  /** Reading order for numeric dates such as 03/04/2026. */
+  dateOrder: "mdy" | "dmy";
+};
+
+/**
+ * A donation CSV layout an admin has reviewed once. Files with the same set of
+ * headers import directly afterwards. Stores headers and mapping only — never
+ * donor values.
+ */
+export const donationCsvFormats = pgTable(
+  "donation_csv_formats",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    headerSignature: text("header_signature").notNull(),
+    headers: jsonb("headers").$type<string[]>().notNull(),
+    mapping: jsonb("mapping").$type<DonationCsvMapping>().notNull(),
+    createdBy: text("created_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    lastUsedAt: timestamp("last_used_at"),
+  },
+  (t) => [uniqueIndex("donation_csv_formats_signature_uq").on(t.headerSignature)]
+);
 
 /** One reviewed monthly CSV upload. Ledger metadata survives source-byte purge. */
 export const donationImports = pgTable(
@@ -42,6 +91,8 @@ export const donationImports = pgTable(
     fileId: uuid("file_id")
       .references(() => files.id, { onDelete: "set null" }),
     sourceFilename: text("source_filename").notNull(),
+    /** Saved CSV format used to read the file; null for the built-in export. */
+    formatName: text("format_name"),
     fileHash: text("file_hash").notNull(),
     currency: text("currency").notNull().default("USD"),
     rowCount: integer("row_count").notNull().default(0),
@@ -134,8 +185,11 @@ export const donationAllocations = pgTable(
       .notNull()
       .references(() => projects.id, { onDelete: "restrict" }),
     fundingReceiptId: uuid("funding_receipt_id")
-      .notNull()
       .references(() => fundingReceipts.id, { onDelete: "restrict" }),
+    sponsorshipReceiptId: uuid("sponsorship_receipt_id").references(
+      () => sponsorshipReceipts.id, { onDelete: "restrict" }
+    ),
+    invoiceId: uuid("invoice_id").references(() => invoices.id, { onDelete: "restrict" }),
     mouPaymentId: uuid("mou_payment_id").references(() => mouPayments.id, {
       onDelete: "restrict",
     }),
@@ -151,10 +205,13 @@ export const donationAllocations = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (t) => [
+    check("donation_allocations_one_receipt_check", sql`num_nonnulls(${t.fundingReceiptId}, ${t.sponsorshipReceiptId}) = 1`),
     uniqueIndex("donation_allocations_receipt_uq").on(t.fundingReceiptId),
     index("donation_allocations_donation_idx").on(t.donationId),
     index("donation_allocations_project_idx").on(t.projectId),
     index("donation_allocations_payment_idx").on(t.mouPaymentId),
+    index("donation_allocations_invoice_idx").on(t.invoiceId),
+    index("donation_allocations_sponsorship_receipt_idx").on(t.sponsorshipReceiptId),
   ]
 );
 

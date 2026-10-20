@@ -2,28 +2,26 @@
 
 import { confirmDialog } from "@/lib/dialog-requests";
 
-import { useEffect, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import {
   Download,
   FileText,
   Loader2,
   Paperclip,
   Pin,
-  PinOff,
   Send,
-  SmilePlus,
-  Trash2,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import type { ChatMessageView } from "@/lib/chat/queries";
+import { clipboardImageFiles } from "@/lib/chat/clipboard";
 import { pinnedByLabel, type ChatPinnedMessage } from "@/lib/chat/pin-state";
 import { useUserActive } from "@/hooks/use-user-active";
+import { syncChannelRead } from "@/lib/chat/read-client";
 import { avatarSrc } from "@/lib/users/avatar";
 import {
   deleteMessage,
-  markChannelRead,
   postMessage,
   setMessageStatus,
   toggleReaction,
@@ -38,7 +36,7 @@ import {
   AttachmentMedia,
   AttachmentTitle,
 } from "@/components/ui/attachment";
-import { Bubble, BubbleContent, BubbleReactions } from "@/components/ui/bubble";
+import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Button } from "@/components/ui/button";
 import {
   Marker,
@@ -49,7 +47,6 @@ import {
   Message,
   MessageAvatar,
   MessageContent,
-  MessageFooter,
   MessageHeader,
 } from "@/components/ui/message";
 import {
@@ -60,11 +57,6 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { MentionInput } from "@/components/mentions/mention-input";
 import { MentionText } from "@/components/mentions/mention-text";
 import type { MentionTarget } from "@/lib/mentions/roster";
@@ -78,13 +70,22 @@ import {
 import { VoiceMessagePlayer } from "@/components/chat/voice-message-player";
 import { useChatNavigation } from "@/components/chat/chat-navigation-context";
 import { useMessagePins } from "@/components/chat/message-pins";
+import { ChatImageGallery } from "@/components/chat/chat-image-gallery";
+import { conversationDay, continuesMessageGroup } from "@/lib/chat/conversation";
+import { sendOnConversationKey } from "@/lib/chat/composer-key";
+import { MessageActions } from "@/components/chat/message-actions";
+import { MessageReactions } from "@/components/chat/message-reactions";
+import { MessageEditor } from "@/components/chat/message-editor";
+import { editMessage } from "@/lib/chat/edit-actions";
+import { reconcileDeletedMessages, reconcileMessageEdits, restoreDeletedMessage, type MessageEditDraft } from "@/lib/chat/edit-state";
+import { reconcileReactionMessages } from "@/lib/chat/reaction-state";
+import { useFrequentReactions } from "@/components/chat/use-frequent-reactions";
 
-const QUICK_EMOJI = ["👍", "❤️", "🎉", "👀", "✅", "😄"];
 const NEAR_BOTTOM_PX = 96;
 
-function timeLabel(iso: string) {
+function timeLabel(iso: string, timeZone?: string) {
   const d = new Date(iso);
-  return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString(undefined, { timeZone, hour: "2-digit", minute: "2-digit" });
 }
 
 async function uploadToMessage(
@@ -144,6 +145,8 @@ export function ChatThread({
   placeholder,
   loading = false,
   fillAvailable = false,
+  direct = false,
+  timeZone,
 }: {
   channelId: string;
   currentUserId: string;
@@ -157,10 +160,13 @@ export function ChatThread({
   placeholder?: string;
   loading?: boolean;
   fillAvailable?: boolean;
+  direct?: boolean;
+  timeZone?: string;
 }) {
   const { pendingChannelId } = useChatNavigation();
   const pins = useMessagePins();
   const { beginPinsFetch } = pins;
+  const { emojis: frequentEmojis, refresh: refreshFrequentReactions } = useFrequentReactions(currentUserId);
   const conversationLoading =
     loading ||
     (pendingChannelId !== null && pendingChannelId !== channelId);
@@ -171,6 +177,37 @@ export function ChatThread({
   const [voiceDraft, setVoiceDraft] = useState<VoiceDraft | null>(null);
   const [recordingVoice, setRecordingVoice] = useState(false);
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [reacting, setReacting] = useState<Set<string>>(new Set());
+  const reactingRef = useRef(new Set<string>());
+  const reactionVersions = useRef(new Map<string, number>());
+  const [editing, setEditing] = useState<MessageEditDraft | null>(null);
+  const [restoreComposerFocus, setRestoreComposerFocus] = useState(false);
+  const [savingEdits, setSavingEdits] = useState<Set<string>>(new Set());
+  const editingRef = useRef(new Set<string>());
+  const editVersions = useRef(new Map<string, number>());
+  const failedEditDrafts = useRef(new Map<string, MessageEditDraft>());
+  const deletingRef = useRef(new Set<string>());
+  const confirmingDeletes = useRef(new Set<string>());
+  const deletionVersions = useRef(new Map<string, number>());
+  const receiveMessages = useCallback((incoming: ChatMessageView[], requestedVersions: Map<string, number>, requestedEdits: Map<string, number>, requestedDeletes: Map<string, number>) => {
+    const protectedIds = new Set(reactingRef.current);
+    for (const [id, version] of reactionVersions.current) {
+      if (requestedVersions.get(id) !== version) protectedIds.add(id);
+    }
+    const protectedEdits = new Set(editingRef.current);
+    for (const [id, version] of editVersions.current) {
+      if (requestedEdits.get(id) !== version) protectedEdits.add(id);
+    }
+    const pendingDeletes = new Set(deletingRef.current);
+    const changedDeletes = new Set<string>();
+    for (const [id, version] of deletionVersions.current) {
+      if (requestedDeletes.get(id) !== version) changedDeletes.add(id);
+    }
+    setMessages(current => reconcileDeletedMessages(current, reconcileMessageEdits(current, reconcileReactionMessages(current, incoming, protectedIds), protectedEdits), pendingDeletes, changedDeletes));
+  }, []);
+  const [draggingFiles, setDraggingFiles] = useState(false);
+  const fileDragDepth = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const lastReadRef = useRef<string>("");
@@ -182,7 +219,7 @@ export function ChatThread({
 
   useEffect(() => {
     if (messages.length === 0) {
-      void markChannelRead(channelId, null);
+      void syncChannelRead(channelId, null);
     }
   }, [channelId, messages.length]);
 
@@ -201,12 +238,15 @@ export function ChatThread({
     const refresh = async () => {
       if (document.hidden) return;
       try {
+        const requestedVersions = new Map(reactionVersions.current);
+        const requestedEdits = new Map(editVersions.current);
+        const requestedDeletes = new Map(deletionVersions.current);
         const receivePins = beginPinsFetch();
         const r = await fetch(recentUrl);
         if (!r.ok || stopped) return;
         const data = await r.json();
         if (stopped) return;
-        setMessages(data.messages);
+        receiveMessages(data.messages, requestedVersions, requestedEdits, requestedDeletes);
         receivePins(data.pins ?? []);
       } catch {
         /* transient */
@@ -225,7 +265,7 @@ export function ChatThread({
       clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [channelId, active, beginPinsFetch]);
+  }, [channelId, active, beginPinsFetch, receiveMessages]);
 
   const latestMessageId = messages[messages.length - 1]?.id ?? null;
   const initialLatestMessageId =
@@ -239,12 +279,11 @@ export function ChatThread({
     const frame = window.requestAnimationFrame(() => {
       const el = scrollRef.current;
       if (el) el.scrollTop = el.scrollHeight;
-      if (
-        initialLatestMessageId &&
-        initialLatestMessageId !== lastReadRef.current
-      ) {
+      // Record every visit, including a cached thread reopening with the same
+      // last-read message, so Chat can resume the conversation actually opened.
+      if (initialLatestMessageId) {
         lastReadRef.current = initialLatestMessageId;
-        void markChannelRead(channelId, initialLatestMessageId);
+        void syncChannelRead(channelId, initialLatestMessageId);
       }
     });
     return () => window.cancelAnimationFrame(frame);
@@ -268,7 +307,7 @@ export function ChatThread({
       if (el) el.scrollTop = el.scrollHeight;
       if (latestMessageId !== lastReadRef.current) {
         lastReadRef.current = latestMessageId;
-        void markChannelRead(channelId, latestMessageId);
+        void syncChannelRead(channelId, latestMessageId);
       }
     });
     return () => window.cancelAnimationFrame(frame);
@@ -300,20 +339,25 @@ export function ChatThread({
       latestMessageId !== lastReadRef.current
     ) {
       lastReadRef.current = latestMessageId;
-      void markChannelRead(channelId, latestMessageId);
+      void syncChannelRead(channelId, latestMessageId);
     }
   }
 
-  async function refreshRecent() {
+  const refreshRecent = useCallback(async () => {
+    const requestedVersions = new Map(reactionVersions.current);
+    const requestedEdits = new Map(editVersions.current);
+    const requestedDeletes = new Map(deletionVersions.current);
     const receivePins = beginPinsFetch();
     const r = await fetch(`/api/chat/${channelId}/recent`);
     if (!r.ok) return;
     const data = await r.json();
-    setMessages(data.messages);
+    receiveMessages(data.messages, requestedVersions, requestedEdits, requestedDeletes);
     receivePins(data.pins ?? []);
-  }
+  }, [beginPinsFetch, channelId, receiveMessages]);
 
   async function send() {
+    if (sending || conversationLoading || recordingVoice) return;
+    const draftText = input;
     const text = input.trim();
     if (!text && pendingFiles.length === 0 && !voiceDraft) return;
     const voiceAtSend = voiceDraft;
@@ -330,14 +374,15 @@ export function ChatThread({
       content: text || null,
       status: "uploading",
       createdAt: new Date().toISOString(),
+      editedAt: null,
       isMine: true,
       reactions: [],
       attachments: [],
     };
     setPendingMessages((current) => [...current, optimisticMessage]);
     setSending(true);
+    setSendError(null);
     setInput("");
-    setPendingFiles([]);
     try {
       const { id } = await postMessage({
         channelId,
@@ -367,11 +412,9 @@ export function ChatThread({
           id,
           failedFiles.length === files.length ? "failed" : "sent"
         );
-        if (failedFiles.length > 0) {
-          setPendingFiles(
-            failedFiles.filter((file) => file !== voiceAtSend?.file)
-          );
-        }
+        setPendingFiles(
+          failedFiles.filter((file) => file !== voiceAtSend?.file)
+        );
         if (voiceAtSend && !failedFiles.includes(voiceAtSend.file)) {
           URL.revokeObjectURL(voiceAtSend.url);
           setVoiceDraft(null);
@@ -380,20 +423,28 @@ export function ChatThread({
       }
     } catch (error) {
       setPendingMessages((current) => current.filter((message) => message.id !== optimisticMessage.id));
-      setInput(text);
-      setPendingFiles(files);
-      toast.error(error instanceof Error ? error.message : "Could not send the message.");
+      setInput((current) => current && draftText ? `${draftText}\n${current}` : current || draftText);
+      setPendingFiles(pendingFiles);
+      const message = error instanceof Error && !(error instanceof TypeError)
+        ? error.message
+        : "Could not send. Check your connection and try again.";
+      setSendError(message);
+      toast.error(message);
     } finally {
       setSending(false);
     }
   }
 
-  function reactTo(messageId: string, emoji: string) {
-    let previous: ChatMessageView[] = [];
+  const reactTo = useCallback((messageId: string, emoji: string) => {
+    if (reactingRef.current.has(messageId)) return;
+    reactingRef.current.add(messageId);
+    reactionVersions.current.set(messageId, (reactionVersions.current.get(messageId) ?? 0) + 1);
+    setReacting((current) => new Set(current).add(messageId));
+    let previous: ChatMessageView["reactions"] | undefined;
     setMessages((current) => {
-      previous = current;
       return current.map((message) => {
         if (message.id !== messageId) return message;
+        previous = message.reactions;
         const reaction = message.reactions.find((item) => item.emoji === emoji);
         const reactions = reaction
           ? reaction.mine
@@ -413,24 +464,100 @@ export function ChatThread({
         return { ...message, reactions };
       });
     });
-    void toggleReaction(messageId, emoji).catch(() => {
-      setMessages(previous);
+    void toggleReaction(messageId, emoji).then(() => {
+      refreshFrequentReactions();
+      reactingRef.current.delete(messageId);
+      reactionVersions.current.set(messageId, (reactionVersions.current.get(messageId) ?? 0) + 1);
+      // A failed reconciliation read must not undo a successful server mutation.
+      return refreshRecent().catch(() => {});
+    }).catch(() => {
+      setMessages((current) => current.map((message) => message.id === messageId && previous ? { ...message, reactions: previous } : message));
       toast.error("Could not update the reaction.");
+    }).finally(() => {
+      reactingRef.current.delete(messageId);
+      setReacting((current) => {
+        const next = new Set(current);
+        next.delete(messageId);
+        return next;
+      });
+    });
+  }, [refreshRecent, refreshFrequentReactions]);
+
+  function beginEdit(message: ChatMessageView) {
+    if (editing || sending || recordingVoice || editingRef.current.has(message.id) || message.userId !== currentUserId || !message.content || message.status !== "sent") return;
+    const failed = failedEditDrafts.current.get(message.id);
+    setRestoreComposerFocus(false);
+    setEditing({ messageId: message.id, originalContent: message.content, originalEditedAt: message.editedAt ?? null, text: failed?.text ?? message.content });
+  }
+
+  function cancelEdit() {
+    if (editing) failedEditDrafts.current.delete(editing.messageId);
+    setEditing(null);
+    setRestoreComposerFocus(true);
+  }
+
+  function saveEdit() {
+    if (!editing || editingRef.current.has(editing.messageId)) return;
+    const draft = editing;
+    const content = draft.text.trim();
+    if (!content || content.length > 20000 || content === draft.originalContent) return;
+    editingRef.current.add(draft.messageId);
+    editVersions.current.set(draft.messageId, (editVersions.current.get(draft.messageId) ?? 0) + 1);
+    setSavingEdits(current => new Set(current).add(draft.messageId));
+    setMessages(current => current.map(message => message.id === draft.messageId ? { ...message, content, editedAt: new Date().toISOString() } : message));
+    setEditing(null);
+    setRestoreComposerFocus(true);
+    startTransition(async () => {
+      try {
+        const result = await editMessage({ messageId: draft.messageId, content, expectedContent: draft.originalContent, expectedEditedAt: draft.originalEditedAt });
+        if (!result.ok) throw new Error(result.error.message);
+        if (!result.data) throw new Error("Could not save the message.");
+        const saved = result.data;
+        setMessages(current => current.map(message => message.id === saved.id ? { ...message, content: saved.content, editedAt: saved.editedAt } : message));
+        failedEditDrafts.current.delete(draft.messageId);
+      } catch (error) {
+        const message = error instanceof Error && !(error instanceof TypeError) ? error.message : "Could not save the message. Your changes are kept below.";
+        setMessages(current => current.map(item => item.id === draft.messageId ? { ...item, content: draft.originalContent, editedAt: draft.originalEditedAt } : item));
+        const failed = { ...draft, error: message };
+        failedEditDrafts.current.set(draft.messageId, failed);
+        setEditing(current => current ?? failed);
+        toast.error(message);
+      } finally {
+        editingRef.current.delete(draft.messageId);
+        editVersions.current.set(draft.messageId, (editVersions.current.get(draft.messageId) ?? 0) + 1);
+        setSavingEdits(current => { const next = new Set(current); next.delete(draft.messageId); return next; });
+        void refreshRecent().catch(() => {});
+      }
     });
   }
 
   async function removeMessage(messageId: string) {
-    if (!(await confirmDialog("Delete this message? This cannot be undone."))) return;
-    let previous: ChatMessageView[] = [];
+    if (editingRef.current.has(messageId) || deletingRef.current.has(messageId) || confirmingDeletes.current.has(messageId)) return;
+    confirmingDeletes.current.add(messageId);
+    let confirmed = false;
+    try { confirmed = await confirmDialog("Delete this message? This cannot be undone."); }
+    finally { confirmingDeletes.current.delete(messageId); }
+    if (!confirmed) return;
+    deletingRef.current.add(messageId);
+    deletionVersions.current.set(messageId, (deletionVersions.current.get(messageId) ?? 0) + 1);
+    let removed: ChatMessageView | undefined;
+    const editAtDelete = editing?.messageId === messageId ? editing : null;
+    if (editAtDelete) { setEditing(null); setRestoreComposerFocus(true); }
     setMessages((current) => {
-      previous = current;
+      removed = current.find(message => message.id === messageId);
       return current.filter((message) => message.id !== messageId);
     });
     const request = deleteMessage(messageId);
+    const settled = () => {
+      deletingRef.current.delete(messageId);
+      deletionVersions.current.set(messageId, (deletionVersions.current.get(messageId) ?? 0) + 1);
+    };
     // Deleting a message also removes its pin for everyone.
     pins.forgetMessage(messageId, request);
-    void request.catch(() => {
-      setMessages(previous);
+    void request.then(() => { settled(); refreshFrequentReactions(); }).catch(() => {
+      settled();
+      setMessages(current => removed ? restoreDeletedMessage(current, removed) : current);
+      if (editAtDelete) setEditing(current => current ?? editAtDelete);
       toast.error("Could not delete the message.");
     });
   }
@@ -453,6 +580,13 @@ export function ChatThread({
     setVoiceDraft(nextDraft);
   }
 
+  const attachmentsDisabled = conversationLoading || sending || recordingVoice || editing !== null;
+
+  function addPendingFiles(files: File[]) {
+    if (attachmentsDisabled || files.length === 0) return;
+    setPendingFiles((current) => [...current, ...files]);
+  }
+
   const heightClass = fillAvailable
     ? "h-full min-h-0 flex-1"
     : variant === "project"
@@ -472,24 +606,61 @@ export function ChatThread({
       <section
         aria-busy={conversationLoading}
         data-chat-thread
+        onDragEnter={(event) => {
+          if (!event.dataTransfer.types.includes("Files")) return;
+          event.preventDefault();
+          fileDragDepth.current += 1;
+          if (!attachmentsDisabled) setDraggingFiles(true);
+        }}
+        onDragOver={(event) => {
+          if (!event.dataTransfer.types.includes("Files")) return;
+          // Prevent the browser from opening the file, including while busy.
+          event.preventDefault();
+          event.dataTransfer.dropEffect = attachmentsDisabled ? "none" : "copy";
+        }}
+        onDragLeave={(event) => {
+          if (!event.dataTransfer.types.includes("Files")) return;
+          fileDragDepth.current = Math.max(0, fileDragDepth.current - 1);
+          if (fileDragDepth.current === 0) setDraggingFiles(false);
+        }}
+        onDrop={(event) => {
+          if (!event.dataTransfer.types.includes("Files")) return;
+          event.preventDefault();
+          fileDragDepth.current = 0;
+          setDraggingFiles(false);
+          addPendingFiles(Array.from(event.dataTransfer.files));
+        }}
         className={cn(
-          "surface-shadow flex flex-col overflow-hidden rounded-xl border bg-card text-card-foreground",
+          "conversation-transcript relative flex flex-col overflow-hidden bg-card text-card-foreground lg:surface-shadow lg:rounded-xl lg:border",
           heightClass
         )}
       >
-        <MessageScroller className="flex-1 bg-[radial-gradient(circle_at_20%_0%,oklch(0.69_0.14_35_/_0.09),transparent_24rem)]">
+        {draggingFiles && !attachmentsDisabled ? (
+          <div
+            role="status"
+            className="pointer-events-none absolute inset-2 z-30 flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary bg-background/95 p-4 text-center"
+          >
+            <Paperclip aria-hidden className="size-6 text-primary" />
+            <p className="font-medium">Drop files to attach</p>
+            <p className="text-sm text-muted-foreground">
+              Review them before sending.
+            </p>
+          </div>
+        ) : null}
+        <MessageScroller className="flex-1">
           <MessageScrollerViewport
             ref={scrollRef}
             onScroll={handleThreadScroll}
             aria-hidden={conversationLoading}
             inert={conversationLoading}
             className={cn(
-              "p-3 transition-opacity duration-150 md:p-5",
+              // Padding grows with the card so messages keep a readable 64rem measure.
+              "p-3 transition-opacity duration-150 md:py-5 md:pl-[max(1.25rem,calc((100%-64rem)/2))] md:pr-[max(1.25rem,calc((100%-64rem)/2))]",
               conversationLoading && "opacity-0"
             )}
           >
             <MessageScrollerContent
-              className={cn(fillAvailable && "max-lg:justify-end")}
+              className={cn("gap-0", fillAvailable && "max-lg:justify-end")}
             >
               <Marker
                 variant="separator"
@@ -502,7 +673,7 @@ export function ChatThread({
               </Marker>
 
               {visibleMessages.length === 0 ? (
-                <Marker className="mx-auto my-8 w-full max-w-sm flex-col items-center justify-center rounded-xl border border-dashed bg-background/45 px-5 py-8 text-center md:my-auto md:px-6 md:py-10">
+                <Marker className="mx-auto my-auto w-full max-w-sm flex-col items-center justify-center px-5 py-8 text-center md:px-6 md:py-10">
                   <MarkerIcon className="size-10 rounded-xl bg-primary/12 p-2 text-primary">
                     <Send className="size-5" />
                   </MarkerIcon>
@@ -520,12 +691,15 @@ export function ChatThread({
                   <MessageScrollerItem
                     key={m.id}
                     data-message-id={m.id}
-                    scrollAnchor={index === visibleMessages.length - 1}
                     className={cn(
-                      "-mx-1.5 -my-1 rounded-xl px-1.5 py-1 transition-colors duration-500 motion-reduce:transition-none data-[pin-highlight=true]:bg-primary/10",
+                      "rounded-xl transition-colors duration-500 motion-reduce:transition-none data-[pin-highlight=true]:bg-primary/10",
+                      continuesMessageGroup(visibleMessages[index - 1], m, timeZone) ? "pt-1" : "pt-3",
                       m.id.startsWith("pending-") && "optimistic-item-in"
                     )}
                   >
+                    {(!visibleMessages[index - 1] || conversationDay(visibleMessages[index - 1].createdAt, timeZone) !== conversationDay(m.createdAt, timeZone)) ? (
+                      <p className="mb-3 pt-1 text-center text-[11px] leading-4 text-muted-foreground"><time dateTime={m.createdAt}>{new Date(m.createdAt).toLocaleDateString("en", { timeZone, dateStyle: "medium" })}</time></p>
+                    ) : null}
                     <MessageRow
                       m={m}
                       isOwn={m.userId === currentUserId}
@@ -533,9 +707,23 @@ export function ChatThread({
                       currentUserId={currentUserId}
                       pin={pins.pinFor(m.id)}
                       pinPending={pins.isPending(m.id)}
+                      // This callback runs on a reaction gesture, never during render.
+                      // eslint-disable-next-line react-hooks/refs
                       onReact={(emoji) => reactTo(m.id, emoji)}
+                      // Deferred message actions read their guards only after a gesture.
+                      // eslint-disable-next-line react-hooks/refs
                       onDelete={() => removeMessage(m.id)}
+                      // eslint-disable-next-line react-hooks/refs
+                      onEdit={() => beginEdit(m)}
+                      editDisabled={editing !== null || sending || recordingVoice || savingEdits.has(m.id)}
+                      editPending={savingEdits.has(m.id)}
                       onTogglePin={() => togglePin(m)}
+                      showAuthor={!direct && !continuesMessageGroup(visibleMessages[index - 1], m, timeZone)}
+                      showTime={!continuesMessageGroup(m, visibleMessages[index + 1] ?? { userId: null, createdAt: m.createdAt }, timeZone)}
+                      direct={direct}
+                      timeZone={timeZone}
+                      reactionPending={reacting.has(m.id)}
+                      frequentEmojis={frequentEmojis}
                     />
                   </MessageScrollerItem>
                 ))
@@ -548,8 +736,8 @@ export function ChatThread({
           {conversationLoading ? <ConversationLoadingState /> : null}
         </MessageScroller>
 
-        {pendingFiles.length > 0 || voiceDraft ? (
-          <div className="shrink-0 space-y-2 border-t bg-background/55 px-3 py-2.5 sm:px-4">
+        {!editing && (pendingFiles.length > 0 || voiceDraft) ? (
+          <div className="shrink-0 space-y-2 border-t bg-background/55 px-3 py-2.5 sm:pl-[max(1rem,calc((100%-64rem)/2))] sm:pr-[max(1rem,calc((100%-64rem)/2))]">
             {voiceDraft ? (
               <VoiceDraftPreview
                 draft={voiceDraft}
@@ -560,28 +748,22 @@ export function ChatThread({
             {pendingFiles.length > 0 ? (
               <AttachmentGroup className="gap-2">
               {pendingFiles.map((f, i) => (
-                <Attachment key={`${f.name}-${i}`} state="idle" size="xs">
-                  <AttachmentMedia className="bg-primary/10 text-primary">
-                    <Paperclip className="size-3.5" />
-                  </AttachmentMedia>
-                  <AttachmentContent className="min-w-36 max-w-64">
-                    <AttachmentTitle>{f.name}</AttachmentTitle>
-                    <AttachmentDescription>{formatBytes(f.size)}</AttachmentDescription>
-                  </AttachmentContent>
-                  <AttachmentActions>
-                    <AttachmentAction
-                      type="button"
-                      aria-label={`Remove ${f.name}`}
-                      onClick={() =>
-                        setPendingFiles((p) => p.filter((_, j) => j !== i))
-                      }
-                    >
-                      <X className="size-3" />
-                    </AttachmentAction>
-                  </AttachmentActions>
-                </Attachment>
+                <DraftFileAttachment
+                  key={`${f.name}-${i}`}
+                  file={f}
+                  sending={sending}
+                  onRemove={() =>
+                    setPendingFiles((p) => p.filter((_, j) => j !== i))
+                  }
+                />
               ))}
               </AttachmentGroup>
+            ) : null}
+            {sending && pendingFiles.length > 0 ? (
+              <p role="status" className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 aria-hidden className="size-3 animate-spin" />
+                Sending attachments…
+              </p>
             ) : null}
             {voiceDraft ? (
               <p className="px-1 text-xs text-muted-foreground">
@@ -592,25 +774,34 @@ export function ChatThread({
           </div>
         ) : null}
 
-        <div
+        {!editing && sendError ? (
+          <p role="alert" className="shrink-0 border-t px-3 py-2 text-sm text-destructive">
+            {sendError} Your draft is restored.
+          </p>
+        ) : null}
+        {editing ? <MessageEditor draft={editing} members={members}
+          onChange={text => setEditing(current => current ? { ...current, text, error: undefined } : current)}
+          onCancel={cancelEdit} onSave={saveEdit} /> : <div
           data-chat-composer
-          className="flex shrink-0 items-end gap-1.5 border-t bg-background/92 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:gap-2 sm:p-3"
+          className="conversation-composer flex shrink-0 items-end gap-1 border-t bg-background px-2 pt-2 lg:gap-2 lg:py-3 lg:pl-[max(0.75rem,calc((100%-64rem)/2))] lg:pr-[max(0.75rem,calc((100%-64rem)/2))]"
         >
           <input
             ref={fileRef}
             type="file"
             multiple
             hidden
-            onChange={(e) =>
-              setPendingFiles((p) => [...p, ...Array.from(e.target.files ?? [])])
-            }
+            disabled={attachmentsDisabled}
+            onChange={(e) => {
+              addPendingFiles(Array.from(e.target.files ?? []));
+              e.target.value = "";
+            }}
           />
           <Button
             variant="ghost"
             size="icon"
             className="size-11 lg:size-10"
             aria-label="Attach files"
-            disabled={conversationLoading || sending || recordingVoice}
+            disabled={attachmentsDisabled}
             onClick={() => fileRef.current?.click()}
           >
             <Paperclip className="size-4" />
@@ -624,14 +815,22 @@ export function ChatThread({
           {!recordingVoice ? (
             <>
               <MentionInput
+                autoFocus={restoreComposerFocus}
                 value={input}
-                onChange={setInput}
+                onChange={(value) => {
+                  setInput(value);
+                  setSendError(null);
+                }}
                 members={members}
+                onPaste={(event) => {
+                  if (attachmentsDisabled) return;
+                  const images = clipboardImageFiles(event.clipboardData);
+                  if (images.length === 0) return;
+                  event.preventDefault();
+                  addPendingFiles(images);
+                }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    void send();
-                  }
+                  sendOnConversationKey(e, () => void send());
                 }}
                 placeholder={
                   voiceDraft
@@ -640,12 +839,12 @@ export function ChatThread({
                 }
                 disabled={conversationLoading}
                 rows={1}
-                containerClassName="flex-1"
-                className="max-h-36 min-h-11 w-full resize-none rounded-xl bg-card px-3.5 py-2.5 text-base shadow-none sm:text-sm"
+                containerClassName="min-w-0 flex-1"
+                className="max-h-32 min-h-11 w-full resize-none rounded-xl bg-card px-3 py-2.5 text-base shadow-none lg:text-sm"
               />
               <Button
                 size="icon"
-                className="size-11 lg:size-10"
+                className="conversation-send size-11 lg:size-10"
                 aria-label="Send"
                 disabled={
                   conversationLoading ||
@@ -664,9 +863,65 @@ export function ChatThread({
               </Button>
             </>
           ) : null}
-        </div>
+        </div>}
       </section>
     </MessageScrollerProvider>
+  );
+}
+
+function DraftFileAttachment({
+  file,
+  sending,
+  onRemove,
+}: {
+  file: File;
+  sending: boolean;
+  onRemove: () => void;
+}) {
+  const imageRef = useCallback((image: HTMLImageElement | null) => {
+    if (!image) return;
+    const url = URL.createObjectURL(file);
+    image.src = url;
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  return (
+    <Attachment
+      state={sending ? "uploading" : "idle"}
+      size="xs"
+      className={cn(file.type.startsWith("image/") && "w-52")}
+    >
+      {file.type.startsWith("image/") ? (
+        <div className="w-full overflow-hidden rounded-md bg-muted/40">
+          {/* Object URLs stay local until Send and are released on removal. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            ref={imageRef}
+            alt={file.name}
+            className="h-24 w-full object-contain outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
+          />
+        </div>
+      ) : (
+        <AttachmentMedia className="bg-primary/10 text-primary">
+          <Paperclip className="size-3.5" />
+        </AttachmentMedia>
+      )}
+      <AttachmentContent className="min-w-0 max-w-64">
+        <AttachmentTitle>{file.name}</AttachmentTitle>
+        <AttachmentDescription>{formatBytes(file.size)}</AttachmentDescription>
+      </AttachmentContent>
+      <AttachmentActions>
+        <AttachmentAction
+          type="button"
+          className="size-10"
+          aria-label={`Remove ${file.name}`}
+          disabled={sending}
+          onClick={onRemove}
+        >
+          <X className="size-3.5" />
+        </AttachmentAction>
+      </AttachmentActions>
+    </Attachment>
   );
 }
 
@@ -701,6 +956,15 @@ function MessageRow({
   onReact,
   onDelete,
   onTogglePin,
+  showAuthor,
+  showTime,
+  direct,
+  timeZone,
+  reactionPending,
+  frequentEmojis,
+  onEdit,
+  editDisabled,
+  editPending,
 }: {
   m: ChatMessageView;
   isOwn: boolean;
@@ -711,8 +975,19 @@ function MessageRow({
   onReact: (emoji: string) => void;
   onDelete: () => void;
   onTogglePin: () => void;
+  showAuthor: boolean;
+  showTime: boolean;
+  direct: boolean;
+  timeZone?: string;
+  reactionPending: boolean;
+  frequentEmojis: string[];
+  onEdit: () => void;
+  editDisabled: boolean;
+  editPending: boolean;
 }) {
-  const canPin = !m.id.startsWith("pending-");
+  const firstImageId = m.attachments.find((attachment) =>
+    attachment.mimeType.startsWith("image/")
+  )?.attachmentId;
   const initials = (m.authorName ?? "?")
     .split(" ")
     .map((s) => s[0])
@@ -724,207 +999,111 @@ function MessageRow({
   return (
     <Message
       align={isOwn ? "end" : "start"}
-      className="items-end gap-2 sm:gap-3"
+      className={cn("items-start", isOwn ? "pl-12" : direct ? "pr-12" : "pl-10 pr-12")}
     >
-      <MessageAvatar
-        className={cn(
-          "size-9 rounded-xl border text-xs font-semibold shadow-sm",
-          isOwn
-            ? "border-primary/20 bg-primary/15 text-primary"
-            : "border-border bg-background text-muted-foreground"
-        )}
-      >
-        {photo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={photo}
-            alt={m.authorName ?? "Avatar"}
-            className="size-full object-cover"
-          />
-        ) : (
-          initials
-        )}
-      </MessageAvatar>
-      <MessageContent className="max-w-[min(42rem,calc(100%-3.25rem))]">
-        <MessageHeader
-          className={cn(
-            "gap-2 px-1",
-            isOwn ? "justify-end" : "justify-start"
-          )}
-        >
-          <span className="truncate font-semibold text-foreground">
-            {m.authorName ?? "Unknown"}
-          </span>
-          <span className="shrink-0 tabular-nums">{timeLabel(m.createdAt)}</span>
-          {m.status === "uploading" ? (
-            <span className="inline-flex shrink-0 items-center gap-1">
-              <Loader2 className="size-3 animate-spin" />
-              {m.attachments.length > 0 ? "uploading" : "sending"}
-            </span>
-          ) : m.status === "failed" ? (
-            <span className="shrink-0 text-destructive">attachment failed</span>
-          ) : null}
-          {pin ? (
-            <span className="inline-flex min-w-0 items-center gap-1 font-medium text-primary">
-              <Pin aria-hidden className="size-3 shrink-0" />
-              <span className="truncate">
-                {pinnedByLabel(pin, currentUserId)}
-              </span>
-            </span>
-          ) : null}
-        </MessageHeader>
+      <MessageContent className="w-fit max-w-[min(42rem,100%)] gap-1">
+        <span className="sr-only">{m.authorName ?? "Teammate"}, {new Date(m.createdAt).toLocaleString("en", { timeZone })}</span>
+        {(!isOwn && showAuthor) || m.status !== "sent" || pin || editPending ? <MessageHeader className={cn("flex-wrap gap-2 px-1", isOwn && "justify-end")}>
+          {!isOwn && showAuthor ? <span className="truncate font-semibold text-foreground">{m.authorName ?? "Teammate"}</span> : null}
+          {m.status === "uploading" ? <span role="status" className="inline-flex items-center gap-1"><Loader2 className="size-3 animate-spin" />{m.attachments.length > 0 ? "Uploading…" : "Sending…"}</span> : m.status === "failed" ? <span role="status" className="text-destructive">Attachment failed</span> : null}
+          {pin ? <span className="inline-flex min-w-0 items-center gap-1 text-primary"><Pin aria-hidden className="size-3 shrink-0" /><span className="truncate">{pinnedByLabel(pin, currentUserId)}</span></span> : null}
+          {editPending ? <span role="status" className="inline-flex items-center gap-1"><Loader2 aria-hidden className="size-3 animate-spin" />Saving edit…</span> : null}
+        </MessageHeader> : null}
 
-        {m.content ? (
-          <Bubble
-            variant={isOwn ? "default" : "secondary"}
-            align={isOwn ? "end" : "start"}
-            className={cn(m.reactions.length > 0 && "mb-3")}
-          >
-            <BubbleContent
+        <MessageActions m={m} isOwn={isOwn} pin={!!pin} time={timeLabel(m.createdAt, timeZone)} frequentEmojis={frequentEmojis}
+          onEdit={onEdit} editDisabled={editDisabled} editPending={editPending}
+          reactionPending={reactionPending} pinPending={pinPending}
+          onReact={onReact} onTogglePin={onTogglePin} onDelete={onDelete}>
+          {!isOwn && !direct && showAuthor ? <MessageAvatar aria-hidden="true" className="absolute right-full bottom-0 mr-2 size-8 min-w-8 rounded-full bg-muted text-xs font-semibold">
+            {photo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photo} alt="" className="size-full object-cover" />
+            ) : initials}
+          </MessageAvatar> : null}
+          {m.content ? (
+            <Bubble
+              variant={isOwn ? "default" : "secondary"}
+              align={isOwn ? "end" : "start"}
+              className="max-w-full"
+            >
+              <BubbleContent
+                className={cn(
+                  "min-h-11 whitespace-pre-wrap py-2.5 text-[15px] leading-relaxed lg:text-sm",
+                  isOwn
+                    ? "conversation-own-bubble bg-primary text-primary-foreground"
+                    : "conversation-incoming-bubble text-foreground"
+                )}
+              >
+                <MentionText
+                  text={m.content}
+                  members={members}
+                  currentUserId={currentUserId}
+                  tone={isOwn ? "onPrimary" : "default"}
+                  className="conversation-mention"
+                />
+              </BubbleContent>
+
+            </Bubble>
+          ) : null}
+
+          {m.attachments.length > 0 ? (
+            <AttachmentGroup
               className={cn(
-                "whitespace-pre-wrap text-pretty shadow-sm",
-                isOwn
-                  ? "bg-primary text-primary-foreground"
-                  : "border-border/70 bg-background/80 text-foreground"
+                "max-w-full flex-wrap gap-2 overflow-visible py-0",
+                isOwn ? "justify-end" : "justify-start"
               )}
             >
-              <MentionText
-                text={m.content}
-                members={members}
-                currentUserId={currentUserId}
-                tone={isOwn ? "onPrimary" : "default"}
-              />
-            </BubbleContent>
-            {m.reactions.length > 0 ? (
-              <BubbleReactions
-                align={isOwn ? "end" : "start"}
-                className="ring-card/90"
-              >
-                {m.reactions.map((r) => (
-                  <button
-                    key={r.emoji}
-                    type="button"
-                    onClick={() => onReact(r.emoji)}
-                    className={cn(
-                      "inline-flex min-h-7 items-center gap-1 rounded-full px-2 text-xs transition-colors",
-                      r.mine
-                        ? "bg-primary/15 text-primary"
-                        : "hover:bg-background"
-                    )}
-                  >
-                    <span>{r.emoji}</span>
-                    <span className="tabular-nums">{r.count}</span>
-                  </button>
-                ))}
-              </BubbleReactions>
-            ) : null}
-          </Bubble>
-        ) : null}
-
-        {m.attachments.length > 0 ? (
-          <AttachmentGroup
-            className={cn(
-              "max-w-full gap-2 py-0",
-              isOwn ? "justify-end" : "justify-start"
-            )}
-          >
-            {m.attachments.map((a) => (
-              a.mimeType.startsWith("audio/") && a.label === "voice" ? (
-                <VoiceMessagePlayer
+              {m.attachments.map((a) => (
+                a.mimeType.startsWith("audio/") && a.label === "voice" ? (
+                  <VoiceMessagePlayer
+                    key={a.attachmentId}
+                    src={`/api/files/${a.fileId}/download?inline=1`}
+                    isOwn={isOwn}
+                  />
+                ) : a.mimeType.startsWith("image/") ? (
+                  a.attachmentId === firstImageId ? (
+                    <ChatImageGallery key={a.attachmentId} attachments={m.attachments} />
+                  ) : null
+                ) : (
+                <Attachment
                   key={a.attachmentId}
-                  src={`/api/files/${a.fileId}/download?inline=1`}
-                  isOwn={isOwn}
-                />
-              ) : (
-              <Attachment
-                key={a.attachmentId}
-                size="sm"
-                state={m.status === "uploading" ? "uploading" : "done"}
-                className="max-w-[18rem] bg-background/80"
-              >
-                <AttachmentMedia className="bg-accent text-accent-foreground">
-                  <FileText className="size-4" />
-                </AttachmentMedia>
-                <AttachmentContent>
-                  <AttachmentTitle>{a.originalName}</AttachmentTitle>
-                  <AttachmentDescription>
-                    {formatBytes(a.sizeBytes)}
-                  </AttachmentDescription>
-                </AttachmentContent>
-                <AttachmentActions>
-                  <AttachmentAction
-                    render={<a href={`/api/files/${a.fileId}/download`} />}
-                    aria-label={`Download ${a.originalName}`}
-                  >
-                    <Download className="size-3.5" />
-                  </AttachmentAction>
-                </AttachmentActions>
-              </Attachment>
-              )
-            ))}
-          </AttachmentGroup>
-        ) : null}
-
-        <MessageFooter
-          className={cn(
-            "gap-1 px-1 transition-opacity md:opacity-0 md:group-hover/message:opacity-100 md:group-focus-within/message:opacity-100",
-            isOwn ? "justify-end" : "justify-start"
-          )}
-        >
-          <Popover>
-            <PopoverTrigger
-              render={
-                <button
-                  type="button"
-                  aria-label="Add reaction"
-                  className="flex size-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 lg:size-9"
-                />
-              }
-            >
-              <SmilePlus className="size-4" />
-            </PopoverTrigger>
-            <PopoverContent className="flex w-auto gap-1 p-1.5">
-              {QUICK_EMOJI.map((e) => (
-                <button
-                  key={e}
-                  type="button"
-                  onClick={() => onReact(e)}
-                  className="flex size-11 items-center justify-center rounded-lg text-base transition-colors hover:bg-secondary lg:size-9"
+                  size="sm"
+                  state={m.status === "uploading" ? "uploading" : "done"}
+                  className="max-w-full bg-background/80 lg:max-w-[18rem]"
                 >
-                  {e}
-                </button>
+                  <AttachmentMedia className="bg-accent text-accent-foreground">
+                    <FileText className="size-4" />
+                  </AttachmentMedia>
+                  <AttachmentContent>
+                    <AttachmentTitle>{a.originalName}</AttachmentTitle>
+                    <AttachmentDescription>
+                      {formatBytes(a.sizeBytes)}
+                    </AttachmentDescription>
+                  </AttachmentContent>
+                  <AttachmentActions>
+                    <AttachmentAction
+                      render={<a href={`/api/files/${a.fileId}/download`} />}
+                      aria-label={`Download ${a.originalName}`}
+                    >
+                      <Download className="size-3.5" />
+                    </AttachmentAction>
+                  </AttachmentActions>
+                </Attachment>
+                )
               ))}
-            </PopoverContent>
-          </Popover>
-
-          {canPin ? (
-            <button
-              type="button"
-              aria-label={pin ? "Unpin message" : "Pin message"}
-              title={pin ? "Unpin message" : "Pin message"}
-              disabled={pinPending}
-              onClick={onTogglePin}
-              className={cn(
-                "flex size-11 items-center justify-center rounded-lg transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 lg:size-9",
-                pin ? "text-primary" : "text-muted-foreground"
-              )}
-            >
-              {pin ? <PinOff className="size-4" /> : <Pin className="size-4" />}
-            </button>
+            </AttachmentGroup>
           ) : null}
 
-          {isOwn ? (
-            <button
-              type="button"
-              aria-label="Delete message"
-              onClick={onDelete}
-              className="flex size-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 lg:size-9"
-            >
-              <Trash2 className="size-4" />
-            </button>
-          ) : null}
-        </MessageFooter>
+        </MessageActions>
+
+        <MessageReactions reactions={m.reactions} isOwn={isOwn} pending={reactionPending} onReact={onReact} />
+        {showTime || m.editedAt ? <div className={cn("flex items-center gap-1.5 px-1 text-[11px] tabular-nums text-muted-foreground", isOwn && "self-end")}>
+          <time dateTime={m.createdAt}>{timeLabel(m.createdAt, timeZone)}</time>
+          {m.editedAt ? <span title={`Edited ${new Date(m.editedAt).toLocaleString("en", { timeZone })}`}>Edited</span> : null}
+        </div> : null}
+
       </MessageContent>
+
     </Message>
   );
 }

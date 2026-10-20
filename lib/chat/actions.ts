@@ -493,7 +493,7 @@ export async function deleteMessage(messageId: string) {
   const { user } = await requireUser();
   await requireMessageAccess(messageId, user.id);
   // A deleted message leaves the conversation's Pinned list too.
-  await db
+  const [deleted] = await db
     .update(chatMessages)
     .set({
       deletedAt: new Date(),
@@ -503,7 +503,8 @@ export async function deleteMessage(messageId: string) {
     })
     .where(
       and(eq(chatMessages.id, messageId), eq(chatMessages.userId, user.id))
-    );
+    ).returning({ id: chatMessages.id });
+  if (!deleted) throw new Error("Only your own messages can be deleted.");
 }
 
 export async function markChannelRead(

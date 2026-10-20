@@ -2,9 +2,9 @@
 title: "Correspondence (email intake)"
 category: "Communication"
 roles: [manager, admin]
-keywords: [correspondence address, in.sastra.cloud, sastra cloud address, copy address, forward address, cc address, connect gmail, app password, shared mailbox, connect mailbox, disconnect mailbox, 2-step verification, google workspace, search, pagination, next page, filters, subject, correspondence, email, inbox, gmail, webhook, resend, receiving email, original email file, thread, email history, newest email first, quoted history, forwarded history, recent correspondence, project email, project filter, expand message, reprocess message, reprocess thread, review as document, missed attachment, manual rights review, uncertain classification, project status suggestion, email project update, post project update, publisher, rights, partner, printer, reply, triage, mailbox, waiting, external follow up, follow-up reminder, snooze, draft follow-up, multiple projects, review projects, link projects, many projects from one email, multi-project mou, shared agreement pdf, attach mou to several projects, video series, original video, translated video, production mode, grant reminder, funder deadline, grant report due date, reminder from email, grant obligation, final report due, recurring report, duplicate project, funder already funds, existing grant, link to existing grant, not a new project, dismiss reason, intake learning, learns from dismissals, negative rules, stop re-suggesting, approve lesson, forwarded email task, proof review task, reply to printer, meeting task, secretary, assistant, signed license, payment receipt, license fee, print proof, proof attachment, restore proof, reprocess proof, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice]
+keywords: [correspondence badge, needs review, shared reviews, unassigned follow ups, correspondence address, in.sastra.cloud, sastra cloud address, copy address, forward address, cc address, connect gmail, app password, shared mailbox, connect mailbox, disconnect mailbox, 2-step verification, google workspace, search, pagination, next page, filters, subject, correspondence, email, inbox, gmail, webhook, resend, receiving email, original email file, thread, email history, newest email first, quoted history, forwarded history, recent correspondence, project email, project filter, expand message, reprocess message, reprocess thread, review as document, missed attachment, manual rights review, uncertain classification, project status suggestion, email project update, post project update, publisher, rights, partner, printer, reply, triage, mailbox, waiting, external follow up, follow-up reminder, snooze, draft follow-up, multiple projects, review projects, link projects, many projects from one email, multi-project mou, shared agreement pdf, attach mou to several projects, video series, original video, translated video, production mode, grant reminder, funder deadline, grant report due date, reminder from email, grant obligation, final report due, recurring report, duplicate project, funder already funds, existing grant, link to existing grant, not a new project, dismiss reason, intake learning, learns from dismissals, negative rules, stop re-suggesting, approve lesson, forwarded email task, proof review task, reply to printer, meeting task, secretary, assistant, signed license, payment receipt, license fee, print proof, proof attachment, restore proof, reprocess proof, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice]
 order: 100
-summary: "The correspondence address (name@in.sastra.cloud on Sastra Cloud, or a connected Gmail mailbox), how email arrives, and how to search, triage, and reply to project email."
+summary: "The correspondence address (name@in.sastra.cloud on Sastra Cloud, or a connected Gmail mailbox), how email arrives, and how to review shared email work, search, triage, and reply to project email."
 ---
 
 **Correspondence** captures email from a shared mailbox so publisher, printer, and
@@ -24,6 +24,23 @@ project. A print quote opens a suggested quote when the linked project has one
 print run; otherwise choose the intended run on its Print page. Uncertain rights
 classifications stay available for manual selection. These actions do not
 approve rights, record a payment, or accept a quote on their own.
+
+## Needs review and the menu badge
+
+**Needs review** shows shared email work: pending project suggestions and updates,
+rights and funding documents ready to review or needing a retry, suggested printer
+quotes, and unassigned follow-ups that are due. Each email thread counts once,
+even when several reviews are waiting inside it. The menu badge opens this filter.
+The list names the reviews waiting in each thread.
+
+This is a shared manager queue, not an unread-email count. Reading a thread or
+clearing the bell does not resolve its pending reviews. Accept, dismiss, or finish
+the source review to clear it. Assign an unowned follow-up to a manager using the thread's assignee control.
+It then belongs to that manager's personal work.
+
+Email work owned by you stays in **My Work**: your personal email task suggestions
+and your due external follow-ups. Accepted tasks also stay with their assignee.
+Routine captured email and other mailbox noise do not increase either badge.
 
 ## How email arrives
 
@@ -306,3 +323,14 @@ review when reprocessed. Funding approval does not alter project budgets or righ
 See **Shared MoU funding** for delivery confirmation and reviewed invoice sending.
 
 Search by email subject or linked project title. Pages show up to 50 emails. Category changes keep your search, project, and status filters. Use Clear project filter to remove only the project, or Clear filters to reset the search and status too.
+
+## On wide screens
+
+On an email thread, the suggestions, follow-ups, and **Thread controls** sit in a
+column beside the messages and the reply box on a wide screen. On a narrow screen
+they appear first, above the messages. The recipient list and the **Send** button
+stay in the reply box.
+
+On **Review new projects**, the source email appears beside the suggestions so
+you can check each field against the original text. Nothing is created until you
+choose to create it.

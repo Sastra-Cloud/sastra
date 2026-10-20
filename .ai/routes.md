@@ -81,6 +81,7 @@
 - `POST` `/api/assistant/transcribe` -> `app/api/assistant/transcribe/route.ts`
 - `GET | POST` `/api/auth/[...all]` -> `app/api/auth/[...all]/route.ts`
 - `GET` `/api/chat/[channelId]/recent` -> `app/api/chat/[channelId]/recent/route.ts`
+- `GET` `/api/chat/reactions` -> `app/api/chat/reactions/route.ts`
 - `GET | POST` `/api/cron/agreement-index` -> `app/api/cron/agreement-index/route.ts`
 - `GET | POST` `/api/cron/assistant-reflection` -> `app/api/cron/assistant-reflection/route.ts`
 - `GET | POST` `/api/cron/donation-upload-cleanup` -> `app/api/cron/donation-upload-cleanup/route.ts`
@@ -106,6 +107,7 @@
 - `POST` `/api/internal/management/entitlements` -> `app/api/internal/management/entitlements/route.ts`
 - `GET` `/api/internal/management/status` -> `app/api/internal/management/status/route.ts`
 - `GET` `/api/invoices/[invoiceId]` -> `app/api/invoices/[invoiceId]/route.ts`
+- `GET` `/api/navigation/badges` -> `app/api/navigation/badges/route.ts`
 - `GET` `/api/notifications/recent` -> `app/api/notifications/recent/route.ts`
 - `POST` `/api/presence/heartbeat` -> `app/api/presence/heartbeat/route.ts`
 - `GET` `/api/presence` -> `app/api/presence/route.ts`

@@ -98,7 +98,7 @@ export function RoleCapacityMatrix({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><Gauge className="size-4" />Role capacity by work path</CardTitle>
-        <CardDescription>
+        <CardDescription className="max-w-4xl">
           How many projects each person can carry at once in each role, <b>per work
           path</b>. Someone might do 2 book translations at once but only 1 for
           articles &amp; podcasts — or work a path not at all (leave those cells

@@ -34,7 +34,7 @@ export default async function SecuritySettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="max-w-3xl">
         <h1 className="text-xl font-semibold">Security</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Manage passkeys and the browsers allowed to open protected admin data.

@@ -1,6 +1,7 @@
 "use client";
 
 import { AssistantShortcut } from "@/components/assistant/assistant-shortcut";
+import { ConversationHeader } from "@/components/chat/conversation-header";
 import { useState } from "react";
 
 import type {
@@ -18,6 +19,7 @@ import { ProjectChannelTabs } from "@/components/chat/project-channel-tabs";
 
 export function ProjectChatView({
   slug,
+  projectTitle,
   channels,
   activeChannel,
   currentUser,
@@ -26,12 +28,14 @@ export function ProjectChatView({
   pins,
 }: {
   slug: string;
+  projectTitle: string;
   channels: ProjectChannelListItem[];
   activeChannel: Pick<ProjectChannelListItem, "id" | "name">;
   currentUser: {
     id: string;
     name: string;
     image: string | null;
+    timezone: string;
   };
   messages: ChatMessageView[];
   members: MentionTarget[];
@@ -48,16 +52,8 @@ export function ProjectChatView({
       currentUserName={currentUser.name}
       initialPins={pins}
     >
-      <div className="flex w-full min-h-0 flex-1 flex-col gap-2">
-        <div className="flex shrink-0 items-center justify-between gap-2">
-          <h2 className="min-w-0 truncate text-sm font-semibold">
-            Chat · {activeChannel.name}
-          </h2>
-          <div className="flex shrink-0 items-center gap-2">
-            <AssistantShortcut />
-            <PinnedMessagesButton />
-          </div>
-        </div>
+      <div className="flex w-full min-h-0 flex-1 flex-col lg:gap-2">
+        <ConversationHeader title={projectTitle} subtitle={`#${activeChannel.name}`} backHref={`/projects/${slug}`} actions={<><AssistantShortcut /><PinnedMessagesButton /></>} />
         <ProjectChannelTabs
           slug={slug}
           channels={channels}
@@ -65,6 +61,7 @@ export function ProjectChatView({
           onChannelNavigate={setPendingChannelId}
         />
         <ChatThread
+          key={activeChannel.id}
           channelId={activeChannel.id}
           currentUserId={currentUser.id}
           currentUserName={currentUser.name}
@@ -73,6 +70,7 @@ export function ProjectChatView({
           members={members}
           variant="project"
           fillAvailable
+          timeZone={currentUser.timezone}
           contextLabel={`${activeChannel.name} discourse`}
           emptyDescription={`Keep ${activeChannel.name.toLowerCase()} decisions, files, and updates together for this project.`}
           placeholder={`Message #${activeChannel.name.toLowerCase()}...`}

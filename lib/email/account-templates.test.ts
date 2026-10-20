@@ -5,6 +5,7 @@ import { renderMagicLinkEmail } from "./magic-link";
 import { renderPasswordResetEmail } from "./password-reset";
 import { renderWorkflowEmail } from "./workflow-notification";
 import { renderSecurityAlertEmail } from "./security-alert";
+import { renderSecurityCodeEmail } from "./security-code";
 
 describe("account email templates", () => {
   it("renders an organization-aware invitation with escaped values and text parity", () => {
@@ -81,8 +82,28 @@ describe("account email templates", () => {
     expect(rendered.html).toContain("email-preheader");
     expect(rendered.html).toContain("The &lt;Trinity&gt;");
     expect(rendered.html).toContain(">Review budget<");
+    expect(rendered.subject).toBe("The <Trinity> · Review the current quotation");
     expect(rendered.text).toContain("Manage notification settings");
     expect(rendered.text).toContain("Stop workflow emails");
+  });
+
+  it("uses the same brand and readable workspace identity in every transactional template", () => {
+    const workspaceName = "Example <Publishing>";
+    const examples = [
+      renderInviteEmail({ inviteUrl: "https://sastra.test/invite", role: "member", workspaceName }),
+      renderMagicLinkEmail({ url: "https://sastra.test/sign-in", workspaceName }),
+      renderPasswordResetEmail({ url: "https://sastra.test/reset", workspaceName }),
+      renderSecurityCodeEmail({ code: "123456", workspaceName }),
+      ...(["failed", "stale", "database_tls"] as const).map((kind) => renderSecurityAlertEmail({ kind, workspaceName })),
+      renderWorkflowEmail({ title: "Review budget", project: "The Trinity", url: "https://sastra.test/projects/trinity/budget", actionLabel: "Review budget", unsubscribeToken: "t", workspaceName }),
+    ];
+    for (const email of examples) {
+      expect(email.html).toContain("/icons/icon-192.png");
+      expect(email.html).toContain("Example &lt;Publishing&gt;");
+      expect(email.html).toContain("prefers-color-scheme: dark");
+      expect(email.html).not.toContain("Example <Publishing>");
+      expect(email.text).toContain(workspaceName);
+    }
   });
 
   it("makes dependency alerts explicit and super-admin scoped", () => {

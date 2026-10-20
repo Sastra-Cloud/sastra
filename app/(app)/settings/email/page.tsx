@@ -85,7 +85,7 @@ export default async function SettingsEmailPage() {
         : { mode: "none", needsReconnect: savedMailbox?.mailbox };
 
   return (
-    <div className="space-y-5">
+    <div className="grid items-start gap-5 @[64rem]/settings:grid-cols-2">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">

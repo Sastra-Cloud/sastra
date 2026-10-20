@@ -28,6 +28,18 @@ export type AssistantThreadMessage = {
   feedback: { rating: 1 | -1; comment: string | null } | null;
 };
 
+/** Has this person ever sent the assistant a message? Drives the first-run intro. */
+export async function hasAskedAssistant(userId: string): Promise<boolean> {
+  const rows = await db
+    .select({ id: assistantMessages.id })
+    .from(assistantMessages)
+    .where(
+      and(eq(assistantMessages.userId, userId), eq(assistantMessages.role, "user"))
+    )
+    .limit(1);
+  return rows.length > 0;
+}
+
 /** The visible transcript: user + assistant text turns (tool plumbing hidden). */
 export async function getThread(userId: string): Promise<AssistantThreadMessage[]> {
   const rows = await db

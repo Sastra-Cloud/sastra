@@ -4,11 +4,14 @@ import { describe, expect, it } from "vitest";
 import { AppCanvas, ContentColumn, PageShell } from "./cockpit";
 
 describe("authenticated page geometry", () => {
-  it("uses the Projects width for the shared app canvas", () => {
+  it("fills the space left by navigation and page padding", () => {
     const markup = renderToStaticMarkup(<AppCanvas>Content</AppCanvas>);
 
     expect(markup).toContain("data-app-canvas");
-    expect(markup).toContain("max-w-[88rem]");
+    expect(markup).toContain("w-full");
+    expect(markup).toContain("min-w-0");
+    expect(markup).not.toContain("max-w-");
+    expect(markup).not.toContain("mx-auto");
   });
 
   it("keeps PageShell responsible for rhythm rather than width", () => {

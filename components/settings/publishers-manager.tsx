@@ -83,7 +83,7 @@ export function PublishersManager({
 
   return (
     <div className="space-y-5">
-      <Card>
+      <Card className="max-w-5xl">
         <CardContent className="space-y-3 py-4">
           <div>
             <p className="text-sm font-medium">Add a publisher / rights holder</p>
@@ -137,7 +137,8 @@ export function PublishersManager({
           import create one after review.
         </p>
       ) : (
-        holders.map((holder) => (
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,36rem),1fr))] items-start gap-5">
+        {holders.map((holder) => (
           <PublisherCard
             key={holder.id}
             holder={holder}
@@ -148,7 +149,8 @@ export function PublishersManager({
             pending={pending}
             run={run}
           />
-        ))
+        ))}
+        </div>
       )}
     </div>
   );
@@ -599,7 +601,7 @@ function ContactForm({
       setValues((current) => ({ ...current, [key]: event.target.value }));
 
   return (
-    <div className="grid gap-3 rounded-lg border bg-muted/20 p-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-3 rounded-lg border bg-muted/20 p-3">
       <Field label="Contact name">
         <Input value={values.name} onChange={set("name")} />
       </Field>
@@ -612,7 +614,7 @@ function ContactForm({
       <Field label="Role (optional)">
         <Input value={values.role} onChange={set("role")} />
       </Field>
-      <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-4">
+      <div className="col-span-full flex flex-wrap gap-2">
         <Button
           size="sm"
           disabled={pending || !values.name.trim()}

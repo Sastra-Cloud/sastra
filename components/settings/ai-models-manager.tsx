@@ -184,7 +184,7 @@ function ModelRow({ row, hosted }: { row: Row; hosted: boolean }) {
             id={`fallback-${row.taskKey}`}
             value={fallback}
             onChange={(e) => setFallback(e.target.value)}
-            placeholder="optional, e.g. anthropic/claude-haiku-4.5"
+            placeholder="optional, e.g. anthropic/claude-haiku-5.5"
           />
         </div>
 

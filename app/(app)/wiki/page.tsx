@@ -83,7 +83,7 @@ export default async function WikiPage({
           )}
         </section>
       ) : (
-        <div className="grid gap-4 xl:grid-cols-2">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,28rem),1fr))] items-start gap-4">
           {tree.map((subject) => (
             <section key={subject.id} className="rounded-xl border bg-card p-4 shadow-sm sm:p-5">
               <div className="mb-4 flex min-w-0 items-start justify-between gap-3">

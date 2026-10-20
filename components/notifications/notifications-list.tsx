@@ -45,8 +45,8 @@ export function NotificationsList({ initial }: { initial: Item[] }) {
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-heading text-3xl font-semibold tracking-tight">
           Notifications
         </h1>
@@ -70,50 +70,52 @@ export function NotificationsList({ initial }: { initial: Item[] }) {
         ) : null}
       </div>
 
-      {items.length === 0 ? (
-        <p className="rounded-lg border bg-card py-14 text-center text-sm text-muted-foreground">
-          You&apos;re all caught up.
-        </p>
-      ) : (
-        <ul className="divide-y rounded-lg border bg-card">
-          {items.map((it) => (
-            <li key={it.id}>
-              <button
-                type="button"
-                onClick={() => open(it)}
-                className={cn(
-                  "flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-muted/50",
-                  !it.readAt && "bg-primary/5"
-                )}
-              >
-                <span
+      <div className="max-w-6xl">
+        {items.length === 0 ? (
+          <p className="rounded-lg border bg-card py-14 text-center text-sm text-muted-foreground">
+            You&apos;re all caught up.
+          </p>
+        ) : (
+          <ul className="divide-y rounded-lg border bg-card">
+            {items.map((it) => (
+              <li key={it.id}>
+                <button
+                  type="button"
+                  onClick={() => open(it)}
                   className={cn(
-                    "mt-1.5 size-2 shrink-0 rounded-full",
-                    it.readAt ? "bg-transparent" : "bg-primary"
+                    "flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-muted/50",
+                    !it.readAt && "bg-primary/5"
                   )}
-                  aria-hidden
-                />
-                <span className="min-w-0 flex-1">
-                  {it.project ? (
-                    <span className="block truncate text-xs font-medium text-muted-foreground">
-                      {it.project}
-                    </span>
-                  ) : null}
-                  <span className="block font-medium">{it.title}</span>
-                  {it.body ? (
-                    <span className="block text-sm text-muted-foreground">
-                      {it.body}
-                    </span>
-                  ) : null}
-                </span>
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {new Date(it.createdAt).toLocaleDateString()}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+                >
+                  <span
+                    className={cn(
+                      "mt-1.5 size-2 shrink-0 rounded-full",
+                      it.readAt ? "bg-transparent" : "bg-primary"
+                    )}
+                    aria-hidden
+                  />
+                  <span className="min-w-0 flex-1">
+                    {it.project ? (
+                      <span className="block truncate text-xs font-medium text-muted-foreground">
+                        {it.project}
+                      </span>
+                    ) : null}
+                    <span className="block font-medium">{it.title}</span>
+                    {it.body ? (
+                      <span className="block text-sm text-muted-foreground">
+                        {it.body}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {new Date(it.createdAt).toLocaleDateString()}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

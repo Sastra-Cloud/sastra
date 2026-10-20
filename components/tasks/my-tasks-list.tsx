@@ -185,8 +185,12 @@ export function MyTasksList({
           </Link>
         </p>
       ) : null}
-      {homePreview && nextUpCount === 0 && blockedNextUp.length === 0 ? <p className="text-xs text-muted-foreground">{selectedCount > 0 ? "Your selected Next up tasks are awaiting payment confirmation in My Work." : "No next tasks chosen yet. Your assigned work is below."}</p> : null}
-      {groups.map((group) => (
+      {homePreview && dueToday.length === 0 ? <p className="text-sm text-muted-foreground">No tasks due today.</p> : null}
+      {homePreview && nextUpCount === 0 && blockedNextUp.length === 0 && selectedCount > 0 ? <p className="text-xs text-muted-foreground">Your selected Next up tasks are awaiting payment confirmation in My Work.</p> : null}
+      {homePreview && groups.every(group => group.rows.length === 0) ? (
+        <p className="rounded-xl border bg-card px-4 py-5 text-sm text-muted-foreground">No other tasks need attention right now. Open My Work to see later and waiting work.</p>
+      ) : null}
+      {groups.filter(group => !homePreview || group.rows.length > 0).map((group) => (
         <section
           key={group.id}
           className="space-y-2"
@@ -326,10 +330,10 @@ export function MyTasksList({
                         >
                           {due.tone === "none" ? "No due date" : due.text}
                         </span>
-                        <PriorityBadge priority={t.priority} />
+                        {t.priority !== "medium" ? <PriorityBadge priority={t.priority} /> : null}
                         <TaskStatusBadge status={t.status} />
                         {followUp?.state === "due" ? <Badge variant="secondary">Follow up due</Badge> : null}
-                        {!controlled ? (
+                        {!controlled && !homePreview ? (
                           <button
                             type="button"
                             aria-label={`Delete "${t.title}"`}
