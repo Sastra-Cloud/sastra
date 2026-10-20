@@ -2,9 +2,9 @@
 title: "Print runs, printer quote requests & quotes"
 category: "Publishing"
 roles: [manager, admin]
-keywords: [publishing, print defaults and printer contacts, active runs, request printer quotes, source page count, full payment, consolidate payments, wrong wire amount, print, print run, reprint, previous print, historical print, old print, collapse print run, show print details, old quote, legacy quote, copy specs, apply specs, measurement unit, millimetres, millimeters, mm, inches, trim size, rfq, quote request, printer, printing coordinator, payment task, payment confirmation task, quantity, tier, total price, price per copy, quote learning, document learning, printing in five steps, print steps, first print run, walk me through printing, how to print, recommended balance, economic elbow, sell-through, lowest cost per copy, total cost, cost per copy, incremental cost, comparison, wire, finance, funding received, printer paid, deposit, balance, proof, proof attachment, proof download, proof files, printer waiting for approval, proofing status, suggested project update, invoice, deposit invoice, final invoice, invoice attachment, attachment preview, preview invoice, estimate vs actual, accept quote, accepted, collapse quotes, hide other quotes, show other quotes, reopen quote, un-accept, unaccept, reject quote, reverse acceptance, ai email draft, generated sign-off, learns from edits, email style, draft tone, awaiting payment, wire requested, run status, print correspondence, printer email, email thread, open thread, view thread, missing price, per copy price, cover pdf, book pdf, artwork not a quote, file note, attachment note, payment follow up, awaiting payment confirmation, confirm printer received payment]
+keywords: [confirm printer paid, confirm payment in my work, publishing, print defaults and printer contacts, active runs, request printer quotes, source page count, full payment, consolidate payments, wrong wire amount, print, print run, reprint, previous print, historical print, old print, collapse print run, show print details, old quote, legacy quote, copy specs, apply specs, measurement unit, millimetres, millimeters, mm, inches, trim size, rfq, quote request, printer, printing coordinator, payment task, payment confirmation task, quantity, tier, total price, price per copy, quote learning, document learning, printing in five steps, print steps, first print run, walk me through printing, how to print, recommended balance, economic elbow, sell-through, lowest cost per copy, total cost, cost per copy, incremental cost, comparison, wire, finance, funding received, printer paid, deposit, balance, proof, proof attachment, proof download, proof files, printer waiting for approval, proofing status, suggested project update, invoice, deposit invoice, final invoice, invoice attachment, attachment preview, preview invoice, estimate vs actual, accept quote, accepted, collapse quotes, hide other quotes, show other quotes, reopen quote, un-accept, unaccept, reject quote, reverse acceptance, ai email draft, generated sign-off, learns from edits, email style, draft tone, awaiting payment, wire requested, run status, print correspondence, printer email, email thread, open thread, view thread, missing price, per copy price, cover pdf, book pdf, artwork not a quote, file note, attachment note, payment follow up, awaiting payment confirmation, confirm printer received payment]
 order: 70
-summary: "Review active Print runs, quotes, payments, and proofs; expand specifications, setup, and defaults as needed."
+summary: "Review active Print runs, quotes, payments, and proofs; confirm printer payments from My Work; expand specifications, setup, and defaults as needed."
 ---
 
 Open **Publishing ▸ Print**. Status, the next unpaid payment, proof, funding
@@ -301,8 +301,12 @@ the wire email send, its title changes to **Confirm printer received … payment
 and its status becomes **Review**. It moves into **Waiting** in My Work while
 the payment is pending. Three business days after the request, or on an earlier
 payment or task due date, it returns to the action queue as **Follow up due**.
-Use the link on the task to open the payment. The task closes automatically
-when the payment is marked paid on the Print tab; its status cannot be changed
+Managers can choose **Confirm printer paid** directly in **My Work ▸ Focus**
+after the printer receives the money. Review the task and project, then confirm.
+This marks the payment paid, updates budget spending, and closes the task.
+The task leaves the open queue while saving and returns if saving fails.
+You can also use the task link to mark the payment paid on the Print tab.
+The task's status cannot be changed
 directly from a task board. Reopening a
 payment reopens its task; deleting the payment removes the generated task. A
 confirmed deletion removes only that payment while it saves, so actions on the

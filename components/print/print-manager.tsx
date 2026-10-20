@@ -1,5 +1,7 @@
 "use client";
 
+import { FileLink } from "@/components/files/file-link";
+
 import { SectionDisclosure } from "@/components/section-disclosure";
 
 import { confirmDialog } from "@/lib/dialog-requests";
@@ -1775,7 +1777,7 @@ export function PrintManager({
                               <span className="hidden sm:inline">Email</span>
                             </Link>
                           ) : null}
-                          <a
+                          <FileLink
                             href={`/api/files/${proof.fileId}/download`}
                             className={cn(
                               buttonVariants({ variant: "ghost", size: "sm" }),
@@ -1785,7 +1787,7 @@ export function PrintManager({
                           >
                             <Download className="size-4" />
                             <span className="hidden sm:inline">Download</span>
-                          </a>
+                          </FileLink>
                         </span>
                       </li>
                     ))}
@@ -2651,12 +2653,12 @@ function RunPanel({
               label="Proof"
               value={
                 proof ? (
-                  <a
+                  <FileLink
                     href={`/api/files/${proof.fileId}/download`}
                     className="text-primary hover:underline"
                   >
                     Download PDF
-                  </a>
+                  </FileLink>
                 ) : run.latestProofUrl ? (
                   <a
                     href={run.latestProofUrl}

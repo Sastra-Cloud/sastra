@@ -174,6 +174,21 @@ export function committedFundingTotal(
   );
 }
 
+/** Keep unscheduled gifts and overpayments without counting scheduled receipts twice. */
+export function receivedContributionsTotal(
+  receipts: Array<{ id: string; amount: string }>,
+  payments: Array<{ receiptId: string | null; amount: string }>
+): number {
+  const expectedByReceipt = new Map(payments
+    .filter((payment) => payment.receiptId)
+    .map((payment) => [payment.receiptId, Math.round(Number(payment.amount) * 100)]));
+  return receipts.reduce((sum, receipt) => {
+    const amountCents = Math.round(Number(receipt.amount) * 100);
+    const expectedCents = expectedByReceipt.get(receipt.id);
+    return sum + (expectedCents === undefined ? amountCents : Math.max(0, amountCents - expectedCents));
+  }, 0) / 100;
+}
+
 export const DEFAULT_FUNDING_DEDUCTION_BPS = 1300;
 
 /** Clamp a persisted deduction rate to a safe 0–99.99% range. */

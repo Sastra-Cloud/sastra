@@ -5,6 +5,7 @@ import {
   DEFAULT_LANGUAGE_EXPANSION_FACTOR,
   budgetGroupLabel,
   committedFundingTotal,
+  receivedContributionsTotal,
   lineAmount,
   lineAmountCents,
   lineQuantity,
@@ -125,5 +126,14 @@ describe("committedFundingTotal", () => {
 
   it("adds unrelated received contributions", () => {
     expect(committedFundingTotal(10088, 10088, 500)).toBe(10588);
+  });
+
+  it("keeps an overpayment in committed funding without counting its linked receipt twice", () => {
+    const extra = receivedContributionsTotal(
+      [{ id: "linked", amount: "2605.90" }, { id: "gift", amount: "100.00" }, { id: "refund", amount: "-25.90" }],
+      [{ receiptId: "linked", amount: "2530.00" }]
+    );
+    expect(extra).toBe(150);
+    expect(committedFundingTotal(0, 5060, extra)).toBe(5210);
   });
 });

@@ -42,7 +42,12 @@ export function BudgetTabs({
       setActiveId(sectionId && ids.includes(sectionId) ? sectionId : ids[0] ?? "planning");
       if (target && sectionId && scroll) {
         cancelAnimationFrame(frame);
-        frame = requestAnimationFrame(() => target.scrollIntoView({ block: "start", behavior: "instant" }));
+        frame = requestAnimationFrame(() => {
+          target.scrollIntoView({ block: "start", behavior: "instant" });
+          if (target instanceof HTMLElement && target.getAttribute("tabindex") === "-1") {
+            target.focus({ preventScroll: true });
+          }
+        });
       }
     }
     function onHashChange() { revealHash(!historyNavigation); }

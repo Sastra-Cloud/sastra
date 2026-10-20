@@ -40,6 +40,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/assistant/routing-jev.ts`
 - `lib/assistant/routing.test.ts`
 - `lib/assistant/routing.ts`
+- `lib/assistant/tools-budget.test.ts`
 - `lib/assistant/tools.test.ts`
 - `lib/assistant/tools.ts`
 - `lib/assistant/trace.ts`

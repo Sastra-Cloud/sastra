@@ -1,5 +1,7 @@
 "use client";
 
+import { FileLink } from "@/components/files/file-link";
+
 import { confirmDialog } from "@/lib/dialog-requests";
 
 import { startTransition, useCallback, useEffect, useRef, useState } from "react";
@@ -1082,7 +1084,7 @@ function MessageRow({
                   </AttachmentContent>
                   <AttachmentActions>
                     <AttachmentAction
-                      render={<a href={`/api/files/${a.fileId}/download`} />}
+                      render={<FileLink href={`/api/files/${a.fileId}/download`} />}
                       aria-label={`Download ${a.originalName}`}
                     >
                       <Download className="size-3.5" />

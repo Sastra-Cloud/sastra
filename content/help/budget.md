@@ -2,9 +2,9 @@
 title: "Budget & quotation"
 category: "Publishing"
 roles: [member, manager, admin]
-keywords: [publishing, content tabs, budget tabs, retained drafts, quotation tab, approvals tab, cash flow tab, payments tab, notes tab, committed funding, funding gap, budget, quotation, quote, internal costs, partner quote, partner safe, assistant project blueprint, create project with budget, conversational project setup, price per copy, per copy invoice, organization donation fee, organization fee, admin fee, donation deduction, fee coverage, funding target, expected net, actual net, available funding, budget attention, next action, section navigation, budget in four steps, what do i do next, walk me through the budget, budget steps, getting started with budget, reprint budget, accepted print quote, add print cost, custom reprint cost, edit budget line, optimistic budget line, unit price, word count, typesetting, funding assigned, raised, to raise, spent, funding, royalties, excel, pdf, export, reconciliation, cashflow, donation mou match, apply donation to mou, shared mou, allocated funding, shared receipt, funding partner, sponsor, funding contact, proposal, funding proposal subject, proposal sign-off, mou proposal, send proposal, proposal history, email attachment, attachment preview, preview quotation, proposed completion date, completion date, suggest a date, completion planner, planning capacity, projects at once, project duration, timeline, deadline, budget approval, approver, approve, request changes, unanimous approval, stale approval, logo, branding, accent color, partners directory, saved partner, paid invoice, upload invoice, past invoice, invoice received, immutable invoice, void invoice, replacement invoice, split payment, edit payment schedule, change mou payment, payment date, invoice owner, royalty payment task, mark royalty paid]
+keywords: [continue to partner email, share quote, email quote to partner, download quote, blank download window, save partner quote, quote save after update, undo funding target, restore partner rates, partner visibility, optimistic partner quote, uncheck budget line, selected budget lines, audiobook invoice, partial invoice, invoice budget lines, assistant invoice, add budget line, publishing, content tabs, budget tabs, retained drafts, quotation tab, approvals tab, cash flow tab, payments tab, notes tab, committed funding, funding gap, budget, quotation, quote, internal costs, partner quote, partner safe, assistant project blueprint, create project with budget, conversational project setup, price per copy, per copy invoice, organization donation fee, organization fee, admin fee, donation deduction, fee coverage, funding target, expected net, actual net, available funding, budget attention, next action, section navigation, budget in four steps, what do i do next, walk me through the budget, budget steps, getting started with budget, reprint budget, accepted print quote, add print cost, custom reprint cost, edit budget line, optimistic budget line, unit price, word count, typesetting, funding assigned, raised, to raise, spent, funding, royalties, excel, pdf, export, reconciliation, cashflow, donation mou match, apply donation to mou, shared mou, allocated funding, shared receipt, funding partner, sponsor, funding contact, proposal, funding proposal subject, proposal sign-off, mou proposal, send proposal, proposal history, email attachment, attachment preview, preview quotation, proposed completion date, completion date, suggest a date, completion planner, planning capacity, projects at once, project duration, timeline, deadline, budget approval, approver, approve, request changes, unanimous approval, stale approval, logo, branding, accent color, partners directory, saved partner, paid invoice, upload invoice, past invoice, invoice received, immutable invoice, void invoice, replacement invoice, split payment, edit payment schedule, change mou payment, payment date, invoice owner, royalty payment task, mark royalty paid, link payment, amount difference, overpayment, different amount]
 order: 60
-summary: "Review funding totals, then switch between Quotation, Approvals, Cash flow, Payments, and Notes without losing drafts."
+summary: "Manage project budgets, share partner quotes through a reviewed email, and invoice selected costs manually or with the assistant."
 ---
 
 Open **Publishing ▸ Budget**. The current scope's quotation, committed funding,
@@ -37,10 +37,19 @@ keeps the attempted values for correction.
 Receipts created from the admin **Donations** ledger are also locked on the
 project Budget page. An admin corrects their project split from **Donations** so
 the original gift, unallocated remainder, and review history stay together.
-If one of these receipts exactly matches one unpaid MoU payment for the same
-project and currency, an admin sees **Apply to MoU** beneath it. This reviewed
-action links the existing receipt and marks the payment received without adding
+An admin can choose **Link to MoU payment** beneath an imported donation receipt.
+Choose an unpaid payment for the same project, print run, and currency. Review
+the expected amount, the amount already received, and their difference.
+If the amounts differ, explain why this completes the scheduled payment.
+Choose **Confirm as received** only when the payment is complete. Leave a part
+payment open.
+
+This links the existing receipt and marks the payment received without adding
 money a second time.
+The original expected amount, received amount, and available net amount stay unchanged.
+The payment schedule shows the actual received amount when it differs. Extra
+funding stays in the project totals. Correct donation-linked payments from
+**Donations**, where their review history is kept.
 Proposal status changes and **Adopt recorded** reconciliation actions follow the
 same pattern: the badge or mismatch row changes immediately, then returns if the
 save fails.
@@ -70,6 +79,37 @@ charts appear after there are at least two months of activity, avoiding empty
 chart space when a project has only one recorded month.
 
 ## Building the quotation
+
+### Invoicing one part of an existing project
+
+In **Payments**, open **Invoice selected budget lines** and choose the costs
+the partner will cover, such as **Audiobook Production**. The invoice uses only
+those lines' partner-safe labels and saved partner prices. It stays on the same
+project. A budget line can be invoiced even when the main quotation uses one
+price per copy.
+
+Leave **Invoice amount** blank for the full selected cost, or enter a smaller
+contribution. Review the partner name, email, billing address, amount, and payment
+date, then confirm **Create invoice**. You can use another partner for this
+invoice without changing the project's main partner. This creates a separate
+scheduled payment and an invoice PDF. It does not record funding received or
+email anyone. Use **Email invoice** on the payment to review the message, CC
+list, and attachment, then confirm the send separately.
+
+Existing project funding is not subtracted automatically: it may cover different
+work. Lines with a linked invoice show a reminder to check existing payments
+before adding another. If PDF creation fails, retry the same request to finish
+the existing payment rather than creating another one. A budget or partner
+change between review and creation requires a fresh review.
+
+While viewing a project, you can ask the **Sastra Assistant**:
+“Create an invoice for this book's audiobook production.” It reads the live
+budget and existing invoices first, then shows the covered work, public amount,
+and partner details for approval. An existing matching invoice should be reused.
+It never creates another project to represent part of a book. If a cost is
+missing, it can propose adding a budget line using the quantity and rate you
+supply; humans can use **Add custom line** in **Quotation**. Both changes require
+manager or admin access. Invoice creation and email sending are separate actions.
 
 Managers and admins can also ask the **Sastra Assistant** to create a complete
 new project from supplied planning data. When the request includes a deliverable
@@ -131,6 +171,14 @@ Open **Partner quote** and choose:
 - **One price per copy** to show only quantity, price per copy, and total.
   **Suggest price** rounds upward to the nearest cent needed to cover costs.
 
+Checking or unchecking a partner line updates its visibility and quotation
+totals immediately. Only that line pauses while its change saves; you can
+continue choosing other lines. If saving fails, that line returns to its
+previous state and an error explains that you can try again. Other successful
+changes stay in place. Unfinished label and rate edits stay in their fields
+during other saves. **Download Excel** (itemized) or **Download PDF** (per copy)
+becomes available after saving finishes.
+
 The **Organization donation fee** is the percentage your organization retains
 from every donation. It is saved per budget scope. New projects and reprints
 snapshot the current workspace default. Existing budgets stay unchanged until a
@@ -157,14 +205,28 @@ the saved internal amounts and rounded upward at the displayed rate precision;
 Sastra verifies that the resulting expected net is at least the full internal
 cost, including when a line amount was adjusted separately from its unit rate.
 
+After applying the target, **Undo funding target** appears beside the Apply
+button. It restores the previous partner rates for the lines that changed,
+including rates that inherited their internal cost. Rates and totals update
+immediately while Apply or Undo saves; a failed save restores the previous
+view and shows an error. Undo cannot overwrite a rate edited since the target
+was applied. Save unfinished line edits before using either button, and save
+changes to the organization donation fee before applying a target. Undo is
+available for the last application while this budget remains open. Reloading
+or leaving the page clears it. Internal costs, labels, visibility, and other lines are preserved.
+
 When the partner quote has no unsaved changes, its action area shows **Saved**
 instead of prompting you to save again. Editing the quote brings back **Save
 partner quote**; preview remains tied to the last saved version until the change
-is saved.
+is saved. Saving also works when the app was updated after you opened the quote.
+You do not need to reload and lose your description. If a save fails, the quote
+keeps your edits so you can try again. **Saved** appears only after the server
+confirms the save.
 
 **Export to Excel** is the internal detailed workbook. **Preview partner file**
 creates a sanitized Excel workbook for itemized quotes or a PDF for per-copy
-quotes.
+quotes. The file downloads while your current budget page stays open. Invoice
+links open an inline preview of the document, where you can download it.
 
 ## Set up a reprint budget
 
@@ -242,6 +304,19 @@ The same flow is available through the project header's **Update from document**
 button when AI detects that the uploaded document is an invoice.
 
 ## Funding partner & proposal
+
+After saving the **Partner quote**, choose **Continue to partner email**. This
+opens **Email quote to partner** in the **Approvals** tab without leaving the
+budget page or clearing unfinished editors. Choose **Draft proposal** or
+**Resume draft**, then review the recipient, CC, message, and attached quotation.
+Confirm your review and choose **Send proposal** to send it. Continuing to the
+email or drafting it never sends anything. If the funding email is missing, the
+composer links back to **Funding partner** in **Quotation** so you can add it.
+The **To** field follows the saved funding contact. Changing that email clears
+your previous review confirmation, and sending stays disabled while it is missing.
+
+The quote must finish saving before you can continue or download it. The
+undercoverage warning does not block sharing a quote for part of the project.
 
 Record the **funding partner / sponsor**, the contact's **first** and **last
 name**, an **email**, and a free-text **contact note** in **Quotation settings**

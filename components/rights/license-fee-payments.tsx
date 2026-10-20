@@ -1,5 +1,7 @@
 "use client";
 
+import { FileLink } from "@/components/files/file-link";
+
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -117,14 +119,14 @@ export function LicenseFeePayments({
                 {p.assigneeName ? ` · ${p.assigneeName}` : ""}
               </p>
               {p.receipts?.map((receipt) => (
-                <Link
+                <FileLink
                   key={receipt.id}
                   href={`/api/files/${receipt.fileId}/download`}
                   className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline"
                 >
                   <FileText className="size-3.5" />
                   {receipt.fileName}
-                </Link>
+                </FileLink>
               ))}
             </div>
             <div className="flex shrink-0 items-center gap-1.5">

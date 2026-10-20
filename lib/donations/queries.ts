@@ -40,6 +40,8 @@ export async function listDonationFundingReceiptLinks(
     allocationId: string;
     receiptId: string;
     mouPaymentId: string | null;
+    invoiceId: string | null;
+    sharedMouGroupId: string | null;
   }[]
 > {
   const rows = await db
@@ -47,6 +49,8 @@ export async function listDonationFundingReceiptLinks(
       allocationId: donationAllocations.id,
       receiptId: donationAllocations.fundingReceiptId,
       mouPaymentId: donationAllocations.mouPaymentId,
+      invoiceId: donationAllocations.invoiceId,
+      sharedMouGroupId: donationAllocations.sharedMouGroupId,
     })
     .from(donationAllocations)
     .where(eq(donationAllocations.projectId, projectId));

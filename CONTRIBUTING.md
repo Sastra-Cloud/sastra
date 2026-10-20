@@ -26,6 +26,24 @@ pnpm dev                      # http://localhost:3243
 
 ## Working on a change
 
+Local checks, CI, and production builds use tsrs, the Rust TypeScript checker.
+Run `pnpm typecheck` (or its alias `pnpm typecheck:tsrs`) for the normal check.
+Run `pnpm typecheck:tsc` to compare with the official TypeScript 7 compiler;
+the two compilers use separate incremental caches. The pinned tsrs release
+targets TypeScript 7.1 development behavior, so investigate diagnostic
+differences. Its published binaries support macOS ARM64 and Linux x64/ARM64.
+
+`pnpm build` generates Next.js route types, requires a successful tsrs check,
+builds the app, then checks the final generated types with tsrs. Any failure
+fails the build. The build wrapper skips Next.js's duplicate compiler check
+only for its bundler child; invoking `next build` directly retains the official
+TypeScript check.
+
+Tests that inspect or transpile source import Microsoft's
+`@typescript/typescript6` compatibility package for its JavaScript compiler API.
+The pnpm install hook in `.pnpmfile.cjs` gives API-based tools, including ESLint,
+the same package.
+
 - Branch from `main`. One change per pull request.
 - Run `pnpm typecheck`, `pnpm lint`, and `pnpm test` before opening the PR.
   `pnpm build` must also pass.

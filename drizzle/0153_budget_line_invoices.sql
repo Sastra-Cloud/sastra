@@ -1,0 +1,1 @@
+ALTER TABLE "mou_payments" ADD COLUMN "budget_invoice" jsonb;

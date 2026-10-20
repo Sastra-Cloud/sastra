@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   ExternalLink,
+  Download,
   FileImage,
   FileSpreadsheet,
   FileText,
@@ -10,6 +11,8 @@ import {
 } from "lucide-react";
 
 import { formatBytes } from "@/lib/format";
+import { fileLinkAttributes } from "@/lib/files/link-attributes";
+import { FileLink } from "@/components/files/file-link";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -73,6 +76,7 @@ export function OutgoingAttachmentReview({
   if (attachments.length === 0) return null;
 
   const inline = selected ? canPreviewInline(selected.mimeType) : false;
+  const previewUrl = selected ? fileLinkAttributes(selected.previewUrl, "preview").href : "";
 
   return (
     <>
@@ -161,14 +165,14 @@ export function OutgoingAttachmentReview({
                     {/* The source is an authenticated application route, not user HTML. */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={selected.previewUrl}
+                      src={previewUrl}
                       alt={`Preview of ${selected.name}`}
                       className="max-h-[66dvh] max-w-full object-contain"
                     />
                   </div>
                 ) : (
                   <iframe
-                    src={selected.previewUrl}
+                    src={previewUrl}
                     title={`Preview of ${selected.name}`}
                     className="h-[70dvh] min-h-72 w-full bg-white"
                   />
@@ -183,9 +187,7 @@ export function OutgoingAttachmentReview({
                       {attachmentKind(selected.mimeType)} preview
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      This file type cannot be displayed inside Sastra. Open the
-                      exact attachment in a new tab to inspect it before
-                      sending.
+                      Download this attachment to open and review it before sending.
                     </p>
                   </div>
                 </div>
@@ -193,18 +195,18 @@ export function OutgoingAttachmentReview({
 
               <DialogFooter className="m-0">
                 <Button
+                  nativeButton={false}
                   type="button"
                   variant="outline"
                   render={
-                    <a
+                    <FileLink
                       href={selected.previewUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      intent={inline ? "preview" : "download"}
                     />
                   }
                 >
-                  <ExternalLink className="size-4" />
-                  Open attachment
+                  {inline ? <ExternalLink className="size-4" /> : <Download className="size-4" />}
+                  {inline ? "Open attachment" : "Download attachment"}
                 </Button>
               </DialogFooter>
             </>

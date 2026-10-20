@@ -12,6 +12,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `app/api/files/complete/route.ts`
 - `app/api/files/presign/route.ts`
 - `components/files/file-attachments.tsx`
+- `components/files/file-link.tsx`
 - `components/imports/discard-import-button.tsx`
 - `components/imports/import-list-refresh.tsx`
 - `components/imports/import-review.tsx`
@@ -22,6 +23,8 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/db/schema/imports.ts`
 - `lib/files/actions.ts`
 - `lib/files/crop-image.ts`
+- `lib/files/link-attributes.test.ts`
+- `lib/files/link-attributes.ts`
 - `lib/files/queries.ts`
 - `lib/files/upload-client.ts`
 - `lib/imports/actions.ts`

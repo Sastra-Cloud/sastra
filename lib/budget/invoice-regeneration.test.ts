@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 import { beforeEach, expect, it, vi } from "vitest";
 import { z } from "zod";
 

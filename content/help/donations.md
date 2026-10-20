@@ -2,7 +2,7 @@
 title: "Donation imports & project funding"
 category: "Publishing"
 roles: [admin]
-keywords: [donations, bulk review, confirm duplicates, mark duplicates, mark all as duplicates, undo duplicate, select donations, keep many unallocated, donation csv, import donations, monthly donations, csv format, new csv format, set up csv format, csv columns, column mapping, saved csv formats, forget format, fund manager export, donation detail, suggest with ai, donor, received funding, project funding, unallocated donation, split donation, multiple projects, duplicate donation, import history, donation match, mou payment, apply donation to mou, reconcile donation, invoice match, budget match, security check, passkey, email code, retention, sensitive columns, source purge, sent invoice, sponsorship invoice, posted, saved project links, edit allocations]
+keywords: [donations, bulk review, confirm duplicates, mark duplicates, mark all as duplicates, undo duplicate, select donations, keep many unallocated, donation csv, import donations, monthly donations, csv format, new csv format, set up csv format, csv columns, column mapping, saved csv formats, forget format, fund manager export, donation detail, suggest with ai, donor, received funding, project funding, unallocated donation, full amount, use remaining, split donation, multiple projects, duplicate donation, import history, donation match, mou payment, apply donation to mou, link payment, amount difference, overpayment, different amount, reconcile donation, invoice match, budget match, security check, passkey, email code, retention, sensitive columns, source purge, sent invoice, sponsorship invoice, posted, saved project links, edit allocations]
 order: 62
 summary: "Admins import donation CSV files from any giving platform, save new CSV formats, match donations to sent invoices, sponsorships, and project payments, then review saved funding links."
 ---
@@ -170,8 +170,18 @@ that MoU payment.
 
 ## Split one donation across projects
 
-Add each project and enter its share. The total cannot be greater than the
-donation.
+When there is no suggested project match, the first manual allocation starts
+with the full donation amount. Choose its project, review the amount, and select
+**Confirm allocation** to post it. Existing allocations and suggested invoice or
+Shared MoU splits keep their amounts. If several projects are related but Sastra
+cannot infer the split, their amounts stay blank for your review.
+
+To split a donation, enter the first project's share, then select **Add project**.
+Each new row starts with the remaining unallocated amount without changing the
+other rows. You can edit a manual share or select **Use remaining** beside its
+amount to fill the balance into that row. The total cannot exceed the donation.
+The shortcut is shown on manual rows. Linked invoice and MoU amounts keep their
+reviewed shares. Remove an invoice match before changing its split.
 
 For a negative refund or reversal, enter negative project amounts. The combined
 adjustment cannot be larger than the imported negative total.
@@ -206,12 +216,21 @@ change the import record. Admins correct imported allocations from the
 A linked MoU payment is also marked received. Matched invoices are marked
 received when their full balance is paid.
 
-For an older posted allocation that was linked only to the project, an admin may
-see **Exact MoU match** beneath its locked receipt on the project Budget page.
-Select **Apply to MoU** to confirm the exact project, amount, and currency match.
-Sastra then links the existing receipt and marks the scheduled payment received;
-it does not create a second receipt. Ambiguous or partial matches must be
-reviewed from **Donations** instead.
+For a posted allocation linked only to the project, an admin can choose
+**Link to MoU payment** beneath its receipt in **Budget → Cash flow**.
+Choose the unpaid scheduled payment and check the expected amount, received
+amount, and difference. Payments must use the same project, print run, and
+currency. Shared MoUs and existing invoice matches stay in **Donations** for review.
+
+If the amounts differ, add a reason explaining why this completes the payment.
+Then choose **Confirm as received**. Leave a part payment open until it is complete.
+Sastra saves your reason and the difference in donation history.
+
+The existing receipt, available net amount, and original expected payment stay
+unchanged. No second receipt is created. The payment schedule shows the actual
+received amount when it differs, and any extra funding stays in project totals.
+Correct a donation-linked payment from **Donations** instead of undoing its receipt
+from the payment schedule.
 
 ## Source files and accounting history
 

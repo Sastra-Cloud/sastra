@@ -93,6 +93,9 @@ const DEFAULT_DUPLICATE_REASON =
 const donationMouMatchInput = z.object({
   allocationId: z.string().uuid(),
   paymentId: z.string().uuid(),
+  expectedPaymentAmount: z.coerce.number().finite().positive().optional(),
+  expectedReceiptAmount: z.coerce.number().finite().positive().optional(),
+  differenceReason: z.string().trim().max(500).optional(),
 });
 
 function money(value: number): string {
@@ -614,7 +617,7 @@ export async function confirmDonationAllocations(
   });
 }
 
-/** Link an existing reviewed donation receipt to one exact unpaid MoU payment. */
+/** Link an existing donation receipt after reviewing any difference from the schedule. */
 export async function confirmDonationMouPaymentMatch(
   input: z.input<typeof donationMouMatchInput>
 ): Promise<{ error?: string }> {
@@ -633,13 +636,17 @@ export async function confirmDonationMouPaymentMatch(
           allocationProjectId: donationAllocations.projectId,
           allocationAmount: donationAllocations.amount,
           currentPaymentId: donationAllocations.mouPaymentId,
+          allocationInvoiceId: donationAllocations.invoiceId,
+          allocationSharedGroupId: donationAllocations.sharedMouGroupId,
           receiptId: donationAllocations.fundingReceiptId,
           receiptProjectId: fundingReceipts.projectId,
+          receiptPrintRunId: fundingReceipts.printRunId,
           receiptAmount: fundingReceipts.amount,
           receiptCurrency: fundingReceipts.currency,
           donationCurrency: donations.currency,
           donationDate: donations.donationDate,
           paymentProjectId: mouPayments.projectId,
+          paymentPrintRunId: mouPayments.printRunId,
           paymentAmount: mouPayments.amount,
           paymentCurrency: mouPayments.currency,
           paymentPaidAt: mouPayments.paidAt,
@@ -667,23 +674,44 @@ export async function confirmDonationMouPaymentMatch(
       if (match.currentPaymentId) {
         throw new Error("This donation is already linked to an MoU payment.");
       }
-      if (match.paymentPaidAt) {
+      if (match.paymentPaidAt || match.paymentReceiptId) {
         throw new Error("This MoU payment is already marked received.");
       }
-      if (match.sharedMouGroupId) {
+      if (match.sharedMouGroupId || match.allocationSharedGroupId) {
         throw new Error("Shared MoU payments must be reviewed from Donations.");
+      }
+      if (match.allocationInvoiceId) {
+        throw new Error("This donation already has an invoice match. Review it from Donations.");
       }
       if (
         match.allocationProjectId !== match.paymentProjectId ||
         match.receiptProjectId !== match.paymentProjectId ||
-        cents(match.allocationAmount) !== cents(match.paymentAmount) ||
-        cents(match.receiptAmount) !== cents(match.paymentAmount) ||
+        match.receiptPrintRunId !== match.paymentPrintRunId ||
+        cents(match.allocationAmount) !== cents(match.receiptAmount) ||
+        cents(match.receiptAmount) <= 0 ||
+        cents(match.paymentAmount) <= 0 ||
         match.donationCurrency !== match.paymentCurrency ||
         match.receiptCurrency !== match.paymentCurrency
       ) {
         throw new Error(
-          "The donation no longer exactly matches this project's MoU payment."
+          "Choose an unpaid payment for the same project, print run, and currency."
         );
+      }
+      if (
+        (parsed.data.expectedPaymentAmount !== undefined &&
+          cents(parsed.data.expectedPaymentAmount) !== cents(match.paymentAmount)) ||
+        (parsed.data.expectedReceiptAmount !== undefined &&
+          cents(parsed.data.expectedReceiptAmount) !== cents(match.receiptAmount))
+      ) {
+        throw new Error("An amount changed. Refresh the page and review the link again.");
+      }
+      const differenceCents = cents(match.receiptAmount) - cents(match.paymentAmount);
+      if (differenceCents !== 0 && (
+        parsed.data.expectedPaymentAmount === undefined ||
+        parsed.data.expectedReceiptAmount === undefined ||
+        (parsed.data.differenceReason?.length ?? 0) < 3
+      )) {
+        throw new Error("Review both amounts and explain the difference before confirming.");
       }
 
       const previousAllocations = await tx
@@ -694,6 +722,7 @@ export async function confirmDonationMouPaymentMatch(
           amount: donationAllocations.amount,
           mouPaymentId: donationAllocations.mouPaymentId,
           sharedMouGroupId: donationAllocations.sharedMouGroupId,
+          invoiceId: donationAllocations.invoiceId,
         })
         .from(donationAllocations)
         .innerJoin(projects, eq(projects.id, donationAllocations.projectId))
@@ -711,7 +740,8 @@ export async function confirmDonationMouPaymentMatch(
         .where(
           and(
             eq(mouPayments.id, parsed.data.paymentId),
-            isNull(mouPayments.paidAt)
+            isNull(mouPayments.paidAt),
+            isNull(mouPayments.receiptId)
           )
         )
         .returning({ id: mouPayments.id });
@@ -741,6 +771,7 @@ export async function confirmDonationMouPaymentMatch(
           amount: allocation.amount,
           mouPaymentId: allocation.mouPaymentId,
           sharedMouGroupId: allocation.sharedMouGroupId,
+          invoiceId: allocation.invoiceId,
         })),
         nextAllocations: previousAllocations.map(
           ({ allocationId, ...allocation }) =>
@@ -748,7 +779,9 @@ export async function confirmDonationMouPaymentMatch(
               ? { ...allocation, mouPaymentId: parsed.data.paymentId }
               : allocation
         ),
-        reason: "Exact project, amount, and currency match confirmed from Budget.",
+        reason: differenceCents === 0
+          ? "Exact project, amount, and currency match confirmed from Budget."
+          : `Different amount confirmed from Budget. Scheduled ${match.paymentCurrency} ${match.paymentAmount}; received ${match.receiptCurrency} ${match.receiptAmount}; difference ${money(differenceCents / 100)}. ${parsed.data.differenceReason}`,
         actorId: user.id,
       });
       return match.allocationProjectId;

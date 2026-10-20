@@ -3,8 +3,16 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { documentImports, partners, projectBudgetSettings, projects, sharedMouGroups, sharedMouMemberships } from "@/lib/db/schema";
 import { describeInvoiceWork } from "./invoice-description";
+import type { BudgetInvoiceSnapshot } from "./line-invoice";
 
-export async function getMouInvoiceDetails(input: { projectId: string; sharedMouGroupId: string | null; trigger: string; publicDescription?: string | null }) {
+export async function getMouInvoiceDetails(input: { projectId: string; sharedMouGroupId: string | null; trigger: string; publicDescription?: string | null; budgetInvoice?: BudgetInvoiceSnapshot | null }) {
+  if (input.budgetInvoice && !input.sharedMouGroupId) {
+    return {
+      recipientName: input.budgetInvoice.recipientName,
+      billingAddress: input.budgetInvoice.recipientAddress,
+      description: input.publicDescription || "Project funding",
+    };
+  }
   const [[budget], [project], groups] = await Promise.all([
     db.select().from(projectBudgetSettings).where(eq(projectBudgetSettings.projectId, input.projectId)).limit(1),
     db.select({ title: projects.title }).from(projects).where(eq(projects.id, input.projectId)).limit(1),

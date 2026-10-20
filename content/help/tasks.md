@@ -2,9 +2,9 @@
 title: "Tasks & the board"
 category: "Work"
 roles: [member, manager, admin]
-keywords: [badge breakdown, actions for you, due tasks, search tasks, find task, missing task, lost task, old task, done task, reopen task, next up, shared queue, undated task, due today, today tasks, overdue tasks, your next tasks, suggestions to review, next task, handoff, more options, create task, laptop task form, task, kanban, board, column, to do, in progress, review, done, drag, move, assign, priority, due date, earliest due first, task order, reschedule, edit task, move task to project, milestone, recurring, recurring schedule, google drive, drive loading, cancel drive, small screen, task form scrolling, task attachment, upload file, attach file, working folder, license obligation, printer payment, printing coordinator, proof review, approve proof, reply to printer, budget approval, approve, request changes, wip, time tracking, comment, mention, email task, forwarded email, meeting reminder, booking link, email assistant, task suggestion, learn from email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice, waiting for payment, follow up due, source linked task]
+keywords: [confirm printer paid, confirm payment in my work, badge breakdown, actions for you, due tasks, search tasks, find task, missing task, lost task, old task, done task, reopen task, next up, shared queue, undated task, due today, today tasks, overdue tasks, your next tasks, suggestions to review, next task, handoff, more options, create task, laptop task form, task, kanban, board, column, to do, in progress, review, done, drag, move, assign, priority, due date, earliest due first, task order, reschedule, edit task, move task to project, milestone, recurring, recurring schedule, google drive, drive loading, cancel drive, small screen, task form scrolling, task attachment, upload file, attach file, working folder, license obligation, printer payment, printing coordinator, proof review, approve proof, reply to printer, budget approval, approve, request changes, wip, time tracking, comment, mention, email task, forwarded email, meeting reminder, booking link, email assistant, task suggestion, learn from email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice, waiting for payment, follow up due, source linked task]
 order: 30
-summary: "Follow a shared Next up order without due dates, see real deadlines, search for any task, review email suggestions, and use Board and Agenda."
+summary: "Follow a shared Next up order without due dates, see real deadlines, search for any task, review email suggestions, confirm printer payments, and use Board and Agenda."
 ---
 
 Tasks are the unit of work. **My Work** brings your personal tasks and dated
@@ -72,8 +72,11 @@ search every task. Deleted tasks cannot be found.
 
 Requested printer payments leave the top action queue while waiting for payment
 confirmation. They return with **Follow up due** after three business days or
-on an earlier due date. Open the linked payment to record that it was paid;
-the task then closes automatically. Linked printer, royalty, license fee,
+on an earlier due date. In **Focus**, managers can choose **Confirm printer paid**
+on a requested payment. Review the task and project, then confirm that the printer
+received the money. The payment is marked paid and the task closes automatically.
+The task leaves the open queue while saving and returns if saving fails.
+You can also open the linked payment to mark it paid. Linked printer, royalty, license fee,
 invoice, and budget approval tasks follow their source records, so ordinary
 task status and deletion controls are unavailable for them. Payment tasks link
 back to the record that controls them.

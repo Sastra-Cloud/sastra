@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 import { z } from "zod";
 import { beforeEach, expect, it, vi } from "vitest";
 

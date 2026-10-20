@@ -1,5 +1,7 @@
 "use client";
 
+import { FileLink } from "@/components/files/file-link";
+
 import { Component, lazy, Suspense, useState, type ReactNode } from "react";
 import { Download, ImageOff, Loader2 } from "lucide-react";
 
@@ -113,7 +115,8 @@ function ImagePreview({
           variant="ghost"
           size="icon"
           className="size-11 shrink-0"
-          render={<a href={image.downloadUrl} />}
+          nativeButton={false}
+          render={<FileLink href={image.downloadUrl} />}
           aria-label={`Download ${image.name}`}
         >
           <Download className="size-4" />

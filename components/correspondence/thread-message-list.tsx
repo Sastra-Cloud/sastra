@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { FileLink } from "@/components/files/file-link";
 import {
   ChevronDown,
   Download,
@@ -137,7 +137,7 @@ export function ThreadMessageList({
               {m.attachments.length ? (
                 <div className="flex flex-wrap gap-2 border-t pt-3">
                   {m.attachments.map((attachment) => (
-                    <div key={attachment.id} className="flex min-w-0 flex-wrap items-center gap-2"><Link
+                    <div key={attachment.id} className="flex min-w-0 flex-wrap items-center gap-2"><FileLink
                       href={`/api/files/${attachment.fileId}/download`}
                       className="inline-flex min-h-11 max-w-full items-center gap-2 rounded-md border bg-background px-3 text-xs font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
@@ -149,7 +149,7 @@ export function ThreadMessageList({
                         </span>
                       </span>
                       <Download className="size-3.5 shrink-0 text-muted-foreground" />
-                    </Link>
+                    </FileLink>
                     {attachment.mimeType === "application/pdf" || attachment.mimeType.startsWith("image/") ? <ReviewEmailAttachmentButton threadId={threadId} attachmentId={attachment.id} /> : null}
                     </div>
                   ))}

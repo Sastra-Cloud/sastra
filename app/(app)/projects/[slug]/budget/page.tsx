@@ -45,7 +45,9 @@ import { ProposalPanel } from "@/components/budget/proposal-panel";
 import { listProposals } from "@/lib/proposals/queries";
 import { listPartnersWithContacts } from "@/lib/partners/queries";
 import { FundingReceipts } from "@/components/budget/funding-receipts";
+import { donationMouLinkOptions } from "@/lib/donations/mou-link";
 import { MouPayments } from "@/components/budget/mou-payments";
+import { BudgetLineInvoice } from "@/components/budget/budget-line-invoice";
 import { RoyaltiesCard } from "@/components/budget/royalties-card";
 import { RoyaltyPayments } from "@/components/budget/royalty-payments";
 import { LicenseFeePayments } from "@/components/rights/license-fee-payments";
@@ -68,6 +70,7 @@ import { buildBudgetAttentionSummary } from "@/lib/budget/attention";
 import { toCents } from "@/lib/budget/reconcile-math";
 import {
   committedFundingTotal,
+  receivedContributionsTotal,
   partnerQuoteTotalCents,
 } from "@/lib/budget/compute";
 import { listEmailDraftsForProject } from "@/lib/email/draft-store";
@@ -263,44 +266,20 @@ export default async function ProjectBudgetPage({
   const donationLinkedReceiptIds = new Set(
     donationReceiptLinks.map((link) => link.receiptId)
   );
-  const donationMouMatchByReceipt = new Map<
-    string,
-    { allocationId: string; paymentId: string; label: string }
-  >();
-  for (const link of donationReceiptLinks) {
-    if (link.mouPaymentId) continue;
-    const receipt = receipts.find((item) => item.id === link.receiptId);
-    if (!receipt) continue;
-    const exactPayments = payments.filter(
-      (payment) =>
-        !payment.paidAt &&
-        Number(payment.amount) === Number(receipt.amount) &&
-        payment.currency === receipt.currency
-    );
-    if (exactPayments.length !== 1) continue;
-    const payment = exactPayments[0];
-    const triggerLabel =
-      {
-        on_signing: "On signing",
-        on_completion: "On completion",
-        on_52_episodes: "Episode milestone",
-        custom: "Scheduled payment",
-      }[payment.trigger] ?? "Scheduled payment";
-    donationMouMatchByReceipt.set(receipt.id, {
-      allocationId: link.allocationId,
-      paymentId: payment.id,
-      label:
-        payment.notes?.trim() ||
-        `${triggerLabel}${payment.dueDate ? ` · due ${payment.dueDate}` : ""}`,
-    });
-  }
+  const donationMouLinksByReceipt = new Map(
+    donationReceiptLinks.flatMap((link) => {
+      if (link.mouPaymentId || link.invoiceId || link.sharedMouGroupId || mouLinkedReceiptIds.has(link.receiptId)) return [];
+      const receipt = receipts.find((item) => item.id === link.receiptId);
+      if (!receipt || Number(receipt.amount) <= 0) return [];
+      const options = donationMouLinkOptions(receipt, payments);
+      return options.length ? [[receipt.id, { allocationId: link.allocationId, options }] as const] : [];
+    })
+  );
   const lockedReceiptIds = new Set([
     ...mouLinkedReceiptIds,
     ...donationLinkedReceiptIds,
   ]);
-  const receivedContributions = receipts
-    .filter((receipt) => !mouLinkedReceiptIds.has(receipt.id))
-    .reduce((s, r) => s + Number(r.amount), 0);
+  const receivedContributions = receivedContributionsTotal(receipts, payments);
   const scheduledFunding = payments.reduce(
     (sum, payment) => sum + Number(payment.amount),
     0
@@ -742,7 +721,9 @@ export default async function ProjectBudgetPage({
               : mouLinkedReceiptIds.has(r.id)
                 ? ("MoU" as const)
                 : undefined,
-            mouMatch: donationMouMatchByReceipt.get(r.id),
+            mouLink: donationMouLinksByReceipt.get(r.id),
+            mouPaymentLabel: payments.find((payment) => payment.receiptId === r.id)?.notes ||
+              (mouLinkedReceiptIds.has(r.id) ? "Scheduled payment" : undefined),
           }))}
         />
       </BudgetSection>
@@ -776,6 +757,24 @@ export default async function ProjectBudgetPage({
             </span>
           </Link>
         ))}
+        {canEdit ? (
+          <BudgetLineInvoice
+            projectId={project.id}
+            printRunId={selectedRunId ?? null}
+            currency={settings.currency}
+            partnerName={budgetSettings.partnerName}
+            partnerEmail={budgetSettings.partnerContactEmail}
+            lines={items.filter((item) => item.partnerVisible).map((item) => ({
+              id: item.id,
+              label: item.partnerLabel?.trim() || item.label,
+              quantity: item.quantity,
+              unitPrice: item.partnerUnitPrice ?? item.unitPrice,
+              alreadyInvoiced: payments.some((payment) =>
+                payment.budgetInvoice?.budgetItemIds.includes(item.id) && invoiceByPayment.has(payment.id)
+              ),
+            }))}
+          />
+        ) : null}
         <MouPayments
           hasSharedSchedule={sharedMouGroups.length > 0}
           projectId={project.id}
@@ -805,6 +804,8 @@ export default async function ProjectBudgetPage({
             invoiceTaskId: p.invoiceTaskId,
             invoiceRequestedAt: p.invoiceRequestedAt,
             paidAt: p.paidAt,
+            receivedAmount: receipts.find((receipt) => receipt.id === p.receiptId)?.amount ?? null,
+            donationLinked: p.receiptId ? donationLinkedReceiptIds.has(p.receiptId) : false,
             invoice: invoiceByPayment.get(p.id) ?? null,
             invoiceHistory: invoiceHistoryByPayment.get(p.id) ?? [],
           }))}

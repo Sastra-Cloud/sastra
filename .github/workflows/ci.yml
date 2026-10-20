@@ -6,6 +6,58 @@ on:
   pull_request:
 
 jobs:
+  container:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.6-pg18-bookworm@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
+        env:
+          POSTGRES_USER: sastra
+          POSTGRES_PASSWORD: smoke-only
+          POSTGRES_DB: sastra_container
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U sastra -d sastra_container"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: sastra:ci
+          cache-from: type=gha,scope=container-smoke
+          cache-to: type=gha,scope=container-smoke,mode=max
+      - name: Start the production image as self-hosted and cloud instances
+        env:
+          DATABASE_URL: postgres://sastra:smoke-only@localhost:5432/sastra_container
+          BETTER_AUTH_SECRET: container-smoke-secret-not-used-in-production
+          BETTER_AUTH_URL: http://localhost:3000
+        run: |
+          start_and_check() {
+            docker run -d --name sastra-smoke --network host \
+              -e DATABASE_URL -e BETTER_AUTH_SECRET -e BETTER_AUTH_URL "$@" sastra:ci
+            for attempt in $(seq 1 60); do
+              if curl --fail --silent http://localhost:3000/api/ready > "$RUNNER_TEMP/ready.json"; then
+                cat "$RUNNER_TEMP/ready.json"
+                return 0
+              fi
+              sleep 2
+            done
+            docker logs sastra-smoke
+            return 1
+          }
+          trap 'docker logs sastra-smoke; docker rm -f sastra-smoke' EXIT
+          start_and_check
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/api/internal/management/status)" = 404
+          docker rm -f sastra-smoke
+          # Fly runs migration/bootstrap in a release machine, before the app.
+          docker run --rm --network host -e DATABASE_URL --entrypoint sh sastra:ci \
+            -c 'node scripts/migrate.mjs && node scripts/bootstrap-workspace.mjs'
+          start_and_check -e MIGRATE_ON_START=false -e SASTRA_CLOUD_INSTANCE_ID=ci-smoke \
+            -e SASTRA_CLOUD_MANAGEMENT_SECRET=smoke-management-secret
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/api/internal/management/status)" = 401
   postgres18:
     runs-on: ubuntu-latest
     services:
@@ -83,7 +135,7 @@ jobs:
             -H "Content-Type: application/json" \
             --data "{\"status\":\"$audit_status\",\"checkedAt\":\"$checked_at\"}"
 
-      - name: Typecheck
+      - name: Typecheck (tsrs)
         run: pnpm typecheck
 
       - name: Lint

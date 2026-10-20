@@ -1,24 +1,31 @@
 "use client";
 
+import { FileLink } from "@/components/files/file-link";
+
 import { useMemo, useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Check, Eye, EyeOff, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, Download, Eye, EyeOff, Sparkles, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { usePropState } from "@/hooks/use-prop-state";
 import {
-  applySuggestedPartnerRates,
+  type PartnerLinePatch,
+  type PartnerRateChange,
+  type PartnerRateResult,
+  type PartnerQuoteLine as PartnerLine,
+} from "@/lib/budget/partner-line-state";
+import {
   applySuggestedPerCopyPrice,
   enableBudgetPresentation,
-  saveBudgetPresentation,
-  updateBudgetLine,
 } from "@/lib/budget/actions";
+import { applySuggestedPartnerRates, undoSuggestedPartnerRates } from "@/lib/budget/partner-rate-actions";
+import { savePartnerQuote } from "@/lib/budget/partner-quote-save";
+import type { PartnerQuotePresentation as Presentation } from "@/lib/budget/presentation-input";
 import {
   expectedNetCents,
   grossTargetCents,
   lineAmountCents,
   partnerQuoteTotalCents,
+  suggestPartnerRates,
 } from "@/lib/budget/compute";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,25 +34,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-type PartnerLine = {
-  id: string;
-  label: string;
-  partnerLabel: string | null;
-  partnerUnitPrice: string | null;
-  partnerVisible: boolean;
-  unit: "words" | "pages" | "cover" | "project" | "flat";
-  quantity: string;
-  unitPrice: string;
-  amount: string;
-};
+type LineDraft = Partial<Pick<PartnerLine, "partnerLabel" | "partnerUnitPrice">>;
 
-type Presentation = {
-  mode: "itemized" | "per_copy";
-  deductionBps: number;
-  publicDescription: string | null;
-  perCopyQuantity: number | null;
-  perCopyUnitPrice: string | null;
-};
 
 function money(cents: number, currency: string) {
   return new Intl.NumberFormat(undefined, {
@@ -63,7 +53,11 @@ export function PartnerQuotePanel({
   currency,
   canEdit,
   presentation: initialPresentation,
-  items: initialItems,
+  items,
+  onUpdateLine,
+  onUpdateRates,
+  isLinePending,
+  linesPending,
 }: {
   projectId: string;
   slug: string;
@@ -72,15 +66,40 @@ export function PartnerQuotePanel({
   canEdit: boolean;
   presentation: Presentation | null;
   items: PartnerLine[];
+  onUpdateLine: (id: string, patch: PartnerLinePatch["patch"], onSuccess: () => void) => void;
+  onUpdateRates: (
+    rates: Record<string, string | null>,
+    action: () => Promise<PartnerRateResult>,
+    onSuccess: (result: Extract<PartnerRateResult, { rates: unknown }>) => void
+  ) => void;
+  isLinePending: (id: string) => boolean;
+  linesPending: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [presentation, setPresentation] = usePropState(initialPresentation);
-  const [savedPresentation, setSavedPresentation] =
-    usePropState(initialPresentation);
-  const [items, setItems] = usePropState(initialItems);
+  const presentationVersion = JSON.stringify(initialPresentation);
+  const [previousPresentationVersion, setPreviousPresentationVersion] = useState(presentationVersion);
+  const [presentation, setPresentation] = useState(initialPresentation);
+  const [savedPresentation, setSavedPresentation] = useState(initialPresentation);
+  // A line save refreshes props too. Equal settings must not erase another draft.
+  if (presentationVersion !== previousPresentationVersion) {
+    setPreviousPresentationVersion(presentationVersion);
+    setPresentation(initialPresentation);
+    setSavedPresentation(initialPresentation);
+  }
+  const [lineDrafts, setLineDrafts] = useState<Record<string, LineDraft>>({});
+  const [undoRates, setUndoRates] = useState<PartnerRateChange[] | null>(null);
+  const saving = pending || linesPending;
+  const hasLineDrafts = items.some((item) => {
+    if (!item.partnerVisible) return false;
+    const draft = lineDrafts[item.id];
+    return draft && (
+      (draft.partnerLabel !== undefined && draft.partnerLabel !== (item.partnerLabel ?? item.label)) ||
+      (draft.partnerUnitPrice !== undefined && draft.partnerUnitPrice !== (item.partnerUnitPrice ?? item.unitPrice))
+    );
+  });
   const [selected, setSelected] = useState<Set<string>>(
-    () => new Set(initialItems.filter((item) => item.partnerVisible).map((item) => item.id))
+    () => new Set(items.filter((item) => item.partnerVisible).map((item) => item.id))
   );
 
   const internalCents = useMemo(
@@ -105,11 +124,13 @@ export function PartnerQuotePanel({
   const coverageCents = expectedCents - internalCents;
   const presentationDirty =
     JSON.stringify(presentation) !== JSON.stringify(savedPresentation);
+  const quoteNotSaved = presentationDirty || saving || hasLineDrafts;
+  const fundingTargetDirty = presentation?.deductionBps !== savedPresentation?.deductionBps;
 
-  function run(
-    action: () => Promise<unknown>,
+  function run<Result>(
+    action: () => Promise<Result>,
     success: string,
-    onSuccess?: (result: unknown) => void
+    onSuccess?: (result: Result) => void
   ) {
     startTransition(async () => {
       try {
@@ -140,7 +161,7 @@ export function PartnerQuotePanel({
     if (!presentation) return;
     run(
       () =>
-        saveBudgetPresentation(projectId, {
+        savePartnerQuote(slug, {
           printRunId,
           mode: presentation.mode,
           deductionPercent: presentation.deductionBps / 100,
@@ -152,42 +173,55 @@ export function PartnerQuotePanel({
               : Number(presentation.perCopyUnitPrice),
         }),
       "Partner quote saved",
-      () => setSavedPresentation(presentation)
+      (saved) => { setPresentation(saved); setSavedPresentation(saved); }
     );
   }
 
-  function updateLine(id: string, patch: Partial<PartnerLine>) {
-    const previous = items;
-    setItems((current) =>
-      current.map((item) => (item.id === id ? { ...item, ...patch } : item))
-    );
-    startTransition(async () => {
-      try {
-        const result = await updateBudgetLine(id, {
-          ...(patch.partnerLabel !== undefined
-            ? { partnerLabel: patch.partnerLabel }
-            : {}),
-          ...(patch.partnerUnitPrice !== undefined
-            ? {
-                partnerUnitPrice:
-                  patch.partnerUnitPrice == null
-                    ? null
-                    : Number(patch.partnerUnitPrice),
-              }
-            : {}),
-          ...(patch.partnerVisible !== undefined
-            ? { partnerVisible: patch.partnerVisible }
-            : {}),
-        });
-        if (!result) throw new Error("Line not found.");
-        router.refresh();
-      } catch (error) {
-        setItems(previous);
-        toast.error(
-          error instanceof Error ? error.message : "Could not save the public line."
-        );
-      }
+  function updateLine(id: string, patch: PartnerLinePatch["patch"]) {
+    if (isLinePending(id)) return;
+    onUpdateLine(id, patch, () => {
+      setLineDrafts((current) => {
+        const draft = current[id];
+        if (!draft) return current;
+        const remaining = { ...draft };
+        if (patch.partnerLabel !== undefined && draft.partnerLabel === patch.partnerLabel) delete remaining.partnerLabel;
+        if (patch.partnerUnitPrice !== undefined && draft.partnerUnitPrice === patch.partnerUnitPrice) delete remaining.partnerUnitPrice;
+        const next = { ...current };
+        if (Object.keys(remaining).length) next[id] = remaining;
+        else delete next[id];
+        return next;
+      });
     });
+  }
+
+  function changeFundingRates(undo: boolean) {
+    if (!presentation || saving || hasLineDrafts || (undo ? !undoRates : fundingTargetDirty)) return;
+    try {
+      const rates = undo
+        ? Object.fromEntries(undoRates!.map((change) => [change.id, change.previousPartnerUnitPrice]))
+        : suggestPartnerRates(items, selected, presentation.deductionBps);
+      // These drafts equal saved values (dirty drafts block the action). Let the
+      // new rates render immediately instead of keeping equal old input values.
+      setLineDrafts((current) => Object.fromEntries(Object.entries(current).map(([id, draft]) => {
+        if (!Object.hasOwn(rates, id)) return [id, draft];
+        const remaining = { ...draft };
+        delete remaining.partnerUnitPrice;
+        return [id, remaining];
+      })));
+      onUpdateRates(
+        rates,
+        () => undo
+          ? undoSuggestedPartnerRates(projectId, printRunId, undoRates!)
+          : applySuggestedPartnerRates(projectId, printRunId, [...selected]),
+        (result) => {
+          if (undo) setUndoRates(null);
+          else if (result.changes.length) setUndoRates(result.changes);
+          toast.success(undo ? "Previous partner rates restored" : result.changes.length ? "Funding target applied" : "Partner rates already match the funding target");
+        }
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not calculate partner rates.");
+    }
   }
 
   if (!presentation) {
@@ -373,34 +407,41 @@ export function PartnerQuotePanel({
                 Choose visible lines and edit the partner-safe wording and rates.
               </p>
               {canEdit ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={pending || selected.size === 0}
-                  onClick={() =>
-                    run(
-                      () =>
-                        applySuggestedPartnerRates(
-                          projectId,
-                          printRunId,
-                          [...selected]
-                        ),
-                      "Suggested public rates applied"
-                    )
-                  }
-                >
-                  <Sparkles className="size-4" />
-                  Apply funding target to selected lines
-                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  {undoRates ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={saving || hasLineDrafts}
+                      onClick={() => changeFundingRates(true)}
+                      title="Restore partner rates from before the last funding target application"
+                    >
+                      <Undo2 className="size-4" />
+                      Undo funding target
+                    </Button>
+                  ) : null}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={saving || selected.size === 0 || hasLineDrafts || fundingTargetDirty}
+                    onClick={() => changeFundingRates(false)}
+                  >
+                    <Sparkles className="size-4" />
+                    Apply funding target to selected lines
+                  </Button>
+                </div>
               ) : null}
             </div>
             <div className="divide-y overflow-hidden rounded-lg border">
               {items.map((item) => {
                 const publicRate = item.partnerUnitPrice ?? item.unitPrice;
+                const draft = lineDrafts[item.id];
+                const linePending = isLinePending(item.id);
                 const amount = lineAmountCents(item.quantity, publicRate);
                 return (
                   <div
                     key={item.id}
+                    aria-busy={linePending}
                     className={cn(
                       "grid gap-3 p-3 md:grid-cols-[auto_minmax(12rem,1fr)_9rem_8rem] md:items-center",
                       !item.partnerVisible && "bg-muted/25 text-muted-foreground"
@@ -409,8 +450,9 @@ export function PartnerQuotePanel({
                     <label className="inline-flex min-h-9 items-center gap-2 text-sm">
                       <input
                         type="checkbox"
+                        aria-label={`Show ${item.label} in partner quote`}
                         checked={item.partnerVisible}
-                        disabled={!canEdit || pending}
+                        disabled={!canEdit || pending || linePending}
                         onChange={(event) =>
                           updateLine(item.id, {
                             partnerVisible: event.target.checked,
@@ -428,16 +470,13 @@ export function PartnerQuotePanel({
                     </label>
                     <Input
                       aria-label={`Partner label for ${item.label}`}
-                      value={item.partnerLabel ?? item.label}
-                      disabled={!canEdit || pending || !item.partnerVisible}
+                      value={draft?.partnerLabel ?? item.partnerLabel ?? item.label}
+                      disabled={!canEdit || pending || linePending || !item.partnerVisible}
                       onChange={(event) =>
-                        setItems((current) =>
-                          current.map((candidate) =>
-                            candidate.id === item.id
-                              ? { ...candidate, partnerLabel: event.target.value }
-                              : candidate
-                          )
-                        )
+                        setLineDrafts((current) => ({
+                          ...current,
+                          [item.id]: { ...current[item.id], partnerLabel: event.target.value },
+                        }))
                       }
                       onBlur={(event) =>
                         updateLine(item.id, {
@@ -450,19 +489,13 @@ export function PartnerQuotePanel({
                       type="number"
                       min="0"
                       step={item.unit === "words" ? "0.0001" : "0.01"}
-                      value={publicRate}
-                      disabled={!canEdit || pending || !item.partnerVisible}
+                      value={draft?.partnerUnitPrice ?? publicRate}
+                      disabled={!canEdit || pending || linePending || !item.partnerVisible}
                       onChange={(event) =>
-                        setItems((current) =>
-                          current.map((candidate) =>
-                            candidate.id === item.id
-                              ? {
-                                  ...candidate,
-                                  partnerUnitPrice: event.target.value,
-                                }
-                              : candidate
-                          )
-                        )
+                        setLineDrafts((current) => ({
+                          ...current,
+                          [item.id]: { ...current[item.id], partnerUnitPrice: event.target.value },
+                        }))
                       }
                       onBlur={(event) =>
                         updateLine(item.id, {
@@ -499,7 +532,7 @@ export function PartnerQuotePanel({
 
         <div
           className={cn(
-            "flex flex-col gap-3 rounded-lg border px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between",
+            "rounded-lg border px-3 py-2 text-sm",
             coverageCents < 0
               ? "border-amber-400/70 bg-amber-50 text-amber-950 dark:bg-amber-950/20 dark:text-amber-100"
               : "border-emerald-300 bg-emerald-50 text-emerald-950 dark:bg-emerald-950/20 dark:text-emerald-100"
@@ -518,9 +551,21 @@ export function PartnerQuotePanel({
               ? ` Short by ${money(Math.abs(coverageCents), currency)}.`
               : ` Covers costs by ${money(coverageCents, currency)}.`}
           </span>
-          {canEdit ? (
-            <div className="flex flex-wrap justify-end gap-2">
-              {pending ? (
+        </div>
+        {canEdit ? (
+          <div className="flex flex-col gap-3 border-t pt-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="space-y-1">
+              <p className="font-medium">Share this quote with the partner</p>
+              <p className="text-xs text-muted-foreground">
+                {quoteNotSaved
+                  ? "Save your changes before preparing the partner email."
+                  : quoteCents <= 0
+                    ? "Set a partner quote amount before preparing the email."
+                  : "Review the recipient, message, and attached quote before sending."}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {saving ? (
                 <span
                   className={cn(
                     buttonVariants({ variant: "outline", size: "sm" }),
@@ -528,6 +573,10 @@ export function PartnerQuotePanel({
                   )}
                 >
                   Saving…
+                </span>
+              ) : hasLineDrafts ? (
+                <span className="inline-flex h-8 items-center px-2 text-sm font-medium">
+                  Unsaved line edits
                 </span>
               ) : presentationDirty ? (
                 <Button size="sm" onClick={persistPresentation}>
@@ -539,22 +588,13 @@ export function PartnerQuotePanel({
                   Saved
                 </span>
               )}
-              {presentationDirty || pending ? (
-                <span
-                  className={cn(
-                    buttonVariants({ variant: "outline", size: "sm" }),
-                    "cursor-not-allowed opacity-50"
-                  )}
-                  title={
-                    pending
-                      ? "Wait for the current save to finish."
-                      : "Save the partner quote before previewing it."
-                  }
-                >
-                  {pending ? "Saving…" : "Save to preview"}
-                </span>
+              {quoteNotSaved ? (
+                <Button variant="outline" size="sm" disabled>
+                  <Download className="size-4" />
+                  Download {presentation.mode === "per_copy" ? "PDF" : "Excel"}
+                </Button>
               ) : (
-                <Link
+                <FileLink
                   href={
                     presentation.mode === "per_copy"
                       ? `/api/projects/${slug}/budget/partner-pdf${
@@ -564,15 +604,26 @@ export function PartnerQuotePanel({
                           printRunId ? `&run=${printRunId}` : ""
                         }`
                   }
-                  target="_blank"
                   className={buttonVariants({ variant: "outline", size: "sm" })}
                 >
-                  Preview saved file
-                </Link>
+                  <Download className="size-4" />
+                  Download {presentation.mode === "per_copy" ? "PDF" : "Excel"}
+                </FileLink>
+              )}
+              {quoteNotSaved || quoteCents <= 0 ? (
+                <Button size="sm" disabled>
+                  Continue to partner email
+                  <ArrowRight className="size-4" />
+                </Button>
+              ) : (
+                <a href="#partner-email" className={buttonVariants({ size: "sm" })}>
+                  Continue to partner email
+                  <ArrowRight className="size-4" />
+                </a>
               )}
             </div>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );

@@ -412,6 +412,10 @@
 
 - GET, dynamic, runtime
 
+## `app/api/projects/[slug]/budget/partner-quote/route.ts`
+
+- PUT
+
 ## `app/api/push/public-key/route.ts`
 
 - GET, dynamic
@@ -616,6 +620,10 @@
 
 - BudgetAttentionSummary
 
+## `components/budget/budget-line-invoice.tsx`
+
+- BudgetLineInvoice
+
 ## `components/budget/budget-manager.tsx`
 
 - BudgetLineDTO, BudgetManager, BudgetPresentationDTO, BudgetSettingsDTO, PartnerContactOption, PartnerOption
@@ -631,6 +639,10 @@
 ## `components/budget/completion-date-planner.tsx`
 
 - CompletionDatePlanner
+
+## `components/budget/donation-mou-link.tsx`
+
+- DonationMouLink
 
 ## `components/budget/funding-receipts.tsx`
 
@@ -835,6 +847,10 @@
 ## `components/files/file-attachments.tsx`
 
 - FileAttachments
+
+## `components/files/file-link.tsx`
+
+- FileLink
 
 ## `components/guidance/coach-card.tsx`
 
@@ -1846,7 +1862,7 @@
 
 ## `lib/budget/actions.ts`
 
-- addAcceptedPrintQuoteBudgetLine, addCustomLine, addPayment, addReceipt, applySuggestedPartnerRates, applySuggestedPerCopyPrice, deleteBudgetLine, deletePayment, deleteReceipt, enableBudgetPresentation, ensureRoyaltyReminderTasksForAllProjects, generateMouInvoice, markPaymentPaid, markPaymentUnpaid, markRoyaltyPaid, markRoyaltyUnpaid, requestCompletionMouInvoices, requestEpisodeMilestoneMouInvoices, requestMouInvoice, resetBudgetLineRate, saveBudgetPresentation, seedDefaultBudget, sendInvoiceEmail, splitFundingIntoTwoPayments, updateBudgetLine, updateBudgetSettings, updatePayment, updateProjectRoyalties, updateReceipt, voidMouInvoice
+- addAcceptedPrintQuoteBudgetLine, addCustomLine, addPayment, addReceipt, applySuggestedPerCopyPrice, deleteBudgetLine, deletePayment, deleteReceipt, enableBudgetPresentation, ensureRoyaltyReminderTasksForAllProjects, generateMouInvoice, markPaymentPaid, markPaymentUnpaid, markRoyaltyPaid, markRoyaltyUnpaid, requestCompletionMouInvoices, requestEpisodeMilestoneMouInvoices, requestMouInvoice, resetBudgetLineRate, saveBudgetPresentation, seedDefaultBudget, sendInvoiceEmail, splitFundingIntoTwoPayments, updateBudgetLine, updateBudgetSettings, updatePayment, updateProjectRoyalties, updateReceipt, voidMouInvoice
 
 ## `lib/budget/approval-actions.ts`
 
@@ -1874,7 +1890,7 @@
 
 ## `lib/budget/compute.ts`
 
-- BudgetCategory, BudgetGroup, BudgetRates, BudgetUnit, DEFAULT_FUNDING_DEDUCTION_BPS, DEFAULT_LANGUAGE_EXPANSION_FACTOR, QuantityBasis, STANDARD_LINES, budgetGroupLabel, committedFundingTotal, deductionPercentToBps, expectedNetCents, grossTargetCents, groupForCategory, lineAmount, lineAmountCents, lineQuantity, normalizeDeductionBps, partnerQuoteTotalCents, rateForCategory, suggestPartnerRates, suggestedPerCopyPriceCents, sumAmountCents
+- BudgetCategory, BudgetGroup, BudgetRates, BudgetUnit, DEFAULT_FUNDING_DEDUCTION_BPS, DEFAULT_LANGUAGE_EXPANSION_FACTOR, QuantityBasis, STANDARD_LINES, budgetGroupLabel, committedFundingTotal, deductionPercentToBps, expectedNetCents, grossTargetCents, groupForCategory, lineAmount, lineAmountCents, lineQuantity, normalizeDeductionBps, partnerQuoteTotalCents, rateForCategory, receivedContributionsTotal, suggestPartnerRates, suggestedPerCopyPriceCents, sumAmountCents
 
 ## `lib/budget/export.ts`
 
@@ -1892,13 +1908,37 @@
 
 - nextInvoiceNumber
 
+## `lib/budget/line-invoice-actions.ts`
+
+- createBudgetLineInvoice, previewBudgetLineInvoice
+
+## `lib/budget/line-invoice.ts`
+
+- BudgetInvoiceSnapshot, BudgetLineInvoiceInput, BudgetLineInvoicePlan, budgetInvoiceHash, budgetLineInvoiceSchema, planBudgetLineInvoice
+
 ## `lib/budget/mou-payments.ts`
 
 - allCoveredProjectsComplete
 
+## `lib/budget/partner-line-state.ts`
+
+- PartnerLinePatch, PartnerQuoteLine, PartnerRateChange, PartnerRateResult, applyPartnerLinePatch, applyPartnerRates
+
+## `lib/budget/partner-quote-save.ts`
+
+- savePartnerQuote
+
+## `lib/budget/partner-rate-actions.ts`
+
+- applySuggestedPartnerRates, undoSuggestedPartnerRates
+
 ## `lib/budget/pdf.ts`
 
 - buildInvoicePdf, buildPerCopyQuotationPdf
+
+## `lib/budget/presentation-input.ts`
+
+- BudgetPresentationInput, PartnerQuotePresentation, budgetPresentationSchema
 
 ## `lib/budget/queries.ts`
 
@@ -1915,6 +1955,10 @@
 ## `lib/budget/reconcile.ts`
 
 - BudgetReconciliation, getBudgetReconciliation
+
+## `lib/budget/revalidate.ts`
+
+- revalidateBudget
 
 ## `lib/budget/royalty-recurring.ts`
 
@@ -2272,6 +2316,10 @@
 
 - confirmDonationAllocations, confirmDonationMouPaymentMatch, createDonationImportFromFile, reopenDonationDuplicates, resolveDonationDuplicate, resolveDonationDuplicates, setDonationUnallocated, setDonationsUnallocated
 
+## `lib/donations/allocation-draft.ts`
+
+- initialDonationAllocationDrafts, remainingDonationAllocationAmount
+
 ## `lib/donations/csv-format-ai.ts`
 
 - suggestDonationCsvMappingWithAi
@@ -2315,6 +2363,10 @@
 ## `lib/donations/match.ts`
 
 - MatchDonation, MatchProject, MatchReceivable, MatchSharedReceivable, buildDonationSuggestion
+
+## `lib/donations/mou-link.ts`
+
+- DonationMouLinkOption, donationMouLinkOptions
 
 ## `lib/donations/queries.ts`
 
@@ -2567,6 +2619,10 @@
 ## `lib/files/crop-image.ts`
 
 - PixelCrop, cropToFile, readFileAsDataURL, validateImageFile
+
+## `lib/files/link-attributes.ts`
+
+- fileLinkAttributes
 
 ## `lib/files/queries.ts`
 

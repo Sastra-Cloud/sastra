@@ -49,6 +49,7 @@ import { cn } from "@/lib/utils";
 import { usePropState } from "@/hooks/use-prop-state";
 import { useOptimisticAction } from "@/hooks/use-optimistic-action";
 import { PartnerQuotePanel } from "@/components/budget/partner-quote-panel";
+import { applyPartnerLinePatch, applyPartnerRates, type PartnerLinePatch, type PartnerRateResult } from "@/lib/budget/partner-line-state";
 
 // The print/ship line stores its status in the label, e.g. "Printing — 3,000
 // copies (finalized)". Show that status as an in-app badge and keep the label
@@ -147,6 +148,8 @@ type ProjectWordCountControl = {
 
 type BudgetItemMutation =
   | { type: "upsert"; item: BudgetLineDTO }
+  | ({ type: "patch-public" } & PartnerLinePatch)
+  | { type: "partner-rates"; rates: Record<string, string | null> }
   | { type: "remove"; id: string }
   | { type: "replace-all"; items: BudgetLineDTO[] };
 
@@ -163,6 +166,8 @@ function applyBudgetItemMutation(
   mutation: BudgetItemMutation
 ) {
   if (mutation.type === "replace-all") return mutation.items;
+  if (mutation.type === "patch-public") return applyPartnerLinePatch(current, mutation);
+  if (mutation.type === "partner-rates") return applyPartnerRates(current, mutation.rates);
   if (mutation.type === "remove") {
     return current.filter((item) => item.id !== mutation.id);
   }
@@ -308,14 +313,15 @@ export function BudgetManager({
   const itemMutation = useOptimisticAction({
     state: itemSource,
     update: applyBudgetItemMutation,
-    getKey: (mutation: BudgetItemMutation) =>
-      mutation.type === "remove"
-        ? mutation.id
-        : mutation.type === "replace-all"
-          ? "quotation-settings"
-          : mutation.item.id,
+    getKey: (mutation: BudgetItemMutation) => {
+      if (mutation.type === "remove" || mutation.type === "patch-public") return mutation.id;
+      if (mutation.type === "partner-rates") return "partner-rates";
+      if (mutation.type === "replace-all") return "quotation-settings";
+      return mutation.item.id;
+    },
   });
   const items = itemMutation.state;
+  const [pendingRateIds, setPendingRateIds] = useState<Set<string>>(() => new Set());
 
   const run = (fn: () => Promise<unknown>, ok?: string, rollback?: () => void) =>
     start(async () => {
@@ -373,6 +379,48 @@ export function BudgetManager({
           })),
       }
     );
+  }
+
+  function savePartnerLine(id: string, patch: PartnerLinePatch["patch"], onSuccess: () => void) {
+    if (itemMutation.isPending(id) || pendingRateIds.has(id)) return;
+    itemMutation.run(
+      { type: "patch-public", id, patch },
+      async () => {
+        const { partnerUnitPrice, ...fields } = patch;
+        const result = await updateBudgetLine(id, {
+          ...fields,
+          ...(partnerUnitPrice !== undefined
+            ? { partnerUnitPrice: partnerUnitPrice == null ? null : Number(partnerUnitPrice) }
+            : {}),
+        });
+        if (!result) throw new Error("Line not found. Refresh and try again.");
+        return result;
+      },
+      {
+        errorMessage: "Could not save the public line. Try again.",
+        reconcile: (result, current) => applyBudgetItemMutation(current, { type: "upsert", item: result }),
+        onSuccess: () => { onSuccess(); router.refresh(); },
+      }
+    );
+  }
+
+  function savePartnerRates(
+    rates: Record<string, string | null>,
+    action: () => Promise<PartnerRateResult>,
+    onSuccess: (result: Extract<PartnerRateResult, { rates: unknown }>) => void
+  ) {
+    if (itemMutation.pending) return;
+    setPendingRateIds(new Set(Object.keys(rates)));
+    itemMutation.run({ type: "partner-rates", rates }, action, {
+      errorMessage: "Could not save partner rates. Try again.",
+      reconcile: (result, current) => "rates" in result ? applyPartnerRates(current, result.rates) : current,
+      onSuccess: (result) => {
+        setPendingRateIds(new Set());
+        if ("rates" in result) onSuccess(result);
+        router.refresh();
+      },
+      onError: () => { setPendingRateIds(new Set()); router.refresh(); },
+    });
   }
 
   function removeLine(item: BudgetLineDTO) {
@@ -976,6 +1024,7 @@ export function BudgetManager({
 
       {!aggregateReadOnly ? (
         <PartnerQuotePanel
+          key={`${projectId}:${printRunId ?? "main"}`}
           projectId={projectId}
           slug={slug}
           printRunId={printRunId}
@@ -983,6 +1032,10 @@ export function BudgetManager({
           canEdit={canEdit}
           presentation={presentation}
           items={items}
+          onUpdateLine={savePartnerLine}
+          onUpdateRates={savePartnerRates}
+          isLinePending={(id) => itemMutation.isPending(id) || pendingRateIds.has(id)}
+          linesPending={itemMutation.pending}
         />
       ) : null}
 
@@ -1219,7 +1272,7 @@ function FundingPartnerCard({
   }
 
   return (
-    <Card>
+    <Card id="funding-partner" tabIndex={-1} className="scroll-mt-32">
       <CardContent className="space-y-3 py-4">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">

@@ -1,3 +1,4 @@
+import { FileLink } from "@/components/files/file-link";
 import { formatInTimeZone } from "date-fns-tz";
 import { getWorkspaceSettings } from "@/lib/workspace/queries";
 import Link from "next/link";
@@ -31,7 +32,7 @@ export default async function FundingReviewPage({ params }: { params: Promise<{ 
     <p className="text-sm text-muted-foreground">Verify the source amounts, processing contact, dates, and delivery clauses. Existing project budgets, rights, and deadlines are preserved.</p>
     <nav aria-label="Funding source" className="flex flex-wrap items-center gap-x-6 gap-y-2 py-2 text-sm">
     {review.sourceThreadId ? <Link href={`/correspondence/${review.sourceThreadId}`} className="inline-flex min-h-9 items-center text-primary underline underline-offset-4">Source correspondence</Link> : null}
-    {review.fileId ? <Link href={`/api/files/${review.fileId}/download`} target="_blank" className="inline-flex min-h-9 items-center text-primary underline underline-offset-4">Open source document</Link> : null}
+    {review.fileId ? <FileLink href={`/api/files/${review.fileId}/download`}  className="inline-flex min-h-9 items-center text-primary underline underline-offset-4">Open source document</FileLink> : null}
     </nav>
     {extraction && review.status === "extracted" && extraction.documentKind === "agreement" && extraction.agreementType !== "license_only" && extraction.mouPaymentSchedule.length > 0 ? <FundingReview today={today} importId={importId} extraction={extraction} projects={options} owners={owners} /> :
       <div className="space-y-3"><p>{review.error ?? (review.status === "extracted" ? "No incoming agreement funding was detected. Check the source document before retrying extraction." : "Extraction is in progress. Refresh this page when it finishes.")}</p><RetryImportButton importId={importId} /></div>}

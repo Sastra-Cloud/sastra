@@ -7,7 +7,6 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Check,
-  Link2,
   Lock,
   Pencil,
   Plus,
@@ -18,7 +17,8 @@ import {
 import { toast } from "sonner";
 
 import { addReceipt, deleteReceipt, updateReceipt } from "@/lib/budget/actions";
-import { confirmDonationMouPaymentMatch } from "@/lib/donations/actions";
+import { DonationMouLink } from "@/components/budget/donation-mou-link";
+import type { DonationMouLinkOption } from "@/lib/donations/mou-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,10 +38,10 @@ export type Receipt = {
   note: string | null;
   locked?: boolean;
   lockLabel?: "MoU" | "Donation";
-  mouMatch?: {
+  mouPaymentLabel?: string;
+  mouLink?: {
     allocationId: string;
-    paymentId: string;
-    label: string;
+    options: DonationMouLinkOption[];
   };
 };
 
@@ -135,8 +135,6 @@ export function FundingReceipts({
     0
   );
   const [pending, start] = useTransition();
-  const [reconcilePending, startReconcile] = useTransition();
-  const [reconcilingId, setReconcilingId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState<ReceiptDraft>(emptyDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -263,34 +261,6 @@ export function FundingReceipts({
     });
   }
 
-  function reconcileDonation(receipt: Receipt) {
-    if (!receipt.mouMatch) return;
-    setReconcilingId(receipt.id);
-    startReconcile(async () => {
-      try {
-        const result = await confirmDonationMouPaymentMatch({
-          allocationId: receipt.mouMatch!.allocationId,
-          paymentId: receipt.mouMatch!.paymentId,
-        });
-        if (result.error) throw new Error(result.error);
-        setVisibleReceipts((current) =>
-          current.map((item) =>
-            item.id === receipt.id ? { ...item, mouMatch: undefined } : item
-          )
-        );
-        toast.success("Donation applied. The MoU payment is now received.");
-        router.refresh();
-      } catch (error) {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Could not apply this donation to the MoU."
-        );
-      } finally {
-        setReconcilingId(null);
-      }
-    });
-  }
 
   return (
     <section
@@ -437,31 +407,19 @@ export function FundingReceipts({
                         </div>
                       ) : null}
                       </div>
-                      {canReconcileDonation && receipt.mouMatch ? (
-                        <div className="mt-2 flex flex-col gap-2 rounded-lg border border-info/25 bg-info/5 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-                          <p className="flex min-w-0 items-start gap-2 text-xs text-muted-foreground">
-                            <Link2 className="mt-0.5 size-3.5 shrink-0 text-info" />
-                            <span>
-                              Exact MoU match:{" "}
-                              <span className="font-medium text-foreground">
-                                {receipt.mouMatch.label}
-                              </span>
-                              . Applying it marks that scheduled payment received.
-                            </span>
-                          </p>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="shrink-0"
-                            disabled={reconcilePending}
-                            onClick={() => reconcileDonation(receipt)}
-                          >
-                            {reconcilePending && reconcilingId === receipt.id
-                              ? "Applying…"
-                              : "Apply to MoU"}
-                          </Button>
-                        </div>
+                      {receipt.mouPaymentLabel ? (
+                        <p className="mt-2 text-xs text-muted-foreground">Linked to MoU payment: {receipt.mouPaymentLabel}</p>
+                      ) : null}
+                      {canReconcileDonation && receipt.mouLink ? (
+                        <DonationMouLink
+                          allocationId={receipt.mouLink.allocationId}
+                          receiptAmount={receipt.amount}
+                          currency={receipt.currency}
+                          options={receipt.mouLink.options}
+                          onLinked={(payment) => setVisibleReceipts((current) => current.map((item) =>
+                            item.id === receipt.id ? { ...item, mouLink: undefined, mouPaymentLabel: payment.label } : item
+                          ))}
+                        />
                       ) : null}
                     </div>
                   )}

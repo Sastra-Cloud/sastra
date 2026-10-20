@@ -46,6 +46,21 @@ describe("assistant chat pin tools", () => {
 });
 
 describe("assistant current-project safeguards", () => {
+  it("reads existing costs and requires individual approval for portion invoices", () => {
+    expect(getTool("get_project_budget")?.kind).toBe("read");
+    for (const name of ["get_project_budget", "create_budget_invoice", "add_budget_line"]) {
+      expect(isToolAllowed("member", name)).toBe(false);
+      expect(isToolAllowed("manager", name)).toBe(true);
+    }
+    expect(isWriteTool("create_budget_invoice")).toBe(true);
+    expect(getTool("create_budget_invoice")?.riskLevel).toBe("high");
+    const names = availableTools("manager", "I just need an invoice for the audiobook").map((tool) =>
+      tool.type === "function" ? tool.function.name : ""
+    );
+    expect(names).toContain("get_project_budget");
+    expect(names).toContain("create_budget_invoice");
+    expect(names).toContain("add_budget_line");
+  });
   it("keeps current-project and correction tools available for short follow-ups", () => {
     const names = availableTools("manager", "yes").map((tool) =>
       tool.type === "function" ? tool.function.name : ""

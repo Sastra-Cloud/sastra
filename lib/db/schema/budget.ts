@@ -24,6 +24,7 @@ import { partnerContacts, partners } from "./partners";
 import { budgetCategory, budgetGroup, budgetUnit } from "./enums";
 import { sharedMouGroups, sharedMouMemberships } from "./agreements";
 import { sponsorships } from "./sponsorships";
+import type { BudgetInvoiceSnapshot } from "@/lib/budget/line-invoice";
 
 /** Itemized quotation line (QTY × unit price = amount), grouped + funded. */
 export const budgetItems = pgTable(
@@ -501,6 +502,8 @@ export const mouPayments = pgTable(
     notes: text("notes"),
     /** Partner-safe invoice description, separate from internal scheduling notes. */
     publicDescription: text("public_description"),
+    /** Reviewed selected-line invoice details, retained for safe generation retries. */
+    budgetInvoice: jsonb("budget_invoice").$type<BudgetInvoiceSnapshot>(),
     invoiceAssigneeId: text("invoice_assignee_id").references(() => user.id, {
       onDelete: "set null",
     }),

@@ -14,6 +14,7 @@ const DESTRUCTIVE = /^(delete|remove|revoke|clear|discard|trash)/;
 const PROGRESS = /^(send|submit|draft|generate|publish|refresh|reprocess|repair|retry|upload|extract|startParse|startNow|startReprint|resume|applyImport|commitImport|attachAgreement|createImport|createProjectsFrom|enablePush|disablePush|runAssistant|request|invite|learn|seed)/;
 const PROGRESS_ACTIONS = new Set([
   "copyMessageText", // Wait for clipboard permission/write before reporting success.
+  "draftMouProposal", // Preparing a reviewable partner email never sends it.
   "promptInstall", // Native browser prompt: wait for the person's choice.
   "uploadToMessage", // Picked, pasted, and dropped files upload only after Send, with progress.
   "submitSupportRequest",
@@ -33,6 +34,8 @@ const PROGRESS_ACTIONS = new Set([
   "bulkCreateEpisodes",
   "bulkUpdateEpisodes",
   "createBudgetApprovalRequest",
+  "createBudgetLineInvoice", // Reviewed financial calculation and PDF generation.
+  "previewBudgetLineInvoice", // Read-only review; no invoice is created.
   "createDonationImportFromFile",
   "createPrintRun",
   "createQuoteFromFile",
@@ -41,7 +44,7 @@ const PROGRESS_ACTIONS = new Set([
   "enableBudgetPresentation",
   "markPaymentPaid",
   "confirmDonationAllocations",
-  "confirmDonationMouPaymentMatch",
+  "confirmDonationMouPaymentMatch", // Review the selected payment and any amount difference before posting.
   "resolveDonationDuplicate",
   "setDonationUnallocated",
   // Confirmed bulk review: server-computed counts, then Undo for duplicates.
@@ -81,13 +84,17 @@ const OPTIMISTIC_ACTIONS = new Set([
   "toggleReaction",
   "editMessage", // Text and Edited marker update immediately; failure restores the edit draft.
   "setTaskNextUp", // shared task selection: immediate state with rollback
+  "markPrintPaymentPaid", // reviewed confirmation: update payment/task immediately, roll back on failure
   // Chat message pins: predictable, reversible, and rolled back on failure.
   "pinMessage",
   "unpinMessage",
   "resetGuidanceTips",
   "applySuggestedPartnerRates",
+  "undoSuggestedPartnerRates", // Restore public rates immediately, with conflict checks and rollback.
   "applySuggestedPerCopyPrice",
   "saveBudgetPresentation",
+  "savePartnerQuote", // Draft stays visible; stable save URL survives app updates.
+  "updateBudgetLine", // Includes partner visibility: immediate totals and per-line rollback.
   "splitFundingIntoTwoPayments",
 ]);
 const NAVIGATION = new Set([

@@ -1,7 +1,8 @@
 "use client";
 
+import { FileLink } from "@/components/files/file-link";
+
 import { useEffect, useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, FileCheck2, Loader2, RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
@@ -202,9 +203,9 @@ function EmailRightsReviewCard({
                 ? review.proposal?.reason
                 : `${review.projectTitle} · ${review.proposal?.reason}`}
             </p>
-            <Link href={`/api/files/${review.fileId}/download`} className="mt-1 inline-block truncate text-xs text-primary hover:underline">
+            <FileLink href={`/api/files/${review.fileId}/download`} className="mt-1 inline-block truncate text-xs text-primary hover:underline">
               Open {review.fileName}
-            </Link>
+            </FileLink>
           </div>
         </div>
         <Button type="button" size="icon" variant="ghost" aria-label="Dismiss suggestion" disabled={pending} onClick={() => run(() => dismissEmailRightsReview(review.id))}>

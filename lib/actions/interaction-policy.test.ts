@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 import { describe, expect, it } from "vitest";
 
 import { interactionModeFor } from "./interaction-policy";
@@ -74,6 +74,9 @@ describe("client action interaction policy", () => {
     expect(interactionModeFor("setTaskNextUp")).toBe("optimistic");
     expect(interactionModeFor("reorderUserTasks")).toBe("optimistic");
   });
+  it("keeps reviewed printer-payment confirmation immediate with rollback", () => {
+    expect(interactionModeFor("markPrintPaymentPaid")).toBe("optimistic");
+  });
   it('keeps support submissions and attachments progress-based', () => {
     expect(interactionModeFor("downloadSupportAttachment")).toBe("progress");
     expect(interactionModeFor("updateSupportEmailPreference")).toBe("optimistic");
@@ -121,8 +124,11 @@ describe("client action interaction policy", () => {
   });
 
   it("keeps irreversible and long-running work out of optimistic completion", () => {
+    expect(interactionModeFor("createBudgetLineInvoice")).toBe("progress");
+    expect(interactionModeFor("previewBudgetLineInvoice")).toBe("progress");
     expect(interactionModeFor("deleteTask")).toBe("confirmed-destructive");
     expect(interactionModeFor("sendMouProposal")).toBe("progress");
+    expect(interactionModeFor("draftMouProposal")).toBe("progress");
     expect(interactionModeFor("approveFundingReview")).toBe("progress");
     expect(interactionModeFor("confirmSharedMouDelivery")).toBe("progress");
     expect(interactionModeFor("sendInvoiceEmail")).toBe("progress");
@@ -241,7 +247,7 @@ describe("client action interaction policy", () => {
     expect(interactionModeFor("updateProjectPrintFunding")).toBe("optimistic");
   });
 
-  it("keeps budget line feedback immediate and reversible", () => {
+  it("keeps budget line edits and partner visibility immediate and reversible", () => {
     expect(interactionModeFor("addCustomLine")).toBe("optimistic");
     expect(interactionModeFor("addAcceptedPrintQuoteBudgetLine")).toBe(
       "optimistic"
@@ -259,8 +265,10 @@ describe("client action interaction policy", () => {
 
   it("classifies partner quotations, receipts, and immutable invoices", () => {
     expect(interactionModeFor("saveBudgetPresentation")).toBe("optimistic");
+    expect(interactionModeFor("savePartnerQuote")).toBe("optimistic");
     expect(interactionModeFor("enableBudgetPresentation")).toBe("progress");
     expect(interactionModeFor("applySuggestedPartnerRates")).toBe("optimistic");
+    expect(interactionModeFor("undoSuggestedPartnerRates")).toBe("optimistic");
     expect(interactionModeFor("applySuggestedPerCopyPrice")).toBe("optimistic");
     expect(interactionModeFor("splitFundingIntoTwoPayments")).toBe("optimistic");
     expect(interactionModeFor("markPaymentPaid")).toBe("progress");

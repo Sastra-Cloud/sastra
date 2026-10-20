@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   CalendarDays,
   Check,
+  CheckCircle2,
   ChevronDown,
   CircleDollarSign,
   Clock3,
@@ -33,6 +34,8 @@ import {
   type MyWorkView,
 } from "@/lib/tasks/my-work";
 import { updateTaskStatus } from "@/lib/tasks/actions";
+import { markPrintPaymentPaid } from "@/lib/print/actions";
+import { confirmDialog } from "@/lib/dialog-requests";
 import { startTimer, stopTimer } from "@/lib/tasks/time-actions";
 import { AgendaRow } from "@/components/agenda/agenda-view";
 import { PriorityBadge, TASK_STATUS, TASK_STATUS_ORDER } from "@/components/badges";
@@ -241,6 +244,49 @@ export function MyWorkHub({
     });
   };
 
+  const confirmPrinterPayment = async (task: MyWorkTaskRow) => {
+    if (
+      !canManage ||
+      !task.printPaymentId ||
+      task.printPaymentStatus !== "requested" ||
+      task.status === "done" ||
+      statusInFlight.current.has(task.id)
+    ) return;
+    const paymentId = task.printPaymentId;
+    statusInFlight.current.add(task.id);
+    try {
+      const confirmed = await confirmDialog(
+        `${task.title}${task.projectTitle ? ` (${task.projectTitle})` : ""}. Confirm only after the printer received the money. This marks the payment paid and completes this task.`,
+        { title: "Confirm printer paid?", confirmLabel: "Confirm printer paid" }
+      );
+      if (!confirmed) return;
+
+      const previousTask = task;
+      const confirmationToast = toast.loading("Saving payment confirmation…");
+      setTasks(current => applyTaskMutation(current, {
+        type: "patch",
+        taskId: task.id,
+        fields: {
+          status: "done",
+          printPaymentStatus: "paid",
+          isNextUp: false,
+          completedAt: new Date(),
+          updatedAt: new Date(),
+        },
+      }));
+      try {
+        await markPrintPaymentPaid(paymentId);
+        router.refresh();
+        toast.success("Printer payment confirmed.", { id: confirmationToast });
+      } catch {
+        setTasks(current => current.map(item => item.id === previousTask.id ? previousTask : item));
+        toast.error("Couldn't confirm the payment. Check your internet and try again.", { id: confirmationToast });
+      }
+    } finally {
+      statusInFlight.current.delete(task.id);
+    }
+  };
+
   const toggleTimer = (task: MyWorkTaskRow) => {
     if (task.id.startsWith("optimistic-task-")) return;
     const previous = activeTimer;
@@ -413,6 +459,7 @@ export function MyWorkHub({
           onOpen={task => { if (!task.id.startsWith("optimistic-task-")) setDetailTask(task); }}
           onStatus={moveTask}
           onTimer={toggleTimer}
+          onConfirmPayment={canManage ? confirmPrinterPayment : undefined}
         />
       ) : null}
 
@@ -502,7 +549,7 @@ export function MyWorkHub({
 
 function FocusView({
   tasks, currentUserId, todayIso, timeZone, completedToday, trackedTodaySeconds,
-  activeTimer, pending, onOpen, onStatus, onTimer, dueOnly, onShowAll,
+  activeTimer, pending, onOpen, onStatus, onTimer, onConfirmPayment, dueOnly, onShowAll,
   emailContent, hasEmailContent,
 }: {
   tasks: MyWorkTaskRow[];
@@ -516,6 +563,7 @@ function FocusView({
   onOpen: (task: MyWorkTaskRow) => void;
   onStatus: (task: MyWorkTaskRow, status: Status) => void;
   onTimer: (task: MyWorkTaskRow) => void;
+  onConfirmPayment?: (task: MyWorkTaskRow) => void;
   dueOnly: boolean;
   onShowAll: () => void;
   emailContent: React.ReactNode;
@@ -574,29 +622,29 @@ function FocusView({
               <Button variant="ghost" size="sm" onClick={onShowAll}>Show all assigned work</Button>
               <FocusSection title="Tasks due" description="Due today or overdue, including printer-payment follow-ups."
                 tasks={dueWork} todayIso={todayIso} timeZone={timeZone} pending={pending}
-                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} emptyTitle="No tasks due now" />
+                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} onConfirmPayment={onConfirmPayment} emptyTitle="No tasks due now" />
             </> : <>
               {nextUp.length > 0 ? <FocusSection id="next-up" title="Next up"
                 description="Manager order across your projects · No due date needed" tasks={nextUp}
                 todayIso={todayIso} timeZone={timeZone} pending={pending}
-                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} emptyTitle="Your selected tasks are waiting on a dependency or confirmation." /> : (
+                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} onConfirmPayment={onConfirmPayment} emptyTitle="Your selected tasks are waiting on a dependency or confirmation." /> : (
                 selectedCount > 0 ? <p id="next-up" className="text-sm text-muted-foreground">Your selected tasks are waiting on a dependency or confirmation.</p> : null
               )}
               {blockedNextUp.length > 0 ? <FocusSection title="Next up · blocked"
                 description="Selected work waiting on a dependency" tasks={blockedNextUp} todayIso={todayIso} timeZone={timeZone} pending={pending}
-                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} /> : null}
+                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} onConfirmPayment={onConfirmPayment} /> : null}
               {dueToday.length > 0 ? <FocusSection id="due-today" title="Due today"
                 description={dueToday.length !== remainingDueToday.length ? `${dueToday.length - remainingDueToday.length} of today's tasks shown in Next up above` : "Today's deadlines and payment follow-ups"}
                 tasks={remainingDueToday} totalCount={dueToday.length} todayIso={todayIso} timeZone={timeZone} pending={pending}
-                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer}
+                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} onConfirmPayment={onConfirmPayment}
                 emptyTitle="Today's selected tasks are shown above in Next up" /> : null}
               {working.length > 0 ? <FocusSection title="Working now" description="In progress and waiting for review"
                 tasks={working} todayIso={todayIso} timeZone={timeZone} pending={pending}
-                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} /> : null}
+                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} onConfirmPayment={onConfirmPayment} /> : null}
               <FocusSection title="Other assigned work" description="Overdue work, payment follow-ups, upcoming tasks, and undated work"
                 tasks={showAllAttention ? attention : attention.slice(0, 5)} totalCount={attention.length}
                 todayIso={todayIso} timeZone={timeZone} pending={pending}
-                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} emptyTitle="No other work needs attention right now" />
+                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} onConfirmPayment={onConfirmPayment} emptyTitle="No other work needs attention right now" />
               {attention.length > 5 ? <Button variant="ghost" onClick={() => setShowAllAttention(value => !value)}>
                 {showAllAttention ? "Show fewer tasks" : `Show all ${attention.length} tasks`}
               </Button> : null}
@@ -607,17 +655,17 @@ function FocusView({
             {waiting.length > 0 ? <SectionDisclosure id="waiting" title="Waiting on confirmation" summary={waiting.length}>
               <FocusSection title="Waiting on confirmation" description="Payment requests sent; follow-up dates bring them back to your action queue"
                 tasks={waiting} todayIso={todayIso} timeZone={timeZone} pending={pending}
-                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} />
+                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} onConfirmPayment={onConfirmPayment} />
             </SectionDisclosure> : null}
             {later.length > 0 ? <CollapsibleSection title={`Later · ${later.length}`} description="Farther-future work kept out of your active queue"
               open={showLater} onToggle={() => setShowLater(value => !value)}>
               <FocusTaskList tasks={later} todayIso={todayIso} timeZone={timeZone} pending={pending}
-                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} />
+                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} onConfirmPayment={onConfirmPayment} />
             </CollapsibleSection> : null}
             {completedToday.length > 0 ? <CollapsibleSection title={`Completed today · ${completedToday.length}`} description="A quick record of today's progress"
               open={showCompleted} onToggle={() => setShowCompleted(value => !value)} tone="success">
               <FocusTaskList tasks={completedToday} todayIso={todayIso} timeZone={timeZone} pending={pending}
-                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} />
+                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} onConfirmPayment={onConfirmPayment} />
             </CollapsibleSection> : null}
           </aside> : null}
         </div>
@@ -654,6 +702,7 @@ function FocusSection({
   onOpen,
   onStatus,
   onTimer,
+  onConfirmPayment,
   emptyTitle,
 }: {
   id?: string;
@@ -668,6 +717,7 @@ function FocusSection({
   onOpen: (task: MyWorkTaskRow) => void;
   onStatus: (task: MyWorkTaskRow, status: Status) => void;
   onTimer: (task: MyWorkTaskRow) => void;
+  onConfirmPayment?: (task: MyWorkTaskRow) => void;
   emptyTitle?: string;
 }) {
   return (
@@ -689,7 +739,7 @@ function FocusSection({
           activeTimerTaskId={activeTimerTaskId}
           onOpen={onOpen}
           onStatus={onStatus}
-          onTimer={onTimer}
+          onTimer={onTimer} onConfirmPayment={onConfirmPayment}
         />
       ) : (
         <div className="rounded-xl border bg-card py-10 text-center text-sm text-muted-foreground">
@@ -711,6 +761,7 @@ function FocusTaskList({
   onOpen,
   onStatus,
   onTimer,
+  onConfirmPayment,
 }: {
   tasks: MyWorkTaskRow[];
   showNextUp?: boolean;
@@ -721,6 +772,7 @@ function FocusTaskList({
   onOpen: (task: MyWorkTaskRow) => void;
   onStatus: (task: MyWorkTaskRow, status: Status) => void;
   onTimer: (task: MyWorkTaskRow) => void;
+  onConfirmPayment?: (task: MyWorkTaskRow) => void;
 }) {
   return (
     <ul className="@container/tasklist divide-y overflow-hidden rounded-xl border bg-card" aria-busy={pending}>
@@ -733,6 +785,7 @@ function FocusTaskList({
         const done = task.status === "done";
         const timerRunning = activeTimerTaskId === task.id;
         const controlled = isSourceControlledTask(task);
+        const canConfirmPayment = Boolean(onConfirmPayment && task.printPaymentId && task.printPaymentStatus === "requested" && !done);
         const sourceLink = taskSourceLink(task, task.projectSlug);
         return (
           <motion.li
@@ -743,7 +796,7 @@ function FocusTaskList({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, transition: { duration: 0.32, delay: 0.18, ease: EASE } }}
             transition={{ duration: 0.28, ease: EASE, layout: ROW_SPRING }}
-            className="flex items-start gap-2 px-3 py-3 sm:items-center sm:gap-3"
+            className={cn("flex items-start gap-2 px-3 py-3 sm:items-center sm:gap-3", canConfirmPayment && "flex-wrap @[40rem]/tasklist:flex-nowrap")}
           >
             {controlled ? (
               <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -792,7 +845,7 @@ function FocusTaskList({
               {sourceLink ? <Link href={sourceLink.href} className="text-xs text-primary hover:underline">{sourceLink.label}</Link> : null}
               <p className={cn("mt-1 text-xs @[40rem]/tasklist:hidden", due.tone === "overdue" ? "font-medium text-destructive" : due.tone === "soon" ? "font-medium text-warning-text" : "text-muted-foreground")}>{due.tone === "none" ? "No due date" : due.text}</p>
             </div>
-            <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
+            <div className={cn("flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center", canConfirmPayment && "w-full flex-row justify-end @[40rem]/tasklist:w-auto")}>
               <div className="hidden items-center gap-2 @[40rem]/tasklist:flex">
                 <span
                   className={cn(
@@ -819,23 +872,30 @@ function FocusTaskList({
                   {timerRunning ? <Square className="size-3.5 fill-current" /> : <Play className="size-3.5" />}
                 </Button>
               ) : null}
-              <Select
-                value={task.status}
-                disabled={controlled || task.id.startsWith("optimistic-task-")}
-                itemToStringLabel={(status) => TASK_STATUS[status].label}
-                onValueChange={(value) => value && onStatus(task, value as Status)}
-              >
-                <SelectTrigger size="sm" aria-label={`Status for ${task.title}`} className="max-w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TASK_STATUS_ORDER.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {TASK_STATUS[status].label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {canConfirmPayment ? (
+                <Button type="button" size="sm" variant="outline" className="h-10 @[40rem]/tasklist:h-8" onClick={() => onConfirmPayment?.(task)}>
+                  <CheckCircle2 className="size-3.5" />
+                  Confirm printer paid
+                </Button>
+              ) : (
+                <Select
+                  value={task.status}
+                  disabled={controlled || task.id.startsWith("optimistic-task-")}
+                  itemToStringLabel={(status) => TASK_STATUS[status].label}
+                  onValueChange={(value) => value && onStatus(task, value as Status)}
+                >
+                  <SelectTrigger size="sm" aria-label={`Status for ${task.title}`} className="max-w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TASK_STATUS_ORDER.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {TASK_STATUS[status].label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </motion.li>
         );

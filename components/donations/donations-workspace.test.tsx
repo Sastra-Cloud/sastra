@@ -15,6 +15,7 @@ vi.mock("@/lib/donations/actions", () => ({
   setDonationsUnallocated: vi.fn(),
 }));
 import { DonationsWorkspace } from "./donations-workspace";
+import { confirmDonationAllocations } from "@/lib/donations/actions";
 
 const row: DonationRowDTO = {
   id: "donation",
@@ -83,6 +84,37 @@ const data: DonationWorkspaceDTO = {
     currency: "USD",
   },
 };
+describe("manual donation allocations", () => {
+  it("starts with the full amount but requires a project and explicit confirmation", () => {
+    const html = renderToStaticMarkup(<DonationsWorkspace data={{
+      ...data,
+      donations: [{ ...row, reviewStatus: "needs_review", allocations: [], allocatedAmount: "0.00", unallocatedAmount: "900.00" }],
+      summary: { ...data.summary, needsReviewCount: 1, needsReviewAmount: "900.00" },
+    }} />);
+    expect(html).toMatch(/type="number"[^>]*value="900.00"/);
+    expect(html).toMatch(/<option value="" selected="">Choose project<\/option>/);
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Confirm allocation<\/button>/);
+    expect(confirmDonationAllocations).not.toHaveBeenCalled();
+  });
+
+  it("keeps a partial invoice share locked without offering to fill its remainder", () => {
+    const html = renderToStaticMarkup(<DonationsWorkspace data={{
+      ...data,
+      donations: [{ ...row, reviewStatus: "needs_review", allocations: [], suggestion: {
+        ...row.suggestion,
+        allocations: [{ ...row.allocations[0], amount: "500.00", invoiceId: "invoice", invoiceNumber: "INV-1" }],
+      } }],
+      summary: { ...data.summary, needsReviewCount: 1, needsReviewAmount: "900.00" },
+    }} />);
+    const amountInput = html.match(/<input\b[^>]*id="allocation-saved"[^>]*>/)?.[0];
+    expect(amountInput).toContain('type="number"');
+    expect(amountInput).toContain('disabled=""');
+    expect(amountInput).toContain('value="500.00"');
+    expect(html).toContain("Remove its match to");
+    expect(html).not.toContain("Use remaining");
+  });
+});
+
 describe("saved donation allocations", () => {
   it("shows saved links and an explicit edit action without suggesting reconfirmation", () => {
     const html = renderToStaticMarkup(<DonationsWorkspace data={data} />);

@@ -2,7 +2,7 @@
 title: "Install the app & turn on notifications"
 category: "Getting started"
 roles: [member, manager, admin]
-keywords: [install, app, pwa, add to home screen, home screen, add to dock, dock, mac, macos, sonoma, desktop, notifications, push, enable notifications, turn on notifications, android, iphone, ipad, ios, safari, chrome, edge, test notification, devices, blocked notifications, focus, badge, offline]
+keywords: [download, blank window, mac download, file download, install, app, pwa, add to home screen, home screen, add to dock, dock, mac, macos, sonoma, desktop, notifications, push, enable notifications, turn on notifications, android, iphone, ipad, ios, safari, chrome, edge, test notification, devices, blocked notifications, focus, badge, offline]
 order: 20
 summary: "Install Sastra on Mac, desktop, Android, or iPhone. Turn on notifications and fix blocked alerts."
 ---
@@ -34,6 +34,16 @@ The Dock icon can then show your unread notification count.
 
 You can also receive notifications in Safari without installing the app.
 If **Add to Dock** is missing from Safari's menu, check your macOS version.
+
+## Downloading files in the app
+
+File downloads keep your current Sastra page open. Use the browser or app's
+Downloads button to open the saved file. Invoice previews open the document
+itself. In email attachment review, **Download attachment** saves files that
+cannot be previewed, such as Excel workbooks.
+
+If an older version left an empty window after a download, close that window
+and open Sastra from the Dock again. The downloaded file remains in Downloads.
 
 ## On desktop (Edge or Chrome)
 

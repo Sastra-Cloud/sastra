@@ -74,6 +74,7 @@ The development bundle pins PostgreSQL 18.6 with pgvector 0.8.6.
 | Command | What |
 |---|---|
 | `pnpm typecheck` · `pnpm lint` · `pnpm test` · `pnpm build` | what CI runs |
+| `pnpm typecheck:tsc` | compare tsrs results with the official TypeScript 7 compiler |
 | `pnpm db:generate --name <name>` | write a migration after editing `lib/db/schema/` |
 | `pnpm ai:map` | regenerate the `.ai/` context index after route or schema changes |
 | `pnpm agent-browser:open /dashboard` | open an authenticated local session for UI review |

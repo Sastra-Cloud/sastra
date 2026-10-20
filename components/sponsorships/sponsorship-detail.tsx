@@ -1,5 +1,7 @@
 "use client";
 
+import { FileLink } from "@/components/files/file-link";
+
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -122,7 +124,7 @@ export function SponsorshipDetail({ detail, options, defaultCc, today }: { detai
     </div>
     {hasAside && <div className="min-w-0 space-y-6">
     {(record.status === "invoiced" || visible.receipts.length > 0 || visible.uses.length > 0) && <SponsorshipFunding detail={visible} today={today} />}
-    {visible.invoiceHistory.some(invoice => invoice.status === "void") && <section className="space-y-2"><h2 className="text-base font-semibold">Previous invoices</h2><ul className="space-y-2">{visible.invoiceHistory.filter(invoice => invoice.status === "void").map(invoice => <li key={invoice.id}><a href={`/api/invoices/${invoice.id}`} target="_blank" rel="noreferrer" className="text-sm text-primary underline underline-offset-4">Invoice {invoice.invoiceNumber} · void</a></li>)}</ul></section>}
+    {visible.invoiceHistory.some(invoice => invoice.status === "void") && <section className="space-y-2"><h2 className="text-base font-semibold">Previous invoices</h2><ul className="space-y-2">{visible.invoiceHistory.filter(invoice => invoice.status === "void").map(invoice => <li key={invoice.id}><FileLink intent="preview" href={`/api/invoices/${invoice.id}`} className="text-sm text-primary underline underline-offset-4">Invoice {invoice.invoiceNumber} · void</FileLink></li>)}</ul></section>}
     </div>}
     </div>
     </div>

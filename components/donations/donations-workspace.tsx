@@ -38,6 +38,10 @@ import {
   setDonationsUnallocated,
 } from "@/lib/donations/actions";
 import { applyUniqueExactMouMatch } from "@/lib/donations/exact-match";
+import {
+  initialDonationAllocationDrafts,
+  remainingDonationAllocationAmount,
+} from "@/lib/donations/allocation-draft";
 import { DONATION_CSV_FIELDS } from "@/lib/donations/csv-format";
 import { deleteDonationCsvFormat } from "@/lib/donations/format-actions";
 import { useOptimisticAction } from "@/hooks/use-optimistic-action";
@@ -1079,33 +1083,8 @@ function DonationReviewPanel({
   >(null);
   const [reason, setReason] = useState("");
   const projectById = new Map(projects.map((project) => [project.id, project]));
-  const suggestedCandidateRows =
-    donation.allocations.length > 0 ||
-    donation.suggestion.allocations.length > 0
-      ? []
-      : donation.suggestion.candidateProjectIds
-          .slice(0, 8)
-          .map((projectId) => ({
-            key: `candidate-${projectId}`,
-            projectId,
-            projectTitle: projectById.get(projectId)?.title ?? "Project",
-            amount: "",
-            mouPaymentId: null,
-            sharedMouGroupId: null,
-            evidence: ["Related project. Enter the amount after review."],
-          }));
-  const initialAllocations =
-    donation.allocations.length > 0
-      ? donation.allocations
-      : donation.suggestion.allocations.length > 0
-        ? donation.suggestion.allocations
-        : suggestedCandidateRows;
   const [allocations, setAllocations] = useState<DonationAllocationDraft[]>(
-    initialAllocations.map((row) =>
-      donation.allocations.length
-        ? row
-        : applyUniqueExactMouMatch(row, donation.currency, mouPayments)
-    )
+    () => initialDonationAllocationDrafts(donation, projects, mouPayments)
   );
   const currentPosted = donation.allocations.length > 0;
   const [editing, setEditing] = useState(!currentPosted);
@@ -1203,7 +1182,7 @@ function DonationReviewPanel({
         key: `manual-${crypto.randomUUID()}`,
         projectId: "",
         projectTitle: "",
-        amount: "",
+        amount: remainingDonationAllocationAmount(donation.amount, current),
         mouPaymentId: null,
         sharedMouGroupId: null,
         evidence: [],
@@ -1460,157 +1439,183 @@ function DonationReviewPanel({
                   change the split.
                 </p>
               ) : null}
-              {allocations.map((row, index) => (
-                <div
-                  key={row.key}
-                  className="space-y-2 rounded-lg bg-muted/35 p-3"
-                >
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={row.projectId}
-                      onChange={(event) =>
-                        changeProject(index, event.target.value)
-                      }
-                      disabled={pending || Boolean(row.invoiceId)}
-                      aria-label={`Project for allocation ${index + 1}`}
-                      className="h-10 min-w-0 flex-1 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                    >
-                      <option value="">Choose project</option>
-                      {projects.map((project) => (
-                        <option key={project.id} value={project.id}>
-                          {project.title}
-                        </option>
-                      ))}
-                    </select>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      aria-label={
-                        row.invoiceId
-                          ? `Remove invoice ${row.invoiceNumber} match`
-                          : `Remove allocation ${index + 1}`
-                      }
-                      disabled={pending}
-                      onClick={() =>
-                        setAllocations((current) =>
-                          current.filter((item, rowIndex) =>
-                            row.invoiceId
-                              ? item.invoiceId !== row.invoiceId
-                              : rowIndex !== index
-                          )
-                        )
-                      }
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </div>
-                  <div className="grid gap-1">
-                    <Label
-                      htmlFor={`allocation-${row.key}`}
-                      className="text-xs"
-                    >
-                      Amount ({donation.currency})
-                    </Label>
-                    <Input
-                      id={`allocation-${row.key}`}
-                      type="number"
-                      min={totalCents > 0 ? "0.01" : undefined}
-                      max={totalCents < 0 ? "-0.01" : undefined}
-                      step="0.01"
-                      value={row.amount}
-                      disabled={pending || Boolean(row.invoiceId)}
-                      onChange={(event) =>
-                        changeAmount(index, event.target.value)
-                      }
-                      className="tabular-nums"
-                      placeholder="0.00"
-                    />
-                  </div>
-                  {row.sponsorshipId ? (
-                    <div className="grid gap-1">
-                      <Label htmlFor={`net-${row.key}`} className="text-xs">
-                        Available sponsorship funds ({donation.currency})
-                      </Label>
-                      <Input
-                        id={`net-${row.key}`}
-                        type="number"
-                        min="0"
-                        max={row.amount}
-                        step="0.01"
-                        value={row.actualNetAmount ?? row.amount}
-                        disabled={pending}
-                        onChange={(event) =>
-                          setAllocations((current) =>
-                            current.map((item, rowIndex) =>
-                              rowIndex === index
-                                ? {
-                                    ...item,
-                                    actualNetAmount: event.target.value,
-                                  }
-                                : item
-                            )
-                          )
-                        }
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        After the saved organization donation fee. Check the
-                        amount received. These funds stay separate from the
-                        production budget.
-                      </p>
-                    </div>
-                  ) : null}
-                  {row.evidence.length > 0 ? (
-                    <p className="text-xs text-muted-foreground">
-                      {row.evidence.join(" ")}
-                    </p>
-                  ) : null}
-                  {row.invoiceId ? (
-                    <Link
-                      href={`/api/invoices/${row.invoiceId}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex min-h-9 items-center text-xs font-medium text-info hover:underline"
-                    >
-                      View invoice {row.invoiceNumber}
-                    </Link>
-                  ) : null}
-                  {row.mouPaymentId &&
-                  !row.sharedMouGroupId &&
+              {allocations.map((row, index) => {
+                const availableAmount = remainingDonationAllocationAmount(
+                  donation.amount,
+                  allocations,
+                  row.key
+                );
+                const canUseRemaining =
+                  remainingCents !== 0 &&
+                  !wrongSign &&
+                  !overallocated &&
                   !row.invoiceId &&
-                  !donation.allocations.some(
-                    (saved) => saved.mouPaymentId === row.mouPaymentId
-                  ) ? (
-                    <div className="flex flex-col gap-2 rounded-md border border-info/25 bg-info/5 px-2.5 py-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-                      <p className="flex items-start gap-2">
-                        <Link2 className="mt-0.5 size-3.5 shrink-0 text-info" />
-                        <span>
-                          Exact MoU payment match. Confirming this allocation
-                          will mark that payment received.
-                        </span>
-                      </p>
+                  !row.mouPaymentId &&
+                  !row.sharedMouGroupId &&
+                  availableAmount !== "";
+                return (
+                  <div
+                    key={row.key}
+                    className="space-y-2 rounded-lg bg-muted/35 p-3"
+                  >
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={row.projectId}
+                        onChange={(event) =>
+                          changeProject(index, event.target.value)
+                        }
+                        disabled={pending || Boolean(row.invoiceId)}
+                        aria-label={`Project for allocation ${index + 1}`}
+                        className="h-10 min-w-0 flex-1 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                      >
+                        <option value="">Choose project</option>
+                        {projects.map((project) => (
+                          <option key={project.id} value={project.id}>
+                            {project.title}
+                          </option>
+                        ))}
+                      </select>
                       <Button
                         type="button"
                         variant="ghost"
-                        size="sm"
-                        className="shrink-0"
+                        size="icon-sm"
+                        aria-label={
+                          row.invoiceId
+                            ? `Remove invoice ${row.invoiceNumber} match`
+                            : `Remove allocation ${index + 1}`
+                        }
                         disabled={pending}
                         onClick={() =>
                           setAllocations((current) =>
-                            current.map((item, rowIndex) =>
-                              rowIndex === index
-                                ? { ...item, mouPaymentId: null, evidence: [] }
-                                : item
+                            current.filter((item, rowIndex) =>
+                              row.invoiceId
+                                ? item.invoiceId !== row.invoiceId
+                                : rowIndex !== index
                             )
                           )
                         }
                       >
-                        Keep as donation only
+                        <Trash2 className="size-4" />
                       </Button>
                     </div>
-                  ) : null}
-                </div>
-              ))}
+                    <div className="grid gap-1">
+                      <div className="flex min-h-8 items-center justify-between gap-2">
+                        <Label htmlFor={`allocation-${row.key}`} className="text-xs">
+                          Amount ({donation.currency})
+                        </Label>
+                        {canUseRemaining ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="xs"
+                            disabled={pending}
+                            aria-label={`Use remaining amount (${money(availableAmount, donation.currency)}) for allocation ${index + 1}`}
+                            onClick={() => changeAmount(index, availableAmount)}
+                          >
+                            Use remaining
+                          </Button>
+                        ) : null}
+                      </div>
+                      <Input
+                        id={`allocation-${row.key}`}
+                        type="number"
+                        min={totalCents > 0 ? "0.01" : undefined}
+                        max={totalCents < 0 ? "-0.01" : undefined}
+                        step="0.01"
+                        value={row.amount}
+                        disabled={pending || Boolean(row.invoiceId)}
+                        onChange={(event) =>
+                          changeAmount(index, event.target.value)
+                        }
+                        className="tabular-nums"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    {row.sponsorshipId ? (
+                      <div className="grid gap-1">
+                        <Label htmlFor={`net-${row.key}`} className="text-xs">
+                          Available sponsorship funds ({donation.currency})
+                        </Label>
+                        <Input
+                          id={`net-${row.key}`}
+                          type="number"
+                          min="0"
+                          max={row.amount}
+                          step="0.01"
+                          value={row.actualNetAmount ?? row.amount}
+                          disabled={pending}
+                          onChange={(event) =>
+                            setAllocations((current) =>
+                              current.map((item, rowIndex) =>
+                                rowIndex === index
+                                  ? {
+                                      ...item,
+                                      actualNetAmount: event.target.value,
+                                    }
+                                  : item
+                              )
+                            )
+                          }
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          After the saved organization donation fee. Check the
+                          amount received. These funds stay separate from the
+                          production budget.
+                        </p>
+                      </div>
+                    ) : null}
+                    {row.evidence.length > 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        {row.evidence.join(" ")}
+                      </p>
+                    ) : null}
+                    {row.invoiceId ? (
+                      <Link
+                        href={`/api/invoices/${row.invoiceId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex min-h-9 items-center text-xs font-medium text-info hover:underline"
+                      >
+                        View invoice {row.invoiceNumber}
+                      </Link>
+                    ) : null}
+                    {row.mouPaymentId &&
+                    !row.sharedMouGroupId &&
+                    !row.invoiceId &&
+                    !donation.allocations.some(
+                      (saved) => saved.mouPaymentId === row.mouPaymentId
+                    ) ? (
+                      <div className="flex flex-col gap-2 rounded-md border border-info/25 bg-info/5 px-2.5 py-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+                        <p className="flex items-start gap-2">
+                          <Link2 className="mt-0.5 size-3.5 shrink-0 text-info" />
+                          <span>
+                            Exact MoU payment match. Confirming this allocation
+                            will mark that payment received.
+                          </span>
+                        </p>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="shrink-0"
+                          disabled={pending}
+                          onClick={() =>
+                            setAllocations((current) =>
+                              current.map((item, rowIndex) =>
+                                rowIndex === index
+                                  ? { ...item, mouPaymentId: null, evidence: [] }
+                                  : item
+                              )
+                            )
+                          }
+                        >
+                          Keep as donation only
+                        </Button>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
               <Button
                 type="button"
                 variant="outline"

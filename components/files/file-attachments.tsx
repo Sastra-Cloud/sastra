@@ -1,5 +1,7 @@
 "use client";
 
+import { FileLink } from "@/components/files/file-link";
+
 import { confirmDialog } from "@/lib/dialog-requests";
 
 import { useRef, useState, useTransition } from "react";
@@ -276,13 +278,13 @@ export function FileAttachments({
               <span className="hidden shrink-0 py-2 text-xs tabular-nums text-muted-foreground sm:inline">
                 {formatBytes(a.sizeBytes)}
               </span>
-              <a
+              <FileLink
                 href={`/api/files/${a.fileId}/download`}
                 className="grid size-10 shrink-0 place-items-center text-muted-foreground hover:text-foreground sm:size-8"
                 aria-label={`Download ${a.originalName}`}
               >
                 <Download className="size-4" />
-              </a>
+              </FileLink>
               {canEdit ? (
                 <Button
                   variant="ghost"

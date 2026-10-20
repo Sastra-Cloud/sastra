@@ -1,5 +1,7 @@
 "use client";
 
+import { FileLink } from "@/components/files/file-link";
+
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import {
@@ -405,13 +407,13 @@ export function SharedPaymentControls({
       </label>}
       <div className="flex flex-wrap items-center gap-2">
         {payment.invoiceId ? (
-          <Link
+          <FileLink
+            intent="preview"
             href={`/api/invoices/${payment.invoiceId}`}
-            target="_blank"
             className="inline-flex min-h-8 items-center gap-1 text-sm font-medium text-primary hover:underline"
           >
             <FileText className="size-4" /> Invoice {payment.invoiceNumber}
-          </Link>
+          </FileLink>
         ) : (
           <Button
             type="button"

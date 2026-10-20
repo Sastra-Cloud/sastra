@@ -6,14 +6,12 @@ import { and, desc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { requireRole } from "@/lib/auth/guards";
-import { recomputeProjectBlockers } from "@/lib/blockers/engine";
 import { db } from "@/lib/db";
 import { clearOverdueNotifications } from "@/lib/notifications";
 import { revalidateForTask } from "@/lib/tasks/create";
 import {
   activityLog,
   budgetItems,
-  budgetApprovalRequests,
   budgetScopePresentations,
   donationAllocations,
   fundingReceipts,
@@ -41,15 +39,11 @@ import {
   STANDARD_LINES,
   DEFAULT_LANGUAGE_EXPANSION_FACTOR,
   deductionPercentToBps,
-  grossTargetCents,
   lineAmount,
   lineQuantity,
   expectedNetCents,
-  partnerQuoteTotalCents,
   rateForCategory,
   suggestedPerCopyPriceCents,
-  suggestPartnerRates,
-  sumAmountCents,
   type BudgetGroup,
   type QuantityBasis,
   type BudgetUnit,
@@ -68,7 +62,8 @@ import { notify } from "@/lib/notifications";
 import { formatDate } from "@/lib/format";
 import { allCoveredProjectsComplete } from "@/lib/budget/mou-payments";
 import { allocateSharedReceipt } from "@/lib/agreements/readiness";
-import { syncBudgetApprovalState } from "@/lib/budget/approval-service";
+import { revalidateBudget as revalidate } from "./revalidate";
+import { budgetPresentationSchema } from "./presentation-input";
 import {
   getSharedPaymentReadiness,
   reevaluateSharedMouPayments,
@@ -87,41 +82,6 @@ import { getObjectBuffer } from "@/lib/r2";
 import { sendEmail } from "@/lib/gmail";
 import { removeEmailDraftForUser } from "@/lib/email/draft-store";
 
-async function revalidate(projectId: string) {
-  const activeApprovalScopes = await db
-    .selectDistinct({ printRunId: budgetApprovalRequests.printRunId })
-    .from(budgetApprovalRequests)
-    .where(
-      and(
-        eq(budgetApprovalRequests.projectId, projectId),
-        ne(budgetApprovalRequests.status, "superseded")
-      )
-    );
-  const scopes = new Set<string | null>([
-    null,
-    ...activeApprovalScopes.map((row) => row.printRunId),
-  ]);
-  await Promise.all(
-    [...scopes].map((printRunId) =>
-      syncBudgetApprovalState(projectId, printRunId)
-    )
-  );
-  await recomputeProjectBlockers(projectId);
-  const [p] = await db
-    .select({ slug: projects.slug })
-    .from(projects)
-    .where(eq(projects.id, projectId))
-    .limit(1);
-  if (p) {
-    revalidatePath(`/projects/${p.slug}/budget`);
-    revalidatePath(`/projects/${p.slug}/print`);
-    revalidatePath(`/projects/${p.slug}/tasks`);
-    revalidatePath(`/projects/${p.slug}`);
-    revalidatePath("/projects");
-    revalidatePath("/dashboard");
-    revalidatePath("/tasks");
-  }
-}
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
@@ -459,14 +419,6 @@ export async function updateBudgetLine(
   return updated ? budgetLineResult(updated) : undefined;
 }
 
-const presentationSchema = z.object({
-  printRunId: z.string().uuid().nullable().optional(),
-  mode: z.enum(["itemized", "per_copy"]),
-  deductionPercent: z.coerce.number().min(0).max(99.99),
-  publicDescription: z.string().max(1000).nullable().optional(),
-  perCopyQuantity: z.coerce.number().int().min(1).nullable().optional(),
-  perCopyUnitPrice: z.coerce.number().min(0).finite().nullable().optional(),
-});
 
 /**
  * Opt a legacy scope into deduction-aware partner quoting, or update an
@@ -474,10 +426,10 @@ const presentationSchema = z.object({
  */
 export async function saveBudgetPresentation(
   projectId: string,
-  input: z.input<typeof presentationSchema>
+  input: z.input<typeof budgetPresentationSchema>
 ) {
   const { user } = await requireRole("manager");
-  const parsed = presentationSchema.parse(input);
+  const parsed = budgetPresentationSchema.parse(input);
   const printRunId = parsed.printRunId || null;
   const existing = await getBudgetPresentation(projectId, printRunId ?? undefined);
   const workspace = existing ? null : await getWorkspaceSettings();
@@ -510,7 +462,16 @@ export async function saveBudgetPresentation(
     });
   }
   await revalidate(projectId);
-  return { ok: true };
+  return {
+    ok: true as const,
+    presentation: {
+      mode: values.mode,
+      deductionBps: values.deductionBps,
+      publicDescription: values.publicDescription,
+      perCopyQuantity: values.perCopyQuantity,
+      perCopyUnitPrice: values.perCopyUnitPrice,
+    },
+  };
 }
 
 /** Start a legacy scope using the workspace's current default deduction. */
@@ -524,54 +485,6 @@ export async function enableBudgetPresentation(
     mode: "itemized",
     deductionPercent: Number(workspace.defaultFundingDeductionBps) / 100,
   });
-}
-
-/** Suggest public rates on selected lines, preserving internal costs. */
-export async function applySuggestedPartnerRates(
-  projectId: string,
-  printRunId: string | null,
-  selectedIds: string[]
-) {
-  await requireRole("manager");
-  const [presentation, items] = await Promise.all([
-    getBudgetPresentation(projectId, printRunId ?? undefined),
-    getProjectBudget(projectId, printRunId ?? undefined),
-  ]);
-  if (!presentation) return { error: "Set up the partner quote first." };
-  try {
-    const selected = new Set(selectedIds);
-    const rates = suggestPartnerRates(items, selected, presentation.deductionBps);
-    const targetCents = grossTargetCents(
-      sumAmountCents(items),
-      presentation.deductionBps
-    );
-    const proposedTotalCents = partnerQuoteTotalCents(
-      items.map((item) =>
-        rates[item.id]
-          ? { ...item, partnerUnitPrice: rates[item.id] }
-          : item
-      )
-    );
-    if (proposedTotalCents < targetCents) {
-      throw new Error(
-        "The suggested rates did not fully cover the funding target. No rates were changed."
-      );
-    }
-    await db.transaction(async (tx) => {
-      for (const [id, partnerUnitPrice] of Object.entries(rates)) {
-        await tx
-          .update(budgetItems)
-          .set({ partnerUnitPrice, updatedAt: new Date() })
-          .where(and(eq(budgetItems.id, id), eq(budgetItems.projectId, projectId)));
-      }
-    });
-    await revalidate(projectId);
-    return { rates };
-  } catch (error) {
-    return {
-      error: error instanceof Error ? error.message : "Could not suggest rates.",
-    };
-  }
 }
 
 /** Use the exact upward-rounded per-copy price needed to cover current costs. */
@@ -633,6 +546,8 @@ const customSchema = z.object({
   unit: z.enum(["words", "pages", "cover", "project", "flat"]),
   quantity: money,
   unitPrice: money,
+  partnerUnitPrice: money.nullable().optional(),
+  partnerLabel: z.string().trim().max(200).nullable().optional(),
 });
 
 export async function addCustomLine(
@@ -669,6 +584,8 @@ export async function addCustomLine(
       amount: lineAmount(quantity, unitPrice),
       isAutoQuantity: false,
       currency: settings.currency,
+      partnerUnitPrice: f.partnerUnitPrice == null ? null : String(f.partnerUnitPrice),
+      partnerLabel: f.partnerLabel || null,
     })
     .returning();
   await logActivity({
@@ -1775,6 +1692,7 @@ export async function generateMouInvoice(
       paymentDueDate: mouPayments.paymentDueDate,
       notes: mouPayments.notes,
       publicDescription: mouPayments.publicDescription,
+      budgetInvoice: mouPayments.budgetInvoice,
       projectTitle: projects.title,
       sharedMouGroupId: mouPayments.sharedMouGroupId,
       groupName: sharedMouGroups.name,
@@ -1846,10 +1764,9 @@ export async function generateMouInvoice(
     return { error: `Complete your organization's ${missingIssuerFields.join(", ")} in Settings → Workspace before issuing an invoice.` };
   }
   const issueDate = refreshing?.issueDate ?? todayIso();
-  const recipientEmail =
-    pay.groupContactEmail?.trim() ||
-    settings.partnerContactEmail?.trim() ||
-    null;
+  const recipientEmail = pay.budgetInvoice
+    ? pay.budgetInvoice.recipientEmail
+    : pay.groupContactEmail?.trim() || settings.partnerContactEmail?.trim() || null;
   const invoiceDetails = await getMouInvoiceDetails(pay);
   const recipientName = invoiceDetails.recipientName;
   const recipientAddress = parsedAddress.data === undefined ? invoiceDetails.billingAddress || null : parsedAddress.data || null;

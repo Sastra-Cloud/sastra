@@ -1,5 +1,7 @@
 "use client";
 
+import { FileLink } from "@/components/files/file-link";
+
 import { confirmDialog } from "@/lib/dialog-requests";
 
 import { useState, useTransition } from "react";
@@ -126,12 +128,20 @@ export function ProposalPanel({
   proposals: ProposalDTO[];
 }) {
   const router = useRouter();
+  const recipientEmail = fundingEmail?.trim() ?? "";
   const [pending, start] = useTransition();
   const [drafting, setDrafting] = useState(false);
   const [draftMutationPending, startDraftMutation] = useTransition();
   const [discardingDraft, setDiscardingDraft] = useState(false);
   const [savedEmailDraft, setSavedEmailDraft] = useState(initialEmailDraft);
-  const [confirmed, setConfirmed] = useState(false);
+  const [review, setReview] = useState({ recipientEmail, confirmed: false });
+  if (review.recipientEmail !== recipientEmail) {
+    setReview({ recipientEmail, confirmed: false });
+  }
+  const confirmed = review.recipientEmail === recipientEmail && review.confirmed;
+  function setConfirmed(confirmed: boolean) {
+    setReview({ recipientEmail, confirmed });
+  }
   const [visibleProposals, setVisibleProposals] = usePropState(proposals);
   const [sendingProposalId, setSendingProposalId] = useState<string | null>(
     null
@@ -152,7 +162,6 @@ export function ProposalPanel({
     });
   }
   const [compose, setCompose] = useState<{
-    to: string;
     cc: string;
     subject: string;
     body: string;
@@ -160,7 +169,7 @@ export function ProposalPanel({
     baselineBody: string;
   } | null>(null);
 
-  const hasEmail = Boolean(fundingEmail && fundingEmail.trim());
+  const hasEmail = Boolean(recipientEmail);
   const perCopyAttachment = partnerQuoteMode === "per_copy";
   const attachmentName = `${projectSlug}-partner-quotation.${
     perCopyAttachment ? "pdf" : "xlsx"
@@ -183,7 +192,7 @@ export function ProposalPanel({
   const draftContextId = printRunId ?? projectId;
   const currentDraftValue: EmailDraftValue | null = compose
     ? {
-        toAddresses: compose.to ? [compose.to] : [],
+        toAddresses: recipientEmail ? [recipientEmail] : [],
         ccAddresses: compose.cc
           .split(/[,\n;]/)
           .map((email) => email.trim())
@@ -202,7 +211,6 @@ export function ProposalPanel({
   function startDraft() {
     if (savedEmailDraft) {
       setCompose({
-        to: fundingEmail || savedEmailDraft.toAddresses[0] || "",
         cc: savedEmailDraft.ccAddresses.join(", "),
         subject: savedEmailDraft.subject,
         body: savedEmailDraft.body,
@@ -223,7 +231,6 @@ export function ProposalPanel({
           return;
         }
         setCompose({
-          to: res.recipientEmail || fundingEmail || "",
           cc: res.defaultCcEmails.join(", "),
           subject: res.subject,
           body: res.body,
@@ -231,6 +238,8 @@ export function ProposalPanel({
           baselineBody: res.body,
         });
         setConfirmed(false);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Could not draft the partner email. Try again.");
       } finally {
         setDrafting(false);
       }
@@ -304,8 +313,8 @@ export function ProposalPanel({
   }
 
   function send() {
-    if (!compose) return;
-    const outgoing = compose;
+    if (!compose || !hasEmail || !confirmed) return;
+    const outgoing = { ...compose, to: recipientEmail };
     const optimisticId = `sending-${crypto.randomUUID()}`;
     setSendingProposalId(optimisticId);
     setVisibleProposals((current) => [
@@ -389,16 +398,15 @@ export function ProposalPanel({
   }
 
   return (
-    <Card>
+    <Card id="partner-email" tabIndex={-1} className="scroll-mt-32" aria-labelledby="partner-email-heading">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle id="partner-email-heading" className="flex items-center gap-2">
           <Mail className="size-4" />
-          Funding proposal
+          Email quote to partner
         </CardTitle>
         <CardDescription>
-          Email the funding partner a proposal with the budget quotation
-          attached. Review the draft before it sends — nothing goes out until you
-          confirm.
+          Email the funding partner the saved {money(partnerQuoteTotal, currency)} quotation.
+          Review the recipient, message, and attachment. Nothing goes out until you confirm.
         </CardDescription>
         {canEdit && !compose ? (
           <CardAction>
@@ -478,8 +486,11 @@ export function ProposalPanel({
         </div>
         {canEdit && !hasEmail ? (
           <p className="rounded-lg border border-dashed bg-background/50 p-3 text-sm text-muted-foreground">
-            You can draft now. Add a funding contact email in{" "}
-            <strong>Quotation settings</strong> before sending.
+            You can draft now. Before sending,{" "}
+            <a href="#funding-partner" className="font-medium text-primary underline underline-offset-4">
+              add the funding contact email
+            </a>{" "}
+            in Quotation.
           </p>
         ) : null}
 
@@ -488,7 +499,7 @@ export function ProposalPanel({
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>To</Label>
-                <Input value={compose.to} readOnly aria-invalid={!compose.to} />
+                <Input value={recipientEmail} readOnly aria-invalid={!hasEmail} />
               </div>
               <div className="space-y-1.5">
                 <Label>Cc</Label>
@@ -568,7 +579,7 @@ export function ProposalPanel({
                     draftMutationPending ||
                     !approvalCanSend ||
                     !confirmed ||
-                    !compose.to ||
+                    !hasEmail ||
                     !compose.subject.trim() ||
                     !compose.body.trim()
                   }
@@ -620,13 +631,13 @@ export function ProposalPanel({
                   ) : null}
                 </div>
                 {p.fileId ? (
-                  <a
+                  <FileLink
                     href={`/api/files/${p.fileId}/download`}
                     className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                   >
                     <Download className="size-3.5" />
                     File
-                  </a>
+                  </FileLink>
                 ) : null}
                 {canEdit && p.status !== "sending" ? (
                   <select

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildDonationSuggestion } from "./match";
+import { initialDonationAllocationDrafts } from "./allocation-draft";
 
 const projects = [
   {
@@ -55,6 +56,11 @@ describe("donation matching", () => {
       ],
     });
     expect(result.confidence).toBe("strong");
+    const suggestedAllocations = structuredClone(result.allocations);
+    expect(initialDonationAllocationDrafts({
+      id: "donation", amount: "13742.00", currency: "USD",
+      allocations: [], suggestion: result,
+    }, [], [])).toEqual(suggestedAllocations);
     expect(result.allocations).toHaveLength(2);
     expect(
       result.allocations.reduce(
@@ -99,10 +105,15 @@ describe("donation matching", () => {
       ],
     });
     expect(result.confidence).toBe("strong");
-    expect(result.allocations.map((row) => row.amount)).toEqual([
+    const drafts = initialDonationAllocationDrafts({
+      id: "donation", amount: "7000.00", currency: "USD",
+      allocations: [], suggestion: result,
+    }, [], []);
+    expect(drafts.map((row) => row.amount)).toEqual([
       "4500.00",
       "2500.00",
     ]);
+    expect(drafts.map((row) => row.mouPaymentId)).toEqual(["payment-a", "payment-b"]);
   });
 
   it("uses a project title in the donation note as possible evidence", () => {

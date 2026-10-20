@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  typescript: {
+    // scripts/build.mjs sets this only after route generation and tsrs pass.
+    ignoreBuildErrors: process.env.SASTRA_TSRS_CHECKED === "1",
+  },
   // PDFKit loads font metrics relative to its installed package at runtime.
   serverExternalPackages: ["pdfkit"],
   // React's <ViewTransition> is on by default since Next 16.3; the former

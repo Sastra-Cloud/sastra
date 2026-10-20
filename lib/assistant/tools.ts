@@ -49,9 +49,14 @@ import { unpinMessage } from "@/lib/chat/pin-actions";
 import { pinnedMessagePreview } from "@/lib/chat/pin-state";
 import { listAccessiblePins, type AccessiblePin } from "@/lib/chat/pins";
 import {
+  getBudgetData,
+  listPayments,
+  listInvoices,
   listRoyaltyPayments,
 } from "@/lib/budget/queries";
-import { markRoyaltyPaid, updateProjectRoyalties } from "@/lib/budget/actions";
+import { addCustomLine, markRoyaltyPaid, updateProjectRoyalties } from "@/lib/budget/actions";
+import { createBudgetLineInvoice, previewBudgetLineInvoice } from "@/lib/budget/line-invoice-actions";
+import { budgetLineInvoiceSchema } from "@/lib/budget/line-invoice";
 import {
   getOrCreateProjectRights,
   listHoldersWithContacts,
@@ -627,6 +632,145 @@ const TOOLS: ToolDef[] = [
             }
           : { id: null, title: null, slug: null }
       ),
+  },
+  {
+    name: "get_project_budget",
+    description:
+      "Read live budget lines, public partner rates, scheduled payments, and existing invoices on an existing project (managers/admins only). Always read this before proposing an invoice or a new budget line. Omit projectId for the book currently visible. Default is the main budget; pass printRunId for a reprint. Use returned line ids and public amounts; never invent rates or create a new project for a portion of an existing book.",
+    kind: "read",
+    minRole: "manager",
+    parameters: {
+      type: "object",
+      properties: { projectId: { type: "string" }, printRunId: { type: "string" } },
+    },
+    run: async (ctx, args) => {
+      const projectId = await contextualProjectId(ctx, args.projectId);
+      if (!projectId) return JSON.stringify({ error: "Resolve the intended project first." });
+      const printRunId = optionalString(args.printRunId);
+      const [budget, payments, invoices] = await Promise.all([
+        getBudgetData(projectId, printRunId),
+        listPayments(projectId, printRunId),
+        listInvoices(projectId, printRunId),
+      ]);
+      return JSON.stringify({
+        projectId,
+        printRunId: printRunId ?? null,
+        currency: budget.settings.currency,
+        partnerName: budget.settings.partnerName,
+        partnerEmail: budget.settings.partnerContactEmail,
+        wordCount: budget.settings.wordCount,
+        lines: budget.items.map((line) => ({
+          id: line.id, label: line.label, partnerLabel: line.partnerLabel,
+          group: line.group, unit: line.unit, quantity: line.quantity,
+          unitPrice: line.unitPrice, amount: line.amount,
+          partnerUnitPrice: line.partnerUnitPrice ?? line.unitPrice,
+          partnerVisible: line.partnerVisible,
+          partnerAmount: (lineAmountCents(line.quantity, line.partnerUnitPrice ?? line.unitPrice) / 100).toFixed(2),
+          amountSecured: line.amountSecured,
+        })),
+        payments: payments.map((payment) => ({
+          id: payment.id, amount: payment.amount, currency: payment.currency,
+          description: payment.publicDescription, paid: Boolean(payment.paidAt),
+          budgetItemIds: payment.budgetInvoice?.budgetItemIds ?? [],
+        })),
+        invoices: invoices.map((invoice) => ({
+          id: invoice.id, paymentId: invoice.mouPaymentId,
+          invoiceNumber: invoice.invoiceNumber, amount: invoice.amount,
+          currency: invoice.currency, description: invoice.description,
+          status: invoice.status, url: `/api/invoices/${invoice.id}`,
+        })),
+      });
+    },
+  },
+  {
+    name: "create_budget_invoice",
+    description:
+      "Create a reviewed invoice for selected existing budget lines on the SAME project, only when the user asks for an invoice. A quotation or proposal request alone does not authorize an invoice. Read get_project_budget first and reuse an existing matching invoice if there is one. Uses public partner rates and labels, supports a smaller contribution amount, and creates its own receivable. Does not change existing funding, the main partner, or send email. Only use supplied recipient overrides when the user names another partner. Approval previews the live amount, recipient, and covered work; changed budgets require a new review.",
+    kind: "write",
+    minRole: "manager",
+    riskLevel: "high",
+    parameters: {
+      type: "object",
+      properties: {
+        projectId: { type: "string" },
+        printRunId: { type: "string" },
+        budgetItemIds: { type: "array", items: { type: "string" }, minItems: 1 },
+        amount: { type: "number", description: "Optional smaller contribution. Omit for the full selected public costs." },
+        recipientName: { type: "string" },
+        recipientEmail: { type: "string" },
+        recipientAddress: { type: "string" },
+        dueDate: { type: "string", description: "Optional YYYY-MM-DD payment date." },
+        reviewedFingerprint: { type: "string", description: "System-owned review token. Omit; the approval preview sets this from live data." },
+      },
+      required: ["budgetItemIds"],
+    },
+    preview: async (ctx, args) => {
+      delete args.reviewedFingerprint;
+      const projectId = await pinContextualProject(ctx, args);
+      const input = budgetLineInvoiceSchema.parse({ ...args, projectId });
+      const result = await previewBudgetLineInvoice(input);
+      if (!result.plan) throw new Error(result.error);
+      args.reviewedFingerprint = result.plan.fingerprint;
+      const plan = result.plan;
+      return [
+        "Create invoice for existing project budget costs",
+        plan.description,
+        `Amount: ${plan.currency} ${plan.amount}`,
+        `Partner: ${plan.recipientName}`,
+        `Email: ${plan.recipientEmail || "Not set"}`,
+        `Billing address: ${plan.recipientAddress || "Not set"}`,
+        `Due: ${plan.dueDate || "On issue"}`,
+        "Creates an invoice and scheduled payment. Email requires a separate review and send.",
+      ].join("\n");
+    },
+    run: async (ctx, args) => {
+      if (!ctx.actionIdempotencyKey || !args.reviewedFingerprint) {
+        return JSON.stringify({ error: "Prepare and review the invoice before creating it." });
+      }
+      const result = await createBudgetLineInvoice({
+        ...budgetLineInvoiceSchema.parse(args),
+        requestId: ctx.actionIdempotencyKey,
+        reviewedFingerprint: String(args.reviewedFingerprint),
+      });
+      return JSON.stringify({ ...result, ...(result.invoiceId ? { url: `/api/invoices/${result.invoiceId}`, sent: false } : {}) });
+    },
+  },
+  {
+    name: "add_budget_line",
+    description:
+      "Add a missing cost to an existing project's budget after approval. First read get_project_budget and reuse an existing matching line. Ask for missing quantity/cost rather than inventing a zero budget. This does not create another project. Humans can do the same with Add custom line.",
+    kind: "write",
+    minRole: "manager",
+    parameters: {
+      type: "object",
+      properties: {
+        projectId: { type: "string" }, printRunId: { type: "string" },
+        label: { type: "string" },
+        group: { type: "string", enum: ["book_publishing", "additional_media"] },
+        unit: { type: "string", enum: ["words", "pages", "cover", "project", "flat"] },
+        quantity: { type: "number" }, unitPrice: { type: "number" },
+        partnerUnitPrice: { type: "number", description: "Optional public rate, separate from the internal cost." },
+        partnerLabel: { type: "string" },
+      },
+      required: ["label", "group", "unit", "quantity", "unitPrice"],
+    },
+    preview: async (ctx, args) => {
+      const projectId = await pinContextualProject(ctx, args);
+      if (!projectId) throw new Error("Resolve the intended project first.");
+      return `Add budget line to ${await projectTitle(projectId)}: ${args.label}\n${args.quantity} ${args.unit} × ${args.unitPrice} internal; partner rate ${args.partnerUnitPrice ?? args.unitPrice}`;
+    },
+    run: async (ctx, args) => {
+      const projectId = await contextualProjectId(ctx, args.projectId);
+      if (!projectId) return JSON.stringify({ error: "Resolve the intended project first." });
+      const line = await addCustomLine(projectId, {
+        label: String(args.label), group: args.group, unit: args.unit,
+        quantity: args.quantity, unitPrice: args.unitPrice,
+        printRunId: optionalString(args.printRunId),
+        partnerUnitPrice: args.partnerUnitPrice ?? undefined,
+        partnerLabel: optionalString(args.partnerLabel),
+      });
+      return JSON.stringify({ projectId, budgetItemId: line?.id, line });
+    },
   },
   {
     name: "get_project_schedule_advice",
@@ -2574,6 +2718,8 @@ export function availableTools(
     "list_projects",
     "get_project",
     "get_current_project",
+    "get_project_budget",
+    "create_budget_invoice",
     "get_project_schedule_advice",
     "list_my_tasks",
     "list_upcoming_deadlines",
@@ -2593,6 +2739,9 @@ export function availableTools(
   ]);
   if (intent) {
     const text = intent.toLocaleLowerCase();
+    if (/\b(budget|funding|funded|invoice|proposal|audiobook|audio|quote|quotation|costs?)\b/.test(text)) {
+      core.add("add_budget_line");
+    }
     if (/\b(project|member|role|channel|chat|message)\b/.test(text)) {
       [
         "post_chat_message",

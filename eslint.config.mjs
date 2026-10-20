@@ -6,6 +6,8 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   {
+    // Match Next's React plugin scope, which excludes CommonJS install hooks.
+    files: ["**/*.{js,jsx,mjs,ts,tsx,mts,cts}"],
     rules: {
       // Purely stylistic (apostrophes/quotes in copy); content is fine as-is.
       "react/no-unescaped-entities": "off",

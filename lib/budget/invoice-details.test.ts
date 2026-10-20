@@ -28,6 +28,14 @@ it("uses the counterparty and saved address and maps source titles by project id
  expect(result.description).not.toContain("Internal");
  expect(result.recipientName).not.toContain("Primary contact");
 });
+it("retains the reviewed recipient and covered costs for a budget-line invoice", async () => {
+ const result = await getMouInvoiceDetails({
+  projectId: "project", sharedMouGroupId: null, trigger: "custom",
+  publicDescription: "Funding for Example book\n- Audiobook Production",
+  budgetInvoice: { requestHash: "hash", fingerprint: "review", termsHash: "terms", budgetItemIds: ["audio"], recipientName: "Audio partner", recipientEmail: "audio@example.org", recipientAddress: "Reviewed address" },
+ });
+ expect(result).toEqual({ recipientName: "Audio partner", billingAddress: "Reviewed address", description: "Funding for Example book\n- Audiobook Production" });
+});
 it("does not choose an address when counterparties are ambiguous", async () => {
  rows.set("partners", [{ billingAddress: "A" }, { billingAddress: "B" }]);
  expect((await getMouInvoiceDetails({ projectId: "articles", sharedMouGroupId: "group", trigger: "on_signing" })).billingAddress).toBe("");

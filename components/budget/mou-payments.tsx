@@ -1,10 +1,11 @@
 "use client";
 
+import { FileLink } from "@/components/files/file-link";
+
 import { invoiceEmailFallback, type DraftIdentity } from "@/lib/email/operational-drafts";
 import { confirmDialog } from "@/lib/dialog-requests";
 
 import { useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
@@ -70,6 +71,8 @@ export type Payment = {
   invoiceTaskId: string | null;
   invoiceRequestedAt: string | Date | null;
   paidAt: string | Date | null;
+  receivedAmount?: string | null;
+  donationLinked?: boolean;
   invoice: {
     id: string;
     invoiceNumber: string;
@@ -317,7 +320,7 @@ export function MouPayments({
   const scheduled = visiblePayments.reduce((s, p) => s + Number(p.amount), 0);
   const received = visiblePayments
     .filter((p) => p.paidAt)
-    .reduce((s, p) => s + Number(p.amount), 0);
+    .reduce((s, p) => s + Number(p.receivedAmount ?? p.amount), 0);
   const awaitingReceipt = visiblePayments.filter((p) => !p.paidAt).length;
   const savedInvoiceDraft = emailingInvoiceId
     ? invoiceDrafts.find(
@@ -746,27 +749,27 @@ export function MouPayments({
                           </span>
                         ) : null}
                         {p.invoice ? (
-                          <Link
+                          <FileLink
+                            intent="preview"
                             href={`/api/invoices/${p.invoice.id}`}
                             className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
-                            target="_blank"
                           >
                             <FileText className="size-3.5" />
                             Invoice {p.invoice.invoiceNumber}
-                          </Link>
+                          </FileLink>
                         ) : null}
                         {p.invoiceHistory
                           .filter((invoice) => invoice.status === "void")
                           .map((invoice) => (
-                            <Link
+                            <FileLink
+                              intent="preview"
                               key={invoice.id}
                               href={`/api/invoices/${invoice.id}`}
                               className="inline-flex items-center gap-1 hover:underline"
-                              target="_blank"
                             >
                               <FileText className="size-3.5" />
                               Invoice {invoice.invoiceNumber} · void
-                            </Link>
+                            </FileLink>
                           ))}
                         {p.invoice && canEdit ? (
                           <Button
@@ -788,6 +791,9 @@ export function MouPayments({
                     </div>
                     <span className="shrink-0 font-medium tabular-nums">
                       {money(p.amount, p.currency)}
+                      {p.paidAt && p.receivedAmount && Number(p.receivedAmount) !== Number(p.amount) ? (
+                        <span className="block text-xs font-normal text-muted-foreground">{money(p.receivedAmount, p.currency)} received</span>
+                      ) : null}
                     </span>
                     {savingPaymentId === p.id ? (
                       <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-info/10 px-2 py-0.5 text-xs font-medium text-info">
@@ -916,7 +922,9 @@ export function MouPayments({
                             disabled={pending || savingPaymentId === p.id}
                           />
                         ) : null}
-                        {p.paidAt ? (
+                        {p.paidAt && p.donationLinked ? (
+                          <span className="text-xs text-muted-foreground">Linked from Donations</span>
+                        ) : p.paidAt ? (
                           <Button
                             variant="ghost"
                             size="icon-xs"
