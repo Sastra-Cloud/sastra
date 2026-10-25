@@ -49,7 +49,7 @@
     "@emoji-mart/data": "^1.2.1",
     "@hookform/resolvers": "^5.4.0",
     "@radix-ui/react-slot": "^1.3.0",
-    "@sentry/nextjs": "^10.68.0",
+    "@sentry/nextjs": "^10.75.2",
     "@shadcn/react": "^0.1.0",
     "@tiptap/core": "^3.31.3",
     "@tiptap/extension-placeholder": "^3.31.3",
@@ -71,7 +71,7 @@
     "mailparser": "^3.9.28",
     "mammoth": "^1.12.3",
     "motion": "^12.42.0",
-    "next": "16.3.8",
+    "next": "16.4.2",
     "next-themes": "^0.4.6",
     "nodemailer": "^10.1.7",
     "openai": "^7.23.0",
@@ -95,7 +95,7 @@
     "web-haptics": "0.0.6",
     "web-push": "^3.6.7",
     "yet-another-react-lightbox": "^3.32.2",
-    "zod": "^4.4.3"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -109,7 +109,7 @@
     "@typescript/typescript6": "6.0.2",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
-    "eslint-config-next": "16.3.8",
+    "eslint-config-next": "16.4.2",
     "png-to-ico": "^3.0.1",
     "shadcn": "4.11.0",
     "tailwindcss": "^4",
@@ -134,13 +134,9 @@
       "fast-uri@<3.1.8": "3.1.8",
       "ip-address@<=10.7.0": "10.7.1",
       "sharp@<0.35.5": "0.35.5",
-      "undici@>=7.0.0 <7.29.1": "7.29.1",
-      "source-map-js@<1.2.2": "1.2.2"
-    },
-    "auditConfig": {
-      "ignoreGhsas": [
-        "GHSA-mh99-v99m-4gvg"
-      ]
+      "source-map-js@<1.2.2": "1.2.2",
+      "undici@>=7.0.0 <7.30.1": "7.30.1",
+      "vite@>=8.0.0 <8.1.6": "8.3.4"
     }
   }
 }
