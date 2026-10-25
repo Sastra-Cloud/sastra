@@ -469,14 +469,15 @@ export type ProjectRightsStatus = {
 };
 
 /** Rights overall status per project (read-only; no get-or-create side effects). */
-export async function listProjectRightsStatus(): Promise<ProjectRightsStatus[]> {
+export async function listProjectRightsStatus(projectId?: string): Promise<ProjectRightsStatus[]> {
   return db
     .select({
       projectId: rightsItems.projectId,
       overallStatus: rightsItems.overallStatus,
       completeByDate: rightsItems.completeByDate,
     })
-    .from(rightsItems);
+    .from(rightsItems)
+    .where(projectId ? eq(rightsItems.projectId, projectId) : undefined);
 }
 
 export type ProjectBlockerSummary = {

@@ -12,6 +12,11 @@ describe("isAllowedMime", () => {
     expect(isAllowedMime("audio/mp4; codecs=mp4a.40.2")).toBe(true);
   });
 
+  it("accepts supported translation source attachments", () => {
+    expect(isAllowedMime("application/vnd.oasis.opendocument.text")).toBe(true);
+    expect(isAllowedMime("application/vnd.adobe.indesign-idml-package")).toBe(true);
+  });
+
   it("still rejects unapproved media types", () => {
     expect(isAllowedMime("audio/flac")).toBe(false);
   });

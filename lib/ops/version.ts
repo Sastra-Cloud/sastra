@@ -11,7 +11,7 @@ import pkg from "@/package.json";
  * version so a release image can carry its tag.
  */
 export type RunningVersion = {
-  /** Next.js build id; changes with every build (the client uses it to detect deploys). */
+  /** Deployment identity, falling back to BUILD_ID for older images. */
   id: string;
   version: string;
   revision: string | null;
@@ -23,7 +23,18 @@ export type RunningVersion = {
 let cachedBuildId: string | null = null;
 
 function buildId(): string {
+  if (process.env.NODE_ENV !== "production") return "dev";
   if (cachedBuildId) return cachedBuildId;
+  try {
+    const manifest = JSON.parse(readFileSync(
+      path.join(process.cwd(), ".next", "required-server-files.json"), "utf8"
+    ));
+    const id = manifest.config?.deploymentId;
+    if (typeof id === "string" && id) {
+      cachedBuildId = id;
+      return id;
+    }
+  } catch { /* Older image or development server. */ }
   try {
     const id = readFileSync(path.join(process.cwd(), ".next", "BUILD_ID"), "utf8").trim();
     if (id) {

@@ -3,8 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Sparkles } from "lucide-react";
 
+import { hasProjectCapability } from "@/lib/auth/project-access";
 import { getSession } from "@/lib/auth/guards";
-import { can } from "@/lib/auth/policy";
 import {
   getProjectBySlug,
   listAssignableUsers,
@@ -77,7 +77,7 @@ export default async function ProjectTasksPage({
 
   const session = await getSession();
   const isManager =
-    can(session?.user ?? null, "tasks.manage");
+    !!session && await hasProjectCapability(session.user, data.project.id, "tasks.manage");
   const generateHref = `/projects/${slug}/tasks/generate`;
   const unitTerms = projectUnitTerms(data.project.kind);
 

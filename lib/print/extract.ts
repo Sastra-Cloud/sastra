@@ -9,13 +9,13 @@ import type { AiMetering } from "@/lib/ai/usage";
 import { db } from "@/lib/db";
 import {
   fileAttachments,
-  files,
   printPayments,
   printQuotes,
   printRuns,
   projects,
 } from "@/lib/db/schema";
 import { presignGet } from "@/lib/r2";
+import { getAccessibleExtractionFile, getEmailExtractionFile } from "@/lib/imports/file-access";
 import { documentCueText } from "@/lib/document-learning/source";
 import { localDocumentGuidance } from "@/lib/document-learning/service";
 import {
@@ -150,13 +150,15 @@ export async function runPrintQuoteExtraction(input: {
   projectId: string;
   actorUserId?: string | null;
   runId?: string | null;
+  sourceMessageId?: string | null;
+  sourceThreadId?: string | null;
 }): Promise<ParsedPrinterQuote | null> {
-  const [file] = await db
-    .select()
-    .from(files)
-    .where(eq(files.id, input.fileId))
-    .limit(1);
-  if (!file || file.status !== "ready") return null;
+  const file = input.actorUserId
+    ? await getAccessibleExtractionFile(input.fileId, input.actorUserId)
+    : input.sourceMessageId && input.sourceThreadId
+      ? await getEmailExtractionFile(input.fileId, input.sourceMessageId, input.sourceThreadId)
+      : null;
+  if (!file) return null;
 
   const url = await presignGet(file.r2Key);
   const res = await withTimeout(fetch(url), 30_000, "Downloading the invoice");
@@ -651,6 +653,8 @@ export async function extractPrintInvoice(input: {
       fileId: input.fileId,
       projectId: run.projectId,
       runId: run.id,
+      sourceMessageId: input.sourceMessageId,
+      sourceThreadId: input.sourceThreadId,
     });
   } catch (err) {
     await markJobFailed(job.id, extractionErrorMessage(err));

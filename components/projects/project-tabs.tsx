@@ -11,7 +11,7 @@ import { projectNavigation, navigationItemActive, type NavigationItem } from "@/
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
-export function ProjectTabs({ slug, kind }: { slug: string; kind?: string | null }) {
+export function ProjectTabs({ slug, kind, lectioEnabled = false }: { slug: string; kind?: string | null; lectioEnabled?: boolean }) {
   const pathname = usePathname();
   const rootRef = useRef<HTMLDivElement>(null);
   const sections = projectNavigation(slug, kind);
@@ -31,6 +31,7 @@ export function ProjectTabs({ slug, kind }: { slug: string; kind?: string | null
     <div ref={rootRef} className="space-y-2">
       <TabScroller aria-label="Project sections">
         {sections.daily.map(tab)}
+        {lectioEnabled ? tab({ href: `/projects/${slug}/translation`, label: "Translation", icon: "projects" }) : null}
         <DropdownMenu>
           <DropdownMenuTrigger aria-current={publishing ? "page" : undefined} className={cn("inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring", publishing ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-muted-foreground")}>
             <BookOpenText className="size-4" />Publishing<ChevronDown className="size-3.5" />

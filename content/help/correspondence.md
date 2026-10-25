@@ -2,19 +2,54 @@
 title: "Correspondence (email intake)"
 category: "Communication"
 roles: [manager, admin]
-keywords: [correspondence badge, needs review, shared reviews, unassigned follow ups, correspondence address, in.sastra.cloud, sastra cloud address, copy address, forward address, cc address, connect gmail, app password, shared mailbox, connect mailbox, disconnect mailbox, 2-step verification, google workspace, search, pagination, next page, filters, subject, correspondence, email, inbox, gmail, webhook, resend, receiving email, original email file, thread, email history, newest email first, quoted history, forwarded history, recent correspondence, project email, project filter, expand message, reprocess message, reprocess thread, review as document, missed attachment, manual rights review, uncertain classification, project status suggestion, email project update, post project update, publisher, rights, partner, printer, reply, triage, mailbox, waiting, external follow up, follow-up reminder, snooze, draft follow-up, multiple projects, review projects, link projects, many projects from one email, multi-project mou, shared agreement pdf, attach mou to several projects, video series, original video, translated video, production mode, grant reminder, funder deadline, grant report due date, reminder from email, grant obligation, final report due, recurring report, duplicate project, funder already funds, existing grant, link to existing grant, not a new project, dismiss reason, intake learning, learns from dismissals, negative rules, stop re-suggesting, approve lesson, forwarded email task, proof review task, reply to printer, meeting task, secretary, assistant, signed license, payment receipt, license fee, print proof, proof attachment, restore proof, reprocess proof, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice]
+keywords: [finish email review, review complete, dismiss quote suggestion, dismiss funding review, clear badge, correspondence badge, needs review, shared reviews, unassigned follow ups, correspondence address, in.sastra.cloud, sastra cloud address, copy address, forward address, cc address, connect gmail, app password, shared mailbox, connect mailbox, disconnect mailbox, 2-step verification, google workspace, search, pagination, next page, filters, subject, correspondence, email, inbox, gmail, webhook, resend, receiving email, original email file, thread, email history, newest email first, quoted history, forwarded history, recent correspondence, project email, project filter, expand message, reprocess message, reprocess thread, review as document, missed attachment, manual rights review, uncertain classification, project status suggestion, email project update, post project update, publisher, rights, partner, printer, reply, triage, mailbox, waiting, external follow up, follow-up reminder, snooze, draft follow-up, multiple projects, review projects, link projects, many projects from one email, multi-project mou, shared agreement pdf, attach mou to several projects, video series, original video, translated video, production mode, grant reminder, funder deadline, grant report due date, reminder from email, grant obligation, final report due, recurring report, duplicate project, funder already funds, existing grant, link to existing grant, not a new project, dismiss reason, intake learning, learns from dismissals, negative rules, stop re-suggesting, approve lesson, forwarded email task, proof review task, reply to printer, meeting task, secretary, assistant, signed license, payment receipt, license fee, print proof, proof attachment, restore proof, reprocess proof, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice]
 order: 100
-summary: "The correspondence address (name@in.sastra.cloud on Sastra Cloud, or a connected Gmail mailbox), how email arrives, and how to review shared email work, search, triage, and reply to project email."
+summary: "The correspondence address (name@in.sastra.cloud on Sastra Cloud, or a connected Gmail mailbox), how email arrives, and how to finish shared email reviews and clear the badge, search, triage, and reply to project email."
 ---
 
 **Correspondence** captures email from a shared mailbox so publisher, printer, and
 finance conversations live next to the projects they belong to. It's sensitive
 operational data, so it's **manager-only** — members don't see it.
 
+Files attached only to correspondence also require manager access, including
+when opened from a saved download link. If a manager shares the same file on a
+project or another accessible workspace surface, teammates can open that shared
+file without gaining access to the email conversation.
+
 Triage status, project links, and assignees update immediately and roll back if
 saving fails. Reprocessing and sending replies show progress; replies require a
 final recipient confirmation and only show **sent** after the mailbox accepts
 them.
+
+## Finish an email review
+
+Open **Needs review**, then open a thread. **Finish email review** lists every
+shared review keeping that thread in the badge. Each thread counts once, even
+when it has several suggestions. Work through every listed item:
+
+- **Project suggestions:** create or link the projects, or dismiss the suggestions.
+- **Project updates:** post the suggested update or dismiss it.
+- **Rights documents:** approve the document or dismiss the suggestion.
+- **Printer quotes:** use **Review in Print** to open the exact price. Accept the
+  price you will use, or choose **Dismiss suggestion** for an unused or outdated
+  price. Dismissing rejects only that suggestion; accepted quotes and payments
+  stay unchanged. Unreviewed prices remain visible in Print after another price
+  is accepted. Rejected prices remain in Print under the other quotes toggle.
+- **Funding documents:** open **Review MoU funding** to approve the funding, or
+  choose **Dismiss review** when it is not needed. Dismissing keeps the source
+  file and does not change approved funding.
+- **Unassigned follow-up:** choose an owner in the thread controls, snooze it, or
+  resolve it. Assigned follow-ups move to their owner's **My Work**.
+
+When the last shared item is resolved, the section shows **Review complete**.
+The thread leaves **Needs review** and its badge count drops automatically.
+Choose **Back to Needs review** to continue. Dismissals update immediately and
+restore the item if saving fails.
+
+The thread's **Open**, **Waiting**, or **Done** status is separate from its
+reviews. Choosing **Done** does not dismiss pending suggestions or approve
+financial records. Personal task suggestions and owned follow-ups stay in
+**My Work**. New review items can bring a thread back into **Needs review**.
 
 For a PDF or image attachment that automatic screening missed, choose a
 workflow beside the attachment and select **Review as document**. A project

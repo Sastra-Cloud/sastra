@@ -43,6 +43,9 @@ and notifications. Managers can add a note beneath an attached document to
 record version, signing, indexing, or follow-up context without renaming the
 file.
 
+Adding or removing rights documents and changing their attachment notes are
+manager actions, including when a document is uploaded directly.
+
 ## Ask about agreements
 
 Select **Ask about agreements** beside the overall Rights status to ask a

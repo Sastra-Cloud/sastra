@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
+import { PHASE_PRODUCTION_BUILD, PHASE_DEVELOPMENT_SERVER } from "next/constants";
+import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
-const nextConfig: NextConfig = {
+const sharedConfig: NextConfig = {
   typescript: {
     // scripts/build.mjs sets this only after route generation and tsrs pass.
     ignoreBuildErrors: process.env.SASTRA_TSRS_CHECKED === "1",
@@ -10,7 +14,7 @@ const nextConfig: NextConfig = {
   // React's <ViewTransition> is on by default since Next 16.3; the former
   // experimental.viewTransition flag no longer exists.
   async headers() {
-    // A stale service worker is the #1 cause of "stuck on an old version".
+    // Never cache the service worker; authenticated content is network-only.
     return [
       {
         source: "/:path*",
@@ -97,4 +101,32 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default function nextConfig(phase: string): NextConfig {
+  let deploymentId: string | undefined;
+  if (phase === PHASE_PRODUCTION_BUILD) {
+    deploymentId = process.env.NEXT_DEPLOYMENT_ID || randomUUID();
+  } else if (phase !== PHASE_DEVELOPMENT_SERVER) {
+    // Use the identity baked into this image, even when runtime env differs.
+    // Next 16.3 uses a CONSTANT BUILD_ID when deploymentId is configured.
+    try {
+      deploymentId = JSON.parse(readFileSync(
+        path.join(process.cwd(), ".next/required-server-files.json"), "utf8"
+      )).config.deploymentId;
+    } catch { /* No production build yet. */ }
+  }
+  return {
+    ...sharedConfig,
+    async headers() {
+      const rules = await sharedConfig.headers?.() ?? [];
+      if (phase !== PHASE_DEVELOPMENT_SERVER) return rules;
+      // Next's development runtime uses eval for module execution and debugging.
+      // Select by build phase so production never inherits this exception.
+      return rules.map(rule => ({ ...rule, headers: rule.headers.map(header =>
+        header.key.toLowerCase() === "content-security-policy"
+          ? { ...header, value: header.value.replace(/script-src ([^;]+)/, "script-src $1 'unsafe-eval'") }
+          : header) }));
+    },
+    deploymentId,
+    env: { NEXT_PUBLIC_SASTRA_DEPLOYMENT_ID: deploymentId ?? "dev" },
+  };
+}

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { and, eq, gt } from "drizzle-orm";
 import { z } from "zod";
 
-import { requireRole } from "@/lib/auth/guards";
+import { requireProjectRecord } from "@/lib/auth/project-access";
 import { db } from "@/lib/db";
 import { phases, projects } from "@/lib/db/schema";
 import { logActivity } from "@/lib/activity/log";
@@ -34,7 +34,7 @@ export async function updatePhaseDates(
   phaseId: string,
   input: z.infer<typeof datesSchema>
 ): Promise<{ error?: string }> {
-  const { user } = await requireRole("manager");
+  const { user } = await requireProjectRecord("phase", phaseId);
   const d = datesSchema.parse(input);
   const [row] = await db
     .update(phases)
@@ -66,7 +66,7 @@ export async function shiftPhase(
   deltaDays: number,
   cascade: boolean
 ): Promise<{ error?: string; shifted?: number }> {
-  const { user } = await requireRole("manager");
+  const { user } = await requireProjectRecord("phase", phaseId);
   const delta = Math.trunc(deltaDays);
   if (!Number.isFinite(delta) || delta === 0 || Math.abs(delta) > 3650) {
     return { error: "Invalid shift." };

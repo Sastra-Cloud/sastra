@@ -13,14 +13,19 @@ import { getWorkspaceSettings } from "@/lib/workspace/queries";
 import { logActivity } from "@/lib/activity/log";
 import { capacityGroupsSchema, normalizeGroups } from "@/lib/planning/groups";
 import { requestScheduledTick } from "@/lib/hosted/tick-request";
-import type { WorkspaceModule } from "@/lib/workspace/modules";
+import { LECTIO_CLOUD_REQUIREMENT, type WorkspaceModule } from "@/lib/workspace/modules";
+import { assertLectioCloudEligibility } from "@/lib/lectio/cloud-eligibility";
 
 export async function setWorkspaceModule(input: { module: WorkspaceModule; enabled: boolean }): Promise<{ error?: string; enabledModules?: string[] }> {
   const { user } = await requireRole("admin");
-  const parsed = z.object({ module: z.enum(["sponsorships"]), enabled: z.boolean() }).safeParse(input);
+  const parsed = z.object({ module: z.enum(["sponsorships", "lectio"]), enabled: z.boolean() }).safeParse(input);
   if (!parsed.success) return { error: "Choose a valid module setting." };
-  await getWorkspaceSettings();
   const { module, enabled } = parsed.data;
+  if (module === "lectio" && enabled) {
+    try { await assertLectioCloudEligibility(); }
+    catch { return { error: LECTIO_CLOUD_REQUIREMENT }; }
+  }
+  await getWorkspaceSettings();
   const [row] = await db.update(workspaceSettings).set({
     enabledModules: enabled
       ? sql`array(select distinct unnest(array_append(${workspaceSettings.enabledModules}, ${module}::text)))`

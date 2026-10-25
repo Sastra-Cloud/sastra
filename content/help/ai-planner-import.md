@@ -31,6 +31,19 @@ payment schedule for you to review before anything is created. A single document
 can produce several different project types, including books, article
 collections, podcasts, and video series.
 
+Imports accept only completed uploads that you currently have permission to
+open. Donation-import files stay in the Donations workflow. Access is checked
+again when background parsing starts; if your account or file access has been
+revoked, parsing stops without reading the file. A multi-file project update
+does not start if any selected file is unavailable.
+
+You also need current source-file access to open a draft, edit it, retry parsing,
+or save its results. Recent imports only lists documents you can currently access.
+Saved extraction does not bypass this check. Another
+authorized manager can retry an import even if its original creator has left.
+Retries use the requesting manager's current access and keep the original author.
+If parsing fails, retry or open manual review before saving the results.
+
 Because agreements sometimes describe the **same payment or cost in more than one
 clause**, the review **flags likely duplicates** — payment rows that share a
 trigger, amount, and date, or budget lines with the same item and amount — with a

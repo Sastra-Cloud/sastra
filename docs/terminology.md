@@ -17,6 +17,7 @@ a component.
 | A reusable workflow blueprint | **template** | preset, workflow (as a noun for the blueprint) | |
 | A person in the workspace | **teammate** / **team member** | user | "user" is fine in code, never in UI copy |
 | Workspace permission level | **workspace role** (member / manager / admin) | access level, tier | |
+| Member granted management of specific projects | **project manager** | workspace manager (for this assignment) | assigned in a project's Members tab; distinct from a job label |
 | Job label on a project (translator, editor…) | **project role** | job role, function | distinct from workspace role |
 
 ## People and organizations

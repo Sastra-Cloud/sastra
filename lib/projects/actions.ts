@@ -5,22 +5,19 @@ import { revalidatePath } from "next/cache";
 import { and, eq, inArray, notInArray, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 
-import { requireRole } from "@/lib/auth/guards";
+import { requireRole, requireUser } from "@/lib/auth/guards";
+import { requireProjectCapability } from "@/lib/auth/project-access";
 import { logActivity } from "@/lib/activity/log";
 import { recomputeProjectBlockers } from "@/lib/blockers/engine";
 import { requestCompletionMouInvoices } from "@/lib/budget/actions";
-import { defaultProjectChannelRows } from "@/lib/chat/project-channels";
 import { db } from "@/lib/db";
 import {
   budgetItems,
-  budgetScopePresentations,
   chatChannels,
   chatMessages,
   fileAttachments,
   files,
   projects,
-  projectBudgetSettings,
-  projectPrintSettings,
   rightsItems,
   sharedMouMemberships,
   sponsorshipLines,
@@ -33,14 +30,17 @@ import {
 } from "@/lib/db/schema";
 import { deleteObject } from "@/lib/r2";
 import { uniqueProjectSlug } from "@/lib/slug";
-import { materializePlan } from "./materialize";
+import { createProjectSchema, createProjectInTransaction } from "./create";
+import { lectioConnections } from "@/lib/db/schema";
+import { moduleEnabled } from "@/lib/workspace/modules";
+import { parseProfile } from "@/lib/lectio/protocol/profile";
+import { queueLectioProject } from "@/lib/lectio/create-project";
+import { findLectioProjectMatches } from "@/lib/lectio/match-actions";
 import { reevaluateSharedMouPayments } from "@/lib/agreements/readiness-engine";
 import { getWorkspaceSettings } from "@/lib/workspace/queries";
-import { insertEpisodicUnitsWithWorkflow } from "@/lib/episodes/materialize";
 import { workflowProfile } from "@/lib/episodes/workflow";
 import { ensureEpisodeWorkflow } from "@/lib/episodes/workflow-service";
 import { requiredStages } from "@/lib/episodes/workflow";
-import { isEpisodicKind } from "./kinds";
 import {
   isBookProjectKind,
   PRINT_FUNDING_STATUSES,
@@ -53,24 +53,6 @@ import {
   type ProjectOpenStatus,
 } from "./status";
 
-const createSchema = z.object({
-  title: z.string().trim().min(1, "Title is required").max(200),
-  description: z.string().trim().optional(),
-  status: z
-    .enum(PROJECT_OPEN_STATUSES)
-    .default("planning"),
-  priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
-  kind: z.enum(["book", "article", "podcast", "video_series", "other"]).optional(),
-  printFundingStatus: z.enum(PRINT_FUNDING_STATUSES).default("not_assessed"),
-  videoProductionMode: z.enum(["original", "translation"]).default("original"),
-  sourceLanguage: z.string().trim().max(100).optional(),
-  targetLanguage: z.string().trim().max(100).optional(),
-  startDate: z.string().optional(),
-  dueDate: z.string().optional(),
-  planTemplateId: z.string().optional(),
-  chapters: z.string().optional(),
-});
-
 export type ProjectFormState = { error?: string; ok?: boolean };
 
 export async function createProject(
@@ -79,7 +61,7 @@ export async function createProject(
 ): Promise<ProjectFormState> {
   const { user } = await requireRole("manager");
 
-  const parsed = createSchema.safeParse({
+  const parsed = createProjectSchema.safeParse({
     title: formData.get("title"),
     description: formData.get("description") || undefined,
     status: formData.get("status") || undefined,
@@ -100,102 +82,40 @@ export async function createProject(
   const data = parsed.data;
   const slug = await uniqueProjectSlug(data.title);
   const workspace = await getWorkspaceSettings();
-
-  const planTemplateId =
-    data.planTemplateId && data.planTemplateId !== "none"
-      ? data.planTemplateId
-      : undefined;
-  const unitNames = data.chapters
-    ? data.chapters.split(/[\n,]/).map((s) => s.trim()).filter(Boolean)
-    : [];
-
-  await db.transaction(async (tx) => {
-    const [project] = await tx
-      .insert(projects)
-      .values({
-        slug,
-        title: data.title,
-        description: data.description,
-        status: data.status,
-        priority: data.priority,
-        kind: data.kind ?? null,
-        printFundingStatus: data.printFundingStatus,
-        videoProductionMode:
-          data.kind === "video_series" ? data.videoProductionMode : null,
-        sourceLanguage: data.sourceLanguage || workspace.sourceLanguage,
-        targetLanguage: data.targetLanguage || workspace.targetLanguage,
-        startDate: data.startDate || null,
-        dueDate: data.dueDate || null,
-        createdBy: user.id,
-      })
-      .returning({ id: projects.id });
-
-    await Promise.all([
-      tx.insert(projectBudgetSettings).values({
-        projectId: project.id,
-        wordsPerPage: workspace.wordsPerPage,
-        currency: workspace.defaultCurrency,
-        rateTranslation: workspace.rateTranslation,
-        rateProofreading: workspace.rateProofreading,
-        rateEditing: workspace.rateEditing,
-        rateCoverDesign: workspace.rateCoverDesign,
-        rateTypesetting: workspace.rateTypesetting,
-        rateProjectManagement: workspace.rateProjectManagement,
-        ratePrintShip: workspace.ratePrintShip,
-        rateAudiobook: workspace.rateAudiobook,
-        rateVideoSeries: workspace.rateVideoSeries,
-      }),
-      tx.insert(budgetScopePresentations).values({
-        projectId: project.id,
-        mode: "itemized",
-        deductionBps: workspace.defaultFundingDeductionBps,
-        createdBy: user.id,
-        updatedBy: user.id,
-      }),
-      tx.insert(projectPrintSettings).values({
-        projectId: project.id,
-        trimWidthIn: workspace.trimWidthIn,
-        trimHeightIn: workspace.trimHeightIn,
-        languageExpansionFactor: workspace.languageExpansionFactor,
-        financialEmail: workspace.financialEmail ?? "",
-        ccEmails: workspace.defaultCcEmails,
-      }),
-    ]);
-
-    if (isEpisodicKind(data.kind) && unitNames.length > 0) {
-      await insertEpisodicUnitsWithWorkflow(tx, {
-        projectId: project.id,
-        actorId: user.id,
-        profile: workflowProfile({
-          kind: data.kind,
-          videoProductionMode: data.videoProductionMode,
-          videoRequired: true,
-        }),
-        unitNames,
-      });
-    } else if (planTemplateId) {
-      await materializePlan(tx, {
-        projectId: project.id,
-        planTemplateId,
-        unitNames,
-        startDate: data.startDate ? new Date(data.startDate) : undefined,
-        createdBy: user.id,
-      });
-    } else if (unitNames.length > 0) {
-      await tx.insert(units).values(
-        unitNames.map((name, orderIndex) => ({
-          projectId: project.id,
-          name,
-          orderIndex,
-        }))
-      );
-    }
-
-    // Every project gets subject channels so decisions do not get lost.
-    await tx.insert(chatChannels).values(defaultProjectChannelRows(project.id));
+  let connectedId: string | null = null;
+  let existingLectioProjectId: string | null = null;
+  const requestedConnection = formData.get("lectioConnectionId");
+  if (moduleEnabled(workspace.enabledModules, "lectio") && ["book", "article"].includes(data.kind || "") && requestedConnection !== "none") {
+    const available = await db.select().from(lectioConnections).where(and(eq(lectioConnections.state, "active"),
+      typeof requestedConnection === "string" && requestedConnection !== "auto" ? eq(lectioConnections.id, requestedConnection) : undefined));
+    if (available.length === 1) {
+      const choice = formData.get("lectioChoice");
+      if (choice !== "new" && choice !== "existing") return { error: "Check for an existing Lectio project in the New project form, or turn its connection off before creating." };
+      connectedId = available[0].id;
+      const matches = await findLectioProjectMatches(connectedId, { name: data.title, sourceLanguage: data.sourceLanguage || "", targetLanguage: data.targetLanguage || "" });
+      if ("error" in matches) return { error: matches.error };
+      if (choice === "existing") {
+        const remoteId = formData.get("lectioRemoteProjectId");
+        if (typeof remoteId !== "string" || !remoteId) return { error: "Choose an existing Lectio project before continuing." };
+        if (!matches.projects.some(project => project.id === remoteId)) return { error: "This Lectio project is no longer available. Check the matches again before creating." };
+        existingLectioProjectId = remoteId;
+      } else {
+      if (!matches.allowNew) return { error: "Both administrators must approve new counterpart creation before continuing. Choose an existing project or turn the connection off." };
+      try {
+        const profile = parseProfile(available[0].profile);
+        if (data.planTemplateId && data.planTemplateId !== "none" && data.planTemplateId !== profile.planTemplateId) return { error: "This Lectio connection uses a different project template. Choose its reviewed template or create this project without Lectio." };
+        data.planTemplateId = profile.planTemplateId;
+      } catch { return { error: "An administrator needs to review this Lectio connection’s project defaults before creating connected projects." }; }
+      }
+    } else if (typeof requestedConnection === "string" && !["auto", "none"].includes(requestedConnection)) return { error: "This Lectio connection is unavailable. Refresh and choose another connection." };
+  }
+  await db.transaction(async tx => {
+    const project = await createProjectInTransaction(tx, { data, slug, workspace, actorId: user.id });
+    if (connectedId && !existingLectioProjectId) await queueLectioProject(tx, connectedId, project.id);
   });
 
   revalidatePath("/projects");
+  if (connectedId && existingLectioProjectId) redirect(`/projects/${slug}/translation?${new URLSearchParams({ lectioConnectionId: connectedId, lectioProjectId: existingLectioProjectId })}`);
   redirect(`/projects/${slug}?created=1`);
 }
 
@@ -213,7 +133,7 @@ export async function updateProject(
   _prev: ProjectFormState,
   formData: FormData
 ): Promise<ProjectFormState> {
-  await requireRole("manager");
+  await requireUser();
   const parsed = updateSchema.safeParse({
     id: formData.get("id"),
     title: formData.get("title"),
@@ -227,6 +147,7 @@ export async function updateProject(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
   const { id, ...data } = parsed.data;
+  await requireProjectCapability(id);
   const [row] = await db
     .update(projects)
     .set({
@@ -258,7 +179,7 @@ export async function updateProjectTitle(
   projectId: string,
   title: string
 ): Promise<{ title?: string; error?: string }> {
-  const { user } = await requireRole("manager");
+  const { user } = await requireProjectCapability(projectId);
   const parsed = updateProjectTitleSchema.safeParse({ projectId, title });
   if (!parsed.success) {
     return {
@@ -303,7 +224,7 @@ export async function updateProjectLanguages(
   projectId: string,
   input: { sourceLanguage: string; targetLanguage: string; targetLanguageTitle: string }
 ): Promise<{ error?: string }> {
-  const { user } = await requireRole("manager");
+  const { user } = await requireProjectCapability(projectId);
   const parsed = z.object({
     sourceLanguage: z.string().trim().max(100),
     targetLanguage: z.string().trim().max(100),
@@ -326,7 +247,7 @@ export async function updateProjectStatus(
   projectId: string,
   status: ProjectOpenStatus
 ): Promise<{ error?: string }> {
-  const { user } = await requireRole("manager");
+  const { user } = await requireProjectCapability(projectId);
   const parsed = z
     .object({
       projectId: z.string().uuid(),
@@ -407,7 +328,7 @@ export async function updateProjectKind(
   projectId: string,
   kind: "book" | "article" | "podcast" | "video_series" | "other"
 ): Promise<{ error?: string }> {
-  const { user } = await requireRole("manager");
+  const { user } = await requireProjectCapability(projectId);
   const parsed = z.enum(["book", "article", "podcast", "video_series", "other"]).safeParse(kind);
   if (!parsed.success) return { error: "Choose a valid project type." };
   const [project] = await db
@@ -448,7 +369,7 @@ export async function updateVideoProductionMode(
   projectId: string,
   mode: "original" | "translation"
 ): Promise<{ error?: string; removed?: number; preserved?: number; created?: number }> {
-  const { user } = await requireRole("manager");
+  const { user } = await requireProjectCapability(projectId);
   const parsed = z.enum(["original", "translation"]).safeParse(mode);
   if (!parsed.success) return { error: "Choose a valid video production mode." };
 
@@ -594,7 +515,7 @@ export async function updateVideoProductionMode(
 export async function completeProject(
   projectId: string
 ): Promise<{ error?: string; invoiceTasks?: number }> {
-  const { user } = await requireRole("manager");
+  const { user } = await requireProjectCapability(projectId);
   const [project] = await db
     .update(projects)
     .set({ status: "completed", updatedAt: new Date() })

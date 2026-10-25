@@ -6,7 +6,7 @@ import { z } from "zod";
 
 import { logActivity } from "@/lib/activity/log";
 import { requireUser } from "@/lib/auth/guards";
-import { can } from "@/lib/auth/policy";
+import { hasProjectCapability } from "@/lib/auth/project-access";
 import { db } from "@/lib/db";
 import { projectSurfaceNotes } from "@/lib/db/schema";
 import { notifyMentions } from "@/lib/mentions/notify";
@@ -151,13 +151,14 @@ export async function deleteProjectSurfaceNote(
       userId: projectSurfaceNotes.userId,
       surface: projectSurfaceNotes.surface,
       parentId: projectSurfaceNotes.parentId,
+      projectId: projectSurfaceNotes.projectId,
     })
     .from(projectSurfaceNotes)
     .where(eq(projectSurfaceNotes.id, noteId))
     .limit(1);
 
   if (!row || row.surface !== parsedSurface) return;
-  const canModerate = can(user, "comments.moderate");
+  const canModerate = await hasProjectCapability(user, row.projectId, "comments.moderate");
   if (row.userId !== user.id && !canModerate) return;
 
   if (row.parentId === null) {

@@ -147,6 +147,9 @@ Once a device is registered it appears under **Devices receiving push**, with a
 **Send test notification** button to confirm delivery (the test ignores your
 schedule so it always arrives) and a way to remove devices you no longer use.
 
+Push registration accepts supported Google, Mozilla, Apple, and Microsoft
+push-service endpoints. Custom push-service URLs are not supported.
+
 When Sastra is installed to your Home Screen (iOS 16.4+) or as an app (Chrome on
 Android/desktop), the app icon also shows a **number badge** with your unread
 count. It goes up when a push arrives and clears as you read notifications or

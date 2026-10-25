@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { and, eq, inArray } from "drizzle-orm";
 import { requireRole } from "@/lib/auth/guards";
+import { getAccessibleExtractionFile } from "@/lib/imports/file-access";
 import { db } from "@/lib/db";
 import { documentImports, projects, sharedMouGroups, user } from "@/lib/db/schema";
 import { PageShell, PageHero } from "@/components/cockpit";
@@ -12,7 +13,7 @@ import { FundingReview } from "@/components/agreements/funding-review";
 import { RetryImportButton } from "@/components/imports/retry-import-button";
 
 export default async function FundingReviewPage({ params }: { params: Promise<{ importId: string }> }) {
-  await requireRole("manager");
+  const { user: actor } = await requireRole("manager");
   const { importId } = await params;
   const [[review], options, owners] = await Promise.all([
     db.select().from(documentImports).where(eq(documentImports.id, importId)).limit(1),
@@ -24,6 +25,7 @@ export default async function FundingReviewPage({ params }: { params: Promise<{ 
     const [group] = await db.select({ id: sharedMouGroups.id }).from(sharedMouGroups).where(eq(sharedMouGroups.sourceImportId, importId)).limit(1);
     if (group) redirect(`/agreements/${group.id}`);
   }
+  if (!review.fileId || !(await getAccessibleExtractionFile(review.fileId, actor.id))) notFound();
   const workspace = await getWorkspaceSettings();
   const today = formatInTimeZone(new Date(), workspace.timezone, "yyyy-MM-dd");
   const extraction = review.reviewed ?? review.extraction;

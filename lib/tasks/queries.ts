@@ -99,7 +99,9 @@ export async function listRecurringTasks(
 }
 
 export type TaskRow = {
+  lectioManaged?: boolean;
   id: string;
+  createdBy?: string | null;
   projectId: string | null;
   title: string;
   description: string | null;
@@ -158,7 +160,9 @@ export type TaskRow = {
 };
 
 const baseSelect = {
+  lectioManaged: tasks.lectioManaged,
   id: tasks.id,
+  createdBy: tasks.createdBy,
   projectId: tasks.projectId,
   title: tasks.title,
   description: tasks.description,

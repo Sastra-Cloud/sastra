@@ -5,6 +5,20 @@ import { describe, expect, it } from "vitest";
 
 import { interactionModeFor } from "./interaction-policy";
 
+it("keeps project permission grants immediate after confirmation and removal confirmed", () => {
+  expect(interactionModeFor("addProjectManager")).toBe("optimistic");
+  expect(interactionModeFor("removeProjectManager")).toBe("confirmed-destructive");
+});
+
+it("keeps cross-app identity and ownership changes review-first", () => {
+  expect(interactionModeFor("findLectioProjectMatches")).toBe("read");
+  expect(interactionModeFor("createLectioProjectForReview")).toBe("progress");
+  expect(interactionModeFor("confirmLectioLink")).toBe("progress");
+  expect(interactionModeFor("reapproveLectioConnection")).toBe("progress");
+  expect(interactionModeFor("removeLectioPerson")).toBe("confirmed-destructive");
+  expect(interactionModeFor("unlinkLectioSignIn")).toBe("confirmed-destructive");
+});
+
 function clientActionImports() {
   const found: string[] = [];
 
@@ -152,6 +166,7 @@ describe("client action interaction policy", () => {
 
   it("treats channel creation as navigation", () => {
     expect(interactionModeFor("createChannel")).toBe("navigation");
+    expect(interactionModeFor("reloadForAppUpdate")).toBe("navigation");
     expect(interactionModeFor("openDirectMessage")).toBe("navigation");
   });
 
@@ -200,6 +215,8 @@ describe("client action interaction policy", () => {
   });
 
   it("classifies the correspondence project actions", () => {
+    expect(interactionModeFor("dismissEmailQuoteSuggestion")).toBe("optimistic");
+    expect(interactionModeFor("dismissEmailFundingReview")).toBe("optimistic");
     // Bulk, server-computed create — show real progress, don't fake completion.
     expect(interactionModeFor("createProjectsFromThread")).toBe("progress");
     // Single create + link from the picker stays optimistic.
@@ -363,3 +380,8 @@ describe("client action interaction policy", () => {
 });
 
 it("restores personal guidance optimistically", () => { expect(interactionModeFor("resetGuidanceTips")).toBe("optimistic"); });
+
+it("waits for canonical cross-app schedule writes while reads remain read-only", () => {
+  expect(interactionModeFor("updateSchedule")).toBe("progress");
+  expect(interactionModeFor("readSchedule")).toBe("read");
+});

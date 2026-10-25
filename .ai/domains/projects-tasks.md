@@ -27,6 +27,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `app/(app)/projects/[slug]/tasks/page.tsx`
 - `app/(app)/projects/[slug]/tasks/pipeline/loading.tsx`
 - `app/(app)/projects/[slug]/tasks/pipeline/page.tsx`
+- `app/(app)/projects/[slug]/translation/page.tsx`
 - `app/(app)/projects/import/[importId]/page.tsx`
 - `app/(app)/projects/import/page.tsx`
 - `app/(app)/projects/loading.tsx`
@@ -34,6 +35,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `app/(app)/projects/page.tsx`
 - `app/(app)/projects/plan/[draftId]/page.tsx`
 - `app/(app)/projects/plan/page.tsx`
+- `app/(app)/projects/resolve/[projectId]/page.tsx`
 - `app/(app)/tasks/page.tsx`
 - `app/(app)/workload/layout.tsx`
 - `app/(app)/workload/loading.tsx`
@@ -55,6 +57,8 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/projects/project-card.tsx`
 - `components/projects/project-draft.tsx`
 - `components/projects/project-drive-folder.tsx`
+- `components/projects/project-management-provider.tsx`
+- `components/projects/project-managers.tsx`
 - `components/projects/project-settings-dialog.tsx`
 - `components/projects/project-surface-notes.tsx`
 - `components/projects/project-tabs.tsx`
@@ -92,8 +96,4 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/db/schema/tasks.ts`
 - `lib/db/schema/templates.ts`
 - `lib/projects/actions.ts`
-- `lib/projects/activity-time.test.ts`
-- `lib/projects/activity-time.ts`
-- `lib/projects/book-format.test.ts`
-- `lib/projects/book-format.ts`
-... 73 more
+... 88 more

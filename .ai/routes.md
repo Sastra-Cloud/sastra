@@ -29,12 +29,14 @@
 - `/projects/[slug]/tasks/generate` -> `app/(app)/projects/[slug]/tasks/generate/page.tsx`
 - `/projects/[slug]/tasks` -> `app/(app)/projects/[slug]/tasks/page.tsx`
 - `/projects/[slug]/tasks/pipeline` -> `app/(app)/projects/[slug]/tasks/pipeline/page.tsx`
+- `/projects/[slug]/translation` -> `app/(app)/projects/[slug]/translation/page.tsx`
 - `/projects/import/[importId]` -> `app/(app)/projects/import/[importId]/page.tsx`
 - `/projects/import` -> `app/(app)/projects/import/page.tsx`
 - `/projects/new` -> `app/(app)/projects/new/page.tsx`
 - `/projects` -> `app/(app)/projects/page.tsx`
 - `/projects/plan/[draftId]` -> `app/(app)/projects/plan/[draftId]/page.tsx`
 - `/projects/plan` -> `app/(app)/projects/plan/page.tsx`
+- `/projects/resolve/[projectId]` -> `app/(app)/projects/resolve/[projectId]/page.tsx`
 - `/schedule` -> `app/(app)/schedule/page.tsx`
 - `/security-check` -> `app/(app)/security-check/page.tsx`
 - `/settings/ai` -> `app/(app)/settings/ai/page.tsx`
@@ -42,11 +44,13 @@
 - `/settings/dictionary` -> `app/(app)/settings/dictionary/page.tsx`
 - `/settings/document-learning` -> `app/(app)/settings/document-learning/page.tsx`
 - `/settings/email` -> `app/(app)/settings/email/page.tsx`
+- `/settings/lectio` -> `app/(app)/settings/lectio/page.tsx`
 - `/settings/modules` -> `app/(app)/settings/modules/page.tsx`
 - `/settings/notifications` -> `app/(app)/settings/notifications/page.tsx`
 - `/settings` -> `app/(app)/settings/page.tsx`
 - `/settings/partners` -> `app/(app)/settings/partners/page.tsx`
 - `/settings/printers` -> `app/(app)/settings/printers/page.tsx`
+- `/settings/profile/lectio-link` -> `app/(app)/settings/profile/lectio-link/page.tsx`
 - `/settings/profile` -> `app/(app)/settings/profile/page.tsx`
 - `/settings/publishers` -> `app/(app)/settings/publishers/page.tsx`
 - `/settings/roles` -> `app/(app)/settings/roles/page.tsx`
@@ -81,6 +85,7 @@
 - `POST` `/api/assistant/transcribe` -> `app/api/assistant/transcribe/route.ts`
 - `GET | POST` `/api/auth/[...all]` -> `app/api/auth/[...all]/route.ts`
 - `GET` `/api/chat/[channelId]/recent` -> `app/api/chat/[channelId]/recent/route.ts`
+- `POST` `/api/chat/channels` -> `app/api/chat/channels/route.ts`
 - `GET` `/api/chat/reactions` -> `app/api/chat/reactions/route.ts`
 - `GET | POST` `/api/cron/agreement-index` -> `app/api/cron/agreement-index/route.ts`
 - `GET | POST` `/api/cron/assistant-reflection` -> `app/api/cron/assistant-reflection/route.ts`
@@ -103,6 +108,9 @@
 - `POST` `/api/files/complete` -> `app/api/files/complete/route.ts`
 - `POST` `/api/files/presign` -> `app/api/files/presign/route.ts`
 - `GET` `/api/health` -> `app/api/health/route.ts`
+- `GET` `/api/integrations/lectio/callback` -> `app/api/integrations/lectio/callback/route.ts`
+- `POST` `/api/integrations/lectio/connect` -> `app/api/integrations/lectio/connect/route.ts`
+- `GET | POST` `/api/integrations/lectio/v1/[operation]` -> `app/api/integrations/lectio/v1/[operation]/route.ts`
 - `POST` `/api/internal/management/bootstrap` -> `app/api/internal/management/bootstrap/route.ts`
 - `POST` `/api/internal/management/entitlements` -> `app/api/internal/management/entitlements/route.ts`
 - `GET` `/api/internal/management/status` -> `app/api/internal/management/status/route.ts`

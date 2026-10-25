@@ -104,6 +104,10 @@
 
 - dynamic, metadata
 
+## `app/(app)/projects/[slug]/translation/page.tsx`
+
+- metadata
+
 ## `app/(app)/projects/import/[importId]/page.tsx`
 
 - dynamic, metadata
@@ -156,6 +160,10 @@
 
 - dynamic, metadata
 
+## `app/(app)/settings/lectio/page.tsx`
+
+- metadata
+
 ## `app/(app)/settings/modules/page.tsx`
 
 - metadata
@@ -175,6 +183,10 @@
 ## `app/(app)/settings/printers/page.tsx`
 
 - dynamic, metadata
+
+## `app/(app)/settings/profile/lectio-link/page.tsx`
+
+- metadata
 
 ## `app/(app)/settings/profile/page.tsx`
 
@@ -284,6 +296,10 @@
 
 - GET, dynamic
 
+## `app/api/chat/channels/route.ts`
+
+- POST
+
 ## `app/api/chat/reactions/route.ts`
 
 - GET, dynamic
@@ -371,6 +387,18 @@
 ## `app/api/health/route.ts`
 
 - GET, dynamic, runtime
+
+## `app/api/integrations/lectio/callback/route.ts`
+
+- GET
+
+## `app/api/integrations/lectio/connect/route.ts`
+
+- POST
+
+## `app/api/integrations/lectio/v1/[operation]/route.ts`
+
+- GET, POST
 
 ## `app/api/internal/management/bootstrap/route.ts`
 
@@ -808,6 +836,10 @@
 
 - ThreadReply
 
+## `components/correspondence/thread-review-checklist.tsx`
+
+- ThreadReviewChecklist
+
 ## `components/dashboard/manager-review-queue.tsx`
 
 - ManagerReviewQueue
@@ -903,6 +935,46 @@
 ## `components/imports/retry-import-button.tsx`
 
 - RetryImportButton
+
+## `components/lectio/assignment-request.tsx`
+
+- AssignmentRequest
+
+## `components/lectio/connection-ownership.tsx`
+
+- ConnectionOwnership
+
+## `components/lectio/connection-settings.tsx`
+
+- ConnectionSettings
+
+## `components/lectio/link-review.tsx`
+
+- LectioLinkReview
+
+## `components/lectio/people-settings.tsx`
+
+- PeopleSettings
+
+## `components/lectio/project-match-dialog.tsx`
+
+- ProjectConnectionChoice, ProjectMatchDialog
+
+## `components/lectio/project-translation.tsx`
+
+- ProjectTranslation
+
+## `components/lectio/setup-settings.tsx`
+
+- SetupSettings
+
+## `components/lectio/shared-sign-in.tsx`
+
+- LectioSignInButtons, SharedSignInSetup
+
+## `components/lectio/source-import.tsx`
+
+- SourceImport
 
 ## `components/mentions/mention-input.tsx`
 
@@ -1055,6 +1127,14 @@
 ## `components/projects/project-drive-folder.tsx`
 
 - ProjectDriveFolder
+
+## `components/projects/project-management-provider.tsx`
+
+- ProjectManagementProvider, useProjectManagement
+
+## `components/projects/project-managers.tsx`
+
+- ProjectManagers
 
 ## `components/projects/project-settings-dialog.tsx`
 
@@ -1828,13 +1908,21 @@
 
 - assertProjectAccess, getSession, requireCapability, requireDonationAdmin, requireRole, requireUser
 
+## `lib/auth/lectio-sso.ts`
+
+- lectioSharedSignIn
+
 ## `lib/auth/password-reset.ts`
 
 - PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, getNewPasswordError, isInvalidPasswordResetLink
 
 ## `lib/auth/policy.ts`
 
-- Capability, ROLE_RANK, TeamRole, asTeamRole, can, canAssignTeamRole, canManage, canManageTeamRole, isAdminRole, isSuperAdminRole
+- Capability, ProjectCapability, ROLE_RANK, TeamRole, asTeamRole, can, canAssignTeamRole, canInProject, canManage, canManageTeamRole, isAdminRole, isSuperAdminRole
+
+## `lib/auth/project-access.ts`
+
+- hasProjectCapability, listManagedProjectIds, requireProjectCapability, requireProjectRecord, requireTaskEdit
 
 ## `lib/auth/provisioning.ts`
 
@@ -1987,6 +2075,10 @@
 ## `lib/chat/actions.ts`
 
 - CreateChannelState, addChannelMember, createChannel, deleteMessage, markChannelRead, openDirectMessage, postMessage, removeChannelMember, setMessageStatus, setProjectPinned, toggleReaction
+
+## `lib/chat/channel-draft.ts`
+
+- ChannelDraft, readChannelDraft, saveChannelDraft
 
 ## `lib/chat/channel-members.ts`
 
@@ -2200,6 +2292,14 @@
 
 - documentImports
 
+## `lib/db/schema/lectio-sso.ts`
+
+- lectioSsoClients, lectioSsoIdentities, lectioSsoSessions
+
+## `lib/db/schema/lectio.ts`
+
+- lectioConnections, lectioOperations, lectioPairingIntents, lectioProjectLinks, lectioRequests, lectioTaskLinks, lectioUnitLinks, lectioUserLinks
+
 ## `lib/db/schema/notifications.ts`
 
 - notificationEmailQueue, notifications, pushSubscriptions
@@ -2230,7 +2330,7 @@
 
 ## `lib/db/schema/projects.ts`
 
-- phases, podcastStageSettings, projectMembers, projects, units
+- phases, podcastStageSettings, projectManagers, projectMembers, projects, units
 
 ## `lib/db/schema/recurring.ts`
 
@@ -2508,6 +2608,10 @@
 
 - RESEND_API_BASE_URL, RESEND_SIGNATURE_TOLERANCE_SECONDS, ResendRawMessage, ResendWebhookEvent, SvixVerifyFailure, SvixVerifyResult, decodeSvixSecret, fetchResendRawMessage, parseResendEvent, receivedEmailId, signSvix, svixSigningString, verifySvixSignature
 
+## `lib/email/review-actions.ts`
+
+- dismissEmailFundingReview, dismissEmailQuoteSuggestion
+
 ## `lib/email/review-queue.ts`
 
 - correspondenceNeedsReview, correspondenceReviewLabels
@@ -2627,6 +2731,10 @@
 ## `lib/files/queries.ts`
 
 - Attachment, listAttachments, listAttachmentsByTargets
+
+## `lib/files/target-access.ts`
+
+- canMutateAttachmentTarget
 
 ## `lib/files/upload-client.ts`
 
@@ -2760,6 +2868,10 @@
 
 - runExtraction
 
+## `lib/imports/file-access.ts`
+
+- getAccessibleExtractionFile, getEmailExtractionFile
+
 ## `lib/imports/fx.ts`
 
 - FxRate, FxRateLoader, convertExtractionToUsd, fetchUsdReferenceRate
@@ -2791,6 +2903,154 @@
 ## `lib/imports/types.ts`
 
 - ExtractedBudgetLine, ExtractedFormats, ExtractedInvoice, ExtractedMouPayment, ExtractedObligation, ExtractedObligationCadence, ExtractedObligationKind, ExtractedProject, ExtractedProjectKind, ImportAgreementType, ImportExtraction
+
+## `lib/lectio/actions.ts`
+
+- confirmLectioPerson, disconnectLectioProject, linkLectioProject, listLectioPeople, listLectioProjects, listLectioSetup, previewLectioMapping, previewLectioProject, refreshLectioProject, removeLectioPerson, resolveLectioReopen, rotateLectioConnectionKeys, saveLectioSetup, setLectioConnectionState, updateLectioMapping
+
+## `lib/lectio/adoption.ts`
+
+- adoptExistingUnits
+
+## `lib/lectio/artifacts.ts`
+
+- fetchArtifact, receiveArtifact
+
+## `lib/lectio/assignment-actions.ts`
+
+- requestLectioAssignment
+
+## `lib/lectio/audit.ts`
+
+- auditLectio
+
+## `lib/lectio/client.ts`
+
+- lectioRequest
+
+## `lib/lectio/cloud-eligibility.ts`
+
+- assertLectioCloudEligibility
+
+## `lib/lectio/create-project.ts`
+
+- deliverLectioProject, queueLectioProject
+
+## `lib/lectio/disconnect-ack.ts`
+
+- settleDisconnect
+
+## `lib/lectio/endpoint.ts`
+
+- IntegrationTransaction, LectioConnection, signedEndpoint
+
+## `lib/lectio/guard.ts`
+
+- lockActiveConnection
+
+## `lib/lectio/handoff.ts`
+
+- handoffTranslation
+
+## `lib/lectio/identity.ts`
+
+- assertVerifiedLectioActor
+
+## `lib/lectio/lifecycle.ts`
+
+- detachProject, queueLifecycle, revokeConnection
+
+## `lib/lectio/mapping.ts`
+
+- mappedPhases
+
+## `lib/lectio/match-actions.ts`
+
+- createLectioProjectForReview, findLectioProjectMatches
+
+## `lib/lectio/ownership-actions.ts`
+
+- listLectioAudit, reapproveLectioConnection
+
+## `lib/lectio/pairing.ts`
+
+- beginPairing, finishPairing
+
+## `lib/lectio/planning.ts`
+
+- queuePlanning, readSchedule, updateSchedule
+
+## `lib/lectio/profile.ts`
+
+- resolveProfile, validateProfile
+
+## `lib/lectio/project-matches.ts`
+
+- projectMatches
+
+## `lib/lectio/projection.ts`
+
+- applySnapshot
+
+## `lib/lectio/protocol/contract.ts`
+
+- DocumentStep, EVENT_LIMIT, IntegrationError, PROTOCOL_VERSION, PlanningProjection, ProjectSnapshot, SNAPSHOT_LIMIT, SourceDocument, SourceStep, StageMapping, StepState, array, dateOnly, identifier, integer, object, parsePlanning, parseSnapshot, projectTaskState, string
+
+## `lib/lectio/protocol/planning.ts`
+
+- PlanningSchedule, ScheduleEdit, parseScheduleEdit, validateScheduleEdit
+
+## `lib/lectio/protocol/profile.ts`
+
+- SetupProfile, parseProfile
+
+## `lib/lectio/protocol/project-matches.ts`
+
+- ProjectCandidate, ProjectMatch, ProjectMatchInput, rankProjectMatches
+
+## `lib/lectio/protocol/signing.ts`
+
+- SigningIdentity, canonicalJson, digest, errorResponse, readLimitedBody, requestTarget, signRequest, signature, verifyRequest
+
+## `lib/lectio/protocol/transport.ts`
+
+- integrationJson, integrationOrigin, integrationRequest, publicAddress
+
+## `lib/lectio/receive-project.ts`
+
+- receiveProject
+
+## `lib/lectio/rotation.ts`
+
+- deliverKeyRotation, queueKeyRotation, receiveKeyRotation
+
+## `lib/lectio/source-actions.ts`
+
+- requestLectioSourceImport
+
+## `lib/lectio/source-files.ts`
+
+- receiveSourceReceipt, sourceBytes
+
+## `lib/lectio/sso-actions.ts`
+
+- configureLectioSharedSignIn
+
+## `lib/lectio/sso-oidc.ts`
+
+- lectioOidcConfiguration, safeSsoReturnPath
+
+## `lib/lectio/sso-service.ts`
+
+- activeSsoClient, checkSsoMembership, resolveSsoIdentity, ssoChoices
+
+## `lib/lectio/sso-unlink.ts`
+
+- unlinkSsoIdentity
+
+## `lib/lectio/sync.ts`
+
+- syncLectioPlanning
 
 ## `lib/logger.ts`
 
@@ -3060,6 +3320,10 @@
 
 - CreatedProjectBlueprint, createProjectFromBlueprint
 
+## `lib/projects/create.ts`
+
+- createProjectInTransaction, createProjectSchema
+
 ## `lib/projects/current-work.ts`
 
 - summarizeCurrentWork
@@ -3087,6 +3351,14 @@
 ## `lib/projects/kinds.ts`
 
 - EPISODIC_KINDS, PROJECT_KINDS, PROJECT_KIND_LABELS, ProjectKind, VIDEO_PRODUCTION_MODES, VIDEO_PRODUCTION_MODE_LABELS, VideoProductionMode, isEpisodicKind, normalizeVideoProductionMode, projectUnitTerms
+
+## `lib/projects/manager-actions.ts`
+
+- addProjectManager, removeProjectManager
+
+## `lib/projects/manager-queries.ts`
+
+- listProjectManagers
 
 ## `lib/projects/materialize.ts`
 
@@ -3183,6 +3455,22 @@
 ## `lib/push/setup-state.ts`
 
 - PushSetupInput, PushSetupState, derivePushSetupState
+
+## `lib/push/subscription.ts`
+
+- pushSubscriptionSchema
+
+## `lib/pwa/apple-startup-images.ts`
+
+- appleStartupImages
+
+## `lib/pwa/client-update.ts`
+
+- APP_UPDATE_EVENT, BEFORE_APP_REFRESH_EVENT, checkForAppUpdate, installDeploymentGuard, reloadForAppUpdate
+
+## `lib/pwa/deployment-guard.ts`
+
+- APP_UPDATE_MESSAGE, AppUpdateRequiredError, createDeploymentGuard, isAppUpdateError
 
 ## `lib/pwa/pull-to-refresh.ts`
 
@@ -3328,6 +3616,10 @@
 
 - supportRequest
 
+## `lib/tasks/access.ts`
+
+- assertTaskAccess, canEditTask, canReadTask, taskEditPredicate, withTaskAccess
+
 ## `lib/tasks/actions.ts`
 
 - TaskFormState, assignTask, createTask, deleteTask, moveTaskToProject, reorderUserTasks, setTaskDependencies, setTaskNextUp, updateTaskFields, updateTaskStatus
@@ -3350,7 +3642,7 @@
 
 ## `lib/tasks/create.ts`
 
-- InsertTaskValues, insertTaskRow, notifyAssignment, revalidateForTask
+- InsertTaskValues, insertTaskInTransaction, insertTaskRow, notifyAssignment, revalidateForTask
 
 ## `lib/tasks/drive-actions.ts`
 
@@ -3498,7 +3790,7 @@
 
 ## `lib/workspace/modules.ts`
 
-- WORKSPACE_MODULES, WorkspaceModule, moduleEnabled
+- LECTIO_CLOUD_REQUIREMENT, WORKSPACE_MODULES, WorkspaceModule, moduleEnabled
 
 ## `lib/workspace/queries.ts`
 

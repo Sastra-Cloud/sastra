@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useTransition } from "react";
+import { startTransition, useActionState, useEffect, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -10,6 +10,7 @@ import {
   type RoleState,
 } from "@/lib/team/roles-actions";
 import { updateProjectRoleDuration } from "@/lib/capacity/actions";
+import { thrownMutationMessage } from "@/lib/actions/result";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,13 +30,18 @@ export function RolesManager({ roles }: { roles: Role[] }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [visibleRoles, setVisibleRoles] = usePropState(roles);
+  const formRef = useRef<HTMLFormElement>(null);
   const [state, action, creating] = useActionState(
-    createProjectRole,
+    async (previous: RoleState, data: FormData): Promise<RoleState> => {
+      try { return await createProjectRole(previous, data); }
+      catch (error) { return { error: thrownMutationMessage(error, "Could not add the role. Keep your changes and try again.") }; }
+    },
     {} as RoleState
   );
 
   useEffect(() => {
     if (state.ok) {
+      formRef.current?.reset();
       toast.success("Role added");
       router.refresh();
     }
@@ -46,9 +52,13 @@ export function RolesManager({ roles }: { roles: Role[] }) {
     const next = trimmed === "" ? null : Math.max(0, Math.min(3650, Math.floor(Number(trimmed) || 0)));
     if (next === (role.defaultDurationDays ?? null)) return;
     start(async () => {
-      const res = await updateProjectRoleDuration({ roleId: role.id, defaultDurationDays: next });
-      if (res.ok) router.refresh();
-      else toast.error(res.error.message);
+      try {
+        const res = await updateProjectRoleDuration({ roleId: role.id, defaultDurationDays: next });
+        if (res.ok) router.refresh();
+        else toast.error(res.error.message);
+      } catch (error) {
+        toast.error(thrownMutationMessage(error, "Could not save the duration. Keep your changes and try again."));
+      }
     });
   }
 
@@ -75,7 +85,11 @@ export function RolesManager({ roles }: { roles: Role[] }) {
       <Card className="max-w-3xl">
         <CardContent className="space-y-3 py-4">
           <p className="text-sm font-medium">Add a project role</p>
-          <form action={action} className="flex flex-col gap-2 sm:flex-row">
+          <form ref={formRef} onSubmit={(event) => {
+            event.preventDefault();
+            const data = new FormData(event.currentTarget);
+            startTransition(() => action(data));
+          }} className="flex flex-col gap-2 sm:flex-row">
             <Input name="label" placeholder="e.g. Narration" required className="flex-1" />
             <input
               type="color"

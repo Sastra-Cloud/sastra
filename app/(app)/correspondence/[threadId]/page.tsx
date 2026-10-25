@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { documentImports, printQuotes, projects as projectTable } from "@/lib/db/schema";
-import { and } from "drizzle-orm";
+import { documentImports, files, printQuotes, projects as projectTable } from "@/lib/db/schema";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowUpRight, Mail, Sparkles } from "lucide-react";
 
@@ -19,6 +18,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThreadControls } from "@/components/correspondence/thread-controls";
 import { ThreadMessageList } from "@/components/correspondence/thread-message-list";
+import { ThreadReviewChecklist } from "@/components/correspondence/thread-review-checklist";
 import { ThreadReply } from "@/components/correspondence/thread-reply";
 import {
   getPossibleCounterpartySuggestion,
@@ -78,8 +78,10 @@ export default async function ThreadPage({
     listProjectUpdateSuggestions(threadId),
     getEmailDraftForUser(user.id, "thread_reply", threadId),
     getWorkspaceSettings(),
-    db.select({ id: documentImports.id, status: documentImports.status, extraction: documentImports.extraction }).from(documentImports).where(eq(documentImports.sourceThreadId, threadId)),
-    db.select({ id: printQuotes.id, projectSlug: projectTable.slug, projectTitle: projectTable.title })
+    db.select({ id: documentImports.id, status: documentImports.status, extraction: documentImports.extraction, fundingSourceKey: documentImports.fundingSourceKey, fileName: files.originalName }).from(documentImports).leftJoin(files, eq(files.id, documentImports.fileId)).where(eq(documentImports.sourceThreadId, threadId)),
+    db.select({ id: printQuotes.id, projectSlug: projectTable.slug, projectTitle: projectTable.title,
+      title: printQuotes.title, kind: printQuotes.kind, quantityCps: printQuotes.quantityCps,
+      totalAmount: printQuotes.totalAmount, unitPrice: printQuotes.unitPrice, currency: printQuotes.currency })
       .from(printQuotes).innerJoin(projectTable, eq(projectTable.id, printQuotes.projectId))
       .where(and(eq(printQuotes.sourceThreadId, threadId), eq(printQuotes.reviewStatus, "suggested"))),
   ]);
@@ -102,6 +104,9 @@ export default async function ThreadPage({
   }));
   const users = us.map((u) => ({ id: u.id, label: u.name }));
 
+  const fundingDocuments = fundingReviews.filter((review) => !review.extraction || (
+    review.extraction.documentKind === "agreement" && review.extraction.agreementType !== "license_only" && review.extraction.mouPaymentSchedule.length > 0
+  ));
   const canSend = await canSendAsCorrespondenceAddress();
   return (
     <PageShell>
@@ -154,6 +159,13 @@ export default async function ThreadPage({
           id="correspondence-review-results"
           className={`min-w-0 space-y-6 scroll-mt-24 @[80rem]/thread:col-start-2 @[80rem]/thread:row-start-1 ${canSend && recipient ? "@[80rem]/thread:row-span-2" : ""}`}
         >
+          <ThreadReviewChecklist
+            threadId={thread.id}
+            reviewLabels={thread.reviewLabels ?? []}
+            quotes={suggestedQuotes}
+            fundingReviews={fundingDocuments.filter((review) => ["extracted", "failed"].includes(review.status)).map(({ id, status, fundingSourceKey, fileName }) => ({ id, status, fundingSourceKey, fileName }))}
+          />
+
           {pendingSuggestions.length > 0 ? (
             <Card className="border-primary/30 bg-primary/5">
               <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
@@ -184,17 +196,9 @@ export default async function ThreadPage({
             </Card>
           ) : null}
 
-          <ProjectUpdateSuggestions suggestions={projectUpdateSuggestions} />
-
-          {suggestedQuotes.length > 0 ? <Card><CardContent className="space-y-2 py-4">
-            <p className="text-sm font-medium">Printer quotes to review</p>
-            <p className="text-xs text-muted-foreground">Check suggested quotes before accepting them.</p>
-            {[...new Map(suggestedQuotes.map(quote => [quote.projectSlug, quote])).values()].map(quote => (
-              <Link key={quote.projectSlug} href={`/projects/${quote.projectSlug}/print`} className="block min-h-11 py-2 text-sm font-medium text-primary underline underline-offset-4">
-                Review printer quotes · {quote.projectTitle}
-              </Link>
-            ))}
-          </CardContent></Card> : null}
+          <div id="review-project-updates" className="scroll-mt-24">
+            <ProjectUpdateSuggestions suggestions={projectUpdateSuggestions} />
+          </div>
 
           <EmailTaskSuggestions
             initialSuggestions={emailTaskSuggestions}
@@ -207,28 +211,33 @@ export default async function ThreadPage({
             canManage
           />
 
-          {fundingReviews.filter((review) => !review.extraction || (review.extraction.documentKind === "agreement" && review.extraction.agreementType !== "license_only" && review.extraction.mouPaymentSchedule.length > 0)).map((review) => <Card key={review.id}><CardContent className="py-4">
+          {fundingDocuments.filter((review) => ["committed", "uploaded", "parsing"].includes(review.status)).map((review) => <Card key={review.id}><CardContent className="py-4">
             <Link href={`/agreements/review/${review.id}`} className="font-medium text-primary underline">{review.status === "committed" ? "View approved MoU funding" : "Review MoU funding"}</Link>
             <p className="text-sm text-muted-foreground">{review.status === "committed" ? "Funding approved. Open the shared schedule and invoice owner." : review.status === "extracted" ? "Verify the shared schedule and invoice owner." : review.status === "failed" ? "Extraction failed. Open the review to retry." : "Reading the funding document…"}</p>
           </CardContent></Card>)}
-          <EmailRightsReviews
-            reviews={rightsReviews}
-            holders={rightsReviewOptions.holders}
-            payments={rightsReviewOptions.payments}
-            projects={threadProjects.map((project) => ({
-              id: project.id,
-              title: project.title,
-            }))}
-          />
+          <div id="review-rights-documents" className="scroll-mt-24">
+            <EmailRightsReviews
+              reviews={rightsReviews}
+              holders={rightsReviewOptions.holders}
+              payments={rightsReviewOptions.payments}
+              projects={threadProjects.map((project) => ({
+                id: project.id,
+                title: project.title,
+              }))}
+            />
+          </div>
 
           {externalFollowUp ? (
-            <ExternalFollowUpCard
-              followUp={externalFollowUp}
-              allowProjectUpdate
-            />
+            <div id="review-follow-up" className="space-y-2 scroll-mt-24">
+              {!externalFollowUp.ownerUserId ? <a href="#thread-controls" className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline">Choose follow-up owner</a> : null}
+              <ExternalFollowUpCard
+                followUp={externalFollowUp}
+                allowProjectUpdate
+              />
+            </div>
           ) : null}
 
-          <Card>
+          <Card id="thread-controls" className="scroll-mt-24">
             <CardContent className="py-4">
               <ThreadControls
                 threadId={thread.id}

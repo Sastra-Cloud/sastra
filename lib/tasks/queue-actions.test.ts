@@ -7,6 +7,7 @@ const state = vi.hoisted(() => ({
 vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/auth/guards", () => ({ requireRole: state.requireRole, requireUser: vi.fn() }));
+vi.mock("@/lib/auth/project-access", () => ({ requireProjectRecord: state.requireRole, requireProjectCapability: state.requireRole }));
 vi.mock("@/lib/db", () => ({ db: { transaction: state.transaction } }));
 vi.mock("./queue-service", () => ({ lockTaskQueues: state.lock, touchTaskQueue: state.touch, nextTaskRank: state.nextRank }));
 vi.mock("./create", () => ({ insertTaskRow: vi.fn(), notifyAssignment: vi.fn(), revalidateForTask: vi.fn() }));

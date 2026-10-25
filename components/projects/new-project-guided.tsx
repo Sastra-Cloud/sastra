@@ -68,7 +68,7 @@ export function NewProjectGuided({
   defaultPlanTemplateKey: string | null;
   onUseForm: () => void;
 }) {
-  const { state, action, pending } = useProjectDraft();
+  const { state, action, pending, onSubmit } = useProjectDraft();
   const formRef = useRef<HTMLFormElement>(null);
 
   const [title, setTitle] = useDraftField("title");
@@ -416,7 +416,7 @@ export function NewProjectGuided({
   ];
 
   return (
-    <form ref={formRef} action={action} className="space-y-2">
+    <form ref={formRef} action={action} onSubmit={onSubmit} className="space-y-2">
       <GuidedSteps
         steps={steps}
         keepMounted

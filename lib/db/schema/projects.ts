@@ -81,6 +81,19 @@ export const projects = pgTable("projects", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+/** Explicit management grants, independent of editable project job labels. */
+export const projectManagers = pgTable(
+  "project_managers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    grantedBy: text("granted_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("project_managers_project_user_unique").on(t.projectId, t.userId)]
+);
+
 /** Who is on a project and in which role(s). A person may hold several roles. */
 export const projectMembers = pgTable(
   "project_members",

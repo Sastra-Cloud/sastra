@@ -91,7 +91,7 @@ export default async function CorrespondencePage({
         <div>
           <p className="text-sm font-medium">{reviewCount} email {reviewCount === 1 ? "thread needs" : "threads need"} review</p>
           <p className="max-w-prose text-xs text-muted-foreground">Shared suggestions, documents, and unassigned follow-ups. Each thread counts once.</p>
-          <p className="max-w-prose text-xs text-muted-foreground">Your task suggestions and owned follow-ups stay in My Work.</p>
+          <p className="max-w-prose text-xs text-muted-foreground">Open a thread to finish its reviews. The badge clears when all its review items are resolved.</p>
         </div>
         <Link href="/tasks" className={buttonVariants({ variant: "ghost", size: "sm" })}>Open My Work</Link>
       </div>

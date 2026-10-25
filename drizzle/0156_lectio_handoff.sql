@@ -1,0 +1,4 @@
+ALTER TABLE "lectio_project_links" ADD COLUMN "handoff_phase_id" uuid;--> statement-breakpoint
+ALTER TABLE "lectio_unit_links" ADD COLUMN "handoff_task_id" uuid;--> statement-breakpoint
+ALTER TABLE "lectio_project_links" ADD CONSTRAINT "lectio_project_links_handoff_phase_id_phases_id_fk" FOREIGN KEY ("handoff_phase_id") REFERENCES "public"."phases"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "lectio_unit_links" ADD CONSTRAINT "lectio_unit_links_handoff_task_id_tasks_id_fk" FOREIGN KEY ("handoff_task_id") REFERENCES "public"."tasks"("id") ON DELETE set null ON UPDATE no action;

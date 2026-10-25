@@ -1,4 +1,6 @@
 import "server-only";
+import { syncLectioPlanning } from "@/lib/lectio/sync";
+import { moduleEnabled } from "@/lib/workspace/modules";
 
 import { and, eq, inArray, isNotNull, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { after } from "next/server";
@@ -86,6 +88,7 @@ export type ScheduledJobContext = CronJobContext & {
 export type ScheduledJob = CronJob<ScheduledJobContext>;
 
 export const CRON_JOB_NAMES = [
+  "lectio-sync",
   "notification-emails",
   "standup",
   "gmail-poll",
@@ -729,9 +732,21 @@ const assistantReflection: ScheduledJob = {
   },
 };
 
+const lectioSync: ScheduledJob = {
+  name: "lectio-sync",
+  async nextDue({ now, lastRunAt, workspace }) {
+    return moduleEnabled(workspace.enabledModules, "lectio") ? intervalDue(now, lastRunAt, MINUTE_MS) : null;
+  },
+  async run() {
+    const result = await syncLectioPlanning();
+    return { ok: result.retrying === 0, note: `${result.delivered} delivered; ${result.retrying} retrying`, result };
+  },
+};
+
 /** Cheap, frequent jobs first so a slow daily job never delays them. */
 export const SCHEDULED_JOBS: ScheduledJob[] = [
   notificationEmails,
+  lectioSync,
   standup,
   gmailPoll,
   weeklyDigest,

@@ -1,9 +1,10 @@
 import { beforeEach, expect, it, vi } from "vitest";
-const { transaction } = vi.hoisted(() => ({ transaction: vi.fn() }));
+const { transaction, access } = vi.hoisted(() => ({ transaction: vi.fn(), access: vi.fn() }));
 vi.mock("@/lib/auth/guards", () => ({ requireRole: vi.fn().mockResolvedValue({ user: { id: "manager" } }) }));
 vi.mock("@/lib/db", () => ({ db: { transaction } }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("./readiness-engine", () => ({ reevaluateSharedMouPayments: vi.fn() }));
+vi.mock("@/lib/imports/file-access", () => ({ getAccessibleExtractionFile: access }));
 import { approveFundingReview, type FundingReviewInput } from "./funding-actions";
 const input: FundingReviewInput = {
   importId: "5bc80ba9-4312-4f85-b806-956a67c73600", name: "MoU", counterparty: "Partner",
@@ -22,4 +23,24 @@ it("rejects duplicate mappings before starting a financial transaction", async (
   expect(await approveFundingReview({ ...input, allocations: input.allocations.map((row) => ({ ...row, projectId: input.importId })) }))
     .toEqual({ error: "Map each work to a different project." });
   expect(transaction).not.toHaveBeenCalled();
+});
+
+it("rejects cached funding approval when source-file access was revoked", async () => {
+  const insert = vi.fn();
+  const update = vi.fn();
+  transaction.mockImplementation(async (callback) => callback({
+    select: () => ({ from: () => ({ where: () => ({ for: async () => [{
+      id: input.importId, fundingSourceKey: "fixture", fileId: "private-file", status: "extracted",
+      extraction: { documentKind: "agreement", agreementType: "mou_only", mouPaymentSchedule: input.installments },
+    }] }) }) }),
+    insert, update,
+  }));
+  access.mockResolvedValue(null);
+  const result = await approveFundingReview({ ...input, allocations: [
+    { projectId: "11111111-1111-4111-8111-111111111111", amount: input.total },
+  ] });
+  expect(result).toEqual({ error: expect.stringContaining("Source document unavailable") });
+  expect(access).toHaveBeenCalledWith("private-file", "manager");
+  expect(insert).not.toHaveBeenCalled();
+  expect(update).not.toHaveBeenCalled();
 });

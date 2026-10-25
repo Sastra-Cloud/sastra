@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { ChevronLeft, Layers } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/guards";
+import { getAccessibleExtractionFile } from "@/lib/imports/file-access";
 import { db } from "@/lib/db";
 import { projects, rightsItems } from "@/lib/db/schema";
 import {
@@ -82,11 +83,15 @@ export default async function ImportReviewPage({
 }: {
   params: Promise<{ importId: string }>;
 }) {
-  await requireRole("manager");
+  const { user } = await requireRole("manager");
   const { importId } = await params;
   const imp = await getImport(importId);
   if (!imp) notFound();
   if (imp.fundingSourceKey) redirect(`/agreements/review/${importId}`);
+  const sourceAccessible = !!imp.fileId && !!(await getAccessibleExtractionFile(imp.fileId, user.id));
+  // Completed imports still offer recovery/navigation after a source is deleted
+  // or access changes, but must not serialize their cached source to the client.
+  if (!sourceAccessible && imp.status !== "committed") notFound();
 
   const target = imp.targetProjectId
     ? await loadTarget(imp.targetProjectId, imp.targetMouPaymentId)
@@ -123,12 +128,12 @@ export default async function ImportReviewPage({
         ) : null}
         <ImportReview
           importId={imp.id}
-          fileName={imp.fileName}
+          fileName={sourceAccessible ? imp.fileName : null}
           status={imp.status}
-          error={imp.error}
+          error={sourceAccessible ? imp.error : null}
           errorKind={imp.errorKind}
           learnFromReview={imp.learnFromReview}
-          initial={imp.reviewed ?? imp.extraction ?? null}
+          initial={sourceAccessible ? imp.reviewed ?? imp.extraction ?? null : null}
           committedProjectIds={imp.committedProjectIds ?? []}
           target={target}
           existingProjects={existingProjects}

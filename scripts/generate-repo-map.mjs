@@ -114,10 +114,11 @@ const DOMAINS = [
   },
   {
     slug: "pwa-notifications",
-    summary: "Push subscriptions, notifications, presence, offline page, and browser instrumentation.",
+    summary: "Push subscriptions, notifications, presence, offline page, deployment recovery, and browser instrumentation.",
     match: (p) =>
       p.includes("lib/notifications/") ||
       p.includes("lib/push/") ||
+      p.includes("lib/pwa/") ||
       p.includes("lib/presence/") ||
       p.includes("components/notifications/") ||
       p.includes("components/pwa/") ||

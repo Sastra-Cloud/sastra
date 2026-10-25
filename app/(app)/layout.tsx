@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 
 import { requireUser } from "@/lib/auth/guards";
+import { listManagedProjectIds } from "@/lib/auth/project-access";
+import { ProjectManagementProvider } from "@/components/projects/project-management-provider";
 import { can, isAdminRole } from "@/lib/auth/policy";
 import { getActiveTimer } from "@/lib/tasks/time-queries";
 import { AppShell } from "@/components/app-shell";
@@ -22,6 +24,7 @@ export default async function AppLayout({
   const workspace = await getWorkspaceSettings();
   if (!workspaceSetupComplete(workspace) && isAdminRole(user)) redirect("/setup");
   const canManage = can(user, "workspace.manage");
+  const managedProjectIds = canManage ? [] : await listManagedProjectIds(user.id);
   const cookieStore = await cookies();
   const initialSidebarCollapsed =
     cookieStore.get("sastra-sidebar-collapsed")?.value === "1";
@@ -52,7 +55,9 @@ export default async function AppLayout({
       enabledModules={workspace.enabledModules}
       initialNavigationBadges={navigationBadges}
     >
-      {children}
+      <ProjectManagementProvider userId={user.id} role={user.role as string} managedProjectIds={managedProjectIds}>
+        {children}
+      </ProjectManagementProvider>
     </AppShell>
   );
 }

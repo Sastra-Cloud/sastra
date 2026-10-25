@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Check, ChevronDown, Settings2, type LucideIcon } from "lucide-react";
+import { useWorkspaceModules } from "./workspace-modules-provider";
 import { settingsNavigation } from "@/lib/navigation";
 import { navigationIcons } from "@/components/navigation-icons";
 
@@ -29,8 +30,9 @@ export function SettingsNav({
   isAdmin: boolean;
 }) {
   const pathname = usePathname();
+  const { enabledModules } = useWorkspaceModules();
 
-  const groups: Group[] = settingsNavigation({ canManage, isAdmin }).map(group => ({
+  const groups: Group[] = settingsNavigation({ canManage, isAdmin, enabledModules }).map(group => ({
     label: group.label,
     tabs: group.items.map(item => ({ ...item, icon: navigationIcons[item.icon] })),
   }));

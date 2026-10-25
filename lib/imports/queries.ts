@@ -11,6 +11,7 @@ import {
   projects,
 } from "@/lib/db/schema";
 import { normalizeExtraction } from "@/lib/imports/schema";
+import { getAccessibleExtractionFile } from "./file-access";
 
 export type ProjectTitle = { id: string; title: string; slug: string };
 
@@ -101,11 +102,12 @@ export type ImportListItem = {
   updatedAt: Date;
 };
 
-/** Recent document imports for the list on the import page. */
-export async function listImports(limit = 30): Promise<ImportListItem[]> {
+/** Recent imports whose source the authenticated requester can still access. */
+export async function listImports(actorUserId: string, limit = 30): Promise<ImportListItem[]> {
   const rows = await db
     .select({
       id: documentImports.id,
+      fileId: documentImports.fileId,
       status: documentImports.status,
       fileName: files.originalName,
       extraction: documentImports.extraction,
@@ -121,9 +123,13 @@ export async function listImports(limit = 30): Promise<ImportListItem[]> {
     .orderBy(desc(documentImports.createdAt))
     .limit(limit);
 
-  return rows.map((r) => {
+  const accessible: ImportListItem[] = [];
+  for (const r of rows) {
+    // Cached titles, filenames, and provider errors remain source data even
+    // after parsing fails. Authorship (including system intake) grants no access.
+    if (!r.fileId || !(await getAccessibleExtractionFile(r.fileId, actorUserId))) continue;
     const projectsData = (r.reviewed ?? r.extraction)?.projects ?? [];
-    return {
+    accessible.push({
       id: r.id,
       status: r.status,
       fileName: r.fileName,
@@ -134,8 +140,9 @@ export async function listImports(limit = 30): Promise<ImportListItem[]> {
       error: r.error,
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
-    };
-  });
+    });
+  }
+  return accessible;
 }
 
 export type ImportRecord = typeof documentImports.$inferSelect & {

@@ -15,10 +15,12 @@ import { cn } from "@/lib/utils";
 import { useConversationViewport } from "@/hooks/use-conversation-viewport";
 
 export function ChatWorkspaceShell({
+  currentUserId,
   sidebar,
   canCreate,
   children,
 }: {
+  currentUserId: string;
   sidebar: ChatSidebarData;
   canCreate: boolean;
   children: ReactNode;
@@ -44,19 +46,21 @@ export function ChatWorkspaceShell({
         ref={workspaceRef}
         data-mobile-conversation={activeChannelId ? "" : undefined}
         className={cn(
-          "grid gap-5 lg:grid-cols-[18rem_minmax(0,1fr)]",
+          "grid min-w-0 grid-cols-1 gap-5 lg:grid-cols-[18rem_minmax(0,1fr)]",
           activeChannelId &&
             "conversation-route h-[var(--conversation-height,calc(100dvh-7.5rem))] min-h-0 overflow-hidden"
         )}
       >
         <aside
           className={cn(
+            "min-w-0",
             activeChannelId &&
               "hidden h-full min-h-0 overflow-y-auto overscroll-contain pr-1 lg:block"
           )}
         >
           {!activeChannelId ? <div className="mb-4 lg:hidden"><h1 className="font-heading text-2xl font-semibold">Chat</h1><p className="text-sm text-muted-foreground">Choose a teammate, team channel, or project conversation.</p></div> : null}
           <ChannelList
+            currentUserId={currentUserId}
             channels={sidebar.channels}
             directMessages={sidebar.directMessages}
             directCandidates={sidebar.directCandidates}

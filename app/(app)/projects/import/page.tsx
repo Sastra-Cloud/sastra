@@ -43,7 +43,7 @@ export default async function ImportPage() {
   const aiReady = (await getOpenRouterApiKeyStatus()).source !== "none";
   // Show only actionable drafts — committed/discarded imports drop off the list
   // (the projects they created live on the Projects page).
-  const imports = (await listImports()).filter(
+  const imports = (await listImports(user.id)).filter(
     (i) => i.status !== "discarded" && i.status !== "committed"
   );
 

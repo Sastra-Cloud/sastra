@@ -1,21 +1,25 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, isNotNull, ne, or } from "drizzle-orm";
+import { and, eq, isNotNull, isNull, ne, or } from "drizzle-orm";
 import { z } from "zod";
 
 import { requireRole, requireUser } from "@/lib/auth/guards";
-import { db } from "@/lib/db";
+import { requireProjectCapability, requireProjectRecord, requireTaskEdit } from "@/lib/auth/project-access";
+import { db, type Db } from "@/lib/db";
 import {
   budgetApprovalAssignments,
   mouPayments,
   royaltyPayments,
   licenseFeePayments,
+  phases,
+  printRuns,
   taskDependencies,
   taskDriveFiles,
   tasks,
   user as users,
 } from "@/lib/db/schema";
+import { assertTaskAccess, taskEditPredicate } from "./access";
 import { assertCompleteTaskQueue, assertQueueRevision } from "./queue";
 import { lockTaskQueues, nextTaskRank, touchTaskQueue } from "./queue-service";
 import { advanceChapterAfterDone, type TaskHandoff } from "@/lib/projects/pipeline";
@@ -48,6 +52,19 @@ const STATUS_LABEL: Record<string, string> = {
   done: "Done",
 };
 
+/** A concurrent move/reassignment must not carry permission into another project. */
+async function lockEditableTask(
+  tx: Pick<Db, "select">,
+  taskId: string,
+  expected: { projectId: string | null; assignedTo: string | null; createdBy: string | null }
+) {
+  const [current] = await tx.select({ projectId: tasks.projectId, assignedTo: tasks.assignedTo, createdBy: tasks.createdBy })
+    .from(tasks).where(eq(tasks.id, taskId)).for("update");
+  if (!current || current.projectId !== expected.projectId || current.assignedTo !== expected.assignedTo || current.createdBy !== expected.createdBy) {
+    throw new Error("This task changed. Refresh and try again.");
+  }
+}
+
 async function assertOrdinaryTask(taskId: string, allowInvoiceDate = false) {
   if (!allowInvoiceDate) {
     const [payment] = await db.select({ id: mouPayments.id }).from(mouPayments)
@@ -67,8 +84,9 @@ async function assertOrdinaryTask(taskId: string, allowInvoiceDate = false) {
 }
 
 async function assertSourceControlledStatusAction(taskId: string) {
-  const [task] = await db.select({ printPaymentId: tasks.printPaymentId })
+  const [task] = await db.select({ printPaymentId: tasks.printPaymentId, lectioManaged: tasks.lectioManaged })
     .from(tasks).where(eq(tasks.id, taskId)).limit(1);
+  if (task?.lectioManaged) throw new Error("Translation status and removal are managed in Lectio. Open the connected project to change them.");
   if (task?.printPaymentId) {
     throw new Error("Printer payment tasks follow the payment on the Print tab.");
   }
@@ -172,12 +190,18 @@ export async function createTask(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
   const d = parsed.data;
-  if (d.isNextUp || (d.assignedTo && d.assignedTo !== user.id)) await requireRole("manager");
+  if (d.isNextUp || (d.assignedTo && d.assignedTo !== user.id)) await requireProjectCapability(d.projectId, "tasks.manage");
   if (d.isNextUp && !d.assignedTo) return { error: "Choose an assignee for Next up." };
   if (d.isNextUp && d.status === "done") return { error: "Next up is for unfinished work." };
   if (d.assignedTo) {
     const [assignee] = await db.select({ active: users.isActive, bot: users.isBot }).from(users).where(eq(users.id, d.assignedTo));
     if (!assignee?.active || assignee.bot) return { error: "Choose an active teammate." };
+  }
+
+  for (const [table, recordId] of [[phases, d.phaseId], [printRuns, d.printRunId]] as const) {
+    if (!recordId) continue;
+    const [parent] = await db.select({ projectId: table.projectId }).from(table).where(eq(table.id, recordId)).limit(1);
+    if (!parent || parent.projectId !== d.projectId) return { error: "Choose a stage or print run from this project." };
   }
 
   const id = await insertTaskRow(
@@ -243,14 +267,16 @@ export async function setTaskDependencies(
   taskId: string,
   dependsOnIds: string[]
 ) {
-  await requireUser();
-  const [t] = await db
-    .select({ projectId: tasks.projectId })
-    .from(tasks)
-    .where(eq(tasks.id, taskId))
-    .limit(1);
+  const { user, task: authorizedTask } = await requireTaskEdit(taskId);
+  await assertOrdinaryTask(taskId);
   const clean = [...new Set(dependsOnIds)].filter((id) => id && id !== taskId);
-  await db.transaction(async (tx) => {
+  const t = await db.transaction(async (tx) => {
+    await lockEditableTask(tx, taskId, authorizedTask);
+    const task = await assertTaskAccess(taskId, user, "edit", tx);
+    // Dependency titles are shown with this task; do not link inaccessible work.
+    for (const predecessorId of clean) {
+      await assertTaskAccess(predecessorId, user, "read", tx, "share");
+    }
     await tx.delete(taskDependencies).where(eq(taskDependencies.taskId, taskId));
     if (clean.length > 0) {
       await tx
@@ -258,12 +284,13 @@ export async function setTaskDependencies(
         .values(clean.map((dependsOnTaskId) => ({ taskId, dependsOnTaskId })))
         .onConflictDoNothing();
     }
+    return task;
   });
   await revalidateForTask(t?.projectId ?? null);
 }
 
 export async function updateTaskStatus(taskId: string, status: string) {
-  const { user } = await requireUser();
+  const { user, task: authorizedTask } = await requireTaskEdit(taskId);
   await assertOrdinaryTask(taskId);
   await assertSourceControlledStatusAction(taskId);
   const s = z
@@ -279,7 +306,9 @@ export async function updateTaskStatus(taskId: string, status: string) {
       await assertPodcastTaskDependenciesComplete(taskId);
     }
   }
-  const [row] = await db
+  const row = await db.transaction(async (tx) => {
+    await lockEditableTask(tx, taskId, authorizedTask);
+    const [updated] = await tx
     .update(tasks)
     .set({
       status: s,
@@ -287,12 +316,15 @@ export async function updateTaskStatus(taskId: string, status: string) {
       completedAt: s === "done" ? new Date() : null,
       updatedAt: new Date(),
     })
-    .where(eq(tasks.id, taskId))
+    .where(taskEditPredicate(taskId, user))
     .returning({
       projectId: tasks.projectId,
       title: tasks.title,
       assignedTo: tasks.assignedTo,
     });
+    return updated;
+  });
+  if (!row) throw new Error("Task not found or access denied.");
   let notificationsChanged = false;
   let handoff: TaskHandoff | null = null;
   if (row) {
@@ -328,7 +360,9 @@ export async function updateTaskStatus(taskId: string, status: string) {
 }
 
 export async function assignTask(taskId: string, userId: string | null) {
-  const { user } = await requireRole("manager");
+  const { user, projectId } = await requireProjectRecord("task", taskId, "tasks.manage");
+  const [source] = await db.select({ managed: tasks.lectioManaged }).from(tasks).where(eq(tasks.id, taskId));
+  if (source?.managed) throw new Error("Assign translation work in Lectio so its workflow permissions stay in sync.");
   await assertOrdinaryTask(taskId);
   const payment = await linkedOutgoingPayment(taskId);
   if (payment.royaltyId || payment.licenseId) await requireRole("manager");
@@ -339,8 +373,8 @@ export async function assignTask(taskId: string, userId: string | null) {
     .limit(1);
   const row = await db.transaction(async (tx) => {
     await lockTaskQueues(tx, [before?.assignedTo ?? null, userId]);
-    const [current] = await tx.select({ assignedTo: tasks.assignedTo }).from(tasks).where(eq(tasks.id, taskId)).for("update");
-    if (!current || current.assignedTo !== before?.assignedTo) throw new Error("This assignment changed. Refresh and try again.");
+    const [current] = await tx.select({ assignedTo: tasks.assignedTo, projectId: tasks.projectId }).from(tasks).where(eq(tasks.id, taskId)).for("update");
+    if (!current || current.assignedTo !== before?.assignedTo || current.projectId !== projectId) throw new Error("This assignment changed. Refresh and try again.");
     if (userId) {
       const [assignee] = await tx.select({ active: users.isActive, bot: users.isBot }).from(users).where(eq(users.id, userId));
       if (!assignee?.active || assignee.bot) throw new Error("Choose an active teammate.");
@@ -384,21 +418,25 @@ export async function updateTaskFields(
   taskId: string,
   fields: z.infer<typeof updateFieldsSchema>
 ) {
-  const { user } = await requireUser();
+  const { user, task: authorizedTask } = await requireTaskEdit(taskId);
   const f = updateFieldsSchema.parse(fields);
   await assertOrdinaryTask(taskId, Object.keys(f).every((key) => key === "dueDate"));
   const payment = f.assignedTo !== undefined ? await linkedOutgoingPayment(taskId) : null;
   if (payment?.royaltyId || payment?.licenseId) await requireRole("manager");
   const [before] = await db
-    .select({ dueDate: tasks.dueDate, assignedTo: tasks.assignedTo })
+    .select({ dueDate: tasks.dueDate, assignedTo: tasks.assignedTo, projectId: tasks.projectId, lectioManaged: tasks.lectioManaged })
     .from(tasks)
     .where(eq(tasks.id, taskId))
     .limit(1);
   if (!before) throw new Error("Task not found.");
+  if (f.assignedTo !== undefined && f.assignedTo !== before.assignedTo && before.lectioManaged) throw new Error("Assign translation work in Lectio so its workflow permissions stay in sync.");
+  if (f.assignedTo !== undefined && f.assignedTo !== before.assignedTo) {
+    await requireProjectCapability(before.projectId, "tasks.manage");
+  }
   const row = await db.transaction(async (tx) => {
+    await lockEditableTask(tx, taskId, authorizedTask);
     const assignmentChanged = f.assignedTo !== undefined && f.assignedTo !== before.assignedTo;
     if (assignmentChanged) {
-      await requireRole("manager");
       await lockTaskQueues(tx, [before.assignedTo, f.assignedTo ?? null]);
       const [current] = await tx.select({ assignedTo: tasks.assignedTo }).from(tasks).where(eq(tasks.id, taskId)).for("update");
       if (!current || current.assignedTo !== before.assignedTo) throw new Error("This assignment changed. Refresh and try again.");
@@ -419,13 +457,18 @@ export async function updateTaskFields(
       ...(f.isMilestone !== undefined ? { isMilestone: f.isMilestone } : {}),
       updatedAt: new Date(),
     })
-    .where(eq(tasks.id, taskId))
+    .where(and(
+      taskEditPredicate(taskId, user),
+      // Even an unchanged submitted assignee must not undo a newer assignment.
+      before.assignedTo === null ? isNull(tasks.assignedTo) : eq(tasks.assignedTo, before.assignedTo),
+    ))
     .returning({
       projectId: tasks.projectId,
       title: tasks.title,
       dueDate: tasks.dueDate,
       assignedTo: tasks.assignedTo,
     });
+    if (!updated) throw new Error("This assignment changed or access was denied. Refresh and try again.");
     if (payment?.royaltyId) await tx.update(royaltyPayments)
       .set({ assigneeId: f.assignedTo }).where(eq(royaltyPayments.id, payment.royaltyId));
     if (payment?.licenseId) await tx.update(licenseFeePayments)
@@ -486,10 +529,12 @@ export async function moveTaskToProject(
   taskId: string,
   input: z.infer<typeof moveProjectSchema>
 ) {
-  const { user } = await requireUser();
+  const { user, task: sourceTask } = await requireTaskEdit(taskId);
   await assertOrdinaryTask(taskId);
   await assertSourceControlledStatusAction(taskId);
   const data = moveProjectSchema.parse(input);
+  const ownWork = sourceTask.assignedTo === user.id || (!sourceTask.assignedTo && sourceTask.createdBy === user.id);
+  if (!ownWork) await requireProjectCapability(data.projectId, "tasks.manage");
   const [before] = await db
     .select({
       projectId: tasks.projectId,
@@ -506,6 +551,7 @@ export async function moveTaskToProject(
   }
 
   await db.transaction(async (tx) => {
+    await lockEditableTask(tx, taskId, sourceTask);
     await tx
       .delete(taskDependencies)
       .where(
@@ -518,6 +564,7 @@ export async function moveTaskToProject(
       .update(tasks)
       .set({
         projectId: data.projectId,
+        isNextUp: false,
         printRunId: null,
         phaseId: null,
         unitId: null,
@@ -543,13 +590,18 @@ export async function moveTaskToProject(
 }
 
 export async function deleteTask(taskId: string) {
-  await requireUser();
+  const { user, task: authorizedTask } = await requireTaskEdit(taskId);
   await assertOrdinaryTask(taskId);
   await assertSourceControlledStatusAction(taskId);
-  const [row] = await db
+  const row = await db.transaction(async (tx) => {
+    await lockEditableTask(tx, taskId, authorizedTask);
+    const [deleted] = await tx
     .delete(tasks)
-    .where(eq(tasks.id, taskId))
+    .where(taskEditPredicate(taskId, user))
     .returning({ projectId: tasks.projectId });
+    return deleted;
+  });
+  if (!row) throw new Error("Task not found or access denied.");
   await clearTaskDueDateNotifications([taskId]);
   await revalidateForTask(row?.projectId ?? null);
 }
@@ -581,7 +633,7 @@ export async function reorderUserTasks(assigneeId: string, orderedTaskIds: strin
 
 /** Selection changes only queue intent, never status, deadlines, or task activity. */
 export async function setTaskNextUp(taskId: string, isNextUp: boolean, expectedRevision?: number) {
-  const { user } = await requireRole("manager");
+  const { user, projectId } = await requireProjectRecord("task", taskId, "tasks.manage");
   z.object({ taskId: z.string().uuid(), isNextUp: z.boolean(), expectedRevision: z.number().int().nonnegative().optional() })
     .parse({ taskId, isNextUp, expectedRevision });
   const result = await db.transaction(async (tx) => {
@@ -590,7 +642,7 @@ export async function setTaskNextUp(taskId: string, isNextUp: boolean, expectedR
     const queues = await lockTaskQueues(tx, [before.assignedTo]);
     assertQueueRevision(queues.get(before.assignedTo)!.revision, expectedRevision);
     const [task] = await tx.select().from(tasks).where(eq(tasks.id, taskId)).for("update");
-    if (!task || task.assignedTo !== before.assignedTo || task.status === "done") throw new Error("This assignment changed. Refresh and try again.");
+    if (!task || task.projectId !== projectId || task.assignedTo !== before.assignedTo || task.status === "done") throw new Error("This assignment changed. Refresh and try again.");
     const rank = isNextUp !== task.isNextUp ? await nextTaskRank(tx, task.assignedTo) : task.rank;
     await tx.update(tasks).set({ isNextUp, rank }).where(eq(tasks.id, taskId));
     const queue = await touchTaskQueue(tx, task.assignedTo, user.id);

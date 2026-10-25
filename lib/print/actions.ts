@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import { aiStructured } from "@/lib/ai/openrouter";
 import { requireRole } from "@/lib/auth/guards";
+import { getAccessibleExtractionFile } from "@/lib/imports/file-access";
 import { scheduleHealthRecompute } from "@/lib/blockers/engine";
 import { lineAmount, lineQuantity } from "@/lib/budget/compute";
 import { db } from "@/lib/db";
@@ -786,6 +787,9 @@ export async function retryExtraction(jobId: string) {
 
   if (job.kind === "pdf") {
     if (!job.fileId) return { error: "This job has no file to re-extract." };
+    if (!(await getAccessibleExtractionFile(job.fileId, user.id))) {
+      return { error: "File not available for extraction." };
+    }
     await extractPrintInvoice({
       fileId: job.fileId,
       runId: job.runId,
@@ -824,6 +828,9 @@ export async function createQuoteFromFile(runId: string, fileId: string) {
   const { user } = await requireRole("manager");
   const [run] = await db.select().from(printRuns).where(eq(printRuns.id, runId)).limit(1);
   if (!run) return { error: "Print run not found." };
+  if (!(await getAccessibleExtractionFile(fileId, user.id))) {
+    return { error: "File not available for extraction." };
+  }
 
   let parsed;
   try {

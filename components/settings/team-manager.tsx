@@ -1,6 +1,7 @@
 "use client";
 
 import { confirmDialog } from "@/lib/dialog-requests";
+import { thrownMutationMessage } from "@/lib/actions/result";
 
 import { startTransition, useActionState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -90,7 +91,7 @@ export function TeamManager({
   const [state, action, inviting] = useActionState(
     async (previous: TeamState, data: FormData): Promise<TeamState> => {
       try { return await inviteMember(previous, data); }
-      catch { return { error: "Could not invite this teammate. Check your connection and try again." }; }
+      catch (error) { return { error: thrownMutationMessage(error, "Could not invite this teammate. Check your connection and try again.") }; }
     },
     {} as TeamState
   );

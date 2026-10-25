@@ -7,10 +7,9 @@ import { db } from "@/lib/db";
 import { chatMessages, fileAttachments, files } from "@/lib/db/schema";
 import { recordR2Operation } from "@/lib/ai/usage";
 import { deleteObject, headObject, validateUpload } from "@/lib/r2";
-import { can } from "@/lib/auth/policy";
 import { ensurePrintPaymentTask } from "@/lib/print/payment-tasks";
 import { enqueueAndProcessAgreementAttachment } from "@/lib/agreement-chat/indexing";
-import { canAccessMessage } from "@/lib/chat/access";
+import { canMutateAttachmentTarget } from "@/lib/files/target-access";
 import { assertStorageAvailable } from "@/lib/hosted/storage-usage";
 
 const schema = z.object({
@@ -30,6 +29,8 @@ const schema = z.object({
     .optional(),
   targetId: z.string().uuid().optional(),
   label: z.string().max(40).optional(),
+}).refine((value) => !!value.targetType === !!value.targetId, {
+  message: "Attachment target type and ID must be supplied together",
 });
 
 export async function POST(request: Request) {
@@ -42,8 +43,8 @@ export async function POST(request: Request) {
   }
   const { fileId, targetType, targetId, label } = parsed.data;
   if (
-    targetType === "agreement_group" &&
-    !can(session.user, "project.edit")
+    targetType && targetId &&
+    !(await canMutateAttachmentTarget(targetType, targetId, session.user))
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -60,14 +61,6 @@ export async function POST(request: Request) {
   if (file.purpose !== "workspace_attachment" || file.status !== "pending") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  if (
-    targetType === "message" &&
-    targetId &&
-    !(await canAccessMessage(targetId, session.user.id))
-  ) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-
   // Confirm the object actually landed in the bucket and re-read its real size.
   let size = file.sizeBytes;
   try {

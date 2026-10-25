@@ -40,6 +40,7 @@
     "next/navigation",
     "drizzle-orm",
     "@/lib/auth/guards",
+    "@/lib/imports/file-access",
     "@/lib/db",
     "@/lib/db/schema",
     "@/components/cockpit",
@@ -91,7 +92,6 @@
     "drizzle-orm",
     "@/lib/db",
     "@/lib/db/schema",
-    "drizzle-orm",
     "next/navigation",
     "lucide-react",
     "@/lib/auth/guards",
@@ -103,6 +103,7 @@
     "@/components/ui/card",
     "@/components/correspondence/thread-controls",
     "@/components/correspondence/thread-message-list",
+    "@/components/correspondence/thread-review-checklist",
     "@/components/correspondence/thread-reply",
     "@/lib/notifications/queries",
     "@/lib/email/task-suggestions",
@@ -188,7 +189,9 @@
     "next/link",
     "lucide-react",
     "@/components/ui/button",
-    "@/components/cockpit"
+    "@/components/cockpit",
+    "@/lib/pwa/deployment-guard",
+    "@/lib/pwa/client-update"
   ],
   "app/(app)/help/[slug]/loading.tsx": [
     "@/components/cockpit",
@@ -219,6 +222,8 @@
   "app/(app)/layout.tsx": [
     "next/headers",
     "@/lib/auth/guards",
+    "@/lib/auth/project-access",
+    "@/components/projects/project-management-provider",
     "@/lib/auth/policy",
     "@/lib/tasks/time-queries",
     "@/components/app-shell",
@@ -372,6 +377,8 @@
     "@/components/episodes/episodes-manager"
   ],
   "app/(app)/projects/[slug]/layout.tsx": [
+    "@/lib/workspace/queries",
+    "@/lib/workspace/modules",
     "next/link",
     "next/navigation",
     "lucide-react",
@@ -380,6 +387,7 @@
     "@/components/cockpit",
     "@/lib/projects/queries",
     "@/lib/print/queries",
+    "@/lib/auth/project-access",
     "@/lib/auth/guards",
     "@/lib/auth/policy",
     "@/components/badges",
@@ -405,6 +413,12 @@
   ],
   "app/(app)/projects/[slug]/members/page.tsx": [
     "@/lib/auth/guards",
+    "@/lib/auth/project-access",
+    "@/lib/projects/manager-queries",
+    "@/components/projects/project-managers",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "drizzle-orm",
     "@/lib/auth/policy",
     "next/navigation",
     "@/lib/projects/queries",
@@ -420,6 +434,7 @@
     "next/link",
     "next/navigation",
     "lucide-react",
+    "@/lib/auth/project-access",
     "@/lib/auth/guards",
     "@/lib/auth/policy",
     "@/lib/projects/queries",
@@ -510,6 +525,7 @@
     "drizzle-orm",
     "lucide-react",
     "@/lib/auth/guards",
+    "@/lib/auth/project-access",
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/projects/queries",
@@ -523,8 +539,8 @@
     "next/link",
     "next/navigation",
     "lucide-react",
+    "@/lib/auth/project-access",
     "@/lib/auth/guards",
-    "@/lib/auth/policy",
     "@/lib/projects/queries",
     "@/lib/print/queries",
     "@/lib/tasks/queries",
@@ -552,12 +568,26 @@
     "@/components/projects/pipeline-view",
     "@/lib/projects/kinds"
   ],
+  "app/(app)/projects/[slug]/translation/page.tsx": [
+    "drizzle-orm",
+    "next/navigation",
+    "@/lib/auth/guards",
+    "@/lib/auth/project-access",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/workspace/queries",
+    "@/lib/workspace/modules",
+    "@/components/lectio/source-import",
+    "@/components/lectio/assignment-request",
+    "@/components/lectio/project-translation"
+  ],
   "app/(app)/projects/import/[importId]/page.tsx": [
     "next/link",
     "next/navigation",
     "drizzle-orm",
     "lucide-react",
     "@/lib/auth/guards",
+    "@/lib/imports/file-access",
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/imports/queries",
@@ -592,7 +622,13 @@
     "@/lib/projects/queries",
     "@/components/projects/new-project-entry",
     "@/lib/workspace/queries",
-    "@/components/cockpit"
+    "@/components/cockpit",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/workspace/modules",
+    "@/lib/lectio/protocol/profile",
+    "@/lib/lectio/cloud-eligibility"
   ],
   "app/(app)/projects/page.tsx": [
     "next/link",
@@ -624,6 +660,15 @@
     "@/components/ui/button",
     "@/components/ui/card",
     "@/components/cockpit"
+  ],
+  "app/(app)/projects/resolve/[projectId]/page.tsx": [
+    "drizzle-orm",
+    "next/navigation",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/workspace/queries",
+    "@/lib/workspace/modules"
   ],
   "app/(app)/schedule/layout.tsx": [
     "@/components/team-planning-nav",
@@ -711,9 +756,22 @@
     "@/components/settings/settings-nav",
     "@/lib/auth/policy"
   ],
+  "app/(app)/settings/lectio/page.tsx": [
+    "next/link",
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/workspace/queries",
+    "@/lib/workspace/modules",
+    "@/components/lectio/connection-settings",
+    "@/lib/lectio/cloud-eligibility",
+    "@/components/lectio/shared-sign-in"
+  ],
   "app/(app)/settings/modules/page.tsx": [
     "@/lib/auth/guards",
-    "@/components/settings/modules-settings"
+    "@/components/settings/modules-settings",
+    "@/lib/lectio/cloud-eligibility"
   ],
   "app/(app)/settings/notifications/page.tsx": [
     "@/lib/auth/guards",
@@ -740,7 +798,17 @@
     "@/components/ui/card",
     "@/lib/format"
   ],
+  "app/(app)/settings/profile/lectio-link/page.tsx": [
+    "@/lib/auth/guards",
+    "@/components/lectio/link-review"
+  ],
   "app/(app)/settings/profile/page.tsx": [
+    "react",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/lectio/sso-service",
+    "@/components/lectio/shared-sign-in",
     "@/lib/notifications/queries",
     "@/lib/email/task-rule-queries",
     "@/components/settings/email-task-preferences",
@@ -999,6 +1067,8 @@
     "@/lib/auth/provisioning"
   ],
   "app/(auth)/login/page.tsx": [
+    "@/lib/lectio/sso-service",
+    "@/components/lectio/shared-sign-in",
     "react",
     "@/components/auth/auth-card-shell",
     "@/components/auth/login-form",
@@ -1038,6 +1108,12 @@
     "@/lib/chat/access",
     "@/lib/chat/pins",
     "@/lib/chat/queries"
+  ],
+  "app/api/chat/channels/route.ts": [
+    "@/lib/auth/guards",
+    "@/lib/auth/policy",
+    "@/lib/chat/actions",
+    "@/lib/security/request-origin"
   ],
   "app/api/chat/reactions/route.ts": [
     "next/server",
@@ -1146,10 +1222,9 @@
     "@/lib/db/schema",
     "@/lib/ai/usage",
     "@/lib/r2",
-    "@/lib/auth/policy",
     "@/lib/print/payment-tasks",
     "@/lib/agreement-chat/indexing",
-    "@/lib/chat/access",
+    "@/lib/files/target-access",
     "@/lib/hosted/storage-usage"
   ],
   "app/api/files/presign/route.ts": [
@@ -1163,6 +1238,36 @@
     "@/lib/hosted/storage-usage"
   ],
   "app/api/health/route.ts": [],
+  "app/api/integrations/lectio/callback/route.ts": [
+    "@/lib/auth/policy",
+    "@/lib/auth/guards",
+    "@/lib/lectio/pairing",
+    "@/lib/lectio/protocol/contract",
+    "@/lib/lectio/protocol/signing"
+  ],
+  "app/api/integrations/lectio/connect/route.ts": [
+    "@/lib/auth/policy",
+    "@/lib/auth/guards",
+    "@/lib/lectio/pairing",
+    "@/lib/lectio/protocol/contract",
+    "@/lib/lectio/protocol/signing"
+  ],
+  "app/api/integrations/lectio/v1/[operation]/route.ts": [
+    "@/lib/lectio/rotation",
+    "@/lib/lectio/project-matches",
+    "@/lib/lectio/planning",
+    "@/lib/hosted/tick-request",
+    "next/cache",
+    "drizzle-orm",
+    "@/lib/db/schema",
+    "@/lib/lectio/endpoint",
+    "@/lib/lectio/artifacts",
+    "@/lib/lectio/projection",
+    "@/lib/lectio/lifecycle",
+    "@/lib/lectio/source-files",
+    "@/lib/lectio/receive-project",
+    "@/lib/lectio/protocol/contract"
+  ],
   "app/api/internal/management/bootstrap/route.ts": [
     "drizzle-orm",
     "next/server",
@@ -1255,7 +1360,8 @@
   "app/api/push/subscribe/route.ts": [
     "next/server",
     "@/lib/auth/guards",
-    "@/lib/notifications/push"
+    "@/lib/notifications/push",
+    "@/lib/push/subscription"
   ],
   "app/api/push/unsubscribe/route.ts": [
     "next/server",
@@ -1408,7 +1514,8 @@
     "@/components/motion/motion-provider",
     "@/components/ui/sonner",
     "@/components/pwa/service-worker-register",
-    "@/components/pwa/pwa-provider"
+    "@/components/pwa/pwa-provider",
+    "@/lib/pwa/apple-startup-images"
   ],
   "app/manifest.ts": [
     "next"
@@ -2061,6 +2168,8 @@
     "sonner",
     "@/lib/chat/actions",
     "@/lib/chat/queries",
+    "@/lib/chat/channel-draft",
+    "@/lib/pwa/client-update",
     "@/components/chat/chat-navigation-context",
     "@/components/ui/button",
     "@/components/ui/checkbox",
@@ -2353,6 +2462,18 @@
     "@/lib/email/draft-actions",
     "@/lib/email/draft-types"
   ],
+  "components/correspondence/thread-review-checklist.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/button",
+    "@/components/navigation-badges-provider",
+    "@/hooks/use-optimistic-action",
+    "@/lib/email/review-actions",
+    "@/lib/print/quote-economics"
+  ],
   "components/dashboard/manager-review-queue.test.tsx": [
     "react-dom/server",
     "vitest",
@@ -2600,6 +2721,83 @@
     "@/lib/imports/actions",
     "@/components/ui/button"
   ],
+  "components/lectio/assignment-request.tsx": [
+    "react",
+    "next/navigation",
+    "@/lib/lectio/assignment-actions",
+    "@/lib/lectio/protocol/contract",
+    "@/components/ui/button",
+    "@/components/ui/label"
+  ],
+  "components/lectio/connection-ownership.tsx": [
+    "react",
+    "next/navigation",
+    "@/components/ui/button",
+    "@/lib/lectio/ownership-actions"
+  ],
+  "components/lectio/connection-settings.tsx": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "./people-settings",
+    "./setup-settings",
+    "./connection-ownership",
+    "@/lib/lectio/actions"
+  ],
+  "components/lectio/link-review.tsx": [
+    "react",
+    "next/link",
+    "@/components/ui/button"
+  ],
+  "components/lectio/people-settings.tsx": [
+    "react",
+    "@/components/ui/button",
+    "@/lib/lectio/actions"
+  ],
+  "components/lectio/project-match-dialog.tsx": [
+    "react",
+    "@/components/ui/dialog",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/lib/lectio/protocol/project-matches"
+  ],
+  "components/lectio/project-translation.tsx": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "@/components/ui/button",
+    "@/components/ui/label",
+    "@/lib/lectio/actions",
+    "@/lib/lectio/match-actions",
+    "@/components/ui/switch",
+    "./project-match-dialog",
+    "@/lib/lectio/protocol/project-matches",
+    "@/lib/lectio/protocol/contract"
+  ],
+  "components/lectio/setup-settings.tsx": [
+    "react",
+    "sonner",
+    "@/components/ui/button",
+    "@/components/ui/label",
+    "@/lib/lectio/actions",
+    "@/lib/lectio/protocol/profile"
+  ],
+  "components/lectio/shared-sign-in.tsx": [
+    "react",
+    "next/navigation",
+    "@/components/ui/button",
+    "@/lib/lectio/sso-actions"
+  ],
+  "components/lectio/source-import.tsx": [
+    "react",
+    "next/navigation",
+    "@/lib/lectio/source-actions",
+    "@/components/ui/button",
+    "@/components/ui/label"
+  ],
   "components/mentions/mention-input.tsx": [
     "react",
     "react-dom",
@@ -2845,7 +3043,11 @@
     "@/components/guidance/guidance-provider",
     "@/components/projects/new-project-form",
     "@/components/projects/new-project-guided",
-    "@/components/ui/button"
+    "@/components/ui/button",
+    "@/components/ui/switch",
+    "@/components/lectio/project-match-dialog",
+    "@/lib/lectio/match-actions",
+    "@/lib/lectio/protocol/project-matches"
   ],
   "components/projects/new-project-form.tsx": [
     "./project-draft",
@@ -2947,8 +3149,24 @@
     "@/components/ui/button",
     "@/hooks/use-prop-state"
   ],
+  "components/projects/project-management-provider.tsx": [
+    "react",
+    "@/lib/auth/policy"
+  ],
+  "components/projects/project-managers.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "@/lib/dialog-requests",
+    "@/lib/projects/manager-actions",
+    "@/hooks/use-optimistic-action",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/user-avatar"
+  ],
   "components/projects/project-settings-dialog.tsx": [
     "@/lib/dialog-requests",
+    "@/lib/actions/result",
     "react",
     "next/navigation",
     "lucide-react",
@@ -3097,7 +3315,8 @@
   "components/pwa/service-worker-register.tsx": [
     "react",
     "sonner",
-    "@/hooks/use-user-active"
+    "@/hooks/use-user-active",
+    "@/lib/pwa/client-update"
   ],
   "components/rights/agreement-chat-sheet.tsx": [
     "@/lib/dialog-requests",
@@ -3453,6 +3672,7 @@
     "next/navigation",
     "sonner",
     "@/lib/team/actions",
+    "@/lib/actions/result",
     "@/components/ui/button",
     "@/components/ui/input",
     "./field-errors",
@@ -3513,6 +3733,7 @@
     "sonner",
     "@/lib/team/roles-actions",
     "@/lib/capacity/actions",
+    "@/lib/actions/result",
     "@/components/ui/badge",
     "@/components/ui/button",
     "@/components/ui/card",
@@ -3555,6 +3776,7 @@
     "next/link",
     "next/navigation",
     "lucide-react",
+    "./workspace-modules-provider",
     "@/lib/navigation",
     "@/components/navigation-icons",
     "@/components/motion/tab-link",
@@ -3576,6 +3798,7 @@
   "components/settings/standup-create-form.tsx": [
     "react",
     "@/lib/standup/config-actions",
+    "@/lib/actions/result",
     "@/components/ui/button",
     "@/components/ui/card",
     "@/components/ui/input",
@@ -3604,6 +3827,7 @@
   ],
   "components/settings/team-manager.tsx": [
     "@/lib/dialog-requests",
+    "@/lib/actions/result",
     "react",
     "next/navigation",
     "sonner",
@@ -3818,6 +4042,7 @@
     "@/hooks/use-prop-state"
   ],
   "components/tasks/create-task-dialog.tsx": [
+    "@/components/projects/project-management-provider",
     "react",
     "next/navigation",
     "lucide-react",
@@ -4043,6 +4268,7 @@
     "@/lib/utils"
   ],
   "components/tasks/task-detail-dialog.tsx": [
+    "@/components/projects/project-management-provider",
     "@/lib/tasks/completion-feedback",
     "@/components/section-disclosure",
     "@/lib/dialog-requests",
@@ -4539,7 +4765,9 @@
     "./optimistic-machine"
   ],
   "lib/actions/optimistic-machine.ts": [],
-  "lib/actions/result.ts": [],
+  "lib/actions/result.ts": [
+    "@/lib/pwa/deployment-guard"
+  ],
   "lib/activity/log.ts": [
     "@/lib/db",
     "@/lib/db/schema",
@@ -4656,6 +4884,7 @@
     "next/cache",
     "zod",
     "@/lib/auth/guards",
+    "@/lib/imports/file-access",
     "@/lib/db",
     "@/lib/db/schema",
     "./funding-review",
@@ -5091,6 +5320,7 @@
     "@/lib/tokens"
   ],
   "lib/auth/auth.ts": [
+    "./lectio-sso",
     "better-auth",
     "better-auth/adapters/drizzle",
     "better-auth/api",
@@ -5114,6 +5344,12 @@
     "better-auth/client/plugins",
     "@better-auth/passkey/client"
   ],
+  "lib/auth/guards.test.ts": [
+    "vitest",
+    "./guards",
+    "@/app/api/reports/portfolio/route",
+    "@/app/api/chat/[channelId]/recent/route"
+  ],
   "lib/auth/guards.ts": [
     "next/headers",
     "next/navigation",
@@ -5123,6 +5359,22 @@
     "./auth",
     "./policy",
     "./assurance"
+  ],
+  "lib/auth/lectio-sso.ts": [
+    "node:crypto",
+    "openid-client",
+    "zod",
+    "better-auth/api",
+    "better-auth/cookies",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/crypto/secret-box",
+    "@/lib/lectio/sso-service",
+    "@/lib/lectio/sso-oidc",
+    "@/lib/lectio/guard",
+    "@/lib/lectio/protocol/contract",
+    "@/lib/lectio/sso-unlink"
   ],
   "lib/auth/password-reset.test.ts": [
     "vitest",
@@ -5134,6 +5386,33 @@
     "./policy"
   ],
   "lib/auth/policy.ts": [],
+  "lib/auth/project-access.test.ts": [
+    "vitest",
+    "drizzle-orm/pg-core",
+    "@/lib/db/schema",
+    "./project-access"
+  ],
+  "lib/auth/project-access.ts": [
+    "react",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./guards",
+    "./policy"
+  ],
+  "lib/auth/project-action-boundaries.test.ts": [
+    "vitest",
+    "@/lib/projects/actions",
+    "@/lib/projects/member-actions",
+    "@/lib/projects/phase-actions",
+    "@/lib/projects/drive-actions",
+    "@/lib/projects/task-plan-actions",
+    "@/lib/projects/status-actions",
+    "@/lib/schedule/actions",
+    "@/lib/episodes/actions",
+    "@/lib/tasks/actions",
+    "@/lib/tasks/recurring-actions"
+  ],
   "lib/auth/provisioning.test.ts": [
     "vitest",
     "./provisioning"
@@ -5474,7 +5753,8 @@
     "@/lib/db/schema",
     "@/lib/auth/policy",
     "@/lib/workspace/queries",
-    "@/lib/workspace/modules"
+    "@/lib/workspace/modules",
+    "@/lib/tasks/access"
   ],
   "lib/chat/actions.ts": [
     "next/cache",
@@ -5492,6 +5772,11 @@
     "@/lib/standup/engine",
     "@/lib/notifications"
   ],
+  "lib/chat/channel-draft.test.ts": [
+    "vitest",
+    "./channel-draft"
+  ],
+  "lib/chat/channel-draft.ts": [],
   "lib/chat/channel-members.test.ts": [
     "vitest",
     "./channel-members"
@@ -5517,6 +5802,10 @@
     "./conversation"
   ],
   "lib/chat/conversation.ts": [],
+  "lib/chat/create-channel-route.test.ts": [
+    "vitest",
+    "@/app/api/chat/channels/route"
+  ],
   "lib/chat/direct.test.ts": [
     "vitest",
     "./direct"
@@ -5544,6 +5833,11 @@
   ],
   "lib/chat/edit-state.ts": [
     "./queries"
+  ],
+  "lib/chat/file-access.test.ts": [
+    "vitest",
+    "drizzle-orm/pg-proxy",
+    "./access"
   ],
   "lib/chat/frequent-reactions-route.test.ts": [
     "vitest",
@@ -5676,6 +5970,8 @@
     "node:crypto"
   ],
   "lib/cron/jobs.ts": [
+    "@/lib/lectio/sync",
+    "@/lib/workspace/modules",
     "drizzle-orm",
     "next/server",
     "@/lib/agreement-chat/indexing",
@@ -5944,7 +6240,22 @@
     "./agreement-chat",
     "./donations",
     "./hosted",
-    "./sponsorships"
+    "./sponsorships",
+    "./lectio",
+    "./lectio-sso"
+  ],
+  "lib/db/schema/lectio-sso.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "./lectio"
+  ],
+  "lib/db/schema/lectio.ts": [
+    "drizzle-orm/pg-core",
+    "./auth",
+    "drizzle-orm",
+    "./projects",
+    "./tasks",
+    "../../lectio/protocol/contract"
   ],
   "lib/db/schema/notifications.ts": [
     "drizzle-orm/pg-core",
@@ -6570,6 +6881,23 @@
   "lib/email/resend-webhook.ts": [
     "node:crypto"
   ],
+  "lib/email/review-actions.test.ts": [
+    "vitest",
+    "drizzle-orm/pg-core",
+    "drizzle-orm",
+    "./review-actions"
+  ],
+  "lib/email/review-actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/activity/log",
+    "@/lib/blockers/engine",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/print/budget-sync"
+  ],
   "lib/email/review-queue.test.ts": [
     "vitest",
     "drizzle-orm/pg-core",
@@ -6793,12 +7121,20 @@
   "lib/episodes/workflow.ts": [
     "@/lib/projects/kinds"
   ],
+  "lib/files/actions.test.ts": [
+    "vitest",
+    "drizzle-orm",
+    "drizzle-orm/pg-core",
+    "@/lib/db/schema",
+    "./actions"
+  ],
   "lib/files/actions.ts": [
     "drizzle-orm",
     "@/lib/auth/guards",
     "@/lib/db",
     "@/lib/db/schema",
-    "@/lib/r2"
+    "@/lib/r2",
+    "./target-access"
   ],
   "lib/files/crop-image.ts": [],
   "lib/files/link-attributes.test.ts": [
@@ -6810,6 +7146,22 @@
     "drizzle-orm",
     "@/lib/db",
     "@/lib/db/schema"
+  ],
+  "lib/files/target-access.test.ts": [
+    "vitest",
+    "drizzle-orm/pg-core",
+    "@/lib/db/schema",
+    "@/app/api/files/complete/route",
+    "./target-access"
+  ],
+  "lib/files/target-access.ts": [
+    "drizzle-orm",
+    "@/lib/auth/policy",
+    "@/lib/auth/project-access",
+    "@/lib/chat/access",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/tasks/access"
   ],
   "lib/files/upload-client.ts": [
     "sonner"
@@ -7048,6 +7400,11 @@
     "./management-auth",
     "./mode"
   ],
+  "lib/imports/actions-file-access.test.ts": [
+    "vitest",
+    "./actions",
+    "./schema"
+  ],
   "lib/imports/actions.ts": [
     "next/navigation",
     "next/server",
@@ -7059,6 +7416,7 @@
     "@/lib/db",
     "@/lib/db/schema",
     "./extraction",
+    "./file-access",
     "@/lib/document-learning/service",
     "@/lib/budget/approval-service",
     "@/lib/budget/queries",
@@ -7082,6 +7440,10 @@
     "@/lib/agreement-chat/indexing",
     "@/lib/workspace/queries"
   ],
+  "lib/imports/extraction-access.test.ts": [
+    "vitest",
+    "./extraction"
+  ],
   "lib/imports/extraction.ts": [
     "drizzle-orm",
     "next/cache",
@@ -7095,9 +7457,24 @@
     "@/lib/document-learning/source",
     "@/lib/document-learning/service",
     "./fx",
+    "./file-access",
     "./schema",
     "exceljs",
     "mammoth"
+  ],
+  "lib/imports/file-access.test.ts": [
+    "vitest",
+    "drizzle-orm",
+    "@/lib/db/schema",
+    "drizzle-orm/pg-proxy",
+    "./file-access"
+  ],
+  "lib/imports/file-access.ts": [
+    "drizzle-orm",
+    "@/lib/auth/policy",
+    "@/lib/chat/access",
+    "@/lib/db",
+    "@/lib/db/schema"
   ],
   "lib/imports/fx.test.ts": [
     "vitest",
@@ -7135,11 +7512,25 @@
   "lib/imports/podcast-workflow.ts": [
     "@/lib/episodes/workflow"
   ],
+  "lib/imports/queries-access.test.ts": [
+    "vitest",
+    "./queries"
+  ],
   "lib/imports/queries.ts": [
     "drizzle-orm",
     "@/lib/db",
     "@/lib/db/schema",
-    "@/lib/imports/schema"
+    "@/lib/imports/schema",
+    "./file-access"
+  ],
+  "lib/imports/review-access.test.ts": [
+    "vitest",
+    "react",
+    "react-dom/server",
+    "drizzle-orm",
+    "@/app/(app)/projects/import/[importId]/page",
+    "@/app/(app)/agreements/review/[importId]/page",
+    "@/app/(app)/projects/import/page"
   ],
   "lib/imports/schema.test.ts": [
     "vitest",
@@ -7154,6 +7545,387 @@
   "lib/imports/types.ts": [
     "@/lib/budget/compute",
     "@/lib/projects/kinds"
+  ],
+  "lib/lectio/actions.ts": [
+    "./rotation",
+    "node:crypto",
+    "next/cache",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/auth/guards",
+    "@/lib/auth/project-access",
+    "@/lib/db/schema",
+    "@/lib/workspace/module-guard",
+    "./protocol/contract",
+    "./client",
+    "./adoption",
+    "./projection",
+    "./mapping",
+    "./lifecycle",
+    "./protocol/profile",
+    "./profile",
+    "./protocol/signing",
+    "./create-project",
+    "./guard",
+    "@/lib/tasks/queue-service",
+    "./audit",
+    "@/lib/hosted/tick-request"
+  ],
+  "lib/lectio/adoption.ts": [
+    "drizzle-orm",
+    "@/lib/db/schema",
+    "./endpoint",
+    "./protocol/contract",
+    "./mapping"
+  ],
+  "lib/lectio/artifacts.ts": [
+    "node:crypto",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/workspace/modules",
+    "@/lib/crypto/secret-box",
+    "@/lib/r2",
+    "./endpoint",
+    "./protocol/contract",
+    "./protocol/signing",
+    "./protocol/transport"
+  ],
+  "lib/lectio/assignment-actions.ts": [
+    "drizzle-orm",
+    "next/cache",
+    "@/lib/db",
+    "@/lib/auth/guards",
+    "@/lib/auth/project-access",
+    "@/lib/db/schema",
+    "./guard",
+    "./protocol/contract",
+    "./protocol/signing",
+    "./identity"
+  ],
+  "lib/lectio/audit.ts": [
+    "@/lib/db/schema",
+    "./endpoint"
+  ],
+  "lib/lectio/client.ts": [
+    "@/lib/crypto/secret-box",
+    "./endpoint",
+    "./protocol/signing",
+    "./protocol/transport",
+    "./cloud-eligibility"
+  ],
+  "lib/lectio/cloud-eligibility.test.ts": [
+    "vitest",
+    "@/lib/hosted/entitlements",
+    "./cloud-eligibility"
+  ],
+  "lib/lectio/cloud-eligibility.ts": [
+    "@/lib/hosted/entitlements",
+    "@/lib/hosted/mode",
+    "./protocol/contract",
+    "./protocol/transport"
+  ],
+  "lib/lectio/create-project.ts": [
+    "node:crypto",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./endpoint",
+    "./protocol/profile",
+    "./protocol/contract",
+    "./protocol/signing",
+    "./client",
+    "./projection",
+    "./guard",
+    "./profile"
+  ],
+  "lib/lectio/disconnect-ack.test.ts": [
+    "vitest",
+    "./disconnect-ack",
+    "@/lib/db/schema"
+  ],
+  "lib/lectio/disconnect-ack.ts": [
+    "drizzle-orm",
+    "@/lib/db/schema",
+    "./endpoint",
+    "./protocol/contract"
+  ],
+  "lib/lectio/endpoint.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/crypto/secret-box",
+    "@/lib/workspace/queries",
+    "@/lib/workspace/modules",
+    "./protocol/contract",
+    "./protocol/signing",
+    "./cloud-eligibility"
+  ],
+  "lib/lectio/guard.ts": [
+    "drizzle-orm",
+    "@/lib/db/schema",
+    "@/lib/workspace/modules",
+    "./endpoint",
+    "./protocol/contract",
+    "./cloud-eligibility"
+  ],
+  "lib/lectio/handoff.ts": [
+    "drizzle-orm",
+    "date-fns-tz",
+    "@/lib/db/schema",
+    "@/lib/tasks/queue-service",
+    "./endpoint",
+    "./protocol/contract",
+    "./protocol/signing"
+  ],
+  "lib/lectio/identity.ts": [
+    "drizzle-orm",
+    "@/lib/db/schema",
+    "./endpoint",
+    "./protocol/contract"
+  ],
+  "lib/lectio/lifecycle.ts": [
+    "drizzle-orm",
+    "@/lib/db/schema",
+    "./endpoint",
+    "./protocol/signing"
+  ],
+  "lib/lectio/mapping.test.ts": [
+    "vitest",
+    "./mapping"
+  ],
+  "lib/lectio/mapping.ts": [
+    "./protocol/contract"
+  ],
+  "lib/lectio/match-actions.ts": [
+    "drizzle-orm",
+    "next/cache",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/auth/guards",
+    "@/lib/auth/project-access",
+    "./guard",
+    "./client",
+    "./create-project",
+    "@/lib/hosted/tick-request",
+    "./protocol/contract",
+    "./protocol/project-matches",
+    "./protocol/profile"
+  ],
+  "lib/lectio/ownership-actions.ts": [
+    "drizzle-orm",
+    "next/cache",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/auth/guards",
+    "@/lib/workspace/modules",
+    "./cloud-eligibility",
+    "./protocol/contract",
+    "./audit"
+  ],
+  "lib/lectio/pairing.ts": [
+    "node:crypto",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/crypto/secret-box",
+    "@/lib/workspace/module-guard",
+    "./protocol/contract",
+    "./protocol/signing",
+    "./protocol/transport",
+    "./client",
+    "./cloud-eligibility",
+    "./audit"
+  ],
+  "lib/lectio/person-links.test.ts": [
+    "vitest",
+    "@/lib/db/schema",
+    "./actions",
+    "./projection"
+  ],
+  "lib/lectio/planning.test.ts": [
+    "vitest",
+    "./protocol/planning"
+  ],
+  "lib/lectio/planning.ts": [
+    "drizzle-orm",
+    "@/lib/db/schema",
+    "@/lib/auth/policy",
+    "./identity",
+    "./endpoint",
+    "./protocol/contract",
+    "./protocol/signing",
+    "./protocol/planning",
+    "@/lib/tasks/due-date-copy"
+  ],
+  "lib/lectio/profile.ts": [
+    "drizzle-orm",
+    "@/lib/db/schema",
+    "./endpoint",
+    "./protocol/contract",
+    "./protocol/profile",
+    "./mapping"
+  ],
+  "lib/lectio/project-matches.ts": [
+    "drizzle-orm",
+    "@/lib/db/schema",
+    "@/lib/auth/policy",
+    "./endpoint",
+    "./identity",
+    "./protocol/contract",
+    "./protocol/project-matches"
+  ],
+  "lib/lectio/projection.ts": [
+    "./handoff",
+    "./mapping",
+    "drizzle-orm",
+    "@/lib/db/schema",
+    "@/lib/tasks/create",
+    "@/lib/tasks/queue-service",
+    "./endpoint",
+    "./protocol/contract"
+  ],
+  "lib/lectio/protocol/contract.ts": [],
+  "lib/lectio/protocol/planning.ts": [
+    "./contract"
+  ],
+  "lib/lectio/protocol/profile.ts": [
+    "./contract"
+  ],
+  "lib/lectio/protocol/project-matches.ts": [],
+  "lib/lectio/protocol/security.test.ts": [
+    "vitest",
+    "./contract",
+    "./signing",
+    "./transport"
+  ],
+  "lib/lectio/protocol/signing.ts": [
+    "node:crypto",
+    "./contract"
+  ],
+  "lib/lectio/protocol/transport.ts": [
+    "node:dns/promises",
+    "node:net",
+    "node:https",
+    "node:http",
+    "./contract"
+  ],
+  "lib/lectio/receive-project.test.ts": [
+    "vitest",
+    "./receive-project",
+    "./projection"
+  ],
+  "lib/lectio/receive-project.ts": [
+    "drizzle-orm",
+    "@/lib/db/schema",
+    "@/lib/projects/create",
+    "@/lib/workspace/queries",
+    "@/lib/slug",
+    "./endpoint",
+    "./protocol/contract",
+    "./protocol/profile",
+    "./projection",
+    "./profile",
+    "./audit"
+  ],
+  "lib/lectio/rotation.ts": [
+    "node:crypto",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/crypto/secret-box",
+    "./endpoint",
+    "./protocol/contract",
+    "./protocol/signing",
+    "./client",
+    "./guard"
+  ],
+  "lib/lectio/source-actions.ts": [
+    "drizzle-orm",
+    "next/cache",
+    "@/lib/db",
+    "@/lib/auth/guards",
+    "@/lib/auth/project-access",
+    "@/lib/db/schema",
+    "@/lib/r2",
+    "./guard",
+    "./protocol/contract",
+    "./protocol/signing",
+    "./identity"
+  ],
+  "lib/lectio/source-files.ts": [
+    "drizzle-orm",
+    "@/lib/db/schema",
+    "./endpoint",
+    "@/lib/r2",
+    "./protocol/contract",
+    "./protocol/signing"
+  ],
+  "lib/lectio/sso-actions.ts": [
+    "node:crypto",
+    "next/cache",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/auth/guards",
+    "@/lib/crypto/secret-box",
+    "./guard",
+    "./client",
+    "./audit"
+  ],
+  "lib/lectio/sso-oidc.test.ts": [
+    "node:crypto",
+    "vitest",
+    "openid-client",
+    "@/lib/crypto/secret-box",
+    "./sso-oidc"
+  ],
+  "lib/lectio/sso-oidc.ts": [
+    "openid-client",
+    "@/lib/crypto/secret-box",
+    "./protocol/transport"
+  ],
+  "lib/lectio/sso-service.test.ts": [
+    "vitest",
+    "@/lib/db/schema",
+    "./sso-service"
+  ],
+  "lib/lectio/sso-service.ts": [
+    "node:crypto",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./guard",
+    "./cloud-eligibility",
+    "./client",
+    "./protocol/contract"
+  ],
+  "lib/lectio/sso-unlink.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/db/schema",
+    "./audit"
+  ],
+  "lib/lectio/sync.ts": [
+    "@/lib/notifications/email-queue",
+    "./projection",
+    "./planning",
+    "./rotation",
+    "./guard",
+    "./artifacts",
+    "./create-project",
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/workspace/queries",
+    "@/lib/workspace/modules",
+    "./protocol/signing",
+    "./protocol/contract",
+    "./client",
+    "./identity",
+    "@/lib/auth/policy",
+    "./disconnect-ack"
   ],
   "lib/logger.ts": [],
   "lib/mentions/actions.ts": [
@@ -7277,9 +8049,15 @@
     "@/lib/notifications/push-gate"
   ],
   "lib/notifications/push-gate.ts": [],
+  "lib/notifications/push.test.ts": [
+    "vitest",
+    "@/app/api/push/subscribe/route",
+    "./push"
+  ],
   "lib/notifications/push.ts": [
     "@/lib/app-hostname",
     "@/lib/push/keys",
+    "@/lib/push/subscription",
     "web-push",
     "drizzle-orm",
     "@/lib/db",
@@ -7354,6 +8132,12 @@
     "./source-url"
   ],
   "lib/ops/source-url.ts": [],
+  "lib/ops/version.test.ts": [
+    "vitest",
+    "node:fs",
+    "./version",
+    "./version"
+  ],
   "lib/ops/version.ts": [
     "node:fs",
     "node:path",
@@ -7421,6 +8205,10 @@
     "./status"
   ],
   "lib/presence/status.ts": [],
+  "lib/print/actions-file-access.test.ts": [
+    "vitest",
+    "./actions"
+  ],
   "lib/print/actions.ts": [
     "@/lib/notifications",
     "@/lib/print/payment-task-copy",
@@ -7430,6 +8218,7 @@
     "zod",
     "@/lib/ai/openrouter",
     "@/lib/auth/guards",
+    "@/lib/imports/file-access",
     "@/lib/blockers/engine",
     "@/lib/budget/compute",
     "@/lib/db",
@@ -7541,6 +8330,7 @@
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/r2",
+    "@/lib/imports/file-access",
     "@/lib/document-learning/source",
     "@/lib/document-learning/service",
     "@/lib/print/extract-schema",
@@ -7551,6 +8341,10 @@
     "@/lib/print/quote-reconciliation",
     "@/lib/print/review-flags",
     "mammoth"
+  ],
+  "lib/print/extraction-access.test.ts": [
+    "vitest",
+    "./extract"
   ],
   "lib/print/extraction-jobs.ts": [
     "drizzle-orm",
@@ -7650,22 +8444,25 @@
     "drizzle-orm",
     "zod",
     "@/lib/auth/guards",
+    "@/lib/auth/project-access",
     "@/lib/activity/log",
     "@/lib/blockers/engine",
     "@/lib/budget/actions",
-    "@/lib/chat/project-channels",
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/r2",
     "@/lib/slug",
-    "./materialize",
+    "./create",
+    "@/lib/db/schema",
+    "@/lib/workspace/modules",
+    "@/lib/lectio/protocol/profile",
+    "@/lib/lectio/create-project",
+    "@/lib/lectio/match-actions",
     "@/lib/agreements/readiness-engine",
     "@/lib/workspace/queries",
-    "@/lib/episodes/materialize",
     "@/lib/episodes/workflow",
     "@/lib/episodes/workflow-service",
     "@/lib/episodes/workflow",
-    "./kinds",
     "./print-funding",
     "./status"
   ],
@@ -7696,6 +8493,19 @@
     "./materialize",
     "./project-blueprint"
   ],
+  "lib/projects/create.ts": [
+    "zod",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/workspace/queries",
+    "@/lib/chat/project-channels",
+    "./materialize",
+    "@/lib/episodes/materialize",
+    "@/lib/episodes/workflow",
+    "./kinds",
+    "./print-funding",
+    "./status"
+  ],
   "lib/projects/current-work.test.ts": [
     "vitest",
     "./current-work"
@@ -7720,7 +8530,7 @@
     "next/cache",
     "drizzle-orm",
     "zod",
-    "@/lib/auth/guards",
+    "@/lib/auth/project-access",
     "@/lib/db",
     "@/lib/db/schema"
   ],
@@ -7737,6 +8547,30 @@
     "./kinds"
   ],
   "lib/projects/kinds.ts": [],
+  "lib/projects/lectio-creation.test.ts": [
+    "vitest",
+    "./create",
+    "./actions"
+  ],
+  "lib/projects/manager-actions.test.ts": [
+    "vitest",
+    "drizzle-orm/pg-core",
+    "./manager-actions"
+  ],
+  "lib/projects/manager-actions.ts": [
+    "drizzle-orm",
+    "next/cache",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/activity/log"
+  ],
+  "lib/projects/manager-queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
   "lib/projects/materialize.ts": [
     "date-fns",
     "drizzle-orm",
@@ -7748,6 +8582,7 @@
     "next/cache",
     "drizzle-orm",
     "@/lib/auth/guards",
+    "@/lib/auth/project-access",
     "@/lib/db",
     "@/lib/db/schema"
   ],
@@ -7762,7 +8597,7 @@
     "next/cache",
     "drizzle-orm",
     "zod",
-    "@/lib/auth/guards",
+    "@/lib/auth/project-access",
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/activity/log",
@@ -7809,7 +8644,7 @@
     "drizzle-orm",
     "zod",
     "@/lib/auth/guards",
-    "@/lib/auth/policy",
+    "@/lib/auth/project-access",
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/activity/log",
@@ -7831,7 +8666,7 @@
     "zod",
     "@/lib/activity/log",
     "@/lib/auth/guards",
-    "@/lib/auth/policy",
+    "@/lib/auth/project-access",
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/mentions/notify",
@@ -7846,7 +8681,7 @@
   "lib/projects/task-plan-actions.ts": [
     "next/cache",
     "drizzle-orm",
-    "@/lib/auth/guards",
+    "@/lib/auth/project-access",
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/budget/queries",
@@ -7942,6 +8777,29 @@
     "./setup-state"
   ],
   "lib/push/setup-state.ts": [],
+  "lib/push/subscription.test.ts": [
+    "vitest",
+    "./subscription"
+  ],
+  "lib/push/subscription.ts": [
+    "zod"
+  ],
+  "lib/pwa/apple-startup-images.ts": [
+    "./apple-startup-devices.json"
+  ],
+  "lib/pwa/client-update.test.ts": [
+    "vitest",
+    "./client-update"
+  ],
+  "lib/pwa/client-update.ts": [
+    "./deployment-guard"
+  ],
+  "lib/pwa/deployment-guard.test.ts": [
+    "vitest",
+    "./deployment-guard",
+    "@/lib/actions/result"
+  ],
+  "lib/pwa/deployment-guard.ts": [],
   "lib/pwa/pull-to-refresh.test.ts": [
     "vitest",
     "./pull-to-refresh"
@@ -8031,6 +8889,7 @@
     "drizzle-orm",
     "zod",
     "@/lib/auth/guards",
+    "@/lib/auth/project-access",
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/activity/log",
@@ -8249,13 +9108,33 @@
     "node:crypto",
     "./config"
   ],
+  "lib/tasks/access.test.ts": [
+    "vitest",
+    "drizzle-orm/pg-core",
+    "./access"
+  ],
+  "lib/tasks/access.ts": [
+    "drizzle-orm",
+    "@/lib/auth/policy",
+    "@/lib/auth/project-access",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/tasks/actions-security.test.ts": [
+    "vitest",
+    "drizzle-orm/pg-core",
+    "@/lib/db/schema",
+    "./actions"
+  ],
   "lib/tasks/actions.ts": [
     "next/cache",
     "drizzle-orm",
     "zod",
     "@/lib/auth/guards",
+    "@/lib/auth/project-access",
     "@/lib/db",
     "@/lib/db/schema",
+    "./access",
     "./queue",
     "./queue-service",
     "@/lib/projects/pipeline",
@@ -8285,11 +9164,12 @@
     "drizzle-orm",
     "zod",
     "@/lib/auth/guards",
-    "@/lib/auth/policy",
+    "@/lib/auth/project-access",
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/mentions/notify",
     "@/lib/mentions/roster",
+    "./access",
     "./queries",
     "./create"
   ],
@@ -8321,6 +9201,7 @@
     "@/lib/auth/auth",
     "@/lib/db",
     "@/lib/db/schema",
+    "./access",
     "./create"
   ],
   "lib/tasks/drive-file-selection.test.ts": [
@@ -8356,6 +9237,10 @@
     "date-fns-tz",
     "@/lib/agenda/bucket"
   ],
+  "lib/tasks/project-access-actions.test.ts": [
+    "vitest",
+    "./actions"
+  ],
   "lib/tasks/queries.ts": [
     "drizzle-orm",
     "drizzle-orm/pg-core",
@@ -8380,11 +9265,18 @@
     "./queue"
   ],
   "lib/tasks/queue.ts": [],
+  "lib/tasks/recurring-actions.test.ts": [
+    "vitest",
+    "drizzle-orm/pg-core",
+    "@/lib/db/schema",
+    "./recurring-actions"
+  ],
   "lib/tasks/recurring-actions.ts": [
     "next/cache",
     "drizzle-orm",
     "zod",
     "@/lib/auth/guards",
+    "@/lib/auth/project-access",
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/recurring/schedule",
@@ -8398,6 +9290,14 @@
     "@/lib/db/schema",
     "@/lib/recurring/schedule",
     "./create"
+  ],
+  "lib/tasks/related-access.test.ts": [
+    "vitest",
+    "drizzle-orm/pg-core",
+    "@/lib/db/schema",
+    "./comment-actions",
+    "./time-actions",
+    "./drive-actions"
   ],
   "lib/tasks/search-actions.ts": [
     "zod",
@@ -8431,6 +9331,7 @@
     "@/lib/auth/guards",
     "@/lib/db",
     "@/lib/db/schema",
+    "./access",
     "./create",
     "./queries",
     "./time-queries",
@@ -8587,7 +9488,8 @@
     "@/lib/activity/log",
     "@/lib/planning/groups",
     "@/lib/hosted/tick-request",
-    "@/lib/workspace/modules"
+    "@/lib/workspace/modules",
+    "@/lib/lectio/cloud-eligibility"
   ],
   "lib/workspace/invoice-issuer.test.ts": [
     "vitest",
@@ -8596,6 +9498,10 @@
   "lib/workspace/module-guard.ts": [
     "./queries",
     "./modules"
+  ],
+  "lib/workspace/modules-actions.test.ts": [
+    "vitest",
+    "./actions"
   ],
   "lib/workspace/modules.ts": [],
   "lib/workspace/queries.ts": [
@@ -8667,7 +9573,8 @@
   "scripts/gen-icons.mjs": [
     "sharp",
     "png-to-ico",
-    "node:fs/promises"
+    "node:fs/promises",
+    "../lib/pwa/apple-startup-devices.json"
   ],
   "scripts/generate-repo-map.mjs": [
     "node:fs",
@@ -8697,5 +9604,17 @@
     "postgres",
     "../lib/db/schema",
     "../lib/projects/default-templates"
+  ],
+  "scripts/verify-lectio-integration.ts": [
+    "node:assert/strict",
+    "node:crypto",
+    "../lib/db",
+    "drizzle-orm",
+    "../lib/db/schema",
+    "../lib/crypto/secret-box",
+    "../lib/lectio/protocol/signing",
+    "../app/api/integrations/lectio/v1/[operation]/route",
+    "../lib/lectio/adoption",
+    "../lib/lectio/protocol/contract"
   ]
 }

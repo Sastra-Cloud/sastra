@@ -1,4 +1,10 @@
 import { requireUser } from "@/lib/auth/guards";
+import { hasProjectCapability } from "@/lib/auth/project-access";
+import { listProjectManagers } from "@/lib/projects/manager-queries";
+import { ProjectManagers } from "@/components/projects/project-managers";
+import { db } from "@/lib/db";
+import { user as usersTable } from "@/lib/db/schema";
+import { and, asc, eq } from "drizzle-orm";
 import { can } from "@/lib/auth/policy";
 import { notFound } from "next/navigation";
 
@@ -49,9 +55,20 @@ export default async function ProjectMembersPage({
     ])
   );
 
+  const canAssign = can(user, "workspace.manage");
+  const [canEdit, managers, eligibleMembers] = await Promise.all([
+    hasProjectCapability(user, data.project.id),
+    listProjectManagers(data.project.id),
+    canAssign ? db.select({ userId: usersTable.id, name: usersTable.name, image: usersTable.image })
+      .from(usersTable).where(and(eq(usersTable.role, "member"), eq(usersTable.isActive, true), eq(usersTable.isBot, false)))
+      .orderBy(asc(usersTable.name)) : Promise.resolve([]),
+  ]);
+
   return (
+    <div className="space-y-5">
+    <ProjectManagers projectId={data.project.id} canAssign={canAssign} managers={managers} members={eligibleMembers} />
     <MembersManager
-      canEdit={can(user, "project.edit")}
+      canEdit={canEdit}
       projectId={data.project.id}
       members={data.members.map((m) => ({
         id: m.id,
@@ -65,5 +82,6 @@ export default async function ProjectMembersPage({
       roles={roles.map((r) => ({ id: r.id, label: r.label }))}
       capacityByUser={capacityByUser}
     />
+    </div>
   );
 }

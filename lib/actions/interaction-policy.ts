@@ -9,10 +9,26 @@ export type MutationInteractionMode =
 // `sync*` are silent, idempotent background reconciliations (no user gesture,
 // no pending/progress UI) — treated like reads for the interaction contract.
 const READ = /^(reviewPrintWirePayment|get|list|load|current|is[A-Z]|sync|pushSupported)/;
-const READ_ACTIONS = new Set(["markChannelRead"]); // silent background read receipt
+const READ_ACTIONS = new Set(["markChannelRead", "readSchedule", "reviewLectioLink", "findLectioProjectMatches"]); // signed review reads
 const DESTRUCTIVE = /^(delete|remove|revoke|clear|discard|trash)/;
 const PROGRESS = /^(send|submit|draft|generate|publish|refresh|reprocess|repair|retry|upload|extract|startParse|startNow|startReprint|resume|applyImport|commitImport|attachAgreement|createImport|createProjectsFrom|enablePush|disablePush|runAssistant|request|invite|learn|seed)/;
 const PROGRESS_ACTIONS = new Set([
+  "linkLectioProject",
+  "createLectioProjectForReview",
+  "confirmLectioPerson",
+  "reapproveLectioConnection",
+  "previewLectioProject",
+  "setLectioConnectionState",
+  "resolveLectioReopen",
+  "disconnectLectioProject", // Confirmed locally; remote disconnection is delivered durably.
+  "previewLectioMapping",
+  "updateLectioMapping",
+  "saveLectioSetup",
+  "rotateLectioConnectionKeys",
+  "configureLectioSharedSignIn",
+  "confirmLectioLink",
+  "startLectioSignIn",
+  "updateSchedule", // Lectio waits for Sastra's canonical dates before reporting success.
   "copyMessageText", // Wait for clipboard permission/write before reporting success.
   "draftMouProposal", // Preparing a reviewable partner email never sends it.
   "promptInstall", // Native browser prompt: wait for the person's choice.
@@ -73,16 +89,20 @@ const PROGRESS_ACTIONS = new Set([
   "reverseSponsorshipFundUse",
 ]);
 const CONFIRMED_DESTRUCTIVE_ACTIONS = new Set([
+  "unlinkLectioSignIn",
   "undoAutoCreatedEmailTask",
   "voidMouInvoice",
   "voidSponsorshipInvoice",
   "cancelSponsorship",
 ]);
 const OPTIMISTIC_ACTIONS = new Set([
+  "addProjectManager", // Explicit permission confirmation precedes immediate assignment feedback.
   // Message menus retain immediate text/reaction feedback; uploads have their own progress action.
   "postMessage",
   "toggleReaction",
   "editMessage", // Text and Edited marker update immediately; failure restores the edit draft.
+  "dismissEmailQuoteSuggestion", // Review-only: hide the suggestion immediately; never reverse accepted finance.
+  "dismissEmailFundingReview", // Unapproved document review only; restore the card on failure.
   "setTaskNextUp", // shared task selection: immediate state with rollback
   "markPrintPaymentPaid", // reviewed confirmation: update payment/task immediately, roll back on failure
   // Chat message pins: predictable, reversible, and rolled back on failure.
@@ -102,6 +122,7 @@ const NAVIGATION = new Set([
   "completeWorkspaceSetup",
   "acceptInvite",
   "createChannel",
+  "reloadForAppUpdate", // Explicit full reload; never replay a pending mutation.
   "openDirectMessage",
   "createProject",
   "createSponsorship",

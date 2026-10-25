@@ -14,6 +14,10 @@ run, clearer to use, or more reliable are the most welcome.
 
 ## Local setup
 
+Use the Node.js version pinned in `.nvmrc`. With nvm, run `nvm install` and
+`nvm use` from the repository root. Node 26 does not bundle Corepack, so install
+the pinned package manager with `npm install --global pnpm@10.32.1`.
+
 ```bash
 docker compose up -d          # Postgres (pgvector), Mailpit, MinIO
 cp .env.example .env
@@ -23,6 +27,11 @@ pnpm dev                      # http://localhost:3243
 ```
 
 `/login` offers "Create the first admin" on an empty database.
+
+Keep `.nvmrc` and the Dockerfile's Node version aligned when updating Node.
+Runtime security fixes require rebuilding and redeploying the image. After
+deployment, verify `node --version` inside the running container; restarting an
+existing container does not update its Node runtime.
 
 ## Working on a change
 

@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 
-import { requireRole } from "@/lib/auth/guards";
+import { requireUser } from "@/lib/auth/guards";
+import { requireProjectCapability } from "@/lib/auth/project-access";
 import { db } from "@/lib/db";
 import { projectMembers, projects } from "@/lib/db/schema";
 
@@ -24,7 +25,7 @@ export async function addProjectMember(
   userId: string,
   projectRoleId: string
 ) {
-  await requireRole("manager");
+  await requireProjectCapability(projectId);
   if (!userId || !projectRoleId) return;
   const [created] = await db
     .insert(projectMembers)
@@ -49,7 +50,11 @@ export async function addProjectMember(
 }
 
 export async function removeProjectMember(memberId: string) {
-  await requireRole("manager");
+  await requireUser();
+  const [member] = await db.select({ projectId: projectMembers.projectId }).from(projectMembers)
+    .where(eq(projectMembers.id, memberId)).limit(1);
+  if (!member) return;
+  await requireProjectCapability(member.projectId);
   const [row] = await db
     .delete(projectMembers)
     .where(eq(projectMembers.id, memberId))

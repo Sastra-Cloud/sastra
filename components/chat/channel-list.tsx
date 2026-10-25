@@ -37,6 +37,7 @@ import { NewDirectMessagePopover } from "./new-direct-message-popover";
 const RECENT_PROJECT_LIMIT = 12;
 
 export function ChannelList({
+  currentUserId,
   channels,
   directMessages,
   directCandidates,
@@ -45,6 +46,7 @@ export function ChannelList({
   activeProjectId,
   canCreate = false,
 }: {
+  currentUserId: string;
   channels: ChannelListItem[];
   directMessages: DirectMessageListItem[];
   directCandidates: DirectMessageCandidate[];
@@ -184,7 +186,7 @@ export function ChannelList({
         onNavigate={handleTeamNavigate}
         action={
           canCreate && !normalizedQuery ? (
-            <CreateChannelDialog candidates={directCandidates} />
+            <CreateChannelDialog candidates={directCandidates} currentUserId={currentUserId} />
           ) : undefined
         }
       />

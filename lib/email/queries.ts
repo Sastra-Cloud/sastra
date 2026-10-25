@@ -286,7 +286,7 @@ export async function getThread(
 ): Promise<{ thread: ThreadSummary; messages: ThreadMessage[] } | null> {
   await requireRole("manager");
   const [thread] = await db
-    .select(summaryColumns)
+    .select({ ...summaryColumns, reviewLabels: correspondenceReviewLabels() })
     .from(emailThreads)
     .leftJoin(projects, eq(projects.id, emailThreads.projectId))
     .leftJoin(rightsHolders, eq(rightsHolders.id, emailThreads.holderId))

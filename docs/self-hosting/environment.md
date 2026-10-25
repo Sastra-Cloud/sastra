@@ -58,3 +58,12 @@ An explicitly enrolled installation can configure `SASTRA_SUPPORT_URL`, `SASTRA_
 Enrollment is independent of hosted billing. Setting these variables does not enable subscription mode, seat limits, AI credit caps, or hosted scheduling. The internal Coolify pilot can therefore use private support while preserving its existing behavior. Revoke or remove enrollment to return to community links.
 
 Requests are visible to their reporter, workspace admins, the cloud account owner, and support operators. Diagnostics are reviewed before submission and attachments are explicitly selected. Security reports still follow `SECURITY.md`.
+
+### Lectio integration
+
+Project sync and shared sign-in with the managed Lectio platform require an eligible
+paid Sastra Cloud workspace or a deployment explicitly managed and approved by the
+Sastra operator. Other self-hosted installations explain this restriction in
+Settings; copying hosted environment values cannot grant access. Lectio verifies
+the instance against the private Cloud registry and, for Cloud subscriptions, current
+production billing. Operator-managed approval is private, explicit, and revocable.

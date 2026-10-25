@@ -7,6 +7,7 @@ import { MotionProvider } from "@/components/motion/motion-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { PwaProvider } from "@/components/pwa/pwa-provider";
+import { appleStartupImages } from "@/lib/pwa/apple-startup-images";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -36,11 +37,15 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "default",
     title: "Sastra",
+    startupImage: appleStartupImages,
   },
   icons: {
     // iOS Home Screen icon (opaque; iOS applies its own rounded-corner mask).
     apple: "/icons/apple-touch-icon.png",
   },
+  // `appleWebApp.capable` only emits the standard `mobile-web-app-capable`, but iOS still
+  // keys apple-touch-startup-image launch screens off the Apple-prefixed tag.
+  other: { "apple-mobile-web-app-capable": "yes" },
 };
 
 export const viewport: Viewport = {

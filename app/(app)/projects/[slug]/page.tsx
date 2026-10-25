@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 
 import { AlertTriangle, ArrowRight, ShieldCheck } from "lucide-react";
 
+import { hasProjectCapability } from "@/lib/auth/project-access";
 import { getSession } from "@/lib/auth/guards";
 import { can } from "@/lib/auth/policy";
 import {
@@ -182,8 +183,9 @@ export default async function ProjectOverviewPage({
   // Manager-only health band — members pay no extra fetch cost.
   const session = await getSession();
   const isManager =
-    can(session?.user ?? null, "project.edit");
-  const sponsorshipFunds = isManager && project.kind === "book" &&
+    !!session && await hasProjectCapability(session.user, project.id, "project.edit");
+  const workspaceManager = can(session?.user, "workspace.manage");
+  const sponsorshipFunds = workspaceManager && project.kind === "book" &&
     moduleEnabled((await getWorkspaceSettings()).enabledModules, "sponsorships")
     ? await listProjectSponsorshipFunds(project.id) : [];
   const canViewCorrespondence = can(
@@ -198,8 +200,10 @@ export default async function ProjectOverviewPage({
     : [[], []];
 
   let band: ReactNode = null;
-  let projectCompleteByDate: string | null = null;
-  if (isManager && !projectClosed) {
+  let projectCompleteByDate: string | null = isManager && !workspaceManager
+    ? (await listProjectRightsStatus(project.id))[0]?.completeByDate ?? null
+    : null;
+  if (workspaceManager && !projectClosed) {
     const [
       fundingSummary,
       rightsStatus,
@@ -345,6 +349,8 @@ export default async function ProjectOverviewPage({
       {isManager ? (
         <ProjectSettingsDialog
           key={settingsOpen ? "settings-open" : "settings-closed"}
+          canDeleteProject={workspaceManager}
+          canManagePublishing={workspaceManager}
           projectId={project.id}
           projectSlug={project.slug}
           projectTitle={project.title}
@@ -469,7 +475,7 @@ export default async function ProjectOverviewPage({
                         Checked {timeAgo(project.healthComputedAt)}
                       </span>
                     ) : null}
-                    {isManager ? <RefreshHealthButton projectId={project.id} /> : null}
+                    {workspaceManager ? <RefreshHealthButton projectId={project.id} /> : null}
                   </span>
                 </div>
                 <ul className="divide-y border-y bg-background/60">
@@ -527,7 +533,7 @@ export default async function ProjectOverviewPage({
                   </div>
                 ) : null}
               </div>
-            ) : isManager && !projectClosed ? (
+            ) : workspaceManager && !projectClosed ? (
               <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
                 {project.healthComputedAt ? (
                   <span>Health checked {timeAgo(project.healthComputedAt)}</span>

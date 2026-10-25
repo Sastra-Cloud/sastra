@@ -59,6 +59,9 @@ features; the application is this repository.
 
 ## Local development
 
+Use the Node.js version pinned in [`.nvmrc`](./.nvmrc) and pnpm 10.32.1.
+See [local setup](./CONTRIBUTING.md#local-setup) for installation commands.
+
 ```bash
 docker compose up -d      # Postgres (pgvector), Mailpit (http://localhost:8025), MinIO
 cp .env.example .env      # defaults already target the local containers

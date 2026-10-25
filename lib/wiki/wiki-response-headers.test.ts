@@ -4,7 +4,7 @@ import nextConfig from "../../next.config";
 
 describe("Wiki response headers", () => {
   it("allows external players to receive the site origin", async () => {
-    const rules = await nextConfig.headers?.();
+    const rules = await nextConfig("phase-development-server").headers?.();
     const wikiRule = rules?.find((rule) => rule.source === "/wiki/:path*");
 
     expect(wikiRule?.headers).toContainEqual({

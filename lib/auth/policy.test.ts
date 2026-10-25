@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   can,
+  canInProject,
   canAssignTeamRole,
   canManage,
   canManageTeamRole,
@@ -79,6 +80,23 @@ describe("canManage", () => {
     expect(canManage("manager")).toBe(true);
     expect(canManage("member")).toBe(false);
     expect(canManage({ role: "manager" })).toBe(true);
+  });
+});
+
+describe("project management grants", () => {
+  it("adds project controls only for the assigned project, preserving the workspace role", () => {
+    for (const capability of ["project.edit", "tasks.manage", "comments.moderate"] as const) {
+      expect(canInProject("member", capability, "assigned", ["assigned", "second"])).toBe(true);
+      expect(canInProject("member", capability, "other", ["assigned"])).toBe(false);
+      expect(canInProject("member", capability, null, ["assigned"])).toBe(false);
+      expect(canInProject("member", capability, "assigned", [])).toBe(false);
+      expect(canInProject("unknown", capability, "assigned", ["assigned"])).toBe(false);
+      expect(canInProject("manager", capability, "other", [])).toBe(true);
+    }
+    for (const capability of ["workspace.manage", "correspondence.view", "budget.edit", "rights.edit", "print.manage", "donations.manage", "ai.configure"] as const) {
+      expect(canInProject("member", capability, "assigned", ["assigned"])).toBe(false);
+      expect(can("member", capability)).toBe(false);
+    }
   });
 });
 

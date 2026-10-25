@@ -10,7 +10,7 @@ import { notify } from "@/lib/notifications";
 import { logActivity } from "@/lib/activity/log";
 import { formatDate } from "@/lib/format";
 import type { PodcastStage } from "@/lib/episodes/workflow";
-import { lockTaskQueues, nextTaskRank, touchTaskQueue } from "./queue-service";
+import { type TaskTransaction, lockTaskQueues, nextTaskRank, touchTaskQueue } from "./queue-service";
 
 /** Notify a newly-assigned user (skips self-assignment). */
 export async function notifyAssignment(
@@ -64,6 +64,7 @@ export async function revalidateForTask(projectId: string | null) {
 }
 
 export type InsertTaskValues = {
+  lectioManaged?: boolean;
   projectId?: string | null;
   printRunId?: string | null;
   printPaymentId?: string | null;
@@ -103,13 +104,37 @@ export async function insertTaskRow(
     notifyAssignment?: boolean;
   }
 ): Promise<string> {
-  const status = values.status ?? "todo";
   const created = await db.transaction(async (tx) => {
+    return insertTaskInTransaction(tx, values, opts.actorId);
+  });
+
+  const id = created.id;
+  if (opts.notifyAssignment !== false) {
+    await notifyAssignment(id, values.assignedTo ?? null, opts.actorId ?? "");
+  }
+  if (opts.activitySummary && opts.actorId) {
+    await logActivity({
+      actorId: opts.actorId,
+      projectId: values.projectId ?? null,
+      entityType: "task",
+      entityId: id,
+      action: "create",
+      summary: opts.activitySummary,
+    });
+  }
+  if (opts.revalidate !== false) await revalidateForTask(values.projectId ?? null);
+  return id;
+}
+
+/** Transactional core; callers persist their own durable effects in the same transaction. */
+export async function insertTaskInTransaction(tx: TaskTransaction, values: InsertTaskValues, actorId: string | null) {
+  const status = values.status ?? "todo";
     await lockTaskQueues(tx, [values.assignedTo ?? null]);
     const rank = await nextTaskRank(tx, values.assignedTo ?? null);
     const [row] = await tx
       .insert(tasks)
       .values({
+        lectioManaged: values.lectioManaged ?? false,
         projectId: values.projectId ?? null,
         printRunId: values.printRunId ?? null,
         printPaymentId: values.printPaymentId ?? null,
@@ -131,28 +156,10 @@ export async function insertTaskRow(
         driveFolderName: values.driveFolderName ?? null,
         driveFolderUrl: values.driveFolderUrl ?? null,
         completedAt: status === "done" ? new Date() : null,
-        createdBy: opts.actorId,
+        createdBy: actorId,
         sourceRecurringTaskId: values.sourceRecurringTaskId ?? null,
       })
       .returning({ id: tasks.id });
-    await touchTaskQueue(tx, values.assignedTo ?? null, opts.actorId);
+    await touchTaskQueue(tx, values.assignedTo ?? null, actorId);
     return row;
-  });
-
-  const id = created.id;
-  if (opts.notifyAssignment !== false) {
-    await notifyAssignment(id, values.assignedTo ?? null, opts.actorId ?? "");
-  }
-  if (opts.activitySummary && opts.actorId) {
-    await logActivity({
-      actorId: opts.actorId,
-      projectId: values.projectId ?? null,
-      entityType: "task",
-      entityId: id,
-      action: "create",
-      summary: opts.activitySummary,
-    });
-  }
-  if (opts.revalidate !== false) await revalidateForTask(values.projectId ?? null);
-  return id;
 }

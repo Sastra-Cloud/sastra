@@ -2,7 +2,7 @@
 title: "Settings"
 category: "Settings"
 roles: [member, manager, admin]
-keywords: [modules, sponsorships, sponsorship funds, enable module, disable module, without AI, missing AI key, self-hosted AI, search settings, find a setting, email assistant preferences, active email preferences, personal, publishing, AI usage, document learning, pause learning, reviewed examples, voice dictionary, project roles, IANA, pending invitations, file space, storage, storage full, out of space, upload limit, your plan, manage plan, people limit, billing address, partner address, invoice description, settings, setup, profile, timezone, languages, currency, invoice issuer, payment instructions, invoice numbering, organization donation fee, organization fee, admin fee, donation deduction, net available, templates, avatar, team, invite, roles, super admin, publishers, printers, email, default cc, cc recipients, outbound email defaults, dictionary, voice, ai, model, model routing, fallback models, Haiku, Sonnet, GPT, Gemini, DeepSeek, budget, costs, usage, cloudflare, r2, openrouter, ai key, api key, openrouter key, credits, ai credits, credits used up, buy credits, branding, logo, workspace, organization identity, aliases, internal domains, mobile settings, planning capacity, projects at once, project duration, completion date planner, work path, work paths, creative path, project type capacity, books at once, articles podcasts and video, guidance, show helpful guidance, guided setup, tips, hide tips, expert mode, security, passkey, fingerprint, trusted browser, two factor, dependency audit, security updates, check again, run security check, GitHub Actions, fast AI pre-checks, pre-check, typesafe, jev, skip AI calls]
+keywords: [project manager, assigned project management, modules, sponsorships, sponsorship funds, enable module, disable module, without AI, missing AI key, self-hosted AI, search settings, find a setting, email assistant preferences, active email preferences, personal, publishing, AI usage, document learning, pause learning, reviewed examples, voice dictionary, project roles, IANA, pending invitations, file space, storage, storage full, out of space, upload limit, your plan, manage plan, people limit, billing address, partner address, invoice description, settings, setup, profile, timezone, languages, currency, invoice issuer, payment instructions, invoice numbering, organization donation fee, organization fee, admin fee, donation deduction, net available, templates, avatar, team, invite, roles, super admin, publishers, printers, email, default cc, cc recipients, outbound email defaults, dictionary, voice, ai, model, model routing, fallback models, Haiku, Sonnet, GPT, Gemini, DeepSeek, budget, costs, usage, cloudflare, r2, openrouter, ai key, api key, openrouter key, credits, ai credits, credits used up, buy credits, branding, logo, workspace, organization identity, aliases, internal domains, mobile settings, planning capacity, projects at once, project duration, completion date planner, work path, work paths, creative path, project type capacity, books at once, articles podcasts and video, guidance, show helpful guidance, guided setup, tips, hide tips, expert mode, security, passkey, fingerprint, trusted browser, two factor, dependency audit, security updates, check again, run security check, GitHub Actions, fast AI pre-checks, pre-check, typesafe, jev, skip AI calls]
 order: 140
 summary: "Search personal and shared settings, manage Profile email preferences, workspace defaults, publishing, AI availability, and model routing."
 ---
@@ -185,12 +185,18 @@ defaults can then be completed in **Settings → Workspace**.
 
 Self-hosted administrators configure email, file storage, correspondence, Google, push, and scheduling credentials in the deployment environment. The OpenRouter AI key can be stored encrypted in Settings → AI, or provided by the server environment. Hosted teams contact Sastra Cloud support for connection setup.
 
-## Two kinds of "role"
+## Workspace roles and project management
 
 Don't confuse the two: your **workspace role** (member / manager / admin / super
 admin) controls
 **permissions**; a **project role label** (translator, editor, …) is just a job
 label with no authority attached.
+
+A workspace manager can separately assign a member as a **Project manager**
+from that project's **Members** tab. This grants management of the assigned
+project's details, schedule, stages, tasks, and members. It does not change their
+workspace role or grant finance, publishing, Correspondence, or Settings access.
+Only workspace managers can change these assignments. See **Projects & stages**.
 
 ## Optional modules
 

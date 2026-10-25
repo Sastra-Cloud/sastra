@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { updateProfile, type TeamState } from "@/lib/team/actions";
+import { thrownMutationMessage } from "@/lib/actions/result";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FieldError, FieldErrorsContext } from "./field-errors";
@@ -21,7 +22,7 @@ export function ProfileForm({
   const router = useRouter();
   const [state, action, pending] = useActionState(async (previous: TeamState, data: FormData): Promise<TeamState> => {
     try { return await updateProfile(previous, data); }
-    catch { return { error: "Could not save your profile. Your changes are still here; try again." }; }
+    catch (error) { return { error: thrownMutationMessage(error, "Could not save your profile. Your changes are still here; try again.") }; }
   }, {} as TeamState);
 
 

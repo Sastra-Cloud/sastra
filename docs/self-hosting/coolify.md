@@ -25,3 +25,6 @@ Either way:
 - Add one **Scheduled Task** that runs every minute:
   `curl -fsS -X POST "http://127.0.0.1:3000/api/cron/tick" -H "Authorization: Bearer $CRON_SECRET"`
 - Use `/api/health` as the container healthcheck.
+
+See [deployment updates](./updates.md) for handling long-lived PWA windows,
+version skew, and rolling-deployment limits.

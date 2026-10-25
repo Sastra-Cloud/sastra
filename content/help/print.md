@@ -169,6 +169,9 @@ an invoice PDF or photo**; AI extracts the quantity and pricing for your review 
 it is never auto-accepted. Files that can't be parsed show under **extraction
 issues** with a retry.
 
+File extraction and retries require a completed upload that the manager can
+currently open. Donation-import files cannot be used as print quote sources.
+
 Quote and payment attachments can carry a note beneath the filename. Use it for
 version details, corrections, approval context, or payment follow-up; editing a
 note does not alter the file or accept the related quote or payment.
@@ -190,8 +193,9 @@ overwritten; a later email with changed figures creates a new suggestion for
 review. New deposit, final, and full-invoice suggestions stay visible for review
 even after older quote alternatives have been collapsed.
 
-When you **accept** a quote, that run's other quotes collapse so the accepted
-figures stay front and center. A **Show N other quotes** button reveals the
+When you **accept** a quote, unreviewed suggestions remain visible so you can
+finish checking every price. Other reviewed or rejected quotes collapse. A
+**Show N other quotes** button reveals the
 alternatives — and the **Compare print quantities** panel — again for
 reference; **Hide other quotes** tucks them back away.
 

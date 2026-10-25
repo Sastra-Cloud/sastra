@@ -189,6 +189,23 @@ Table and enum exports parsed from `lib/db/schema/`.
 
 - `documentImports` (pgTable)
 
+## `lib/db/schema/lectio-sso.ts`
+
+- `lectioSsoClients` (pgTable)
+- `lectioSsoIdentities` (pgTable)
+- `lectioSsoSessions` (pgTable)
+
+## `lib/db/schema/lectio.ts`
+
+- `lectioConnections` (pgTable)
+- `lectioOperations` (pgTable)
+- `lectioPairingIntents` (pgTable)
+- `lectioProjectLinks` (pgTable)
+- `lectioRequests` (pgTable)
+- `lectioTaskLinks` (pgTable)
+- `lectioUnitLinks` (pgTable)
+- `lectioUserLinks` (pgTable)
+
 ## `lib/db/schema/notifications.ts`
 
 - `notificationEmailQueue` (pgTable)
@@ -231,6 +248,7 @@ Table and enum exports parsed from `lib/db/schema/`.
 
 - `phases` (pgTable)
 - `podcastStageSettings` (pgTable)
+- `projectManagers` (pgTable)
 - `projectMembers` (pgTable)
 - `projects` (pgTable)
 - `units` (pgTable)

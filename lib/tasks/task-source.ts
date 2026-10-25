@@ -1,16 +1,18 @@
 import type { TaskRow } from "./queries";
 
 type SourceTask = Pick<TaskRow,
+  "lectioManaged" |
   "printPaymentId" | "royaltyPaymentId" | "licenseFeePaymentId" | "mouInvoicePaymentId" | "mouInvoiceSharedGroupId" | "approvalAssignmentId" | "printRunId"
 >;
 
 export function isSourceControlledTask(task: SourceTask): boolean {
-  return Boolean(task.printPaymentId || task.royaltyPaymentId || task.licenseFeePaymentId || task.mouInvoicePaymentId || task.approvalAssignmentId);
+  return Boolean(task.lectioManaged || task.printPaymentId || task.royaltyPaymentId || task.licenseFeePaymentId || task.mouInvoicePaymentId || task.approvalAssignmentId);
 }
 
 export function taskSourceLink(task: SourceTask, projectSlug: string | null):
   { href: string; label: string } | null {
   if (!projectSlug) return null;
+  if (task.lectioManaged) return { href: `/projects/${projectSlug}/translation`, label: "Open translation workflow" };
   if (task.printPaymentId) return {
     href: `/projects/${projectSlug}/print#payment-${task.printPaymentId}`,
     label: "Open printer payment",

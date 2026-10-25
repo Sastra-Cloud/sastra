@@ -18,16 +18,18 @@ function seconds(from: Date, to: Date): number {
 /**
  * Start a timer for `userId` on `taskId` (single running timer: any existing one
  * is stopped first). No-op if already running on this task. Atomic via txn; the
- * partial unique index guards races.
+ * partial unique index guards races. Client actions pass their authorization
+ * transaction so the task's visibility lock also covers the timer write.
  */
 export async function startTimerFor(
   userId: string,
   taskId: string,
   source: "timer" | "auto",
-  note?: string | null
+  note?: string | null,
+  client: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0] = db,
 ): Promise<void> {
   const now = new Date();
-  await db.transaction(async (tx) => {
+  await client.transaction(async (tx) => {
     const [running] = await tx
       .select({
         id: timeEntries.id,

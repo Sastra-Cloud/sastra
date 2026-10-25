@@ -1,6 +1,7 @@
 "use client";
 
 import { confirmDialog } from "@/lib/dialog-requests";
+import { thrownMutationMessage } from "@/lib/actions/result";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -66,7 +67,16 @@ const selectClass =
 const fieldClass = "h-11 sm:h-9";
 const saveButtonClass = "h-11 w-full sm:h-9 sm:w-auto";
 
+type SettingResult = { error?: string; created?: number; removed?: number; preserved?: number };
+
+async function saveSetting(action: Promise<SettingResult>): Promise<SettingResult> {
+  try { return await action; }
+  catch (error) { return { error: thrownMutationMessage(error, "Could not save. Try again.") }; }
+}
+
 type ProjectSettingsDialogProps = {
+  canDeleteProject?: boolean;
+  canManagePublishing?: boolean;
   projectId: string;
   projectSlug: string;
   projectTitle: string;
@@ -97,6 +107,8 @@ function addMonthsYmd(ymd: string, months: number) {
 }
 
 export function ProjectSettingsDialog({
+  canDeleteProject = false,
+  canManagePublishing = false,
   projectId,
   projectSlug,
   projectTitle,
@@ -167,7 +179,7 @@ export function ProjectSettingsDialog({
   const canSaveTitle =
     syncedTitleState.draft.trim().length > 0 &&
     syncedTitleState.draft.trim() !== syncedTitleState.saved;
-  const canDelete = typedTitle === visibleProjectTitle;
+  const canDelete = canDeleteProject && typedTitle === visibleProjectTitle;
 
   const effectiveDuration = schedDur ? Number(schedDur) : defaultDurationMonths;
   const plannedEnd = schedStart ? addMonthsYmd(schedStart, effectiveDuration) : null;
@@ -360,7 +372,7 @@ export function ProjectSettingsDialog({
                   const next = statusVal;
                   setSavedStatus(next);
                   startStatus(async () => {
-                    const result = await updateProjectStatus(projectId, next);
+                    const result = await saveSetting(updateProjectStatus(projectId, next));
                     if (result.error) {
                       setSavedStatus(previous);
                       setStatusVal(previous);
@@ -411,7 +423,7 @@ export function ProjectSettingsDialog({
               disabled={kindPending || kindVal === savedKind}
               onClick={() =>
                 startKind(async () => {
-                  const res = await updateProjectKind(projectId, kindVal);
+                  const res = await saveSetting(updateProjectKind(projectId, kindVal));
                   if (res.error) {
                     toast.error(res.error);
                   } else {
@@ -459,7 +471,7 @@ export function ProjectSettingsDialog({
                     const confirmed = (await confirmDialog(`Change every video to the ${VIDEO_PRODUCTION_MODE_LABELS[mode]} workflow? Untouched obsolete generated tasks will be removed; tasks with assignments, progress, comments, time, or files will be preserved as ordinary tasks.`));
                     if (!confirmed) return;
                     startMode(async () => {
-                      const result = await updateVideoProductionMode(projectId, mode);
+                      const result = await saveSetting(updateVideoProductionMode(projectId, mode));
                       if (result.error) {
                         toast.error(result.error);
                         return;
@@ -480,7 +492,7 @@ export function ProjectSettingsDialog({
           ) : null}
         </section>
 
-        {savedKind === "book" ? (
+        {canManagePublishing && savedKind === "book" ? (
           <section className="grid gap-4 border-b py-5">
             <div>
               <h3 className="text-sm font-semibold">Print plan and funding</h3>
@@ -522,7 +534,7 @@ export function ProjectSettingsDialog({
                   const next = fundingVal;
                   setSavedFunding(next);
                   startFunding(async () => {
-                    const result = await updateProjectPrintFunding(projectId, next);
+                    const result = await saveSetting(updateProjectPrintFunding(projectId, next));
                     if (result.error) {
                       setSavedFunding(previous);
                       setFundingVal(previous);
@@ -583,7 +595,7 @@ export function ProjectSettingsDialog({
                 const res = await updateProjectSchedule(projectId, {
                   startDate: schedStart || null,
                   estimatedDurationMonths: schedDur ? Math.max(1, Math.min(120, Number(schedDur))) : null,
-                });
+                }).catch((error) => ({ ok: false, error: { message: thrownMutationMessage(error, "Could not save. Try again.") } } as const));
                 if (res.ok) {
                   toast.success("Schedule saved");
                   router.refresh();
@@ -614,7 +626,7 @@ export function ProjectSettingsDialog({
             className={`${saveButtonClass} justify-self-stretch sm:justify-self-end`}
             disabled={languagePending}
             onClick={() => startLanguage(async () => {
-              const result = await updateProjectLanguages(projectId, { sourceLanguage: source, targetLanguage: target, targetLanguageTitle: localizedTitle });
+              const result = await saveSetting(updateProjectLanguages(projectId, { sourceLanguage: source, targetLanguage: target, targetLanguageTitle: localizedTitle }));
               if (result.error) toast.error(result.error); else { toast.success("Project languages saved"); router.refresh(); }
             })}
           >
@@ -623,7 +635,7 @@ export function ProjectSettingsDialog({
           </Button>
         </section>
 
-          <section className="py-5">
+          {canDeleteProject ? <section className="py-5">
             <details className="group rounded-xl border border-destructive/30 bg-destructive/5">
               <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset [&::-webkit-details-marker]:hidden">
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
@@ -697,7 +709,7 @@ export function ProjectSettingsDialog({
                 </Button>
               </form>
             </details>
-          </section>
+          </section> : null}
         </div>
       </SheetContent>
     </Sheet>

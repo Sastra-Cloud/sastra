@@ -33,15 +33,45 @@ your database without running a local Postgres container. See the
 
 ## Files without an external bucket
 
+Both Compose bundles offer an optional `minio` profile. Before starting it,
+set `MINIO_ROOT_PASSWORD` in `.env` to a unique generated secret (for example,
+generate one with `openssl rand -base64 32`). Set `R2_ACCESS_KEY_ID` to
+`MINIO_ROOT_USER` (default `sastra`) and `R2_SECRET_ACCESS_KEY` to the same
+password. Single-quote values in `.env` if they contain literal `$` characters
+so Compose does not interpolate them.
+
 ```bash
 docker compose --profile minio up -d
 ```
 
-and in `.env` set `R2_ENDPOINT=http://minio:9000`, `R2_ACCESS_KEY_ID` to
-`MINIO_ROOT_USER`, and `R2_SECRET_ACCESS_KEY` to `MINIO_ROOT_PASSWORD`. Browser
-uploads go straight to the bucket, so the MinIO API port must also be reachable
-from users' browsers through your proxy (or use an external bucket, which is
-simpler for a public installation).
+An unset or empty `MINIO_ROOT_PASSWORD` makes both the MinIO server and bucket
+initializer exit before contacting storage or starting MinIO. The server may
+keep restarting under its restart policy. Set the password and matching
+`R2_SECRET_ACCESS_KEY`, then rerun the command above to recreate the services
+with the updated settings. There is no fallback password. Deployments without
+the `minio` profile do not need this variable.
+
+Browser uploads go straight to the bucket. Set `R2_ENDPOINT` to the MinIO API
+URL reachable from both the app and users' browsers, such as
+`https://files.example.org`. Route that hostname through your HTTPS proxy to
+MinIO's API on port 9000, and configure bucket CORS for your app's origin.
+`http://minio:9000` works inside the Compose network but is not a usable endpoint
+for remote browsers. The bundle does not publish port 9000 on the host; your
+proxy must join the Compose network or use an explicitly configured API port
+mapping. An external S3-compatible bucket is another option for a public
+installation.
+
+The administration console is separate from the S3 API. Its host port binds to
+`127.0.0.1:9001` by default (`MINIO_CONSOLE_PORT` changes the port, not the bind
+address). For remote administration, forward it over SSH:
+
+```bash
+ssh -N -L 9001:127.0.0.1:9001 user@your-server
+```
+
+Then open `http://localhost:9001`. Adjust the forwarded remote port if you change
+`MINIO_CONSOLE_PORT`. Browser uploads need access to port 9000 through the API
+proxy, not the administration console.
 
 ## Upgrading
 

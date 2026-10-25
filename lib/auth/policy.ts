@@ -2,15 +2,9 @@
  * Central authorization policy. Pure (no server-only, no DB) so both server
  * pages and client components can consult it, and so it's table-testable.
  *
- * Model (deliberate, single trusting team): roles are WORKSPACE-level
- * (super admin > admin > manager > member). Every capability below currently requires
- * manager+ — the point of this module is the single seam: if a capability ever
- * diverges (e.g. per-project managers, member-editable tasks boards), it
- * changes here once, not across a dozen pages.
- *
- * Explicitly out of scope: per-project membership authority. `projectMembers`
- * describes who does what work, not who may edit. Changing that is a product
- * decision; `assertProjectAccess` in guards.ts is the other half of that seam.
+ * Workspace roles remain global. Explicit project-manager grants add only the
+ * capabilities below, for the assigned project. Project job labels never grant
+ * authority. Server enforcement lives in project-access.ts.
  */
 
 export type TeamRole = "super_admin" | "admin" | "manager" | "member";
@@ -90,6 +84,23 @@ export function canManage(
   user: string | { role?: string | null } | null | undefined
 ): boolean {
   return can(user, "workspace.manage");
+}
+
+export type ProjectCapability = "project.edit" | "tasks.manage" | "comments.moderate";
+const PROJECT_CAPABILITIES: ReadonlySet<Capability> = new Set<ProjectCapability>([
+  "project.edit", "tasks.manage", "comments.moderate",
+]);
+
+/** `managedProjectIds` must come from server-resolved grants, never client input. */
+export function canInProject(
+  user: string | { role?: string | null } | null | undefined,
+  capability: Capability,
+  projectId: string | null | undefined,
+  managedProjectIds: readonly string[]
+): boolean {
+  if (can(user, capability)) return true;
+  const role = asTeamRole(typeof user === "string" ? user : user?.role);
+  return role === "member" && PROJECT_CAPABILITIES.has(capability) && !!projectId && managedProjectIds.includes(projectId);
 }
 
 /** Admin-level access, including the super-admin role. */

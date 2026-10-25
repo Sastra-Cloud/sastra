@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 
-import { requireRole, requireUser } from "@/lib/auth/guards";
-import { can } from "@/lib/auth/policy";
+import { requireUser } from "@/lib/auth/guards";
+import { hasProjectCapability, requireProjectCapability } from "@/lib/auth/project-access";
 import { db } from "@/lib/db";
 import { projectUpdates, projects } from "@/lib/db/schema";
 import { logActivity } from "@/lib/activity/log";
@@ -29,7 +29,7 @@ export async function postProjectUpdate(
   slug: string,
   body: string
 ) {
-  const { user } = await requireRole("manager");
+  const { user } = await requireProjectCapability(projectId);
   const text = bodySchema.parse(body);
   const [row] = await db
     .insert(projectUpdates)
@@ -88,7 +88,11 @@ export async function markProjectUpdateRecommendationsReviewed(
   id: string,
   slug: string
 ) {
-  await requireRole("manager");
+  await requireUser();
+  const [update] = await db.select({ projectId: projectUpdates.projectId }).from(projectUpdates)
+    .where(eq(projectUpdates.id, id)).limit(1);
+  if (!update) return;
+  await requireProjectCapability(update.projectId);
   await db
     .update(projectUpdates)
     .set({ aiReviewedAt: new Date() })
@@ -102,12 +106,12 @@ export async function markProjectUpdateRecommendationsReviewed(
 export async function deleteProjectUpdate(id: string, slug: string) {
   const { user } = await requireUser();
   const [row] = await db
-    .select({ userId: projectUpdates.userId, parentId: projectUpdates.parentId })
+    .select({ userId: projectUpdates.userId, parentId: projectUpdates.parentId, projectId: projectUpdates.projectId })
     .from(projectUpdates)
     .where(eq(projectUpdates.id, id))
     .limit(1);
   if (!row) return;
-  const isManager = can(user, "comments.moderate");
+  const isManager = await hasProjectCapability(user, row.projectId, "comments.moderate");
   if (row.userId !== user.id && !isManager) return;
   if (row.parentId === null) {
     await db.delete(projectUpdates).where(eq(projectUpdates.parentId, id));

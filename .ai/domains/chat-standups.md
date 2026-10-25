@@ -12,6 +12,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `app/(app)/standups/loading.tsx`
 - `app/(app)/standups/page.tsx`
 - `app/api/chat/[channelId]/recent/route.ts`
+- `app/api/chat/channels/route.ts`
 - `app/api/chat/reactions/route.ts`
 - `app/api/cron/standup/route.ts`
 - `components/chat/channel-list.tsx`
@@ -44,6 +45,8 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/chat/voice-recorder.tsx`
 - `lib/chat/access.ts`
 - `lib/chat/actions.ts`
+- `lib/chat/channel-draft.test.ts`
+- `lib/chat/channel-draft.ts`
 - `lib/chat/channel-members.test.ts`
 - `lib/chat/channel-members.ts`
 - `lib/chat/chat-index.test.ts`
@@ -52,12 +55,14 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/chat/composer-key.ts`
 - `lib/chat/conversation.test.ts`
 - `lib/chat/conversation.ts`
+- `lib/chat/create-channel-route.test.ts`
 - `lib/chat/direct.test.ts`
 - `lib/chat/direct.ts`
 - `lib/chat/edit-actions.test.ts`
 - `lib/chat/edit-actions.ts`
 - `lib/chat/edit-state.test.ts`
 - `lib/chat/edit-state.ts`
+- `lib/chat/file-access.test.ts`
 - `lib/chat/frequent-reactions-route.test.ts`
 - `lib/chat/haptics-dom.test.ts`
 - `lib/chat/haptics.test.ts`
@@ -91,7 +96,4 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/standup/config-actions.ts`
 - `lib/standup/engine.ts`
 - `lib/standup/heuristic.test.ts`
-- `lib/standup/heuristic.ts`
-- `lib/standup/insights.ts`
-- `lib/standup/queries.ts`
-- `lib/standup/view-queries.ts`
+... 4 more

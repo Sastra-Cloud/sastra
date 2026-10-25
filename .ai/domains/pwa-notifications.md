@@ -1,6 +1,6 @@
 # Domain: pwa-notifications
 
-Push subscriptions, notifications, presence, offline page, and browser instrumentation.
+Push subscriptions, notifications, presence, offline page, deployment recovery, and browser instrumentation.
 
 Read this when the task touches this domain. Use the file list as a starting map, then inspect the specific files you edit.
 
@@ -37,6 +37,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/notifications/overdue.ts`
 - `lib/notifications/push-gate.test.ts`
 - `lib/notifications/push-gate.ts`
+- `lib/notifications/push.test.ts`
 - `lib/notifications/push.ts`
 - `lib/notifications/queries.ts`
 - `lib/notifications/work-hours.test.ts`
@@ -51,3 +52,12 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/push/keys.ts`
 - `lib/push/setup-state.test.ts`
 - `lib/push/setup-state.ts`
+- `lib/push/subscription.test.ts`
+- `lib/push/subscription.ts`
+- `lib/pwa/apple-startup-images.ts`
+- `lib/pwa/client-update.test.ts`
+- `lib/pwa/client-update.ts`
+- `lib/pwa/deployment-guard.test.ts`
+- `lib/pwa/deployment-guard.ts`
+- `lib/pwa/pull-to-refresh.test.ts`
+- `lib/pwa/pull-to-refresh.ts`

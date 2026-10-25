@@ -30,6 +30,9 @@ projects. Completed and cancelled projects are kept out of this working list.
 Use **Find a conversation** to filter the sidebar by teammate, team channel,
 project, or project channel.
 
+On a phone, the conversation list fits the screen. Long names are shortened so
+the search field and project pin buttons stay visible.
+
 Select the pin button beside a project (**Pin project**) to keep it at the top
 of your sidebar; select it again (**Unpin project**) to let it move. Project
 pins are only for you. Pinned projects stay anchored at the top. Unpinned

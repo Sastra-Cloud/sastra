@@ -2,9 +2,9 @@
 title: "Install the app & turn on notifications"
 category: "Getting started"
 roles: [member, manager, admin]
-keywords: [download, blank window, mac download, file download, install, app, pwa, add to home screen, home screen, add to dock, dock, mac, macos, sonoma, desktop, notifications, push, enable notifications, turn on notifications, android, iphone, ipad, ios, safari, chrome, edge, test notification, devices, blocked notifications, focus, badge, offline]
+keywords: [download, blank window, mac download, file download, install, app, pwa, update, refresh, new version, server action, draft, add to home screen, home screen, add to dock, dock, mac, macos, sonoma, desktop, notifications, push, enable notifications, turn on notifications, android, iphone, ipad, ios, safari, chrome, edge, test notification, devices, blocked notifications, focus, badge, offline]
 order: 20
-summary: "Install Sastra on Mac, desktop, Android, or iPhone. Turn on notifications and fix blocked alerts."
+summary: "Install Sastra, refresh after updates, turn on notifications, and fix blocked alerts."
 ---
 
 Sastra runs in your browser but can also be **installed** like an app, so it
@@ -83,6 +83,27 @@ testing. If a Mac test does not appear, check **System Settings → Notification
 
 You can remove a device from that list if you stop using it — it simply stops
 receiving push until you turn notifications on again from that device.
+
+## When an update is available
+
+An open browser tab or installed app can keep an older version after Sastra is
+updated. Sastra checks when you return to the app and before sending changes
+that depend on that version.
+
+If you see **Update available**, copy any unsaved work and choose **Refresh app**.
+Sastra never refreshes your window automatically. It waits for running changes
+to finish before allowing this refresh. You do not need to reinstall the app.
+
+If a change needs the new version, Sastra asks you to refresh. After refreshing,
+check whether the change was saved before trying again. Messages, payments,
+invitations, and emails are never sent again automatically after an update or
+connection error.
+
+The **New channel** form keeps its name and selected teammates if creation
+fails. When you use **Refresh app** with that form open, Sastra keeps its draft
+in the same tab for up to one hour. The form reopens after refresh; review it
+and choose **Create channel** yourself. Other unsaved forms and file attachments
+are not kept across a full refresh, so copy or finish that work first.
 
 ## If notifications are blocked
 

@@ -2,6 +2,7 @@ import "server-only";
 
 import { appHostname } from "@/lib/app-hostname";
 import { vapidPublicKeyFromEnv } from "@/lib/push/keys";
+import { pushSubscriptionSchema } from "@/lib/push/subscription";
 
 import webpush from "web-push";
 import { and, eq } from "drizzle-orm";
@@ -145,8 +146,14 @@ async function sendToSubscriptions(
   const results = await Promise.allSettled(
     subs.map(async (s) => {
       try {
+        // Revalidate stored rows too, including subscriptions saved before this
+        // restriction existed. Invalid destinations must never reach transport.
+        const subscription = pushSubscriptionSchema.parse({
+          endpoint: s.endpoint,
+          keys: { p256dh: s.p256dh, auth: s.auth },
+        });
         await webpush.sendNotification(
-          { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+          subscription,
           json,
           { TTL: 86_400, urgency: "high", timeout: 10_000 }
         );
@@ -243,21 +250,22 @@ export async function saveSubscription(
   sub: IncomingSubscription,
   userAgent?: string
 ): Promise<void> {
+  const validated = pushSubscriptionSchema.parse(sub);
   await db
     .insert(pushSubscriptions)
     .values({
       userId,
-      endpoint: sub.endpoint,
-      p256dh: sub.keys.p256dh,
-      auth: sub.keys.auth,
+      endpoint: validated.endpoint,
+      p256dh: validated.keys.p256dh,
+      auth: validated.keys.auth,
       userAgent: userAgent ?? null,
     })
     .onConflictDoUpdate({
       target: pushSubscriptions.endpoint,
       set: {
         userId,
-        p256dh: sub.keys.p256dh,
-        auth: sub.keys.auth,
+        p256dh: validated.keys.p256dh,
+        auth: validated.keys.auth,
         userAgent: userAgent ?? null,
         failureCount: 0,
         lastSeenAt: new Date(),

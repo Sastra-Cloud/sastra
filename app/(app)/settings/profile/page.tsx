@@ -1,3 +1,9 @@
+import { Suspense } from "react";
+import { eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { lectioSsoIdentities } from "@/lib/db/schema";
+import { ssoChoices } from "@/lib/lectio/sso-service";
+import { LectioSignInButtons } from "@/components/lectio/shared-sign-in";
 import { getEmailPreferences } from "@/lib/notifications/queries";
 import { listEmailTaskRulesForUser } from "@/lib/email/task-rule-queries";
 import { EmailTaskPreferences } from "@/components/settings/email-task-preferences";
@@ -16,6 +22,9 @@ export const dynamic = "force-dynamic";
 export default async function ProfileSettingsPage() {
   const { user } = await requireUser();
   const [autoStartTimer, prefs, rules] = await Promise.all([isAutoStartEnabled(user.id), getEmailPreferences(user.id), listEmailTaskRulesForUser(user.id)]);
+  const choices = await ssoChoices();
+  // Account owners can remove an existing binding even while its connection is disabled.
+  const identities = await db.select({ id: lectioSsoIdentities.id }).from(lectioSsoIdentities).where(eq(lectioSsoIdentities.userId, user.id));
   const guidanceEnabled =
     (user as { guidanceLevel?: string }).guidanceLevel !== "off";
   return (
@@ -24,6 +33,7 @@ export default async function ProfileSettingsPage() {
         <p className="text-sm font-medium">Profile photo</p>
         <AvatarUploader name={user.name} image={user.image ?? null} />
       </div>
+      {choices.length || identities.length ? <Suspense><LectioSignInButtons connections={choices} link linked={identities.length > 0} /></Suspense> : null}
       <ProfileForm
         defaultName={user.name}
         defaultTimezone={user.timezone ?? "UTC"}

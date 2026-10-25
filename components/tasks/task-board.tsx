@@ -330,6 +330,7 @@ export function TaskBoard({
                     id={t.id}
                     dragging={t.id === activeId}
                     disabled={
+                      (!canManage && t.assignedTo !== currentUserId && !(!t.assignedTo && t.createdBy === currentUserId)) ||
                       isSourceControlledTask(t) ||
                       taskCreation.isPending(t.id)
                     }
@@ -345,7 +346,7 @@ export function TaskBoard({
                           : () => setDetailTask(t)
                       }
                       onTitle={
-                        taskCreation.isPending(t.id)
+                        taskCreation.isPending(t.id) || (!canManage && t.assignedTo !== currentUserId && !(!t.assignedTo && t.createdBy === currentUserId))
                           ? undefined
                           : (title) =>
                               run(
@@ -361,7 +362,7 @@ export function TaskBoard({
                               )
                       }
                       menu={
-                        taskCreation.isPending(t.id) ? undefined : (
+                        taskCreation.isPending(t.id) || (!canManage && t.assignedTo !== currentUserId && !(!t.assignedTo && t.createdBy === currentUserId)) ? undefined : (
                           <TaskMenu
                             task={t}
                             assignees={assignees}

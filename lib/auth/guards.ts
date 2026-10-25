@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { projectMembers } from "@/lib/db/schema";
+import { projectManagers, projectMembers } from "@/lib/db/schema";
 import { auth } from "./auth";
 // Role ranking + capability policy live in lib/auth/policy.ts (pure, testable);
 // these guards are the server-side enforcement wrapped around that table.
@@ -21,9 +21,10 @@ import { isAdminAssured } from "./assurance";
 
 export type { TeamRole };
 
-/** Resolve the current session (or null). The single source of identity. */
+/** Resolve an active application session (or null). The single source of identity. */
 export async function getSession() {
-  return auth.api.getSession({ headers: await headers() });
+  const session = await auth.api.getSession({ headers: await headers() });
+  return session?.user.isActive ? session : null;
 }
 
 /** Require a logged-in, active user; redirect to /login otherwise. */
@@ -66,8 +67,8 @@ export async function requireDonationAdmin() {
 
 /**
  * Authorization model (deliberate, single trusting team):
- * every authenticated teammate may **view** any project, while **mutations**
- * stay role-gated through `requireRole("manager")`. This helper is the seam for
+ * Every authenticated teammate may view projects. Project mutations use
+ * project-access.ts; workspace and finance mutations keep their global guards. This helper is the seam for
  * tightening view access later: pass `{ membersOnly: true }` to restrict a page
  * to the project's members (admins/managers always allowed). No caller uses
  * `membersOnly` today, so current behavior is unchanged.
@@ -91,6 +92,10 @@ export async function assertProjectAccess(
       )
     )
     .limit(1);
-  if (!member) redirect("/dashboard");
+  if (!member) {
+    const [manager] = await db.select({ id: projectManagers.id }).from(projectManagers)
+      .where(and(eq(projectManagers.projectId, projectId), eq(projectManagers.userId, session.user.id))).limit(1);
+    if (!manager) redirect("/dashboard");
+  }
   return session;
 }

@@ -1,11 +1,8 @@
 import "server-only";
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
-import {
-  MEMBER_SCOPED_CHANNEL_KINDS,
-  isMemberScopedChannel,
-} from "@/lib/chat/channel-members";
+import { isMemberScopedChannel } from "@/lib/chat/channel-members";
 import { db } from "@/lib/db";
 import {
   chatChannelMembers,
@@ -13,11 +10,13 @@ import {
   chatMessages,
   fileAttachments,
   files,
+  tasks,
   user,
 } from "@/lib/db/schema";
-import { isAdminRole } from "@/lib/auth/policy";
+import { canManage, isAdminRole } from "@/lib/auth/policy";
 import { getWorkspaceSettings } from "@/lib/workspace/queries";
 import { moduleEnabled } from "@/lib/workspace/modules";
+import { canReadTask } from "@/lib/tasks/access";
 
 export async function canAccessChannel(channelId: string, userId: string) {
   const [channel] = await db
@@ -79,8 +78,9 @@ export async function requireMessageAccess(messageId: string, userId: string) {
 }
 
 /**
- * Workspace files are otherwise shared, but a file attached to a member-scoped
- * conversation (direct, custom or standup) inherits its access boundary.
+ * Private chat files retain their membership boundary even when also attached
+ * elsewhere. Other files need an accessible attachment surface: correspondence
+ * and agreement groups require managers, and standalone tasks keep their scope.
  */
 export async function canAccessFile(fileId: string, userId: string) {
   const [file] = await db
@@ -94,7 +94,7 @@ export async function canAccessFile(fileId: string, userId: string) {
     .leftJoin(user, eq(user.id, userId))
     .where(eq(files.id, fileId))
     .limit(1);
-  if (!file) return false;
+  if (!file || file.isActive !== true) return false;
   if (file.purpose === "donation_import") {
     return file.isActive === true && isAdminRole(file.role);
   }
@@ -104,28 +104,24 @@ export async function canAccessFile(fileId: string, userId: string) {
   }
 
   const attachments = await db
-    .select({ id: fileAttachments.id })
+    .select({
+      targetType: fileAttachments.targetType,
+      channelKind: chatChannels.kind,
+      memberUserId: chatChannelMembers.userId,
+      taskId: tasks.id,
+      taskProjectId: tasks.projectId,
+      taskAssignedTo: tasks.assignedTo,
+      taskCreatedBy: tasks.createdBy,
+    })
     .from(fileAttachments)
-    .where(eq(fileAttachments.fileId, fileId))
-    .limit(1);
-  if (attachments.length === 0) {
-    return (
-      file.uploadedBy === userId ||
-      (file.isActive === true && isAdminRole(file.role))
-    );
-  }
-
-  const scopedAttachments = await db
-    .select({ memberUserId: chatChannelMembers.userId })
-    .from(fileAttachments)
-    .innerJoin(
+    .leftJoin(
       chatMessages,
       and(
         eq(fileAttachments.targetType, "message"),
         eq(fileAttachments.targetId, chatMessages.id)
       )
     )
-    .innerJoin(chatChannels, eq(chatChannels.id, chatMessages.channelId))
+    .leftJoin(chatChannels, eq(chatChannels.id, chatMessages.channelId))
     .leftJoin(
       chatChannelMembers,
       and(
@@ -133,15 +129,46 @@ export async function canAccessFile(fileId: string, userId: string) {
         eq(chatChannelMembers.userId, userId)
       )
     )
-    .where(
-      and(
-        eq(fileAttachments.fileId, fileId),
-        inArray(chatChannels.kind, [...MEMBER_SCOPED_CHANNEL_KINDS])
-      )
-    );
+    .leftJoin(tasks, and(
+      eq(fileAttachments.targetType, "task"),
+      eq(fileAttachments.targetId, tasks.id)
+    ))
+    .where(eq(fileAttachments.fileId, fileId));
 
-  return (
-    scopedAttachments.length === 0 ||
-    scopedAttachments.some((row) => row.memberUserId === userId)
-  );
+  if (attachments.length === 0) {
+    return file.uploadedBy === userId || isAdminRole(file.role);
+  }
+  const privateChats = attachments.filter((attachment) =>
+    attachment.targetType === "message" && attachment.channelKind !== null &&
+    isMemberScopedChannel(attachment.channelKind));
+  if (privateChats.length > 0 && !privateChats.some((attachment) => attachment.memberUserId === userId)) {
+    return false;
+  }
+  return attachments.some((attachment) => {
+    switch (attachment.targetType) {
+      case "email_message":
+      case "agreement_group":
+        return canManage(file.role);
+      case "message":
+        return attachment.channelKind !== null && (
+          !isMemberScopedChannel(attachment.channelKind) ||
+          attachment.memberUserId === userId
+        );
+      case "task":
+        return attachment.taskId !== null && canReadTask({ id: userId, role: file.role }, {
+          projectId: attachment.taskProjectId,
+          assignedTo: attachment.taskAssignedTo,
+          createdBy: attachment.taskCreatedBy,
+        });
+      case "rights_item":
+      case "budget_item":
+      case "project":
+      case "print_quote":
+      case "print_payment":
+      case "license_fee_payment":
+        return true;
+      default:
+        return false;
+    }
+  });
 }

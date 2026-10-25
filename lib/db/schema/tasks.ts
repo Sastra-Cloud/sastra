@@ -41,6 +41,7 @@ export const tasks = pgTable(
     unitId: uuid("unit_id").references(() => units.id, { onDelete: "set null" }),
     // Set only for the standard task representing one podcast production stage.
     podcastStage: podcastStage("podcast_stage"),
+    lectioManaged: boolean("lectio_managed").notNull().default(false),
     title: text("title").notNull(),
     description: text("description"),
     status: taskStatus("status").notNull().default("todo"),

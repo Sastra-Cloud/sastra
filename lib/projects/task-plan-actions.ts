@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { and, asc, eq } from "drizzle-orm";
 
-import { requireRole } from "@/lib/auth/guards";
+import { requireProjectCapability } from "@/lib/auth/project-access";
 import { db } from "@/lib/db";
 import {
   fileAttachments,
@@ -104,7 +104,7 @@ export async function generateProjectPlan(
   projectId: string,
   opts: { kind: Kind; detail: Detail; instructions?: string }
 ): Promise<GeneratePlanResult> {
-  const { user } = await requireRole("manager");
+  const { user } = await requireProjectCapability(projectId);
   try {
     const [signals, workspaceContext] = await Promise.all([
       gatherSignals(projectId, opts.kind, opts.detail),
@@ -164,7 +164,7 @@ const CHAPTERS_PROMPT = `Extract the ordered list of chapter / section titles fr
 export async function extractChaptersFromDocument(
   projectId: string
 ): Promise<{ chapters?: string[]; error?: string }> {
-  const { user } = await requireRole("manager");
+  const { user } = await requireProjectCapability(projectId);
   const [att] = await db
     .select({ r2Key: files.r2Key, mime: files.mimeType, name: files.originalName })
     .from(fileAttachments)
@@ -257,7 +257,7 @@ export async function commitProjectPlan(
     startDate?: string;
   }
 ): Promise<{ error?: string }> {
-  const { user } = await requireRole("manager");
+  const { user } = await requireProjectCapability(projectId);
   const [proj] = await db
     .select({ slug: projects.slug, startDate: projects.startDate })
     .from(projects)

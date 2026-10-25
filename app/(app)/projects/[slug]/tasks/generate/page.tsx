@@ -6,7 +6,8 @@ import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { ChevronLeft } from "lucide-react";
 
-import { requireRole } from "@/lib/auth/guards";
+import { requireUser } from "@/lib/auth/guards";
+import { requireProjectCapability } from "@/lib/auth/project-access";
 import { db } from "@/lib/db";
 import {
   fileAttachments,
@@ -26,7 +27,7 @@ export default async function GeneratePlanPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { user } = await requireRole("manager");
+  const { user } = await requireUser();
   const aiReady = (await getOpenRouterApiKeyStatus()).source !== "none";
   const { slug } = await params;
 
@@ -36,6 +37,7 @@ export default async function GeneratePlanPage({
     .where(eq(projects.slug, slug))
     .limit(1);
   if (!project) notFound();
+  await requireProjectCapability(project.id, "tasks.manage");
 
   const [users, roles, unitRows, taskRow, docRow] = await Promise.all([
     listAssignableUsers(),

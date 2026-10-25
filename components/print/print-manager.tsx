@@ -98,7 +98,6 @@ import {
 } from "@/lib/print/quote-economics";
 import {
   invoiceFilePaymentKinds,
-  isPendingPrintInvoiceReview,
 } from "@/lib/print/quote-reconciliation";
 import {
   quoteHasProductionSpecs,
@@ -2349,7 +2348,7 @@ function RunPanel({
     const revealPayment = () => {
       let target: string;
       try { target = decodeURIComponent(window.location.hash.slice(1)); } catch { return; }
-      if (target === `print-run-${run.id}-details` || payments.some(payment => target === `payment-${payment.id}`)) {
+      if (target === `print-run-${run.id}-details` || payments.some(payment => target === `payment-${payment.id}`) || quotes.some(quote => target === `print-quote-${quote.id}`)) {
         setCollapsed(false);
         requestAnimationFrame(() => document.getElementById(target)?.scrollIntoView({ block: "start" }));
       }
@@ -2357,7 +2356,7 @@ function RunPanel({
     revealPayment();
     window.addEventListener("hashchange", revealPayment);
     return () => window.removeEventListener("hashchange", revealPayment);
-  }, [run.id, payments]);
+  }, [run.id, payments, quotes]);
   const [editing, setEditing] = useState(false);
   const [qtyDraft, setQtyDraft] = useState("");
   const [showOtherQuotes, setShowOtherQuotes] = useState(false);
@@ -2456,20 +2455,20 @@ function RunPanel({
     .filter(Boolean)
     .join(" · ");
 
-  // Once a quote is accepted, keep the focus on it and tuck the alternatives
-  // (suggested/rejected/other tiers) behind a toggle for a cleaner view.
+  // Unreviewed tiers stay visible even after another price is accepted.
+  // Otherwise Correspondence can count a suggestion hidden behind this toggle.
   const acceptedQuotes = quotes.filter((q) => q.reviewStatus === "accepted");
   const otherQuotes = quotes.filter((q) => q.reviewStatus !== "accepted");
-  const pendingInvoiceReviews = otherQuotes.filter(isPendingPrintInvoiceReview);
+  const pendingQuoteReviews = otherQuotes.filter((quote) => quote.reviewStatus === "suggested");
   const hiddenOtherQuotes = otherQuotes.filter(
-    (quote) => !isPendingPrintInvoiceReview(quote)
+    (quote) => quote.reviewStatus !== "suggested"
   );
   const hasAccepted = acceptedQuotes.length > 0;
   const visibleQuotes = !hasAccepted
     ? quotes
     : showOtherQuotes
       ? [...acceptedQuotes, ...otherQuotes]
-      : [...acceptedQuotes, ...pendingInvoiceReviews];
+      : [...acceptedQuotes, ...pendingQuoteReviews];
 
   return (
     <Card size={collapsed ? "sm" : "default"}>
@@ -3001,8 +3000,8 @@ function RunPanel({
                   : "Final Payment";
 
                 return (
-                  <li key={quote.id} className="space-y-2 px-3 py-3">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                  <li key={quote.id} id={`print-quote-${quote.id}`} className="@container/quote space-y-2 scroll-mt-24 px-3 py-3">
+                    <div className="flex flex-col gap-3 @[46rem]/quote:flex-row @[46rem]/quote:items-start">
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-medium">

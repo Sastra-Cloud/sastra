@@ -35,3 +35,6 @@ export * from "./agreement-chat";
 export * from "./donations";
 export * from "./hosted";
 export * from "./sponsorships";
+export * from "./lectio";
+
+export * from "./lectio-sso";

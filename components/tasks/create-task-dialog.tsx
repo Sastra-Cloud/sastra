@@ -1,5 +1,7 @@
 "use client";
 
+import { useProjectManagement } from "@/components/projects/project-management-provider";
+
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
@@ -60,7 +62,7 @@ export function CreateTaskDialog({
   defaultDescription = "",
   defaultPriority = "medium",
   triggerLabel = "Add task",
-  canManage = false,
+  canManage: providedCanManage = false,
   onOptimisticCreate,
 }: {
   projectId?: string;
@@ -81,6 +83,8 @@ export function CreateTaskDialog({
   /** Lets an owning task surface show a temporary task while the save settles. */
   onOptimisticCreate?: (request: OptimisticTaskCreateRequest) => void;
 }) {
+  const [chosenProjectId, setChosenProjectId] = useState("");
+  const { canManageProject: canManage, currentUserId } = useProjectManagement(projectId ?? chosenProjectId, providedCanManage);
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const submissionInFlight = useRef(false);
@@ -348,7 +352,7 @@ export function CreateTaskDialog({
                     defaultValue={defaultAssignee}
                   >
                     <option value="">Unassigned</option>
-                    {assignees.map((a) => (
+                    {assignees.filter((assignee) => canManage || !currentUserId || assignee.id === currentUserId).map((a) => (
                       <option key={a.id} value={a.id}>
                         {a.name}
                       </option>
@@ -373,7 +377,8 @@ export function CreateTaskDialog({
                       id="t-project"
                       name="projectId"
                       className={selectClass}
-                      defaultValue=""
+                      value={chosenProjectId}
+                      onChange={(event) => setChosenProjectId(event.target.value)}
                     >
                       <option value="">None — general task</option>
                       {projects.map((p) => (

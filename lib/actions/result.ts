@@ -1,3 +1,5 @@
+import { APP_UPDATE_MESSAGE, isAppUpdateError } from "@/lib/pwa/deployment-guard";
+
 export type MutationError = {
   message: string;
   code?: string;
@@ -27,5 +29,6 @@ export function mutationErrorMessage(
 }
 
 export function thrownMutationMessage(error: unknown, fallback: string) {
+  if (isAppUpdateError(error)) return APP_UPDATE_MESSAGE;
   return error instanceof Error && error.message ? error.message : fallback;
 }

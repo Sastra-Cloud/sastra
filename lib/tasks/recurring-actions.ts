@@ -5,6 +5,7 @@ import { and, eq, gte, isNull, ne, or } from "drizzle-orm";
 import { z } from "zod";
 
 import { requireRole, requireUser } from "@/lib/auth/guards";
+import { requireProjectCapability } from "@/lib/auth/project-access";
 import { db } from "@/lib/db";
 import {
   licenseObligations,
@@ -74,7 +75,7 @@ export async function updateRecurringTask(
   id: string,
   input: RecurringTaskUpdateInput
 ): Promise<{ error?: string }> {
-  const { user } = await requireRole("manager");
+  const { user } = await requireUser();
   const parsed = updateSchema.safeParse(input);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -97,6 +98,8 @@ export async function updateRecurringTask(
     .where(eq(recurringTasks.id, id))
     .limit(1);
   if (!rule) return { error: "Recurring task not found" };
+  await requireProjectCapability(rule.projectId, "tasks.manage");
+  if (rule.sourceObligationId) await requireRole("manager");
   if (rule.sourceObligationId && d.frequency === "weekly") {
     return {
       error: "License report schedules can be monthly, quarterly, or annual",
@@ -231,6 +234,7 @@ export async function createRecurringTask(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
   const d = parsed.data;
+  if (d.assigneeId && d.assigneeId !== user.id) await requireProjectCapability(d.projectId, "tasks.manage");
 
   const [row] = await db
     .insert(recurringTasks)
@@ -255,8 +259,20 @@ export async function createRecurringTask(
   return { id: row.id };
 }
 
+async function requireRecurringControl(id: string) {
+  const { user } = await requireUser();
+  const [rule] = await db.select({ projectId: recurringTasks.projectId, assigneeId: recurringTasks.assigneeId,
+    createdBy: recurringTasks.createdBy, sourceObligationId: licenseObligations.id })
+    .from(recurringTasks).leftJoin(licenseObligations, eq(licenseObligations.recurringTaskId, recurringTasks.id))
+    .where(eq(recurringTasks.id, id)).limit(1);
+  if (!rule) throw new Error("Recurring task not found. Refresh and try again.");
+  if (rule.sourceObligationId) await requireRole("manager");
+  const ownWork = rule.assigneeId === user.id || (!rule.assigneeId && rule.createdBy === user.id);
+  if (!ownWork) await requireProjectCapability(rule.projectId, "tasks.manage");
+}
+
 export async function setRecurringTaskActive(id: string, active: boolean) {
-  await requireUser();
+  await requireRecurringControl(id);
   const [row] = await db
     .update(recurringTasks)
     .set({ isActive: active, updatedAt: new Date() })
@@ -267,7 +283,7 @@ export async function setRecurringTaskActive(id: string, active: boolean) {
 }
 
 export async function deleteRecurringTask(id: string) {
-  await requireUser();
+  await requireRecurringControl(id);
   // The rule has no FK cascade to the tasks it materialized. Remove its still-
   // open occurrences (a wrongly-anchored reminder shouldn't linger after the
   // rule is deleted); completed occurrences stay as history.

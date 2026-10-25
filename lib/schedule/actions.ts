@@ -5,6 +5,7 @@ import { and, eq, isNotNull, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { requireRole } from "@/lib/auth/guards";
+import { requireProjectCapability } from "@/lib/auth/project-access";
 import { db } from "@/lib/db";
 import { projects, tasks } from "@/lib/db/schema";
 import { logActivity } from "@/lib/activity/log";
@@ -43,7 +44,7 @@ export async function updateProjectSchedule(
   projectId: string,
   input: z.input<typeof updateSchema>
 ): Promise<ActionResult> {
-  const { user } = await requireRole("manager");
+  const { user } = await requireProjectCapability(projectId);
   const data = updateSchema.parse(input);
 
   const set: ProjectSet = { updatedAt: new Date() };
@@ -113,7 +114,7 @@ export async function setProjectDueDate(
   projectId: string,
   dueDate: string | null
 ): Promise<ActionResult<{ slug: string }>> {
-  const { user } = await requireRole("manager");
+  const { user } = await requireProjectCapability(projectId);
   const parsed = dueDateSchema.safeParse(dueDate);
   if (!parsed.success) {
     return {

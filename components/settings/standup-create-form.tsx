@@ -3,6 +3,7 @@
 import { startTransition, useActionState } from "react";
 
 import { createStandup, type StandupState } from "@/lib/standup/config-actions";
+import { thrownMutationMessage } from "@/lib/actions/result";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,7 @@ export function StandupCreateForm({ defaultTimezone }: { defaultTimezone: string
       try { return await createStandup(previous, data); }
       catch (error) {
         if (error && typeof error === "object" && "digest" in error && String(error.digest).startsWith("NEXT_REDIRECT")) throw error;
-        return { error: "Could not create the check-in. Your settings are still here; try again." };
+        return { error: thrownMutationMessage(error, "Could not create the check-in. Your settings are still here; try again.") };
       }
     },
     {} as StandupState

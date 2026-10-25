@@ -1,5 +1,7 @@
 "use client";
 
+import { useProjectManagement } from "@/components/projects/project-management-provider";
+
 import { showTaskCompleted } from "@/lib/tasks/completion-feedback";
 import { SectionDisclosure } from "@/components/section-disclosure";
 import { confirmDialog } from "@/lib/dialog-requests";
@@ -122,11 +124,14 @@ function TaskDetailDialogContent({
   assignees,
   projects = [],
   currentUserId,
-  canManage,
+  canManage: providedCanManage,
   onClose,
   onOptimisticUpdate,
   onOptimisticDelete,
 }: TaskDetailDialogProps & { task: TaskRow }) {
+  const { canManageProject, canManageWorkspace } = useProjectManagement(task.projectId, providedCanManage);
+  const canManage = isSourceControlledTask(task) && !task.lectioManaged ? canManageWorkspace : canManageProject;
+  const canEditTask = canManage || task.assignedTo === currentUserId || (!task.assignedTo && task.createdBy === currentUserId);
   const router = useRouter();
   const pathname = usePathname();
   const [saving, startSave] = useTransition();
@@ -199,7 +204,7 @@ function TaskDetailDialogContent({
   const sourceLink = taskSourceLink(t, projectSlug);
 
   function save(statusOverride?: string) {
-    if (queueInFlight.current) return;
+    if (queueInFlight.current || !canEditTask) return;
     if (isApprovalTask) {
       if (!canManage) return;
       if (dueDate === (t.dueDate ?? "")) {
@@ -503,7 +508,7 @@ function TaskDetailDialogContent({
                     <Input
                       id="d-title"
                       value={title}
-                      readOnly={isApprovalTask || isSharedInvoiceTask}
+                      readOnly={!canEditTask || isApprovalTask || isSharedInvoiceTask}
                       onChange={(e) => setTitle(e.target.value)}
                     />
                   </div>
@@ -514,7 +519,7 @@ function TaskDetailDialogContent({
                       rows={7}
                       className="min-h-36 resize-y"
                       value={description}
-                      readOnly={isApprovalTask || isSharedInvoiceTask}
+                      readOnly={!canEditTask || isApprovalTask || isSharedInvoiceTask}
                       onChange={(e) => setDescription(e.target.value)}
                     />
                   </div>
@@ -698,7 +703,7 @@ function TaskDetailDialogContent({
                         <ExternalLink className="size-3.5" />
                       </a>
                     ) : null}
-                    {canManage && t.sourceEmailThreadId ? (
+                    {canManageWorkspace && t.sourceEmailThreadId ? (
                       <a
                         href={`/correspondence/${t.sourceEmailThreadId}`}
                         className="inline-flex min-h-9 items-center rounded-md px-3 text-sm font-medium hover:bg-muted"
@@ -735,7 +740,7 @@ function TaskDetailDialogContent({
                         id="d-project"
                         className={selectClass}
                         value={projectId}
-                        disabled={isControlledTask}
+                        disabled={!canEditTask || isControlledTask}
                         onChange={(e) => setProjectId(e.target.value)}
                       >
                         <option value="">None — general task</option>
@@ -753,7 +758,7 @@ function TaskDetailDialogContent({
                       id="d-status"
                       className={selectClass}
                       value={status}
-                      disabled={isControlledTask}
+                      disabled={!canEditTask || isControlledTask}
                       onChange={(e) => setStatus(e.target.value)}
                     >
                       {TASK_STATUS_ORDER.map((s) => (
@@ -769,7 +774,7 @@ function TaskDetailDialogContent({
                       id="d-assignee"
                       className={selectClass}
                       value={assignedTo}
-                      disabled={isApprovalTask || isSharedInvoiceTask || !canManage}
+                      disabled={t.lectioManaged || isApprovalTask || isSharedInvoiceTask || !canManage}
                       onChange={(e) => setAssignedTo(e.target.value)}
                     >
                       <option value="">Unassigned</option>
@@ -786,7 +791,7 @@ function TaskDetailDialogContent({
                       id="d-due"
                       type="date"
                       value={dueDate}
-                      disabled={isApprovalTask && !canManage}
+                      disabled={!canEditTask || (isApprovalTask && !canManage)}
                       required={isApprovalTask && canManage}
                       onChange={(e) => setDueDate(e.target.value)}
                     />
@@ -811,7 +816,7 @@ function TaskDetailDialogContent({
                       id="d-priority"
                       className={selectClass}
                       value={priority}
-                      disabled={isApprovalTask || isSharedInvoiceTask}
+                      disabled={!canEditTask || isApprovalTask || isSharedInvoiceTask}
                       onChange={(e) => setPriority(e.target.value as Priority)}
                     >
                       <option value="low">Low</option>
@@ -825,7 +830,7 @@ function TaskDetailDialogContent({
                     type="checkbox"
                     className="size-4"
                     checked={isMilestone}
-                    disabled={isApprovalTask || isSharedInvoiceTask}
+                    disabled={!canEditTask || isApprovalTask || isSharedInvoiceTask}
                     onChange={(e) => setIsMilestone(e.target.checked)}
                   />
                   Mark as milestone
@@ -973,7 +978,7 @@ function TaskDetailDialogContent({
         </div>
 
         <DialogFooter className="mx-0 mb-0 flex-col rounded-none border-t bg-muted/30 px-5 py-4 sm:flex-row sm:px-6">
-          {!isApprovalTask ? (
+          {!canEditTask ? <Button onClick={onClose}>Close</Button> : !isApprovalTask ? (
             <>
               {!isControlledTask ? (
                 <Button variant="destructive" onClick={removeTask} disabled={saving} className="sm:mr-auto">

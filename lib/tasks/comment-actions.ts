@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { requireUser } from "@/lib/auth/guards";
-import { can } from "@/lib/auth/policy";
+import { hasProjectCapability } from "@/lib/auth/project-access";
 import { db } from "@/lib/db";
 import { projects, taskComments, tasks } from "@/lib/db/schema";
 import { notifyMentions } from "@/lib/mentions/notify";
@@ -12,6 +12,7 @@ import {
   listAllMentionTargets,
   listProjectMentionTargets,
 } from "@/lib/mentions/roster";
+import { assertTaskAccess, withTaskAccess } from "./access";
 import { getTaskComments, type TaskComment } from "./queries";
 import { revalidateForTask } from "./create";
 
@@ -45,14 +46,15 @@ async function taskContext(taskId: string): Promise<TaskContext | null> {
 
 /** Read a task's comments (thin authed wrapper so the client dialog can fetch). */
 export async function listTaskComments(taskId: string): Promise<TaskComment[]> {
-  await requireUser();
+  const { user } = await requireUser();
+  await assertTaskAccess(taskId, user);
   return getTaskComments(taskId);
 }
 
 export async function addTaskComment(taskId: string, content: string) {
   const { user } = await requireUser();
   const text = contentSchema.parse(content);
-  const [created] = await db
+  const [created] = await withTaskAccess(taskId, user, "read", async (tx) => tx
     .insert(taskComments)
     .values({ taskId, userId: user.id, content: text })
     .returning({
@@ -60,7 +62,7 @@ export async function addTaskComment(taskId: string, content: string) {
       content: taskComments.content,
       createdAt: taskComments.createdAt,
       updatedAt: taskComments.updatedAt,
-    });
+    }));
 
   const ctx = await taskContext(taskId);
   if (text.includes("@")) {
@@ -99,10 +101,10 @@ export async function editTaskComment(commentId: string, content: string) {
     .where(eq(taskComments.id, commentId))
     .limit(1);
   if (!c || c.userId !== user.id) return;
-  await db
+  await withTaskAccess(c.taskId, user, "read", async (tx) => tx
     .update(taskComments)
     .set({ content: text, updatedAt: new Date() })
-    .where(eq(taskComments.id, commentId));
+    .where(eq(taskComments.id, commentId)));
   await revalidateForTask((await taskContext(c.taskId))?.projectId ?? null);
 }
 
@@ -115,8 +117,9 @@ export async function deleteTaskComment(commentId: string) {
     .where(eq(taskComments.id, commentId))
     .limit(1);
   if (!c) return;
-  const isManager = can(user, "comments.moderate");
+  const isManager = await hasProjectCapability(user, (await taskContext(c.taskId))?.projectId, "comments.moderate");
   if (c.userId !== user.id && !isManager) return;
-  await db.delete(taskComments).where(eq(taskComments.id, commentId));
+  await withTaskAccess(c.taskId, user, "read", async (tx) =>
+    tx.delete(taskComments).where(eq(taskComments.id, commentId)));
   await revalidateForTask((await taskContext(c.taskId))?.projectId ?? null);
 }

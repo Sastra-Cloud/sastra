@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { requireRole } from "@/lib/auth/guards";
+import { requireProjectCapability } from "@/lib/auth/project-access";
 import { db } from "@/lib/db";
 import { projects } from "@/lib/db/schema";
 
@@ -22,7 +22,7 @@ export async function setProjectDriveFolder(
   projectId: string,
   folder: z.infer<typeof folderSchema>
 ) {
-  await requireRole("manager");
+  await requireProjectCapability(projectId);
   const f = folderSchema.parse(folder);
   const [row] = await db
     .update(projects)
@@ -40,7 +40,7 @@ export async function setProjectDriveFolder(
 
 /** Remove a project's linked Drive folder. Manager+. */
 export async function clearProjectDriveFolder(projectId: string) {
-  await requireRole("manager");
+  await requireProjectCapability(projectId);
   const [row] = await db
     .update(projects)
     .set({

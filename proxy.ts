@@ -12,6 +12,7 @@ const PUBLIC_PREFIXES = [
   "/unsubscribe",
   "/api/unsubscribe", // token-authorized one-click unsubscribe
   "/api/auth",
+  "/api/integrations/lectio/v1", // independently HMAC-authorized integration endpoints
   "/api/cron", // protected by CRON_SECRET, not a session
   "/api/security/dependency-status", // protected by its webhook secret
   // Inbound email webhooks: signed with INBOUND_WEBHOOK_SECRET (generic) or

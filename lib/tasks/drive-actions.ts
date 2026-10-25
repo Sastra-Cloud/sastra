@@ -8,6 +8,7 @@ import { requireUser } from "@/lib/auth/guards";
 import { auth } from "@/lib/auth/auth";
 import { db } from "@/lib/db";
 import { account, projects, taskDriveFiles, tasks } from "@/lib/db/schema";
+import { assertTaskAccess, taskEditPredicate, withTaskAccess } from "./access";
 import { revalidateForTask } from "./create";
 
 export type DriveAttachContext = {
@@ -84,7 +85,7 @@ export async function addTaskDriveFile(
 ) {
   const { user } = await requireUser();
   const f = fileSchema.parse(file);
-  await db
+  await withTaskAccess(taskId, user, "edit", async (tx) => tx
     .insert(taskDriveFiles)
     .values({
       taskId,
@@ -95,18 +96,18 @@ export async function addTaskDriveFile(
       url: f.url,
       addedBy: user.id,
     })
-    .onConflictDoNothing();
+    .onConflictDoNothing());
   await revalidateForTask(await taskProjectId(taskId));
 }
 
 export async function removeTaskDriveFile(id: string) {
-  await requireUser();
-  const [row] = await db
-    .delete(taskDriveFiles)
-    .where(eq(taskDriveFiles.id, id))
-    .returning({ taskId: taskDriveFiles.taskId });
-  if (!row) return;
-  await revalidateForTask(await taskProjectId(row.taskId));
+  const { user } = await requireUser();
+  const [file] = await db.select({ taskId: taskDriveFiles.taskId })
+    .from(taskDriveFiles).where(eq(taskDriveFiles.id, id)).limit(1);
+  if (!file) return;
+  await withTaskAccess(file.taskId, user, "edit", async (tx) =>
+    tx.delete(taskDriveFiles).where(and(eq(taskDriveFiles.id, id), eq(taskDriveFiles.taskId, file.taskId))));
+  await revalidateForTask(await taskProjectId(file.taskId));
 }
 
 export type TaskDriveFile = {
@@ -121,7 +122,8 @@ export type TaskDriveFile = {
 export async function listTaskDriveFiles(
   taskId: string
 ): Promise<TaskDriveFile[]> {
-  await requireUser();
+  const { user } = await requireUser();
+  await assertTaskAccess(taskId, user);
   return db
     .select({
       id: taskDriveFiles.id,
@@ -147,7 +149,8 @@ export async function setTaskDriveFolder(
   taskId: string,
   folder: z.infer<typeof folderSchema>
 ) {
-  await requireUser();
+  const { user } = await requireUser();
+  await assertTaskAccess(taskId, user, "edit");
   const f = folderSchema.parse(folder);
   const [row] = await db
     .update(tasks)
@@ -157,14 +160,16 @@ export async function setTaskDriveFolder(
       driveFolderUrl: f.url,
       updatedAt: new Date(),
     })
-    .where(eq(tasks.id, taskId))
+    .where(taskEditPredicate(taskId, user))
     .returning({ projectId: tasks.projectId });
+  if (!row) throw new Error("Task not found or access denied.");
   await revalidateForTask(row?.projectId ?? null);
 }
 
 /** Clear a task's default working Drive folder. */
 export async function clearTaskDriveFolder(taskId: string) {
-  await requireUser();
+  const { user } = await requireUser();
+  await assertTaskAccess(taskId, user, "edit");
   const [row] = await db
     .update(tasks)
     .set({
@@ -173,8 +178,9 @@ export async function clearTaskDriveFolder(taskId: string) {
       driveFolderUrl: null,
       updatedAt: new Date(),
     })
-    .where(eq(tasks.id, taskId))
+    .where(taskEditPredicate(taskId, user))
     .returning({ projectId: tasks.projectId });
+  if (!row) throw new Error("Task not found or access denied.");
   await revalidateForTask(row?.projectId ?? null);
 }
 
@@ -195,7 +201,8 @@ export type TaskDriveTarget = {
 export async function getTaskDriveTarget(
   taskId: string
 ): Promise<TaskDriveTarget> {
-  await requireUser();
+  const { user } = await requireUser();
+  await assertTaskAccess(taskId, user);
   const [t] = await db
     .select({
       projectId: tasks.projectId,

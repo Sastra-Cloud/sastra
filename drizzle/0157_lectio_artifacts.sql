@@ -1,0 +1,1 @@
+ALTER TABLE "lectio_project_links" ADD COLUMN "deliver_files" boolean DEFAULT false NOT NULL;

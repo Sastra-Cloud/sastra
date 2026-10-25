@@ -1,4 +1,5 @@
 import "server-only";
+import { lectioSharedSignIn } from "./lectio-sso";
 
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -286,6 +287,7 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    lectioSharedSignIn(),
     magicLink({
       expiresIn: 60 * 5,
       disableSignUp: true,

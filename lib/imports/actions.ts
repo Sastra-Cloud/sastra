@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { revalidatePath } from "next/cache";
-import { and, asc, eq, inArray, isNull, lt, ne, notInArray, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNull, lt, ne, notInArray, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { requireRole } from "@/lib/auth/guards";
@@ -36,6 +36,7 @@ import {
   units,
 } from "@/lib/db/schema";
 import { runExtraction } from "./extraction";
+import { getAccessibleExtractionFile } from "./file-access";
 import { recordDocumentCase } from "@/lib/document-learning/service";
 import { syncBudgetApprovalState } from "@/lib/budget/approval-service";
 import {
@@ -91,25 +92,37 @@ import {
  */
 const STALE_PARSE_MS = 3 * 60 * 1000;
 
+const IMPORT_SOURCE_ERROR = "Source document unavailable. Check your file access before continuing.";
+
+async function hasImportSourceAccess(imp: { fileId: string | null }, actorId: string) {
+  return !!imp.fileId && !!(await getAccessibleExtractionFile(imp.fileId, actorId));
+}
+
+// PostgreSQL defaults may retain microseconds that JavaScript Dates cannot.
+// Match the observed millisecond; new attempts always advance past it.
+function importVersion(updatedAt: Date) {
+  return and(
+    gte(documentImports.updatedAt, updatedAt),
+    lt(documentImports.updatedAt, new Date(updatedAt.getTime() + 1))
+  );
+}
+
 /** Reject if `p` doesn't settle within `ms` — keeps a hung parse from sticking. */
 /** Create an import draft for an already-uploaded file; returns its id. */
 export async function createImportFromFile(
   fileId: string
 ): Promise<{ importId?: string; error?: string }> {
   const { user } = await requireRole("manager");
-  const [file] = await db
-    .select({ id: files.id })
-    .from(files)
-    .where(eq(files.id, fileId))
-    .limit(1);
-  if (!file) return { error: "File not found." };
+  if (!(await getAccessibleExtractionFile(fileId, user.id))) {
+    return { error: "File not available for import." };
+  }
 
   const [imp] = await db
     .insert(documentImports)
     .values({ fileId, status: "parsing", createdBy: user.id })
-    .returning({ id: documentImports.id });
+    .returning({ id: documentImports.id, updatedAt: documentImports.updatedAt });
   // Parse server-side after the response — survives the user navigating away.
-  after(() => runExtraction(imp.id));
+  after(() => runExtraction(imp.id, { actorUserId: user.id, updatedAt: imp.updatedAt }));
   revalidatePath("/projects/import");
   return { importId: imp.id };
 }
@@ -133,12 +146,9 @@ export async function createImportForPaymentInvoice(
   if (payment.sharedMouGroupId) {
     return { error: "Upload shared-agreement invoices from the agreement page." };
   }
-  const [file] = await db
-    .select({ id: files.id })
-    .from(files)
-    .where(eq(files.id, fileId))
-    .limit(1);
-  if (!file) return { error: "File not found." };
+  if (!(await getAccessibleExtractionFile(fileId, user.id))) {
+    return { error: "File not available for import." };
+  }
 
   const [imp] = await db
     .insert(documentImports)
@@ -149,8 +159,8 @@ export async function createImportForPaymentInvoice(
       status: "parsing",
       createdBy: user.id,
     })
-    .returning({ id: documentImports.id });
-  after(() => runExtraction(imp.id));
+    .returning({ id: documentImports.id, updatedAt: documentImports.updatedAt });
+  after(() => runExtraction(imp.id, { actorUserId: user.id, updatedAt: imp.updatedAt }));
   revalidatePath("/projects/import");
   return { importId: imp.id };
 }
@@ -164,7 +174,7 @@ export async function startParse(
   importId: string,
   opts?: { force?: boolean }
 ): Promise<{ error?: string; status?: string }> {
-  await requireRole("manager");
+  const { user } = await requireRole("manager");
   const [imp] = await db
     .select()
     .from(documentImports)
@@ -172,6 +182,7 @@ export async function startParse(
     .limit(1);
   if (!imp) return { error: "Import not found." };
   if (imp.status === "committed") return { error: "Already committed." };
+  if (!(await hasImportSourceAccess(imp, user.id))) return { error: IMPORT_SOURCE_ERROR };
   // `force` lets the review screen re-run extraction (e.g. to pick up a better
   // prompt); it overwrites the prior extraction.
   if (imp.status === "extracted" && !opts?.force) return { status: "extracted" };
@@ -181,11 +192,14 @@ export async function startParse(
     imp.status === "parsing" &&
     Date.now() - imp.updatedAt.getTime() < STALE_PARSE_MS;
   if (opts?.force || !fresh) {
-    await db
+    const [claimed] = await db
       .update(documentImports)
-      .set({ status: "parsing", error: null, errorKind: null, updatedAt: new Date() })
-      .where(eq(documentImports.id, importId));
-    after(() => runExtraction(importId));
+      .set({ status: "parsing", error: null, errorKind: null,
+        updatedAt: new Date(Math.max(Date.now(), imp.updatedAt.getTime() + 1)) })
+      .where(and(eq(documentImports.id, importId), eq(documentImports.status, imp.status), importVersion(imp.updatedAt)))
+      .returning({ updatedAt: documentImports.updatedAt });
+    if (!claimed) return { error: "This import changed. Refresh before trying again." };
+    after(() => runExtraction(importId, { actorUserId: user.id, updatedAt: claimed.updatedAt }));
   }
   return { status: "parsing" };
 }
@@ -198,30 +212,34 @@ export async function startParse(
  * won't double-kick the same row.
  */
 export async function resumeStalledImports(): Promise<{ resumed: number }> {
-  await requireRole("manager");
+  const { user } = await requireRole("manager");
   const cutoff = new Date(Date.now() - STALE_PARSE_MS);
-  const resumed = await db
-    .update(documentImports)
-    .set({ updatedAt: new Date() })
-    .where(
-      and(
-        eq(documentImports.status, "parsing"),
-        lt(documentImports.updatedAt, cutoff)
-      )
-    )
-    .returning({ id: documentImports.id });
-  for (const r of resumed) after(() => runExtraction(r.id));
-  if (resumed.length > 0) revalidatePath("/projects/import");
-  return { resumed: resumed.length };
+  const stalled = await db.select({ id: documentImports.id, fileId: documentImports.fileId,
+    updatedAt: documentImports.updatedAt }).from(documentImports)
+    .where(and(eq(documentImports.status, "parsing"), lt(documentImports.updatedAt, cutoff)));
+  let resumed = 0;
+  for (const imp of stalled) {
+    if (!(await hasImportSourceAccess(imp, user.id))) continue;
+    const [claimed] = await db.update(documentImports).set({ updatedAt: new Date() })
+      .where(and(eq(documentImports.id, imp.id), eq(documentImports.status, "parsing"),
+        lt(documentImports.updatedAt, cutoff), importVersion(imp.updatedAt)))
+      .returning({ updatedAt: documentImports.updatedAt });
+    if (!claimed) continue;
+    after(() => runExtraction(imp.id, { actorUserId: user.id, updatedAt: claimed.updatedAt }));
+    resumed++;
+  }
+  if (resumed > 0) revalidatePath("/projects/import");
+  return { resumed };
 }
 
 /** Lightweight poll target: current parse status (+ extraction once ready). */
 export async function getImportStatus(
   importId: string
 ): Promise<{ status: string; error: string | null; errorKind: string | null; extraction: ImportExtraction | null }> {
-  await requireRole("manager");
+  const { user } = await requireRole("manager");
   const [imp] = await db
     .select({
+      fileId: documentImports.fileId,
       status: documentImports.status,
       error: documentImports.error,
       errorKind: documentImports.errorKind,
@@ -232,6 +250,9 @@ export async function getImportStatus(
     .where(eq(documentImports.id, importId))
     .limit(1);
   if (!imp) return { status: "failed", error: "Import not found.", errorKind: "file", extraction: null };
+  if (!(await hasImportSourceAccess(imp, user.id))) {
+    return { status: "failed", error: IMPORT_SOURCE_ERROR, errorKind: "file", extraction: null };
+  }
   return {
     status: imp.status,
     error: imp.error,
@@ -249,14 +270,15 @@ export async function updateImportDraft(
   reviewed: ImportExtraction,
   learnFromReview?: boolean
 ): Promise<{ error?: string }> {
-  await requireRole("manager");
+  const { user } = await requireRole("manager");
   const [imp] = await db
-    .select({ status: documentImports.status })
+    .select({ status: documentImports.status, fileId: documentImports.fileId })
     .from(documentImports)
     .where(eq(documentImports.id, importId))
     .limit(1);
   if (!imp) return { error: "Import not found." };
   if (imp.status === "committed") return { error: "Already committed." };
+  if (!(await hasImportSourceAccess(imp, user.id))) return { error: IMPORT_SOURCE_ERROR };
 
   let clean: ImportExtraction;
   try {
@@ -273,10 +295,11 @@ export async function updateImportDraft(
 
 /** Open the ordinary review editor when AI cannot extract a saved upload. */
 export async function enterImportManually(importId: string, kind: "agreement" | "invoice") {
-  await requireRole("manager");
-  const [imp] = await db.select({ status: documentImports.status }).from(documentImports)
+  const { user } = await requireRole("manager");
+  const [imp] = await db.select({ status: documentImports.status, fileId: documentImports.fileId }).from(documentImports)
     .where(eq(documentImports.id, importId)).limit(1);
   if (!imp || imp.status !== "failed") return { error: "This import is no longer awaiting manual review." };
+  if (!(await hasImportSourceAccess(imp, user.id))) return { error: IMPORT_SOURCE_ERROR };
   const reviewed = normalizeExtraction({
     documentKind: kind,
     projects: kind === "agreement" ? [{ title: "Untitled project" }] : [],
@@ -289,7 +312,10 @@ export async function enterImportManually(importId: string, kind: "agreement" | 
 
 /** Route an invoice uploaded outside a payment card into the existing invoice review. */
 export async function setImportTargetProject(importId: string, projectId: string) {
-  await requireRole("manager");
+  const { user } = await requireRole("manager");
+  const [imp] = await db.select({ fileId: documentImports.fileId }).from(documentImports)
+    .where(eq(documentImports.id, importId)).limit(1);
+  if (!imp || !(await hasImportSourceAccess(imp, user.id))) return { error: IMPORT_SOURCE_ERROR };
   const [project] = await db.select({ id: projects.id }).from(projects).where(eq(projects.id, projectId)).limit(1);
   if (!project) return { error: "Project not found." };
   const [updated] = await db.update(documentImports).set({ targetProjectId: projectId, updatedAt: new Date() })
@@ -305,6 +331,7 @@ export async function saveImportAsLesson(importId: string, reviewed: ImportExtra
   const { user } = await requireRole("manager");
   const [imp] = await db.select().from(documentImports).where(eq(documentImports.id, importId)).limit(1);
   if (!imp || imp.status !== "extracted") return { error: "Review the document before saving an example." };
+  if (!(await hasImportSourceAccess(imp, user.id))) return { error: IMPORT_SOURCE_ERROR };
   const clean = normalizeExtraction(reviewed);
   if (clean.documentKind === "agreement" && !clean.projects.some((project) => project.title.trim() && project.title !== "Untitled project")) {
     return { error: "Add the corrected project details before teaching this document." };
@@ -346,7 +373,10 @@ async function captureCommittedImport(
 
 /** Mark an import discarded (soft hide from the list). */
 export async function discardImport(importId: string): Promise<void> {
-  await requireRole("manager");
+  const { user } = await requireRole("manager");
+  const [imp] = await db.select({ fileId: documentImports.fileId }).from(documentImports)
+    .where(eq(documentImports.id, importId)).limit(1);
+  if (!imp || !(await hasImportSourceAccess(imp, user.id))) throw new Error(IMPORT_SOURCE_ERROR);
   await db
     .update(documentImports)
     .set({ status: "discarded", updatedAt: new Date() })
@@ -1064,6 +1094,8 @@ export async function commitImport(
   if (imp.status === "committed" || (imp.committedProjectIds?.length ?? 0) > 0) {
     redirect("/projects");
   }
+  if (!(await hasImportSourceAccess(imp, user.id))) return { error: IMPORT_SOURCE_ERROR };
+  if (imp.status !== "extracted") return { error: "Review the document before saving." };
   if (imp.fundingSourceKey) return { error: "Approve email funding from its MoU funding review." };
   const rawData = imp.reviewed ?? imp.extraction;
   if (!rawData) return { error: "Nothing to commit — parse the document first." };
@@ -1546,6 +1578,7 @@ export async function commitImport(
   const siblings = await db
     .select({
       id: documentImports.id,
+      fileId: documentImports.fileId,
       extraction: documentImports.extraction,
       reviewed: documentImports.reviewed,
     })
@@ -1557,10 +1590,14 @@ export async function commitImport(
       )
     )
     .orderBy(asc(documentImports.createdAt));
-  const next = siblings.find((s) => {
+  let next: { id: string } | undefined;
+  for (const s of siblings) {
     const t = (s.reviewed ?? s.extraction)?.projects?.[0]?.title;
-    return t ? committedTitles.has(norm(t)) : false;
-  });
+    if (t && committedTitles.has(norm(t)) && await hasImportSourceAccess(s, user.id)) {
+      next = s;
+      break;
+    }
+  }
 
   revalidatePath("/projects");
   revalidatePath("/projects/import");
@@ -1589,6 +1626,8 @@ export async function attachAgreementToProjects(
   if (imp.status === "committed" || (imp.committedProjectIds?.length ?? 0) > 0) {
     redirect("/projects");
   }
+  if (!(await hasImportSourceAccess(imp, user.id))) return { error: IMPORT_SOURCE_ERROR };
+  if (imp.status !== "extracted") return { error: "Review the document before saving." };
   if (imp.fundingSourceKey) return { error: "Approve email funding from its MoU funding review." };
   const rawData = imp.reviewed ?? imp.extraction;
   if (!rawData) return { error: "Nothing to attach — parse the document first." };
@@ -1832,17 +1871,13 @@ export async function createImportsForProject(
     .limit(1);
   if (!project) return { error: "Project not found." };
 
-  // Keep the caller's order, but drop any id whose upload didn't persist.
-  const known = new Set(
-    (
-      await db
-        .select({ id: files.id })
-        .from(files)
-        .where(inArray(files.id, requested))
-    ).map((f) => f.id)
-  );
-  const valid = requested.filter((id) => known.has(id));
-  if (valid.length === 0) return { error: "Files not found." };
+  // Validate the entire batch before creating drafts or scheduling any work.
+  const valid = [...new Set(requested)];
+  for (const fileId of valid) {
+    if (!(await getAccessibleExtractionFile(fileId, user.id))) {
+      return { error: "A file is not available for import." };
+    }
+  }
 
   const inserted = await db
     .insert(documentImports)
@@ -1854,9 +1889,9 @@ export async function createImportsForProject(
         createdBy: user.id,
       }))
     )
-    .returning({ id: documentImports.id });
+    .returning({ id: documentImports.id, updatedAt: documentImports.updatedAt });
 
-  for (const imp of inserted) after(() => runExtraction(imp.id));
+  for (const imp of inserted) after(() => runExtraction(imp.id, { actorUserId: user.id, updatedAt: imp.updatedAt }));
   revalidatePath("/projects/import");
   return {
     importIds: inserted.map((imp) => imp.id),
@@ -1871,10 +1906,11 @@ export async function createImportsForProject(
 async function nextUpdateImportPath(
   projectId: string,
   projectSlug: string,
-  currentImportId: string
+  currentImportId: string,
+  actorUserId: string
 ): Promise<string> {
-  const [next] = await db
-    .select({ id: documentImports.id })
+  const pending = await db
+    .select({ id: documentImports.id, fileId: documentImports.fileId })
     .from(documentImports)
     .where(
       and(
@@ -1883,9 +1919,11 @@ async function nextUpdateImportPath(
         notInArray(documentImports.status, ["committed", "discarded"])
       )
     )
-    .orderBy(asc(documentImports.createdAt), asc(documentImports.id))
-    .limit(1);
-  return next ? `/projects/import/${next.id}` : `/projects/${projectSlug}`;
+    .orderBy(asc(documentImports.createdAt), asc(documentImports.id));
+  for (const next of pending) {
+    if (await hasImportSourceAccess(next, actorUserId)) return `/projects/import/${next.id}`;
+  }
+  return `/projects/${projectSlug}`;
 }
 
 const importedInvoiceSchema = z.object({
@@ -1933,6 +1971,9 @@ export async function applyImportedInvoice(
     return { error: "This invoice was already saved." };
   }
 
+  if (!(await hasImportSourceAccess(imp, user.id))) return { error: IMPORT_SOURCE_ERROR };
+  if (imp.status !== "extracted") return { error: "Review the document before saving." };
+  if (imp.fundingSourceKey) return { error: "Approve email funding from its MoU funding review." };
   const data = normalizeExtraction(imp.reviewed ?? imp.extraction);
   if (data.documentKind !== "invoice" || !data.invoice) {
     return { error: "The AI did not identify this document as an invoice." };
@@ -2094,7 +2135,7 @@ export async function applyImportedInvoice(
   revalidatePath(`/projects/${project.slug}/budget`);
   revalidatePath("/projects");
   revalidatePath("/dashboard");
-  redirect(await nextUpdateImportPath(project.id, project.slug, importId));
+  redirect(await nextUpdateImportPath(project.id, project.slug, importId, user.id));
 }
 
 /**
@@ -2132,9 +2173,11 @@ export async function applyImportToProject(
   // Idempotency: never apply twice. If this was one of several documents queued
   // for the project, carry on to the next still-pending one.
   if (imp.status === "committed" || (imp.committedProjectIds?.length ?? 0) > 0) {
-    redirect(await nextUpdateImportPath(projectId, project.slug, importId));
+    redirect(await nextUpdateImportPath(projectId, project.slug, importId, user.id));
   }
 
+  if (!(await hasImportSourceAccess(imp, user.id))) return { error: IMPORT_SOURCE_ERROR };
+  if (imp.status !== "extracted") return { error: "Review the document before saving." };
   if (imp.fundingSourceKey) return { error: "Approve email funding from its MoU funding review." };
   const rawData = imp.reviewed ?? imp.extraction;
   if (!rawData) return { error: "Nothing to apply — parse the document first." };
@@ -2213,5 +2256,5 @@ export async function applyImportToProject(
   revalidatePath(`/projects/${project.slug}/budget`);
   revalidatePath(`/projects/${project.slug}/rights`);
   // Multi-document update: hand off to the next queued document, else the project.
-  redirect(await nextUpdateImportPath(projectId, project.slug, importId));
+  redirect(await nextUpdateImportPath(projectId, project.slug, importId, user.id));
 }

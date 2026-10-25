@@ -12,11 +12,13 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `app/(app)/settings/document-learning/page.tsx`
 - `app/(app)/settings/email/page.tsx`
 - `app/(app)/settings/layout.tsx`
+- `app/(app)/settings/lectio/page.tsx`
 - `app/(app)/settings/modules/page.tsx`
 - `app/(app)/settings/notifications/page.tsx`
 - `app/(app)/settings/page.tsx`
 - `app/(app)/settings/partners/page.tsx`
 - `app/(app)/settings/printers/page.tsx`
+- `app/(app)/settings/profile/lectio-link/page.tsx`
 - `app/(app)/settings/profile/page.tsx`
 - `app/(app)/settings/publishers/page.tsx`
 - `app/(app)/settings/roles/page.tsx`
@@ -90,10 +92,8 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/auth/assurance.ts`
 - `lib/auth/auth.ts`
 - `lib/auth/client.ts`
+- `lib/auth/guards.test.ts`
 - `lib/auth/guards.ts`
+- `lib/auth/lectio-sso.ts`
 - `lib/auth/password-reset.test.ts`
-- `lib/auth/password-reset.ts`
-- `lib/auth/policy.test.ts`
-- `lib/auth/policy.ts`
-- `lib/auth/provisioning.test.ts`
-... 9 more
+... 16 more

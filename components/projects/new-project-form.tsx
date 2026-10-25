@@ -41,7 +41,7 @@ export function NewProjectForm({
   defaultTargetLanguage: string | null;
   defaultPlanTemplateKey: string | null;
 }) {
-  const { draft, setDraft, state, action, pending } = useProjectDraft();
+  const { draft, setDraft, state, action, pending, onSubmit } = useProjectDraft();
   const [kind, setKind] = useDraftField("kind");
   const [planTemplateId, setPlanTemplateId] = useDraftField("planTemplateId");
   const units = projectUnitTerms(kind);
@@ -72,7 +72,7 @@ export function NewProjectForm({
   };
 
   return (
-    <form action={action} className="grid max-w-2xl gap-5">
+    <form action={action} onSubmit={onSubmit} className="grid max-w-2xl gap-5">
       <div className="grid gap-2">
         <Label htmlFor="title">Title</Label>
         <Input id="title" name="title" required autoFocus value={draft.title} onChange={event => setDraft(current => ({ ...current, title: event.target.value }))} />

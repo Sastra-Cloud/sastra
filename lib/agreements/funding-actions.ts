@@ -3,6 +3,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireRole } from "@/lib/auth/guards";
+import { getAccessibleExtractionFile } from "@/lib/imports/file-access";
 import { db } from "@/lib/db";
 import { activityLog, documentImports, sharedMouGroups, sharedMouMemberships, mouPayments, fileAttachments, projects, user as users } from "@/lib/db/schema";
 import { fundingTotalsReconcile, defaultInvoiceOwner } from "./funding-review";
@@ -35,6 +36,8 @@ export async function approveFundingReview(input: FundingReviewInput): Promise<{
     const groupId = await db.transaction(async (tx) => {
       const [review] = await tx.select().from(documentImports).where(eq(documentImports.id, data.importId)).for("update");
       if (!review?.fundingSourceKey || !review.fileId) throw new Error("Funding source document not found.");
+      if (!(await getAccessibleExtractionFile(review.fileId, user.id)))
+        throw new Error("Source document unavailable. Check your file access before continuing.");
       if (review.status === "committed") {
         const [existing] = await tx.select({ id: sharedMouGroups.id }).from(sharedMouGroups)
           .where(eq(sharedMouGroups.sourceImportId, review.id)).limit(1);

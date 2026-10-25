@@ -1,8 +1,8 @@
 import "server-only";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gte, lt } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { documentImports, files, rightsHolders } from "@/lib/db/schema";
+import { documentImports, rightsHolders } from "@/lib/db/schema";
 import { presignGet } from "@/lib/r2";
 import { recordR2Operation } from "@/lib/ai/usage";
 import { aiStructuredFromDocument, type DocPart } from "@/lib/ai/openrouter";
@@ -11,6 +11,7 @@ import { getWorkspaceAiContext } from "@/lib/workspace/queries";
 import { documentCueText } from "@/lib/document-learning/source";
 import { localDocumentGuidance } from "@/lib/document-learning/service";
 import { convertExtractionToUsd } from "./fx";
+import { getAccessibleExtractionFile, getEmailExtractionFile } from "./file-access";
 import { EXTRACTION_JSON_SCHEMA, EXTRACTION_SYSTEM_PROMPT, fillMouPaymentAmounts, gateExtractionFormats, normalizeExtraction } from "./schema";
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout>;
@@ -46,11 +47,14 @@ async function xlsxToText(buf: Buffer): Promise<string> {
 
 /**
  * Fetch the document from R2, run AI extraction, and store the result. Designed
- * to run DETACHED (via `after()`), so it takes no auth and is keyed only by
- * importId — if the user navigates away, this still completes server-side and
- * the result is persisted, ready to resume.
+ * to run DETACHED (via `after()`). The server-only caller binds a claimed attempt
+ * to its authenticated requester, without changing the import's authorship.
+ * Legacy jobs recheck the creator; actorless funding intake needs email provenance.
  */
-export async function runExtraction(importId: string): Promise<void> {
+export async function runExtraction(
+  importId: string,
+  attempt?: { actorUserId: string; updatedAt: Date }
+): Promise<void> {
   const [imp] = await db
     .select()
     .from(documentImports)
@@ -58,9 +62,9 @@ export async function runExtraction(importId: string): Promise<void> {
     .limit(1);
   if (
     !imp ||
-    imp.status === "committed" ||
-    imp.status === "discarded" ||
-    !imp.fileId
+    imp.status !== "parsing" ||
+    !imp.fileId ||
+    (attempt && attempt.updatedAt.getTime() !== imp.updatedAt.getTime())
   )
     return;
 
@@ -68,7 +72,9 @@ export async function runExtraction(importId: string): Promise<void> {
   // (→ discarded) or a newer attempt superseded this one mid-flight, leave it be.
   const stillParsing = and(
     eq(documentImports.id, importId),
-    eq(documentImports.status, "parsing")
+    eq(documentImports.status, "parsing"),
+    gte(documentImports.updatedAt, imp.updatedAt),
+    lt(documentImports.updatedAt, new Date(imp.updatedAt.getTime() + 1))
   );
   const markFailed = async (msg: string, errorKind: "provider" | "extraction" | "file" = "extraction") => {
     await db
@@ -79,12 +85,13 @@ export async function runExtraction(importId: string): Promise<void> {
     revalidatePath("/projects/import");
   };
 
-  const [file] = await db
-    .select()
-    .from(files)
-    .where(eq(files.id, imp.fileId))
-    .limit(1);
-  if (!file || file.status !== "ready") return markFailed("File not ready.", "file");
+  const actorUserId = attempt ? attempt.actorUserId : imp.createdBy;
+  const file = actorUserId
+    ? await getAccessibleExtractionFile(imp.fileId, actorUserId)
+    : !attempt && imp.fundingSourceKey && imp.sourceMessageId && imp.sourceThreadId
+      ? await getEmailExtractionFile(imp.fileId, imp.sourceMessageId, imp.sourceThreadId)
+      : null;
+  if (!file) return markFailed("File not available for import.", "file");
 
   try {
     const url = await presignGet(file.r2Key);
@@ -96,7 +103,7 @@ export async function runExtraction(importId: string): Promise<void> {
     await recordR2Operation({
       classType: "B",
       operationName: "GetObject",
-      actorUserId: imp.createdBy,
+      actorUserId,
       entityType: "document_import",
       entityId: importId,
       metadata: { source: "document_import_extraction" },
@@ -181,7 +188,7 @@ export async function runExtraction(importId: string): Promise<void> {
             scope: "workspace",
             feature: "document_import",
             operation: "extract_document",
-            actorUserId: imp.createdBy,
+            actorUserId,
             entityType: "document_import",
             entityId: importId,
             metadata: {

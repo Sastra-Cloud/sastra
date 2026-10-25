@@ -1,9 +1,11 @@
-// Regenerates favicon / PWA / apple-touch / notification icons from the Sastra mark.
+// Regenerates favicon / PWA / apple-touch / notification icons and iOS launch images from
+// the Sastra mark.
 // Sources: public/sastra-logo.svg (the mark) and public/sastra-icon.svg (the mark on a
 // rounded violet tile). Run: node scripts/gen-icons.mjs
 import sharp from "sharp";
 import pngToIco from "png-to-ico";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import devices from "../lib/pwa/apple-startup-devices.json" with { type: "json" };
 
 const MARK = "public/sastra-logo.svg";
 const TILE = "public/sastra-icon.svg";
@@ -67,3 +69,29 @@ const icoSizes = await Promise.all(
 );
 await writeFile("app/favicon.ico", await pngToIco(icoSizes));
 console.log("wrote app/icon.svg + app/favicon.ico");
+
+// iOS launch images: the tile centred on the app background, so iOS matches the splash
+// Android builds from the manifest. One per device size, orientation, and theme (see
+// lib/pwa/apple-startup-images.ts for the matching <link> media queries).
+const SPLASH_THEMES = [
+  { suffix: "", background: "#fbfaf6" }, // manifest background_color
+  { suffix: "-dark", background: "#120e20" }, // dark --background in globals.css
+];
+await mkdir("public/splash", { recursive: true });
+for (const { width, height, ratio } of devices) {
+  // ~120pt on a phone, capped so the tile stays modest on iPads.
+  const tileSize = Math.round(Math.min(width * 0.3, 160) * ratio);
+  const tilePng = await sharp(TILE, { density: DENSITY }).resize(tileSize, tileSize).png().toBuffer();
+  for (const [w, h] of [
+    [width * ratio, height * ratio],
+    [height * ratio, width * ratio],
+  ]) {
+    for (const { suffix, background } of SPLASH_THEMES) {
+      await sharp({ create: { width: w, height: h, channels: 4, background } })
+        .composite([{ input: tilePng, gravity: "center" }])
+        .png({ palette: true, compressionLevel: 9 })
+        .toFile(`public/splash/apple-splash-${w}x${h}${suffix}.png`);
+    }
+  }
+}
+console.log("wrote", devices.length * 2 * SPLASH_THEMES.length, "launch images to public/splash");

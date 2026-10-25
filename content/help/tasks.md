@@ -2,9 +2,9 @@
 title: "Tasks & the board"
 category: "Work"
 roles: [member, manager, admin]
-keywords: [confirm printer paid, confirm payment in my work, badge breakdown, actions for you, due tasks, search tasks, find task, missing task, lost task, old task, done task, reopen task, next up, shared queue, undated task, due today, today tasks, overdue tasks, your next tasks, suggestions to review, next task, handoff, more options, create task, laptop task form, task, kanban, board, column, to do, in progress, review, done, drag, move, assign, priority, due date, earliest due first, task order, reschedule, edit task, move task to project, milestone, recurring, recurring schedule, google drive, drive loading, cancel drive, small screen, task form scrolling, task attachment, upload file, attach file, working folder, license obligation, printer payment, printing coordinator, proof review, approve proof, reply to printer, budget approval, approve, request changes, wip, time tracking, comment, mention, email task, forwarded email, meeting reminder, booking link, email assistant, task suggestion, learn from email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice, waiting for payment, follow up due, source linked task]
+keywords: [task permissions, private task, project manager, assigned project management, confirm printer paid, confirm payment in my work, badge breakdown, actions for you, due tasks, search tasks, find task, missing task, lost task, old task, done task, reopen task, next up, shared queue, undated task, due today, today tasks, overdue tasks, your next tasks, suggestions to review, next task, handoff, more options, create task, laptop task form, task, kanban, board, column, to do, in progress, review, done, drag, move, assign, priority, due date, earliest due first, task order, reschedule, edit task, move task to project, milestone, recurring, recurring schedule, google drive, drive loading, cancel drive, small screen, task form scrolling, task attachment, upload file, attach file, working folder, license obligation, printer payment, printing coordinator, proof review, approve proof, reply to printer, budget approval, approve, request changes, wip, time tracking, comment, mention, email task, forwarded email, meeting reminder, booking link, email assistant, task suggestion, learn from email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice, waiting for payment, follow up due, source linked task]
 order: 30
-summary: "Follow a shared Next up order without due dates, see real deadlines, search for any task, review email suggestions, confirm printer payments, and use Board and Agenda."
+summary: "Understand task permissions, follow a shared Next up order without due dates, see real deadlines, search for any task, review email suggestions, confirm printer payments, and use Board and Agenda."
 ---
 
 Tasks are the unit of work. **My Work** brings your personal tasks and dated
@@ -65,9 +65,10 @@ description. Results replace the current view until you clear the search, press
   that are not assigned. Each result says why, for example **Done Sep 3, 2026**
   or **Assigned to a teammate**.
 
-Select a result to open its task details. From there you can reopen done work
-by changing its status. Managers can also assign it back to you.
-Members search project tasks and their own tasks without a project. Managers
+Select a result to open its task details. If you can edit the task, you can
+reopen done work by changing its status. Managers can also assign it back to you.
+Members can view project tasks and standalone tasks they created or are assigned.
+This includes comments, time entries, and Drive references. Managers can view and
 search every task. Deleted tasks cannot be found.
 
 Requested printer payments leave the top action queue while waiting for payment
@@ -218,14 +219,24 @@ task description, while upload, folder, and removal controls stay under
 Removing an attachment from Sastra does not delete the file from Google Drive.
 
 Select an assigned task's title on **Home** or in **My Work** to open its
-details. The assigned owner can update the work there; managers and admins can
-also edit tasks from project and workload views.
+details. Members can change status, fields, dependencies, project placement,
+Drive links and folders, or delete ordinary tasks assigned to them. They can
+also manage tasks they created while those tasks remain unassigned. Creating a
+task does not let you edit it after it is assigned to someone else. Assigned
+project managers can manage ordinary tasks and their attachments within their
+assigned projects; workspace managers and admins can manage any ordinary task.
+Protected approval and payment tasks keep their workflow restrictions.
 
 In **Task details**, choose **Mark task done** when the work is finished. Sastra
 updates the status at once and also saves your other changes. If saving fails,
 the task returns to its earlier status and your changes stay in the dialog.
 
-Creating tasks for other people, or beyond your own, is a manager action.
+Workspace managers can create and assign tasks for anyone. Assigned project
+managers can do this within their assigned projects. Members can edit their own
+tasks; changing someone else's task needs management access to that project.
+Moving someone else's task also requires management access to the destination.
+Moving a task clears its **Next up** selection. Workspace-wide queue reordering
+stays with workspace managers.
 Managers can also **set up a task plan with AI**, which generates chapter-by-stage
 tasks for a book.
 
@@ -293,11 +304,16 @@ ordinary tasks yet. This keeps current work ahead of future automation. Each
 schedule shows its cadence, owner, next due date, and whether it came from a
 license obligation.
 
-Managers can **edit** the title, instructions, cadence, first due date, optional
-end date, owner, and priority, or pause/resume the schedule. Editing a schedule
-updates its unfinished occurrence and all future occurrences; completed tasks
-remain unchanged as history. If the schedule came from a license obligation,
-the matching obligation on the Rights tab is corrected too.
+Workspace managers and assigned project managers can **edit** the title,
+instructions, cadence, first due date, optional end date, owner, and priority,
+or pause/resume or delete schedules they manage. Members can create recurring
+tasks for themselves or leave them unassigned, and pause/resume or delete their
+own ordinary schedules. Assigning recurring work to someone else or editing a
+schedule requires management access to its project; standalone schedules need
+a workspace manager. Editing a schedule updates its unfinished occurrence and
+all future occurrences; completed tasks remain unchanged as history. Schedules
+from license obligations remain restricted to workspace managers, and edits
+also correct the matching obligation on the Rights tab.
 
 Generated task cards carry a **Recurring** badge. Editing one generated task
 changes only that occurrence; use **Edit** on the recurring schedule to correct
@@ -305,6 +321,10 @@ future tasks. On books with more than one print run, a **Task scope** selector
 switches the board between the whole title and a specific print run or reprint.
 
 ## Comments & @mentions
+
+You can comment on tasks you can view and log your own time on them. You can
+edit your own comments and time entries while you still have access to the task;
+managers can also remove comments.
 
 Open a task to see its **Comments**. Post an update, and **@mention** a teammate
 (type **@** and pick a name) to notify them about it — the notification links back

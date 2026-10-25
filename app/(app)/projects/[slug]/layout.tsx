@@ -1,3 +1,5 @@
+import { getWorkspaceSettings } from "@/lib/workspace/queries";
+import { moduleEnabled } from "@/lib/workspace/modules";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Archive, ArrowRight, ChevronLeft, Layers3, Settings2 } from "lucide-react";
@@ -7,6 +9,7 @@ import { ProjectWorkspaceFrame } from "@/components/projects/project-workspace-f
 import { PageHero } from "@/components/cockpit";
 import { getProjectHeader } from "@/lib/projects/queries";
 import { getActiveReprintRun } from "@/lib/print/queries";
+import { hasProjectCapability } from "@/lib/auth/project-access";
 import { getSession } from "@/lib/auth/guards";
 import { can } from "@/lib/auth/policy";
 import { PriorityBadge, ProjectStatusBadge } from "@/components/badges";
@@ -48,9 +51,11 @@ export default async function ProjectWorkspaceLayout({
   ]);
 
   const session = await getSession();
+  const lectioEnabled = moduleEnabled((await getWorkspaceSettings()).enabledModules, "lectio");
   const isManager =
-    can(session?.user ?? null, "project.edit");
-  const sharedMouGroups = isManager
+    !!session && await hasProjectCapability(session.user, project.id, "project.edit");
+  const workspaceManager = can(session?.user, "workspace.manage");
+  const sharedMouGroups = workspaceManager
     ? await listSharedMouGroupsForProject(project.id)
     : [];
 
@@ -89,10 +94,10 @@ export default async function ProjectWorkspaceLayout({
                   className="w-full sm:w-auto"
                 />
               ) : null}
-              <ProjectImportButton
+              {workspaceManager ? <ProjectImportButton
                 projectId={project.id}
                 className="w-full sm:w-auto"
-              />
+              /> : null}
               </ProjectActions>
               <Button
                 nativeButton={false}
@@ -215,7 +220,7 @@ export default async function ProjectWorkspaceLayout({
         </div>
       ) : null}
 
-      <ProjectTabs slug={slug} kind={project.kind} />
+      <ProjectTabs slug={slug} kind={project.kind} lectioEnabled={lectioEnabled} />
 
       {sharedMouGroups.map((group) => (
         <Link

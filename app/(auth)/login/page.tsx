@@ -1,3 +1,5 @@
+import { ssoChoices } from "@/lib/lectio/sso-service";
+import { LectioSignInButtons } from "@/components/lectio/shared-sign-in";
 import { Suspense } from "react";
 
 import { AuthCardShell } from "@/components/auth/auth-card-shell";
@@ -15,6 +17,7 @@ export default async function LoginPage() {
   const needsBootstrap =
     isInitialAdminBootstrapEnabled() && (await countHumanUsers()) === 0;
 
+  const choices = needsBootstrap ? [] : await ssoChoices();
   return (
     <AuthCardShell
       title={needsBootstrap ? "Create the first admin" : "Sign in"}
@@ -29,6 +32,7 @@ export default async function LoginPage() {
       ) : (
         <Suspense>
           <LoginForm />
+          <LectioSignInButtons connections={choices} />
         </Suspense>
       )}
     </AuthCardShell>

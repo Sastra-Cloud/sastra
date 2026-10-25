@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, type Dispatch, type SetStateAction } from "react";
+import { createContext, useContext, type Dispatch, type FormEventHandler, type SetStateAction } from "react";
 import type { ProjectFormState } from "@/lib/projects/actions";
 import type { ProjectKind } from "@/lib/projects/kinds";
 
@@ -12,6 +12,7 @@ export type ProjectDraft = {
 };
 export const ProjectDraftContext = createContext<{
   state: ProjectFormState; action: () => void; pending: boolean;
+  onSubmit?: FormEventHandler<HTMLFormElement>;
   draft: ProjectDraft; setDraft: Dispatch<SetStateAction<ProjectDraft>>;
 } | null>(null);
 

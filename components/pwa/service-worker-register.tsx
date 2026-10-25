@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 import { useUserActive } from "@/hooks/use-user-active";
+import { APP_UPDATE_EVENT, checkForAppUpdate, reloadForAppUpdate } from "@/lib/pwa/client-update";
 
 /** Registers the service worker and surfaces a non-intrusive update toast. */
 export function ServiceWorkerRegister() {
@@ -23,7 +24,7 @@ export function ServiceWorkerRegister() {
     // the initial registration — not an update — so don't toast for it.
     const hadController = navigator.serviceWorker.controller !== null;
 
-    navigator.serviceWorker.register("/sw.js").catch(() => {
+    navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).catch(() => {
       /* registration failures are non-fatal */
     });
 
@@ -35,43 +36,32 @@ export function ServiceWorkerRegister() {
       navigator.serviceWorker.removeEventListener("controllerchange", onChange);
   }, []);
 
-  // App-code deploys don't change the (static) service worker, so the
-  // controllerchange path above won't fire for them. Poll a build-id endpoint
-  // and prompt a refresh when the server's build changes — this is what saves an
-  // open tab from a version-skew Server Action 404 after a deploy.
+  // The static worker does not change with app-code deploys. Compare against
+  // the build embedded in this window, never the first response after resuming.
   useEffect(() => {
-    let baseline: string | null = null;
-    let notified = false;
-
     const check = async () => {
-      // An idle tab stops asking so the server can sleep; it checks again on return.
-      if (document.hidden || notified || !activeRef.current) return;
-      try {
-        const res = await fetch("/api/version", { cache: "no-store" });
-        if (!res.ok) return;
-        const { id } = (await res.json()) as { id?: string };
-        if (!id) return;
-        if (baseline === null) {
-          baseline = id;
-        } else if (id !== baseline) {
-          notified = true;
-          promptUpdate();
-        }
-      } catch {
-        /* offline / transient */
-      }
+      if (!document.hidden && await checkForAppUpdate()) promptUpdate();
     };
 
+    window.addEventListener(APP_UPDATE_EVENT, promptUpdate);
     checkRef.current = check;
     void check();
-    const interval = setInterval(check, 60_000);
-    const onVisible = () => {
-      if (!document.hidden) void check();
-    };
+    const interval = setInterval(() => {
+      if (activeRef.current) void check();
+    }, 60_000);
+    const onVisible = () => { void check(); };
     document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    window.addEventListener("pageshow", onVisible);
+    window.addEventListener("online", onVisible);
     return () => {
+      checkRef.current = null;
       clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+      window.removeEventListener("pageshow", onVisible);
+      window.removeEventListener("online", onVisible);
+      window.removeEventListener(APP_UPDATE_EVENT, promptUpdate);
     };
   }, []);
 
@@ -82,8 +72,12 @@ export function ServiceWorkerRegister() {
 function promptUpdate() {
   toast("Update available", {
     id: "app-update",
-    description: "A new version is ready — refresh to avoid errors.",
-    action: { label: "Refresh", onClick: () => location.reload() },
+    description: "Copy any unsaved work before refreshing. No changes will be sent again automatically.",
+    action: { label: "Refresh app", onClick: () => {
+      if (!reloadForAppUpdate()) {
+        toast.error("Finish the current action before refreshing. Keep any unsaved work.");
+      }
+    } },
     duration: Infinity,
   });
 }

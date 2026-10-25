@@ -1079,6 +1079,48 @@
       "when": 1792531900533,
       "tag": "0153_budget_line_invoices",
       "breakpoints": true
+    },
+    {
+      "idx": 154,
+      "version": "7",
+      "when": 1792685078819,
+      "tag": "0154_project_managers",
+      "breakpoints": true
+    },
+    {
+      "idx": 155,
+      "version": "7",
+      "when": 1792818745270,
+      "tag": "0155_lectio_integration",
+      "breakpoints": true
+    },
+    {
+      "idx": 156,
+      "version": "7",
+      "when": 1792819337806,
+      "tag": "0156_lectio_handoff",
+      "breakpoints": true
+    },
+    {
+      "idx": 157,
+      "version": "7",
+      "when": 1792819703393,
+      "tag": "0157_lectio_artifacts",
+      "breakpoints": true
+    },
+    {
+      "idx": 158,
+      "version": "7",
+      "when": 1792822697154,
+      "tag": "0158_lectio_project_disconnect",
+      "breakpoints": true
+    },
+    {
+      "idx": 159,
+      "version": "7",
+      "when": 1792823885899,
+      "tag": "0159_lectio_shared_sign_in",
+      "breakpoints": true
     }
   ]
 }

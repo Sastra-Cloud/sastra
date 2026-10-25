@@ -7,6 +7,7 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { tasks, timeEntries, user } from "@/lib/db/schema";
+import { assertTaskAccess, withTaskAccess } from "./access";
 import { revalidateForTask } from "./create";
 import { getMyTasks } from "./queries";
 import { getTaskTimeEntries } from "./time-queries";
@@ -14,7 +15,8 @@ import { startTimerFor, stopTimerFor } from "./time-service";
 
 /** Entries + total for a task (for the task detail Time-tracking section). */
 export async function loadTaskTime(taskId: string) {
-  await requireUser();
+  const { user: u } = await requireUser();
+  await assertTaskAccess(taskId, u);
   return getTaskTimeEntries(taskId);
 }
 
@@ -42,7 +44,7 @@ async function revalidateTask(taskId: string) {
 
 export async function startTimer(taskId: string, note?: string) {
   const { user: u } = await requireUser();
-  await startTimerFor(u.id, taskId, "timer", note);
+  await withTaskAccess(taskId, u, "read", (tx) => startTimerFor(u.id, taskId, "timer", note, tx));
   await revalidateTask(taskId);
 }
 
@@ -68,7 +70,7 @@ export async function logTime(input: z.infer<typeof logSchema>) {
     ? new Date(startedAt)
     : new Date(Date.now() - durationSeconds * 1000);
   const end = new Date(start.getTime() + durationSeconds * 1000);
-  await db.insert(timeEntries).values({
+  await withTaskAccess(taskId, u, "read", async (tx) => tx.insert(timeEntries).values({
     taskId,
     userId: u.id,
     startedAt: start,
@@ -76,7 +78,7 @@ export async function logTime(input: z.infer<typeof logSchema>) {
     durationSeconds,
     source: "manual",
     note: note ?? null,
-  });
+  }));
   await revalidateTask(taskId);
 }
 
@@ -111,7 +113,8 @@ export async function updateTimeEntry(
   } else if (f.startedAt !== undefined && entry.durationSeconds !== null) {
     patch.endedAt = new Date(start.getTime() + entry.durationSeconds * 1000);
   }
-  await db.update(timeEntries).set(patch).where(eq(timeEntries.id, id));
+  await withTaskAccess(entry.taskId, u, "read", async (tx) =>
+    tx.update(timeEntries).set(patch).where(eq(timeEntries.id, id)));
   await revalidateTask(entry.taskId);
 }
 
@@ -123,7 +126,8 @@ export async function deleteTimeEntry(id: string) {
     .where(eq(timeEntries.id, id))
     .limit(1);
   if (!entry || entry.userId !== u.id) return;
-  await db.delete(timeEntries).where(eq(timeEntries.id, id));
+  await withTaskAccess(entry.taskId, u, "read", async (tx) =>
+    tx.delete(timeEntries).where(eq(timeEntries.id, id)));
   await revalidateTask(entry.taskId);
 }
 

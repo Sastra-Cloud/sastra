@@ -2,10 +2,11 @@
 
 import { eq } from "drizzle-orm";
 
-import { requireRole, requireUser } from "@/lib/auth/guards";
+import { requireUser } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { fileAttachments, files } from "@/lib/db/schema";
 import { deleteObject } from "@/lib/r2";
+import { canMutateAttachmentTarget } from "./target-access";
 
 const ATTACHMENT_NOTES_MAX_LENGTH = 1000;
 
@@ -13,6 +14,7 @@ export async function updateAttachmentNotes(
   attachmentId: string,
   notes: string
 ) {
+  const { user } = await requireUser();
   if (!attachmentId || typeof notes !== "string") {
     throw new Error("Invalid attachment note.");
   }
@@ -22,14 +24,18 @@ export async function updateAttachmentNotes(
   }
 
   const [target] = await db
-    .select({ targetType: fileAttachments.targetType })
+    .select({
+      targetType: fileAttachments.targetType,
+      targetId: fileAttachments.targetId,
+    })
     .from(fileAttachments)
     .where(eq(fileAttachments.id, attachmentId))
     .limit(1);
   if (!target) throw new Error("Attachment not found.");
 
-  if (target.targetType === "agreement_group") await requireRole("manager");
-  else await requireUser();
+  if (!(await canMutateAttachmentTarget(target.targetType, target.targetId, user))) {
+    throw new Error("Attachment not found.");
+  }
 
   const [updated] = await db
     .update(fileAttachments)
@@ -48,13 +54,19 @@ export async function updateAttachmentNotes(
  * delete the file record and its R2 object too.
  */
 export async function removeAttachment(attachmentId: string) {
+  const { user } = await requireUser();
   const [target] = await db
-    .select({ targetType: fileAttachments.targetType })
+    .select({
+      targetType: fileAttachments.targetType,
+      targetId: fileAttachments.targetId,
+    })
     .from(fileAttachments)
     .where(eq(fileAttachments.id, attachmentId))
     .limit(1);
-  if (target?.targetType === "agreement_group") await requireRole("manager");
-  else await requireUser();
+  if (!target) return;
+  if (!(await canMutateAttachmentTarget(target.targetType, target.targetId, user))) {
+    throw new Error("Attachment not found.");
+  }
 
   const [att] = await db
     .delete(fileAttachments)

@@ -33,6 +33,8 @@ const ALLOWED_MIME = new Set([
   "application/vnd.ms-powerpoint",
   "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   "application/zip",
+  "application/vnd.oasis.opendocument.text",
+  "application/vnd.adobe.indesign-idml-package",
   "application/epub+zip",
   "audio/mpeg",
   "audio/wav",

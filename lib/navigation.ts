@@ -56,6 +56,7 @@ export function settingsNavigation(access: Access): NavigationGroup[] {
       { href: "/settings/team", label: "Team", icon: "members", access: "manager", description: "Invite teammates and manage workspace roles." },
       { href: "/settings/workspace", label: "Workspace", icon: "workspace", access: "admin", description: "Organization identity and defaults for new projects." },
       { href: "/settings/modules", label: "Modules", icon: "settings", access: "admin", description: "Enable optional tools, including book sponsorships." },
+      ...(moduleEnabled(access.enabledModules ?? [], "lectio") ? [{ href: "/settings/lectio", label: "Lectio", icon: "projects", access: "admin" as const, description: "Connect translation projects and teams." }] : []),
       { href: "/settings/standups", label: "Standups", icon: "standups", access: "manager", description: "Set up team check-ins and their schedules." },
     ] },
     { label: "Publishing", items: [

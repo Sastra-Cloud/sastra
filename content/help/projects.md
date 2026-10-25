@@ -2,9 +2,9 @@
 title: "Projects & stages"
 category: "Work"
 roles: [member, manager, admin]
-keywords: [sponsorship funds, funds used, available sponsorship funds, publishing, current work, project details, stages and team, create project, shared draft, guided setup, project actions, project, project name, rename project, edit project name, phase, proposal stage, proposed project, project status, planning, active, on hold, book, ebook, ebook only, ebook for now, print, print plan, book format, format plan not set, article, podcast, video series, videos, create project, new project, guided setup, guided project, step by step, one page form, overview, portfolio, filter, sort, print funding, print covered, print funding not assigned, funding assigned, no funding, seeking funding, partially funded, funded, no printing planned yet, due date, start date, schedule, estimated duration, planned finish, timeline, gantt, drive, file note, attachment note, delete project, completed project, project archive, archived project, reprint, status update, recent correspondence, project email, linked email, AI recommendation, daily review, mention, note, shared mou, shared agreement, project type, change project type, set project type, work path, wrong path]
+keywords: [project manager, assigned projects, project management access, delegate projects, sponsorship funds, funds used, available sponsorship funds, publishing, current work, project details, stages and team, create project, shared draft, guided setup, project actions, project, project name, rename project, edit project name, phase, proposal stage, proposed project, project status, planning, active, on hold, book, ebook, ebook only, ebook for now, print, print plan, book format, format plan not set, article, podcast, video series, videos, create project, new project, guided setup, guided project, step by step, one page form, overview, portfolio, filter, sort, print funding, print covered, print funding not assigned, funding assigned, no funding, seeking funding, partially funded, funded, no printing planned yet, due date, start date, schedule, estimated duration, planned finish, timeline, gantt, drive, file note, attachment note, delete project, completed project, project archive, archived project, reprint, status update, recent correspondence, project email, linked email, AI recommendation, daily review, mention, note, shared mou, shared agreement, project type, change project type, set project type, work path, wrong path]
 order: 20
-summary: "Create and manage publishing projects, preserve creation drafts, and find project settings and actions."
+summary: "Create and manage projects, assign members to manage specific projects, and find project settings."
 ---
 
 A **project** is one publishing initiative — a book, a collection of articles,
@@ -22,6 +22,33 @@ being reviewed. Proposal projects are clearly badged and filterable in the
 portfolio, but they do not count toward active delivery capacity, schedule
 roadmaps, overdue-project totals, or missing-deadline warnings. Move a proposal
 to **Planning** or **Active** in **Project settings** when the work is approved.
+
+## Project managers
+
+A member can manage selected projects without becoming a workspace manager.
+Open a project's **Members** tab. Under **Project managers**, select a member and
+choose **Assign project manager**. Confirm the permission change. Repeat this on
+each project they should manage. Only workspace managers, admins, and super admins
+can grant or remove this access.
+
+Assigned project managers can change that project's name, details, schedule,
+stages, tasks, status updates, and project members.
+They can assign tasks and choose **Next up** for tasks in those projects. They
+can also set up a task plan with AI when AI is available. Their workspace role
+stays **Member**, and other projects keep the normal member permissions. Members
+can still view projects and update their own tasks.
+
+The assignment does not grant access to workspace settings, team administration,
+Correspondence, shared MoUs, budget editing, rights editing, printing actions,
+print-funding decisions, episode or video publishing controls, finance actions,
+or project creation and deletion. Workspace managers keep
+management access to every project.
+
+Use the remove button beside a project manager to end that project's management
+access. Confirm removal. Their project job labels stay the same. Adding a job
+label, even one called "Project manager", never grants management permission.
+Grant and removal changes appear immediately after confirmation. A failed save
+restores the previous list and shows an error.
 
 ## Creating a project
 

@@ -13,6 +13,7 @@ export default async function ChatLayout({
 
   return (
     <ChatWorkspaceShell
+      currentUserId={user.id}
       sidebar={sidebar}
       canCreate={can(user, "chat.createChannel")}
     >
