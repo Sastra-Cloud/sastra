@@ -394,7 +394,7 @@
 
 ## `app/api/integrations/lectio/connect/route.ts`
 
-- POST
+- GET, POST
 
 ## `app/api/integrations/lectio/v1/[operation]/route.ts`
 
@@ -2971,6 +2971,10 @@
 ## `lib/lectio/ownership-actions.ts`
 
 - listLectioAudit, reapproveLectioConnection
+
+## `lib/lectio/pairing-proof.ts`
+
+- pairingProof
 
 ## `lib/lectio/pairing.ts`
 

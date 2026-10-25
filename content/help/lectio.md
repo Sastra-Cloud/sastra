@@ -19,6 +19,11 @@ prevents enabling Lectio. **Settings → Lectio** shows the same notice instead 
 connection controls. The New project form also omits connection controls while Cloud
 eligibility is unavailable. If Lectio was already enabled, you can still turn it off.
 
+Use Sastra 0.5.1 or later. Lectio verifies directly with your Sastra server that
+an active administrator started the setup request. An address pasted into a URL
+cannot approve a workspace. If verification fails, restart setup from Sastra Settings
+and ask its administrator to update Sastra if needed.
+
 A Sastra administrator enables **Lectio** in **Settings → Modules**, then opens
 **Settings → Lectio** and enters the Lectio app address. A Lectio team administrator
 signs in there, checks the displayed Sastra workspace, explicitly selects the team,

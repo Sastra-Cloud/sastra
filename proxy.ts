@@ -41,7 +41,10 @@ export function proxy(request: NextRequest) {
 
   let response: NextResponse;
 
-  if (isPublic(pathname)) {
+  // The GET backchannel proves an opaque administrator-created intent; its
+  // handler validates current authority and never returns the PKCE verifier.
+  const pairingProof = request.method === "GET" && pathname === "/api/integrations/lectio/connect";
+  if (isPublic(pathname) || pairingProof) {
     response = NextResponse.next();
   } else {
     // Optimistic cookie check (no DB hit); real verification happens in layouts.

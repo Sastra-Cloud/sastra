@@ -1,8 +1,16 @@
 import { isAdminRole } from "@/lib/auth/policy";
 import { getSession } from "@/lib/auth/guards";
 import { beginPairing } from "@/lib/lectio/pairing";
+import { pairingProof } from "@/lib/lectio/pairing-proof";
 import { EVENT_LIMIT, IntegrationError, object, string } from "@/lib/lectio/protocol/contract";
 import { errorResponse, readLimitedBody } from "@/lib/lectio/protocol/signing";
+export async function GET(request: Request) {
+  try {
+    return Response.json(await pairingProof(new URL(request.url).searchParams.get("state") || ""), {
+      headers: { "Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer" },
+    });
+  } catch (error) { return errorResponse(error); }
+}
 export async function POST(request: Request) {
   try {
     if (request.headers.get("origin") !== new URL(process.env.BETTER_AUTH_URL || request.url).origin) throw new IntegrationError("forbidden", "Invalid request origin.", 403);

@@ -1249,6 +1249,7 @@
     "@/lib/auth/policy",
     "@/lib/auth/guards",
     "@/lib/lectio/pairing",
+    "@/lib/lectio/pairing-proof",
     "@/lib/lectio/protocol/contract",
     "@/lib/lectio/protocol/signing"
   ],
@@ -7722,6 +7723,29 @@
     "./cloud-eligibility",
     "./protocol/contract",
     "./audit"
+  ],
+  "lib/lectio/pairing-proof.test.ts": [
+    "vitest",
+    "@/lib/db/schema",
+    "./pairing-proof",
+    "./protocol/signing"
+  ],
+  "lib/lectio/pairing-proof.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/auth/policy",
+    "@/lib/crypto/secret-box",
+    "@/lib/workspace/module-guard",
+    "./cloud-eligibility",
+    "./protocol/contract",
+    "./protocol/signing",
+    "./protocol/transport"
+  ],
+  "lib/lectio/pairing-proxy.test.ts": [
+    "vitest",
+    "next/server",
+    "@/proxy"
   ],
   "lib/lectio/pairing.ts": [
     "node:crypto",

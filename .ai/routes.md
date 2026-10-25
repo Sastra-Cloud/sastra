@@ -109,7 +109,7 @@
 - `POST` `/api/files/presign` -> `app/api/files/presign/route.ts`
 - `GET` `/api/health` -> `app/api/health/route.ts`
 - `GET` `/api/integrations/lectio/callback` -> `app/api/integrations/lectio/callback/route.ts`
-- `POST` `/api/integrations/lectio/connect` -> `app/api/integrations/lectio/connect/route.ts`
+- `GET | POST` `/api/integrations/lectio/connect` -> `app/api/integrations/lectio/connect/route.ts`
 - `GET | POST` `/api/integrations/lectio/v1/[operation]` -> `app/api/integrations/lectio/v1/[operation]/route.ts`
 - `POST` `/api/internal/management/bootstrap` -> `app/api/internal/management/bootstrap/route.ts`
 - `POST` `/api/internal/management/entitlements` -> `app/api/internal/management/entitlements/route.ts`
