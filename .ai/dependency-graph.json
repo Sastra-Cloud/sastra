@@ -766,7 +766,8 @@
     "@/lib/workspace/modules",
     "@/components/lectio/connection-settings",
     "@/lib/lectio/cloud-eligibility",
-    "@/components/lectio/shared-sign-in"
+    "@/components/lectio/shared-sign-in",
+    "@/lib/lectio/protocol/transport"
   ],
   "app/(app)/settings/modules/page.tsx": [
     "@/lib/auth/guards",
@@ -2741,8 +2742,6 @@
     "next/navigation",
     "sonner",
     "@/components/ui/button",
-    "@/components/ui/input",
-    "@/components/ui/label",
     "./people-settings",
     "./setup-settings",
     "./connection-ownership",

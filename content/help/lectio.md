@@ -25,11 +25,20 @@ cannot approve a workspace. If verification fails, restart setup from Sastra Set
 and ask its administrator to update Sastra if needed.
 
 A Sastra administrator enables **Lectio** in **Settings → Modules**, then opens
-**Settings → Lectio** and enters the Lectio app address. A Lectio team administrator
-signs in there, checks the displayed Sastra workspace, explicitly selects the team,
+**Settings → Lectio** and selects **Choose team in Lectio**. There is no address or
+team name to enter in Sastra. Sign in to Lectio and choose your team by its name;
+you do not need to paste its team URL. A Lectio team administrator
+checks the displayed Sastra workspace, explicitly selects the team,
 and reviews its name, team ID, and owner before approving the connection.
+Only teams owned or administered by the signed-in Lectio account appear in the
+picker. Other teams are not listed. The Sastra and Lectio email addresses can be
+different; signing into each app proves access, and an email match is not required.
 Each Lectio team can connect to one Sastra workspace. A Sastra workspace can connect
 several Lectio teams. Other teams and projects keep their existing workflows.
+
+The server operator configures the Lectio platform address. If setup is unavailable,
+ask your server administrator to configure it; an existing connection's address can
+also be reused. This setting does not grant Cloud eligibility or team access.
 
 The module is off by default. Disabling it pauses integration actions and hides the
 integration screens; it preserves existing links and history. To make linked tasks

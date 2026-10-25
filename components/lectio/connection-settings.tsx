@@ -3,24 +3,22 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { PeopleSettings } from "./people-settings";
 import { SetupSettings } from "./setup-settings";
 import { ConnectionOwnership } from "./connection-ownership";
 import { rotateLectioConnectionKeys, setLectioConnectionState } from "@/lib/lectio/actions";
 
 type Connection = { id: string; origin: string; teamName: string; state: string; lastSuccessAt: string | null; approvedBy: string | null };
-export function ConnectionSettings({ connections }: { connections: Connection[] }) {
+export function ConnectionSettings({ connections, lectioOrigin }: { connections: Connection[]; lectioOrigin: string | null }) {
   const router = useRouter();
   const [disconnect, setDisconnect] = useState<string | null>(null);
-  const [origin, setOrigin] = useState(""), [pending, setPending] = useState<string | null>(null);
+  const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   async function connect(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault(); if (pending) return;
+    event.preventDefault(); if (pending || !lectioOrigin) return;
     setPending("connect"); setError(null);
     try {
-      const response = await fetch("/api/integrations/lectio/connect", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ origin }) });
+      const response = await fetch("/api/integrations/lectio/connect", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ origin: lectioOrigin }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "Could not begin connection setup.");
       window.location.assign(result.redirect);
@@ -57,10 +55,11 @@ export function ConnectionSettings({ connections }: { connections: Connection[] 
       }}>{pending === `rotate-${c.id}` ? "Queuing rotation…" : "Rotate connection keys"}</Button><p className="mt-2 text-xs text-muted-foreground">Replaces the signing keys without reconnecting projects. The previous key remains valid for up to 24 hours while pending deliveries finish.</p></div> : null}
     </section>)}
     <form onSubmit={connect} className="space-y-4 rounded-xl border bg-card p-5">
-      <div><h3 className="font-semibold">Connect a Lectio team</h3><p className="mt-1 text-sm text-muted-foreground">A Lectio team administrator approves the connection in Lectio. You can connect several teams to this workspace.</p></div>
-      <div className="space-y-2"><Label htmlFor="lectio-origin">Lectio address</Label><Input id="lectio-origin" type="url" required value={origin} onChange={e => setOrigin(e.target.value)} placeholder="https://your-lectio.example" autoComplete="url" /></div>
+      <div><h3 className="font-semibold">Connect a Lectio team</h3><p className="mt-1 text-sm text-muted-foreground">Sign in to Lectio, then choose and approve your team. Only teams you own or administer are shown.</p></div>
+      <p className="text-sm text-muted-foreground">Your Sastra and Lectio emails can be different.</p>
+      {!lectioOrigin ? <p role="alert" className="text-sm text-muted-foreground">Ask your server administrator to configure the Lectio connection.</p> : null}
       {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
-      <Button type="submit" disabled={pending === "connect"}>{pending === "connect" ? "Opening Lectio…" : "Continue to Lectio"}</Button>
+      <Button type="submit" disabled={!lectioOrigin || pending === "connect"}>{pending === "connect" ? "Opening Lectio…" : "Choose team in Lectio"}</Button>
     </form>
   </div>;
 }
