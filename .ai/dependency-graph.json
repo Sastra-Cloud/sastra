@@ -5403,6 +5403,12 @@
     "@/lib/lectio/protocol/contract",
     "@/lib/lectio/sso-unlink"
   ],
+  "lib/auth/magic-link-security.test.ts": [
+    "better-auth",
+    "better-auth/adapters/memory",
+    "vitest",
+    "./auth"
+  ],
   "lib/auth/password-reset.test.ts": [
     "vitest",
     "./password-reset"

@@ -291,6 +291,9 @@ export const auth = betterAuth({
     magicLink({
       expiresIn: 60 * 5,
       disableSignUp: true,
+      // Keep emailed tokens distinct from database-backed OAuth state.
+      // GHSA-965c-763c-88jm: global verification identifier hashing must stay off.
+      storeToken: "hashed",
       sendMagicLink: async ({ email, url }) => {
         await sendMagicLinkEmail({ to: email, url });
       },

@@ -33,6 +33,8 @@ once and expires after one hour. Choose a new password with at least eight
 characters. After the reset, sign in again on each device.
 
 You can also select **Email me a sign-in link** to sign in without your password.
+If a sign-in link is expired, already used, or no longer valid after an update,
+request a new link from the sign-in page.
 Unexpected invitations, magic links, and password resets can be ignored. They
 do not change your account unless you open and complete them.
 

@@ -95,5 +95,5 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/auth/guards.test.ts`
 - `lib/auth/guards.ts`
 - `lib/auth/lectio-sso.ts`
-- `lib/auth/password-reset.test.ts`
-... 16 more
+- `lib/auth/magic-link-security.test.ts`
+... 17 more
