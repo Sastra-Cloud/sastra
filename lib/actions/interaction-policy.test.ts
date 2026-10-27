@@ -356,7 +356,7 @@ describe("client action interaction policy", () => {
     expect(interactionModeFor("runEmailSignalReflectionNow")).toBe("progress");
   });
 
-  it("classifies chat message pins as optimistic, not destructive", () => {
+  it("keeps chat quick actions and message menus optimistic with confirmed deletion", () => {
     expect(interactionModeFor("postMessage")).toBe("optimistic");
     expect(interactionModeFor("toggleReaction")).toBe("optimistic");
     expect(interactionModeFor("markChannelRead")).toBe("read");

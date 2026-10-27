@@ -778,7 +778,11 @@
 
 ## `components/chat/use-message-hold.ts`
 
-- useMessageHold
+- MESSAGE_NATIVE_CONTROLS, useMessageHold
+
+## `components/chat/use-message-menu-layout.ts`
+
+- useMessageMenuLayout
 
 ## `components/chat/voice-message-player.tsx`
 

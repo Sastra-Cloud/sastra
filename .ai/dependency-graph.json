@@ -2196,9 +2196,11 @@
     "lucide-react",
     "sonner",
     "@/components/ui/button",
-    "@/components/ui/popover",
+    "@base-ui/react/menu",
+    "@/components/ui/tooltip",
     "@/components/ui/sheet",
     "./use-message-hold",
+    "./use-message-menu-layout",
     "@/lib/chat/haptics",
     "@/lib/chat/reaction-suggestions",
     "@/lib/utils",
@@ -2308,6 +2310,9 @@
   "components/chat/use-message-hold.ts": [
     "react",
     "@/lib/chat/message-hold"
+  ],
+  "components/chat/use-message-menu-layout.ts": [
+    "react"
   ],
   "components/chat/voice-message-player.tsx": [
     "react",

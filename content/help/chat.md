@@ -2,9 +2,9 @@
 title: "Chat"
 category: "Communication"
 roles: [member, manager, admin]
-keywords: [chat, channel, message, reply, reply to message, quoted reply, original message, edit message, edited, correct typo, delete message, cancel edit, save changes, mention, general, react, reactions, reaction summary, reaction counts, emoji, emoji picker, frequent emoji, frequently used, praying hands, skin tone, long press, touch and hold, haptic feedback, vibration, copy text, pin, pin message, pinned, pinned messages, unpin, unpin message, pin project, attachment, file, drag and drop, drop files, PowerPoint, ppt, pptx, image, screenshot, paste image, clipboard, inline image, image viewer, zoom, pinch to zoom, lightbox, swipe images, audio, voice message, microphone, recording, transcript, direct message, dm, private message, loading, unread, search, recent projects, members, add member, remove member, private channel, standup conversation, landscape, short screen, composer hidden, mobile, conversation details, message actions, keyboard, newline, grouped messages, last conversation, reopen chat, resume chat]
+keywords: [chat, channel, message, reply, reply to message, quoted reply, original message, edit message, edited, correct typo, delete message, cancel edit, save changes, mention, general, react, reactions, reaction summary, reaction counts, emoji, emoji picker, frequent emoji, frequently used, praying hands, skin tone, right click, context menu, quick actions, desktop, Shift F10, long press, touch and hold, haptic feedback, vibration, copy text, pin, pin message, pinned, pinned messages, unpin, unpin message, pin project, attachment, file, drag and drop, drop files, PowerPoint, ppt, pptx, image, screenshot, paste image, clipboard, inline image, image viewer, zoom, pinch to zoom, lightbox, swipe images, audio, voice message, microphone, recording, transcript, direct message, dm, private message, loading, unread, search, recent projects, members, add member, remove member, private channel, standup conversation, landscape, short screen, composer hidden, mobile, conversation details, message actions, keyboard, newline, grouped messages, last conversation, reopen chat, resume chat]
 order: 80
-summary: "Chat reopens your last conversation. Project chat, team channels, direct messages, voice recordings, replies to specific messages, mentions, mobile reaction gestures, optional haptic feedback, personal emoji suggestions, message editing and deletion, emoji search, pinned messages, drag-and-drop file attachments, and a zoomable image viewer."
+summary: "Chat reopens your last conversation. Project chat, team channels, direct messages, voice recordings, replies to specific messages, mentions, desktop quick actions and right-click menus, mobile reaction gestures, optional haptic feedback, personal emoji suggestions, message editing and deletion, emoji search, pinned messages, drag-and-drop file attachments, and a zoomable image viewer."
 ---
 
 Chat is real-time messaging for the team. Every project has focused channels,
@@ -76,7 +76,21 @@ Nearby messages from the same teammate are grouped together. Day labels and
 group times use your saved timezone. Your own messages appear on the right,
 without repeating your name and photo. Select **Message actions** immediately
 beside a bubble to reply, react, copy its text, pin, unpin, or delete that message.
-On a phone, you can also **touch and hold a message** to open the same menu.
+On a computer, hover over a bubble to reveal **React**, **Reply**, and **More
+actions** icons. **Reply** goes straight to the composer; **React** opens your
+quick emoji choices. You can also **right-click the bubble** to open all its
+actions. Right-clicking a link or selected text keeps the browser's usual menu.
+Keyboard users can Tab to the controls, open **More actions** with Enter or
+Space, or use **Shift+F10**. Use arrow keys to move through the menu, Enter to
+choose, and Escape to close. Closing the menu returns focus to its control.
+
+When there is room around the selected message, quick reactions appear above
+it and the action list below. Near the edge of the conversation or on a short
+screen, both stay together in a panel that fits the screen. Scrolling the
+conversation closes the menu.
+
+On a phone, **touch and hold a message** to open the same menu. The desktop
+quick-action icons stay hidden; the three-dot button is also available.
 Scrolling cancels the hold. Supported phones give a brief haptic tap when the
 hold opens the menu; reduced motion disables it. Feedback depends on browser
 and device support. The selected message and menu also provide visual feedback.

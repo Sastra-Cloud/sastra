@@ -8,6 +8,7 @@ import type { ChatMessageView } from "@/lib/chat/queries";
 const hooks = vi.hoisted(() => ({ values: [] as unknown[], cursor: 0, hold: undefined as (() => void) | undefined }));
 vi.mock("react", async original => ({
   ...await original<typeof import("react")>(), useEffect: vi.fn(), useLayoutEffect: vi.fn(),
+  useCallback: (callback: unknown) => callback,
   useState(initial: unknown) {
     const i = hooks.cursor++;
     if (!(i in hooks.values)) hooks.values[i] = initial;
@@ -19,7 +20,7 @@ vi.mock("react", async original => ({
     return hooks.values[i];
   },
 }));
-vi.mock("./use-message-hold", () => ({ useMessageHold: (_enabled: boolean, onHold: () => void) => { hooks.hold = onHold; return {}; } }));
+vi.mock("./use-message-hold", () => ({ useMessageHold: (_enabled: boolean, onHold: () => void) => { hooks.hold = onHold; return { onContextMenu: vi.fn() }; }, MESSAGE_NATIVE_CONTROLS: "a,button,input,audio,video" }));
 vi.mock("@/lib/chat/haptics", () => ({ messageHoldHaptic: vi.fn() }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 const react = vi.fn();
@@ -34,8 +35,9 @@ function render() {
     isOwn: true, pin: false, time: "12:00", reactionPending: false, pinPending: false, onEdit: edit, onReply: reply, onReact: react, onTogglePin: vi.fn(), onDelete: vi.fn(), children: "Message" }));
   return {
     popover: all.find(e => "open" in e.props)!.props,
+    surface: all.find(e => "data-message-press-surface" in e.props)!.props,
     menu: all.find(e => e.props["aria-label"] === "Message actions")!.props,
-    button: (label: string) => all.find(e => e.props["aria-label"] === label || e.props.children && Children.toArray(e.props.children as ReactNode).includes(label))!.props,
+    button: (label: string) => all.find(e => typeof e.props.onClick === "function" && (e.props["aria-label"] === label || e.props.children && Children.toArray(e.props.children as ReactNode).includes(label)))!.props,
   };
 }
 beforeEach(() => { hooks.values = []; hooks.cursor = 0; vi.clearAllMocks(); });
@@ -63,9 +65,34 @@ describe("message actions", () => {
     expect(render().popover.open).toBe(true);
     expect(messageHoldHaptic).toHaveBeenCalledOnce();
   });
+  it("opens on bubble right-click or the keyboard shortcut while preserving native copy and link menus", () => {
+    vi.stubGlobal("window", { getSelection: () => null });
+    const event = { target: { closest: () => null }, defaultPrevented: false, preventDefault: vi.fn(), stopPropagation: vi.fn() };
+    const context = () => render().surface.onContextMenu as (event: unknown) => void;
+    context()({ ...event, target: { closest: () => ({}) } });
+    expect(render().popover.open).toBe(false);
+    vi.stubGlobal("window", { getSelection: () => ({ isCollapsed: false, containsNode: () => true }) });
+    context()(event);
+    expect(render().popover.open).toBe(false);
+    expect(event.preventDefault).not.toHaveBeenCalled();
+    vi.stubGlobal("window", { getSelection: () => null });
+    context()(event);
+    expect(render().popover.open).toBe(true);
+    expect(event.preventDefault).toHaveBeenCalledOnce();
+    (render().popover.onOpenChange as (open: boolean) => void)(false);
+    (render().surface.onKeyDown as (event: unknown) => void)({ ...event, key: "F10", shiftKey: true });
+    expect(render().popover.open).toBe(true);
+    expect(messageHoldHaptic).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+  it("quick reply hands focus to the composer", () => {
+    (render().button("Reply to message").onClick as () => void)();
+    expect(reply).toHaveBeenCalledOnce();
+    expect(render().menu.finalFocus).toBe(false);
+  });
   it("highlights your quick reaction and closes after choosing", () => {
     (render().popover.onOpenChange as (open: boolean) => void)(true);
-    expect(render().button("React 👍")["aria-pressed"]).toBe(true);
+    expect(render().button("React 👍").checked).toBe(true);
     (render().button("React 👍").onClick as () => void)();
     expect(react).toHaveBeenCalledWith("👍");
     expect(render().popover.open).toBe(false);

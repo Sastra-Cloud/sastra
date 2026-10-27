@@ -100,7 +100,7 @@ const OPTIMISTIC_ACTIONS = new Set([
   // Message menus retain immediate text/reaction feedback; uploads have their own progress action.
   // Quoted replies use the same optimistic send and restore draft/context on failure.
   "postMessage",
-  "toggleReaction",
+  "toggleReaction", // Desktop quick actions and message menus share immediate feedback and rollback.
   "editMessage", // Text and Edited marker update immediately; failure restores the edit draft.
   "dismissEmailQuoteSuggestion", // Review-only: hide the suggestion immediately; never reverse accepted finance.
   "dismissEmailFundingReview", // Unapproved document review only; restore the card on failure.

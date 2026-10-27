@@ -686,6 +686,31 @@
   outline: 2px solid var(--ring);
   outline-offset: 3px;
 }
+.conversation-message-quick { display: none; }
+.conversation-message-menu[data-layout="compact"],
+.conversation-message-menu[data-layout="split"] > * {
+  background: var(--popover);
+  box-shadow: var(--shadow-lg), 0 0 0 1px color-mix(in oklch, var(--foreground) 10%, transparent);
+  border-radius: 1rem;
+}
+.conversation-message-menu[data-layout="split"] { pointer-events: none; }
+.conversation-message-menu > * { pointer-events: auto; }
+/* Use actual hover capability so a phone never gets a sticky hover toolbar. */
+@media (min-width: 48rem) and (hover: hover) and (pointer: fine) {
+  .conversation-transcript [data-slot="message"][data-align="end"] { padding-left: 7rem; }
+  .conversation-transcript [data-slot="message"][data-align="start"] { padding-right: 7rem; }
+  .conversation-message-quick { display: inline-flex; opacity: 0; pointer-events: none; }
+  .conversation-message-more { width: 2rem; height: 2rem; }
+  .conversation-message-tools { gap: .125rem; }
+  .conversation-message-tools > *, .conversation-message-quick { transition: opacity 120ms ease-out; }
+  [data-message-press-surface]:is(:hover, :focus-within, [data-message-selected]) .conversation-message-quick {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .conversation-message-tools > *, .conversation-message-quick { transition: none; }
+}
 /* One summary overlaps by 8px while its 44px target stays in flow. */
 .conversation-transcript { --conversation-surface: var(--card); }
 @media (width < 64rem) {

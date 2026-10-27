@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, type PointerEvent, type MouseEvent } from "react";
 import { createMessageHold } from "@/lib/chat/message-hold";
 
-const CONTROLS = "a,input,textarea,select,audio,video,[contenteditable=true],button:not([data-message-image])";
+export const MESSAGE_NATIVE_CONTROLS = "a,input,textarea,select,audio,video,[contenteditable=true],button:not([data-message-image])";
 
 export function useMessageHold(enabled: boolean, onHold: () => void) {
   const callback = useRef(onHold);
@@ -25,7 +25,7 @@ export function useMessageHold(enabled: boolean, onHold: () => void) {
       hold.current!.reset();
       detach.current();
       touch.current = event.pointerType === "touch";
-      if (!enabled || !touch.current || !event.isPrimary || (event.target as Element).closest(CONTROLS)) return;
+      if (!enabled || !touch.current || !event.isPrimary || (event.target as Element).closest(MESSAGE_NATIVE_CONTROLS)) return;
       hold.current!.start({ pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY });
       const cancel = () => { hold.current!.cancel(); detach.current(); };
       const move = (next: globalThis.PointerEvent) => {
@@ -58,7 +58,7 @@ export function useMessageHold(enabled: boolean, onHold: () => void) {
     },
     onContextMenu(event: MouseEvent<HTMLDivElement>) {
       // The browser may dispatch its callout after our menu has already opened.
-      if (touch.current && !(event.target as Element).closest(CONTROLS)) event.preventDefault();
+      if (touch.current && !(event.target as Element).closest(MESSAGE_NATIVE_CONTROLS)) event.preventDefault();
     },
   };
 }
