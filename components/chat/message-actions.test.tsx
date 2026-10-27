@@ -65,7 +65,7 @@ describe("message actions", () => {
     expect(render().popover.open).toBe(true);
     expect(messageHoldHaptic).toHaveBeenCalledOnce();
   });
-  it("opens on bubble right-click or the keyboard shortcut while preserving native copy and link menus", () => {
+  it("opens on selected or unselected bubble text while preserving native link menus", () => {
     vi.stubGlobal("window", { getSelection: () => null });
     const event = { target: { closest: () => null }, defaultPrevented: false, preventDefault: vi.fn(), stopPropagation: vi.fn() };
     const context = () => render().surface.onContextMenu as (event: unknown) => void;
@@ -73,12 +73,13 @@ describe("message actions", () => {
     expect(render().popover.open).toBe(false);
     vi.stubGlobal("window", { getSelection: () => ({ isCollapsed: false, containsNode: () => true }) });
     context()(event);
-    expect(render().popover.open).toBe(false);
-    expect(event.preventDefault).not.toHaveBeenCalled();
+    expect(render().popover.open).toBe(true);
+    expect(event.preventDefault).toHaveBeenCalledOnce();
+    (render().popover.onOpenChange as (open: boolean) => void)(false);
     vi.stubGlobal("window", { getSelection: () => null });
     context()(event);
     expect(render().popover.open).toBe(true);
-    expect(event.preventDefault).toHaveBeenCalledOnce();
+    expect(event.preventDefault).toHaveBeenCalledTimes(2);
     (render().popover.onOpenChange as (open: boolean) => void)(false);
     (render().surface.onKeyDown as (event: unknown) => void)({ ...event, key: "F10", shiftKey: true });
     expect(render().popover.open).toBe(true);

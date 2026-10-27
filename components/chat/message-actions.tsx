@@ -119,9 +119,7 @@ export function MessageActions({ m, isOwn, pin, time, reactionPending, pinPendin
         onContextMenu={event => {
           hold.onContextMenu(event);
           if (event.defaultPrevented || !available || (event.target as Element).closest(MESSAGE_NATIVE_CONTROLS)) return;
-          // Keep the browser's Copy / Open link controls for selected text and links.
-          const selection = window.getSelection();
-          if (selection && !selection.isCollapsed && selection.containsNode(event.target as Node, true)) return;
+          // Highlighted message text must open these actions too.
           event.preventDefault();
           event.stopPropagation();
           openMenu();
