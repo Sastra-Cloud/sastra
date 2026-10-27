@@ -24,13 +24,14 @@ vi.mock("@/lib/chat/haptics", () => ({ messageHoldHaptic: vi.fn() }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 const react = vi.fn();
 const edit = vi.fn();
+const reply = vi.fn();
 function elements(node: ReactNode): React.ReactElement<Record<string, unknown>>[] {
   return isValidElement<Record<string, unknown>>(node) ? [node, ...Children.toArray(node.props.children as ReactNode).flatMap(elements)] : [];
 }
 function render() {
   hooks.cursor = 0;
   const all = elements(MessageActions({ m: { id: "saved", status: "sent", content: "Hello @Teammate", authorName: "Sender", reactions: [{ emoji: "👍", count: 1, mine: true }] } as ChatMessageView,
-    isOwn: true, pin: false, time: "12:00", reactionPending: false, pinPending: false, onEdit: edit, onReact: react, onTogglePin: vi.fn(), onDelete: vi.fn(), children: "Message" }));
+    isOwn: true, pin: false, time: "12:00", reactionPending: false, pinPending: false, onEdit: edit, onReply: reply, onReact: react, onTogglePin: vi.fn(), onDelete: vi.fn(), children: "Message" }));
   return {
     popover: all.find(e => "open" in e.props)!.props,
     menu: all.find(e => e.props["aria-label"] === "Message actions")!.props,
@@ -39,7 +40,7 @@ function render() {
 }
 beforeEach(() => { hooks.values = []; hooks.cursor = 0; vi.clearAllMocks(); });
 describe("message actions", () => {
-  it("opens the message editor and closes the action menu", () => {
+  it("hands off focus when opening the editor or reply composer", () => {
     (render().popover.onOpenChange as (open: boolean) => void)(true);
     (render().button("Edit message").onClick as () => void)();
     expect(edit).toHaveBeenCalledOnce();
@@ -47,6 +48,10 @@ describe("message actions", () => {
     expect(render().menu.finalFocus).toBe(false);
     hooks.hold!();
     expect(render().menu.finalFocus).not.toBe(false);
+    (render().button("Reply").onClick as () => void)();
+    expect(reply).toHaveBeenCalledOnce();
+    expect(render().popover.open).toBe(false);
+    expect(render().menu.finalFocus).toBe(false);
   });
   it("gives haptic feedback only when a touch hold opens the menu", () => {
     render();

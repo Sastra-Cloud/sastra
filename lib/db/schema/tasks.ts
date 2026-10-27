@@ -17,6 +17,7 @@ import { user } from "./auth";
 import { printPayments, printRuns } from "./print";
 import { phases, projects, units } from "./projects";
 import { podcastStage, priority, taskStatus } from "./enums";
+import type { TaskAssignmentSource } from "@/lib/tasks/assignment";
 
 export const tasks = pgTable(
   "tasks",
@@ -52,6 +53,12 @@ export const tasks = pgTable(
     createdBy: text("created_by").references(() => user.id, {
       onDelete: "set null",
     }),
+    // Latest assignment, independent of the creator. Approved assistant requests
+    // are direct assignments by the person who approved the action.
+    assignedBy: text("assigned_by").references(() => user.id, { onDelete: "set null" }),
+    assignedAt: timestamp("assigned_at", { precision: 3 }),
+    assignmentSource: text("assignment_source").$type<TaskAssignmentSource>().notNull().default("unknown"),
+    assignmentDeferredAt: timestamp("assignment_deferred_at", { precision: 3 }),
     dueDate: date("due_date"),
     // Protects dates a person deliberately changed from backward rescheduling.
     dueDateIsManual: boolean("due_date_is_manual").notNull().default(false),

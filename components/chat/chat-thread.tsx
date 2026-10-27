@@ -11,6 +11,7 @@ import {
   Loader2,
   Paperclip,
   Pin,
+  Reply,
   Send,
   X,
 } from "lucide-react";
@@ -18,6 +19,7 @@ import { toast } from "sonner";
 
 import type { ChatMessageView } from "@/lib/chat/queries";
 import { clipboardImageFiles } from "@/lib/chat/clipboard";
+import { replyPreview, type ChatReplyPreview } from "@/lib/chat/replies";
 import { pinnedByLabel, type ChatPinnedMessage } from "@/lib/chat/pin-state";
 import { useUserActive } from "@/hooks/use-user-active";
 import { syncChannelRead } from "@/lib/chat/read-client";
@@ -175,6 +177,7 @@ export function ChatThread({
   const [messages, setMessages] = useState<ChatMessageView[]>(initialMessages);
   const [pendingMessages, setPendingMessages] = useState<ChatMessageView[]>([]);
   const [input, setInput] = useState("");
+  const [replyTarget, setReplyTarget] = useState<ChatReplyPreview | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [voiceDraft, setVoiceDraft] = useState<VoiceDraft | null>(null);
   const [recordingVoice, setRecordingVoice] = useState(false);
@@ -358,8 +361,9 @@ export function ChatThread({
   }, [beginPinsFetch, channelId, receiveMessages]);
 
   async function send() {
-    if (sending || conversationLoading || recordingVoice) return;
+    if (sending || conversationLoading || recordingVoice || editing) return;
     const draftText = input;
+    const replyAtSend = replyTarget;
     const text = input.trim();
     if (!text && pendingFiles.length === 0 && !voiceDraft) return;
     const voiceAtSend = voiceDraft;
@@ -380,21 +384,31 @@ export function ChatThread({
       isMine: true,
       reactions: [],
       attachments: [],
+      replyTo: replyAtSend,
     };
     setPendingMessages((current) => [...current, optimisticMessage]);
     setSending(true);
     setSendError(null);
     setInput("");
+    setReplyTarget(null);
+    let created = false;
     try {
       const { id } = await postMessage({
         channelId,
         content: text || undefined,
         status: hasFiles ? "uploading" : "sent",
         clientNonce,
+        replyToId: replyAtSend?.messageId,
       });
-      // Refresh immediately so the message shows without waiting for the next tick.
-      await refreshRecent();
+      created = true;
+      setMessages((current) => current.some((message) => message.id === id) ? current : [...current, {
+        ...optimisticMessage,
+        id,
+        status: hasFiles ? "uploading" : "sent",
+      }]);
       setPendingMessages((current) => current.filter((message) => message.id !== optimisticMessage.id));
+      // Refresh immediately so the message shows without waiting for the next tick.
+      await refreshRecent().catch(() => {});
 
       if (hasFiles) {
         const failedFiles: File[] = [];
@@ -421,16 +435,19 @@ export function ChatThread({
           URL.revokeObjectURL(voiceAtSend.url);
           setVoiceDraft(null);
         }
-        await refreshRecent();
+        await refreshRecent().catch(() => {});
       }
     } catch (error) {
       setPendingMessages((current) => current.filter((message) => message.id !== optimisticMessage.id));
-      setInput((current) => current && draftText ? `${draftText}\n${current}` : current || draftText);
-      setPendingFiles(pendingFiles);
+      if (!created) {
+        setInput((current) => current && draftText ? `${draftText}\n${current}` : current || draftText);
+        setReplyTarget(replyAtSend);
+        setPendingFiles(pendingFiles);
+      }
       const message = error instanceof Error && !(error instanceof TypeError)
         ? error.message
         : "Could not send. Check your connection and try again.";
-      setSendError(message);
+      if (!created) setSendError(message);
       toast.error(message);
     } finally {
       setSending(false);
@@ -569,6 +586,24 @@ export function ChatThread({
     else pins.pin(message);
   }
 
+  function startReply(message: ChatMessageView) {
+    if (conversationLoading || sending || recordingVoice || editing || message.id.startsWith("pending-")) return;
+    setReplyTarget(replyPreview(message));
+    setSendError(null);
+  }
+
+  function showOriginal(messageId: string) {
+    const element = scrollRef.current?.querySelector<HTMLElement>(`[data-message-id="${CSS.escape(messageId)}"]`);
+    if (!element) {
+      toast.info("This message is older than the recent messages shown here.");
+      return;
+    }
+    element.scrollIntoView({ block: "center", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    element.focus({ preventScroll: true });
+    element.dataset.pinHighlight = "true";
+    window.setTimeout(() => { delete element.dataset.pinHighlight; }, 1800);
+  }
+
   const visibleMessages = [...messages, ...pendingMessages];
 
   function discardVoiceDraft() {
@@ -693,6 +728,7 @@ export function ChatThread({
                   <MessageScrollerItem
                     key={m.id}
                     data-message-id={m.id}
+                    tabIndex={-1}
                     className={cn(
                       "rounded-xl transition-colors duration-500 motion-reduce:transition-none data-[pin-highlight=true]:bg-primary/10",
                       continuesMessageGroup(visibleMessages[index - 1], m, timeZone) ? "pt-1" : "pt-3",
@@ -720,6 +756,9 @@ export function ChatThread({
                       editDisabled={editing !== null || sending || recordingVoice || savingEdits.has(m.id)}
                       editPending={savingEdits.has(m.id)}
                       onTogglePin={() => togglePin(m)}
+                      onReply={() => startReply(m)}
+                      onShowOriginal={showOriginal}
+                      replyDisabled={conversationLoading || sending || recordingVoice || editing !== null}
                       showAuthor={!direct && !continuesMessageGroup(visibleMessages[index - 1], m, timeZone)}
                       showTime={!continuesMessageGroup(m, visibleMessages[index + 1] ?? { userId: null, createdAt: m.createdAt }, timeZone)}
                       direct={direct}
@@ -737,6 +776,19 @@ export function ChatThread({
           ) : null}
           {conversationLoading ? <ConversationLoadingState /> : null}
         </MessageScroller>
+
+        {replyTarget && !editing ? (
+          <div className="flex shrink-0 items-center gap-2 border-t bg-muted/40 px-3 py-2" data-reply-composer>
+            <Reply aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+            <div className="min-w-0 flex-1 text-sm" role="status">
+              <p className="truncate font-medium">Replying to {replyTarget.authorName ?? "Teammate"}</p>
+              <p className="truncate text-xs text-muted-foreground">{replyTarget.preview}</p>
+            </div>
+            <Button type="button" variant="ghost" size="icon" className="size-11 shrink-0" aria-label="Cancel reply" disabled={sending} onClick={() => setReplyTarget(null)}>
+              <X className="size-4" />
+            </Button>
+          </div>
+        ) : null}
 
         {!editing && (pendingFiles.length > 0 || voiceDraft) ? (
           <div className="shrink-0 space-y-2 border-t bg-background/55 px-3 py-2.5 sm:pl-[max(1rem,calc((100%-64rem)/2))] sm:pr-[max(1rem,calc((100%-64rem)/2))]">
@@ -958,6 +1010,9 @@ function MessageRow({
   onReact,
   onDelete,
   onTogglePin,
+  onReply,
+  onShowOriginal,
+  replyDisabled,
   showAuthor,
   showTime,
   direct,
@@ -977,6 +1032,9 @@ function MessageRow({
   onReact: (emoji: string) => void;
   onDelete: () => void;
   onTogglePin: () => void;
+  onReply: () => void;
+  onShowOriginal: (messageId: string) => void;
+  replyDisabled: boolean;
   showAuthor: boolean;
   showTime: boolean;
   direct: boolean;
@@ -1014,6 +1072,7 @@ function MessageRow({
 
         <MessageActions m={m} isOwn={isOwn} pin={!!pin} time={timeLabel(m.createdAt, timeZone)} frequentEmojis={frequentEmojis}
           onEdit={onEdit} editDisabled={editDisabled} editPending={editPending}
+          onReply={onReply} replyDisabled={replyDisabled}
           reactionPending={reactionPending} pinPending={pinPending}
           onReact={onReact} onTogglePin={onTogglePin} onDelete={onDelete}>
           {!isOwn && !direct && showAuthor ? <MessageAvatar aria-hidden="true" className="absolute right-full bottom-0 mr-2 size-8 min-w-8 rounded-full bg-muted text-xs font-semibold">
@@ -1022,7 +1081,7 @@ function MessageRow({
               <img src={photo} alt="" className="size-full object-cover" />
             ) : initials}
           </MessageAvatar> : null}
-          {m.content ? (
+          {m.content || m.replyTo ? (
             <Bubble
               variant={isOwn ? "default" : "secondary"}
               align={isOwn ? "end" : "start"}
@@ -1036,13 +1095,28 @@ function MessageRow({
                     : "conversation-incoming-bubble text-foreground"
                 )}
               >
-                <MentionText
+              {m.replyTo ? (
+                <button
+                  type="button"
+                  disabled={m.replyTo.unavailable}
+                  onClick={() => onShowOriginal(m.replyTo!.messageId)}
+                  aria-label={m.replyTo.unavailable ? "Original message unavailable" : `View original message from ${m.replyTo.authorName ?? "Teammate"}`}
+                  className={cn("flex min-h-11 w-full min-w-0 items-start gap-2 rounded-md px-2.5 py-2 text-left whitespace-normal transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current disabled:cursor-default motion-reduce:transition-none", m.content && "mb-2", isOwn ? "bg-black/15 hover:bg-black/20" : "bg-muted hover:bg-muted/80")}
+                >
+                  <Reply aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+                  <span className="min-w-0 flex-1">
+                    {!m.replyTo.unavailable ? <span className="block truncate text-xs font-semibold">{m.replyTo.authorName ?? "Teammate"}</span> : null}
+                    <span className="line-clamp-2 text-xs leading-relaxed [overflow-wrap:anywhere]">{m.replyTo.preview}</span>
+                  </span>
+                </button>
+              ) : null}
+                {m.content ? <MentionText
                   text={m.content}
                   members={members}
                   currentUserId={currentUserId}
                   tone={isOwn ? "onPrimary" : "default"}
                   className="conversation-mention"
-                />
+                /> : null}
               </BubbleContent>
 
             </Bubble>

@@ -144,6 +144,11 @@ export function CreateTaskDialog({
         estimateHours: estimateHours || null,
         updatedAt: new Date(),
         assignedTo,
+        assignedBy: null,
+        assignedByName: null,
+        assignedAt: null,
+        assignmentSource: "unknown",
+        assignmentDeferredAt: null,
         assigneeName:
           assignees.find((item) => item.id === assignedTo)?.name ?? null,
         printRunId,

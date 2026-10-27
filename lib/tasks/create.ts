@@ -11,6 +11,7 @@ import { logActivity } from "@/lib/activity/log";
 import { formatDate } from "@/lib/format";
 import type { PodcastStage } from "@/lib/episodes/workflow";
 import { type TaskTransaction, lockTaskQueues, nextTaskRank, touchTaskQueue } from "./queue-service";
+import { taskAssignmentFields, type TaskAssignmentSource } from "./assignment";
 
 /** Notify a newly-assigned user (skips self-assignment). */
 export async function notifyAssignment(
@@ -99,13 +100,14 @@ export async function insertTaskRow(
   values: InsertTaskValues,
   opts: {
     actorId: string | null;
+    assignmentSource?: TaskAssignmentSource;
     activitySummary?: string;
     revalidate?: boolean;
     notifyAssignment?: boolean;
   }
 ): Promise<string> {
   const created = await db.transaction(async (tx) => {
-    return insertTaskInTransaction(tx, values, opts.actorId);
+    return insertTaskInTransaction(tx, values, opts.actorId, opts.assignmentSource);
   });
 
   const id = created.id;
@@ -127,7 +129,10 @@ export async function insertTaskRow(
 }
 
 /** Transactional core; callers persist their own durable effects in the same transaction. */
-export async function insertTaskInTransaction(tx: TaskTransaction, values: InsertTaskValues, actorId: string | null) {
+export async function insertTaskInTransaction(
+  tx: TaskTransaction, values: InsertTaskValues, actorId: string | null,
+  assignmentSource: TaskAssignmentSource = "system",
+) {
   const status = values.status ?? "todo";
     await lockTaskQueues(tx, [values.assignedTo ?? null]);
     const rank = await nextTaskRank(tx, values.assignedTo ?? null);
@@ -148,6 +153,7 @@ export async function insertTaskInTransaction(tx: TaskTransaction, values: Inser
         isNextUp: Boolean(values.isNextUp && values.assignedTo && status !== "done"),
         priority: values.priority ?? "medium",
         assignedTo: values.assignedTo ?? null,
+        ...taskAssignmentFields(actorId, values.assignedTo ?? null, assignmentSource),
         dueDate: values.dueDate || null,
         dueDateIsManual: values.dueDateIsManual ?? false,
         isMilestone: values.isMilestone ?? false,

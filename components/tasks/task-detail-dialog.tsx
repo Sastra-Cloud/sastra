@@ -31,6 +31,9 @@ import {
 import { formatDistanceToNow } from "date-fns";
 
 import type { TaskComment, TaskRow } from "@/lib/tasks/queries";
+import type { Attachment } from "@/lib/files/queries";
+import { FileAttachments } from "@/components/files/file-attachments";
+import { listTaskAttachments } from "@/lib/tasks/file-actions";
 import {
   deleteTask,
   moveTaskToProject,
@@ -140,6 +143,8 @@ function TaskDetailDialogContent({
   const [loadingComments, setLoadingComments] = useState(true);
   const [newComment, setNewComment] = useState("");
   const [commentBusy, startComment] = useTransition();
+  const [attachments, setAttachments] = useState<Attachment[] | null>(null);
+  const [attachmentError, setAttachmentError] = useState(false);
   const [driveFiles, setDriveFiles] = useState<TaskDriveFile[] | null>(null);
   const [driveTarget, setDriveTarget] = useState<TaskDriveTarget | null>(null);
   const [driveBusy, startDrive] = useTransition();
@@ -186,6 +191,9 @@ function TaskDetailDialogContent({
       .then(setComments)
       .catch(() => setComments([]))
       .finally(() => setLoadingComments(false));
+    listTaskAttachments(task.id)
+      .then(setAttachments)
+      .catch(() => setAttachmentError(true));
     listTaskDriveFiles(task.id)
       .then(setDriveFiles)
       .catch(() => setDriveFiles([]));
@@ -373,6 +381,16 @@ function TaskDetailDialogContent({
     });
   }
 
+  async function refetchAttachments() {
+    setAttachmentError(false);
+    try {
+      setAttachments(await listTaskAttachments(t.id));
+    } catch (error) {
+      setAttachmentError(true);
+      throw error;
+    }
+  }
+
   function refetchDrive() {
     listTaskDriveFiles(t.id)
       .then(setDriveFiles)
@@ -526,64 +544,87 @@ function TaskDetailDialogContent({
                 </div>
               </section>
 
-              {(driveFiles === null
-                ? t.driveFileCount > 0
-                : driveFiles.length > 0) ? (
-                <section className="min-w-0 overflow-hidden rounded-lg border border-info/20 bg-info/[0.035] p-4 dark:bg-info/[0.07]">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Paperclip className="size-4 text-info" />
-                        <h3 className="text-sm font-semibold">Task files</h3>
-                      </div>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Open the documents you need to complete this task.
-                      </p>
-                    </div>
-                    <span className="shrink-0 rounded-full bg-background/80 px-2 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
-                      {driveFiles?.length ?? t.driveFileCount}
-                    </span>
+              <section className={panelClass} aria-labelledby="task-attachments-heading">
+                <div className="mb-3 flex items-center gap-2">
+                  <Paperclip className="size-4 text-muted-foreground" />
+                  <h3 id="task-attachments-heading" className="text-sm font-semibold">Attachments</h3>
+                </div>
+                <p className="mb-3 text-sm text-muted-foreground">
+                  {canEditTask
+                    ? "Upload documents, spreadsheets, or images. Up to 50 MB per file."
+                    : "Download task files or open linked documents in Google Drive."}
+                </p>
+                {attachmentError ? (
+                  <div role="alert" className="mb-3 flex flex-wrap items-center gap-2 text-sm">
+                    <span>Couldn&apos;t load attachments. Try again.</span>
+                    <Button type="button" variant="outline" size="sm" onClick={() => void refetchAttachments().catch(() => {})}>
+                      Retry attachments
+                    </Button>
                   </div>
-                  {driveFiles === null ? (
-                    <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-                      <Loader2 className="size-4 animate-spin" /> Loading files…
-                    </p>
-                  ) : (
-                    <ul className="mt-3 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2">
-                      {driveFiles.map((file) => (
-                        <li key={file.id} className="min-w-0">
-                          <a
-                            href={file.url}
-                            target="_blank"
-                            rel="noreferrer noopener"
-                            className="group flex min-h-11 w-full min-w-0 max-w-full items-center gap-3 overflow-hidden rounded-md bg-background px-3 py-2 ring-1 ring-inset ring-info/15 transition-colors hover:bg-info/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-                          >
-                            {file.iconUrl ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={file.iconUrl}
-                                alt=""
-                                className="size-5 shrink-0"
-                              />
-                            ) : file.mimeType === FOLDER_MIME ? (
-                              <Folder className="size-5 shrink-0 text-info" />
-                            ) : (
-                              <FileText className="size-5 shrink-0 text-info" />
-                            )}
-                            <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                              {file.name}
-                            </span>
-                            <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
-                              Open in Drive
-                            </span>
-                            <ExternalLink className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </section>
-              ) : null}
+                ) : null}
+                {attachments === null ? (
+                  !attachmentError ? <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="size-4 animate-spin" /> Loading attachments…
+                  </p> : null
+                ) : (
+                  <FileAttachments
+                    targetType="task"
+                    targetId={t.id}
+                    attachments={attachments}
+                    canEdit={canEditTask}
+                    emptyText={canEditTask ? "No uploaded files yet. Add the files needed for this task." : "No uploaded files yet."}
+                    actionsPosition="top"
+                    onUploadComplete={refetchAttachments}
+                    additionalActions={<DriveAttachButton taskId={t.id} onChange={refetchDrive} />}
+                  />
+                )}
+                {canEditTask ? <p className="mt-2 text-xs text-muted-foreground">
+                  Uploads save to this task immediately. No Google account needed.
+                </p> : null}
+                {(driveFiles === null ? t.driveFileCount > 0 : driveFiles.length > 0) ? (
+                  <div className="mt-4 border-t pt-3">
+                    <h4 className="text-xs font-medium text-muted-foreground">Google Drive links</h4>
+                    {driveFiles === null ? (
+                      <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="size-4 animate-spin" /> Loading files…
+                      </p>
+                    ) : (
+                      <ul className="mt-3 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2">
+                        {driveFiles.map((file) => (
+                          <li key={file.id} className="min-w-0">
+                            <a
+                              href={file.url}
+                              target="_blank"
+                              rel="noreferrer noopener"
+                              className="group flex min-h-11 w-full min-w-0 max-w-full items-center gap-3 overflow-hidden rounded-md bg-background px-3 py-2 ring-1 ring-inset ring-info/15 transition-colors hover:bg-info/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                            >
+                              {file.iconUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={file.iconUrl}
+                                  alt=""
+                                  className="size-5 shrink-0"
+                                />
+                              ) : file.mimeType === FOLDER_MIME ? (
+                                <Folder className="size-5 shrink-0 text-info" />
+                              ) : (
+                                <FileText className="size-5 shrink-0 text-info" />
+                              )}
+                              <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                                {file.name}
+                              </span>
+                              <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
+                                Open in Drive
+                              </span>
+                              <ExternalLink className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ) : null}
+              </section>
 
               <section className={panelClass}>
                 <div className="mb-3 flex items-center gap-2">
@@ -850,10 +891,10 @@ function TaskDetailDialogContent({
               ) : null}
 
               </SectionDisclosure>
-              <SectionDisclosure title="Manage Google Drive" description="Working folder and linked files">
+              {canEditTask ? <SectionDisclosure title="Google Drive options" description="Upload to Drive, folders, and linked files">
                 <div className="mb-3 flex items-center gap-2">
                   <Paperclip className="size-4 text-muted-foreground" />
-                  <h3 className="sr-only">Manage Google Drive</h3>
+                  <h3 className="sr-only">Google Drive options</h3>
                 </div>
                 <div className="grid gap-3">
                   {/* Working folder: default upload destination for this task. */}
@@ -921,7 +962,6 @@ function TaskDetailDialogContent({
                         : "No files linked yet."}
                   </p>
                   <div className="flex flex-wrap items-center gap-2">
-                    <DriveAttachButton taskId={t.id} onChange={refetchDrive} />
                     <DriveUploadButton
                       taskId={t.id}
                       quiet
@@ -972,7 +1012,7 @@ function TaskDetailDialogContent({
                     </details>
                   ) : null}
                 </div>
-              </SectionDisclosure>
+              </SectionDisclosure> : null}
             </aside>
           </div>
         </div>

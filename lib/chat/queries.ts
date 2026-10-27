@@ -26,6 +26,7 @@ import {
   user,
 } from "@/lib/db/schema";
 import { requireChannelAccess } from "@/lib/chat/access";
+import { replyPreview, type ChatReplyPreview } from "@/lib/chat/replies";
 import {
   isMemberScopedChannel,
   type ChannelMember,
@@ -58,6 +59,7 @@ export type ChatMessageView = {
   isMine: boolean;
   reactions: ChatReaction[];
   attachments: Attachment[];
+  replyTo: ChatReplyPreview | null;
 };
 
 /** How many of a conversation's newest messages the thread loads and polls. */
@@ -87,6 +89,7 @@ export async function getRecentMessages(
       authorName: user.name,
       authorImage: user.image,
       content: chatMessages.content,
+      replyToId: chatMessages.replyToId,
       status: chatMessages.status,
       createdAt: chatMessages.createdAt,
       editedAt: chatMessages.editedAt,
@@ -102,6 +105,23 @@ export async function getRecentMessages(
 
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
+  const replyIds = [...new Set(rows.flatMap((row) => row.replyToId ? [row.replyToId] : []))];
+  // Load parents separately from the recent window, with the same channel and
+  // deletion boundary. Never follow an arbitrary legacy/corrupt cross-chat id.
+  const originals = replyIds.length > 0 ? await db
+    .select({
+      id: chatMessages.id,
+      authorName: user.name,
+      content: chatMessages.content,
+    })
+    .from(chatMessages)
+    .leftJoin(user, eq(user.id, chatMessages.userId))
+    .where(and(
+      inArray(chatMessages.id, replyIds),
+      eq(chatMessages.channelId, channelId),
+      isNull(chatMessages.deletedAt)
+    )) : [];
+
 
   const reactionRows = await db
     .select({
@@ -123,7 +143,12 @@ export async function getRecentMessages(
     reactionMap.set(r.messageId, list);
   }
 
-  const attachMap = await listAttachmentsByTargets("message", ids);
+  const attachMap = await listAttachmentsByTargets("message", [...new Set([...ids, ...originals.map((row) => row.id)])]);
+
+  const replies = new Map(originals.map((original) => [original.id, replyPreview({
+    ...original,
+    attachments: attachMap.get(original.id) ?? [],
+  })]));
 
   return rows.map((r) => ({
     id: r.id,
@@ -137,6 +162,12 @@ export async function getRecentMessages(
     isMine: r.userId === currentUserId,
     reactions: reactionMap.get(r.id) ?? [],
     attachments: attachMap.get(r.id) ?? [],
+    replyTo: r.replyToId ? replies.get(r.replyToId) ?? {
+      messageId: r.replyToId,
+      authorName: null,
+      preview: "Original message unavailable",
+      unavailable: true,
+    } : null,
   }));
 }
 

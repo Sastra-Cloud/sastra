@@ -4,7 +4,7 @@ import { FileLink } from "@/components/files/file-link";
 
 import { confirmDialog } from "@/lib/dialog-requests";
 
-import { useRef, useState, useTransition } from "react";
+import { type ReactNode, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Download,
@@ -64,6 +64,9 @@ export function FileAttachments({
   canEdit = true,
   label,
   emptyText = "No files yet.",
+  onUploadComplete,
+  additionalActions,
+  actionsPosition = "bottom",
 }: {
   targetType: TargetType;
   targetId: string;
@@ -73,11 +76,17 @@ export function FileAttachments({
   label?: string;
   /** Context-specific empty-state copy for the attachment slot. */
   emptyText?: string;
+  /** Reload files for client-fetched surfaces such as task dialogs. */
+  onUploadComplete?: () => Promise<void>;
+  additionalActions?: ReactNode;
+  actionsPosition?: "top" | "bottom";
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [visibleAttachments, setVisibleAttachments] = usePropState(attachments);
   const [uploading, setUploading] = useState<string[]>([]);
+  const [failedFiles, setFailedFiles] = useState<File[]>([]);
+  const uploadInFlight = useRef(false);
   const [editingAttachmentId, setEditingAttachmentId] = useState<string | null>(
     null
   );
@@ -153,9 +162,12 @@ export function FileAttachments({
     }
   }
 
-  async function onFiles(fileList: FileList | null) {
-    if (!fileList || fileList.length === 0) return;
+  async function onFiles(fileList: FileList | File[] | null) {
+    if (!fileList || fileList.length === 0 || uploadInFlight.current) return;
+    uploadInFlight.current = true;
     const list = Array.from(fileList);
+    const failed: File[] = [];
+    setFailedFiles([]);
     setUploading(list.map((f) => f.name));
     let completed = 0;
     for (const f of list) {
@@ -163,19 +175,63 @@ export function FileAttachments({
         await uploadOne(f);
         completed += 1;
       } catch (error) {
+        failed.push(f);
         toast.error(`${f.name}: ${error instanceof Error ? error.message : "Upload failed"}`);
       }
     }
-    setUploading([]);
-    if (inputRef.current) inputRef.current.value = "";
     if (completed > 0) {
       toast.success(completed === list.length ? "Upload complete" : `${completed} of ${list.length} files uploaded`);
+      try {
+        await onUploadComplete?.();
+      } catch {
+        toast.error("Files uploaded. Reload this page to see them.");
+      }
       router.refresh();
     }
+    setUploading([]);
+    setFailedFiles(failed);
+    uploadInFlight.current = false;
+    if (inputRef.current) inputRef.current.value = "";
   }
+
+  const uploadControls = canEdit ? (
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        hidden
+        aria-label="Upload files"
+        onChange={(e) => onFiles(e.target.files)}
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="pointer-coarse:min-h-11"
+          disabled={uploading.length > 0}
+          onClick={() => inputRef.current?.click()}
+        >
+          <Upload className="size-4" />
+          Upload files
+        </Button>
+        {additionalActions}
+      </div>
+      {failedFiles.length > 0 ? (
+        <div role="alert" className="space-y-2 break-words text-sm text-destructive">
+          <p>Couldn&apos;t upload: {failedFiles.map((file) => file.name).join(", ")}. Try again, or choose a different file.</p>
+          <Button type="button" variant="outline" size="sm" onClick={() => onFiles(failedFiles)}>
+            Retry failed uploads
+          </Button>
+        </div>
+      ) : null}
+    </>
+  ) : null;
 
   return (
     <div className="space-y-2">
+      {actionsPosition === "top" ? uploadControls : null}
       {shown.length === 0 && uploading.length === 0 ? (
         <p className="text-sm text-muted-foreground">{emptyText}</p>
       ) : (
@@ -314,9 +370,10 @@ export function FileAttachments({
               ) : null}
             </li>
           ))}
-          {uploading.map((name) => (
+          {uploading.map((name, index) => (
             <li
-              key={name}
+              key={index}
+              role="status"
               className="flex items-center gap-2 rounded-md border bg-card px-2.5 py-1.5 text-muted-foreground"
             >
               <Loader2 className="size-4 shrink-0 animate-spin" />
@@ -327,26 +384,7 @@ export function FileAttachments({
         </ul>
       )}
 
-      {canEdit ? (
-        <>
-          <input
-            ref={inputRef}
-            type="file"
-            multiple
-            hidden
-            onChange={(e) => onFiles(e.target.files)}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={uploading.length > 0}
-            onClick={() => inputRef.current?.click()}
-          >
-            <Upload className="size-4" />
-            Upload files
-          </Button>
-        </>
-      ) : null}
+      {actionsPosition === "bottom" ? uploadControls : null}
     </div>
   );
 }

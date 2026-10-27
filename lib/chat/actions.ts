@@ -414,9 +414,23 @@ export async function postMessage(input: {
   content?: string;
   status?: "sent" | "uploading";
   clientNonce?: string;
+  replyToId?: string;
 }): Promise<{ id: string }> {
   const { user: actor } = await requireUser();
   await requireChannelAccess(input.channelId, actor.id);
+  const replyToId = z.string().uuid().optional().parse(input.replyToId);
+  if (replyToId) {
+    // A reply can only quote a live message in this conversation, even when
+    // the caller can also read the conversation the supplied id belongs to.
+    const [original] = await db
+      .select({ channelId: chatMessages.channelId, deletedAt: chatMessages.deletedAt })
+      .from(chatMessages)
+      .where(eq(chatMessages.id, replyToId))
+      .limit(1);
+    if (!original || original.channelId !== input.channelId || original.deletedAt !== null) {
+      throw new Error("The message you are replying to is no longer available. Cancel the reply to send a new message.");
+    }
+  }
   const id = uuidv7();
   await db.insert(chatMessages).values({
     id,
@@ -425,6 +439,7 @@ export async function postMessage(input: {
     content: input.content?.trim() || null,
     status: input.status ?? "sent",
     clientNonce: input.clientNonce,
+    replyToId,
   });
   const mentionedIds = await handleMentions(
     input.channelId,

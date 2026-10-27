@@ -98,12 +98,14 @@ const CONFIRMED_DESTRUCTIVE_ACTIONS = new Set([
 const OPTIMISTIC_ACTIONS = new Set([
   "addProjectManager", // Explicit permission confirmation precedes immediate assignment feedback.
   // Message menus retain immediate text/reaction feedback; uploads have their own progress action.
+  // Quoted replies use the same optimistic send and restore draft/context on failure.
   "postMessage",
   "toggleReaction",
   "editMessage", // Text and Edited marker update immediately; failure restores the edit draft.
   "dismissEmailQuoteSuggestion", // Review-only: hide the suggestion immediately; never reverse accepted finance.
   "dismissEmailFundingReview", // Unapproved document review only; restore the card on failure.
   "setTaskNextUp", // shared task selection: immediate state with rollback
+  "setTaskAssignmentDeferred", // personal Later planning: immediate regrouping with rollback
   "markPrintPaymentPaid", // reviewed confirmation: update payment/task immediately, roll back on failure
   // Chat message pins: predictable, reversible, and rolled back on failure.
   "pinMessage",

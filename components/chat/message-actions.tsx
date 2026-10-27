@@ -1,7 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { Copy, MoreHorizontal, Pencil, Pin, PinOff, Plus, Trash2, X } from "lucide-react";
+import { Copy, MoreHorizontal, Pencil, Pin, PinOff, Plus, Reply, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -13,13 +13,14 @@ import { cn } from "@/lib/utils";
 import ReactionPicker from "./reaction-picker";
 import type { ChatMessageView } from "@/lib/chat/queries";
 
-export function MessageActions({ m, isOwn, pin, time, reactionPending, pinPending, onReact, onTogglePin, onDelete, children, frequentEmojis = DEFAULT_REACTIONS, onEdit, editDisabled = false, editPending = false }: {
+export function MessageActions({ m, isOwn, pin, time, reactionPending, pinPending, onReact, onTogglePin, onDelete, children, frequentEmojis = DEFAULT_REACTIONS, onEdit, editDisabled = false, editPending = false, onReply, replyDisabled = false }: {
   m: ChatMessageView; isOwn: boolean; pin: boolean; time: string;
   reactionPending: boolean; pinPending: boolean;
   onReact: (emoji: string) => void; onTogglePin: () => void; onDelete: () => void;
   children: ReactNode;
   frequentEmojis?: string[];
   onEdit?: () => void; editDisabled?: boolean; editPending?: boolean;
+  onReply?: () => void; replyDisabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [picker, setPicker] = useState(false);
@@ -96,6 +97,14 @@ export function MessageActions({ m, isOwn, pin, time, reactionPending, pinPendin
           <Button type="button" size="icon" variant="ghost" className="size-11 rounded-xl" aria-label="More reactions"
             disabled={reactionPending} onClick={() => { setOpen(false); setPicker(true); }}><Plus className="size-5" /></Button>
         </div>
+        {available && onReply ? <Button type="button" variant="ghost" className="min-h-11 w-full justify-start rounded-xl" disabled={replyDisabled}
+          onClick={() => {
+            setEditHandoff(true);
+            setOpen(false);
+            onReply();
+            // Keep this in the gesture so touch keyboards can open as well.
+            surface.current?.closest("[data-chat-thread]")?.querySelector<HTMLTextAreaElement>("[data-chat-composer] textarea")?.focus({ preventScroll: true });
+          }}><Reply className="size-4" />Reply</Button> : null}
         {isOwn && available && m.content && m.status === "sent" && onEdit ? <Button type="button" variant="ghost" className="min-h-11 w-full justify-start rounded-xl" disabled={editDisabled}
           onClick={() => { setEditHandoff(true); setOpen(false); onEdit(); }}><Pencil className="size-4" />Edit message</Button> : null}
         {m.content ? <Button type="button" variant="ghost" className="min-h-11 w-full justify-start rounded-xl" disabled={copying} onClick={copyMessageText}><Copy className="size-4" />{copying ? "Copying…" : "Copy text"}</Button> : null}

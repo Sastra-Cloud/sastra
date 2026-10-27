@@ -105,6 +105,54 @@ it("uses an earlier payment due date and treats an unknown send time as due", ()
   expect(printPaymentFollowUp({ ...payment, printWireRequestedAt: null }, "2026-09-27")).toEqual({ state: "due", date: "2026-09-27" });
 });
 
+describe("requests from teammates", () => {
+  const request = (id: string, fields = {}) => ({
+    ...task(id, null), assignedTo: "me", assignedBy: "teammate",
+    assignmentSource: "direct", assignedAt: "2026-07-10T10:00:00Z",
+    assignmentDeferredAt: null as Date | null, priority: "medium", ...fields,
+  });
+
+  it("reserves intentional teammate requests outside a long backlog, including older and assistant-approved requests", () => {
+    const result = selectPersonalWork([
+      ...Array.from({ length: 25 }, (_, index) => task(`overdue-${index}`, "2026-07-01")),
+      request("old-request", { assignedAt: "2025-01-01T00:00:00Z" }),
+      request("approved-assistant-request"),
+      request("urgent", { priority: "urgent" }),
+      request("own-assistant-request", { assignedBy: "me" }),
+      request("automatic", { assignmentSource: "system" }),
+      request("unknown-history", { assignmentSource: "unknown" }),
+      request("payment", { printPaymentId: "payment" }),
+      request("managed", { lectioManaged: true }),
+    ], "2026-07-10");
+    expect(result.fromTeammates.map(row => row.id)).toEqual(["urgent", "approved-assistant-request", "old-request"]);
+    expect(result.attention).toHaveLength(30);
+    expect(result.ordered.slice(0, 3)).toEqual(result.fromTeammates);
+    expect(new Set(result.ordered.map(row => row.id)).size).toBe(result.ordered.length);
+  });
+
+  it("keeps shared order and lifecycle changes authoritative and restores a failed Later choice", () => {
+    const original = request("request");
+    const selected = selectPersonalWork([request("selected", { isNextUp: true }), original], "2026-07-10");
+    expect(selected.nextUp.map(row => row.id)).toEqual(["selected"]);
+    expect(selected.fromTeammates).toEqual([original]);
+    const deferred = selectPersonalWork([{ ...original, assignmentDeferredAt: new Date() }], "2026-07-10");
+    expect(deferred.fromTeammates).toEqual([]);
+    expect(deferred.later.map(row => row.id)).toEqual(["request"]);
+    expect(selectPersonalWork([original], "2026-07-10").fromTeammates).toEqual([original]);
+    const changed = selectPersonalWork([
+      request("started", { status: "in_progress" }),
+      request("dated", { dueDate: "2026-07-10" }),
+      request("done", { status: "done" }),
+      request("manager-selected", { isNextUp: true, assignmentDeferredAt: new Date() }),
+    ], "2026-07-10");
+    expect(changed.fromTeammates).toEqual([]);
+    expect(changed.working.map(row => row.id)).toEqual(["started"]);
+    expect(changed.dueToday.map(row => row.id)).toEqual(["dated"]);
+    expect(changed.nextUp.map(row => row.id)).toEqual(["manager-selected"]);
+    expect(changed.later).toEqual([]);
+  });
+});
+
 describe("Shared Next up", () => {
   it("keeps manager order ahead of dated and started work, including far-future selections", () => {
     const first = { ...task("undated", null), isNextUp: true, rank: 1 };

@@ -7,7 +7,7 @@ const state = vi.hoisted(() => ({
   task: { projectId: null as string | null, assignedTo: "other" as string | null, createdBy: "other" },
   grants: new Set<string>(),
   missing: false, reads: [] as unknown[], select: vi.fn(), insert: vi.fn(), update: vi.fn(), delete: vi.fn(),
-  comments: vi.fn(), time: vi.fn(), mentions: vi.fn(), start: vi.fn(), revalidate: vi.fn(),
+  attachments: vi.fn(), comments: vi.fn(), time: vi.fn(), mentions: vi.fn(), start: vi.fn(), revalidate: vi.fn(),
 }));
 vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -18,6 +18,7 @@ vi.mock("@/lib/db", () => ({ db: {
   select: state.select, insert: state.insert, update: state.update, delete: state.delete,
   transaction: async (run: (tx: unknown) => unknown) => run({ select: state.select, insert: state.insert, update: state.update, delete: state.delete }),
 } }));
+vi.mock("@/lib/files/queries", () => ({ listAttachments: state.attachments }));
 vi.mock("./queries", () => ({ getTaskComments: state.comments, getMyTasks: vi.fn() }));
 vi.mock("./time-queries", () => ({ getTaskTimeEntries: state.time }));
 vi.mock("./create", () => ({ revalidateForTask: state.revalidate }));
@@ -30,10 +31,13 @@ import { addTaskComment, deleteTaskComment, editTaskComment, listTaskComments } 
 import { deleteTimeEntry, loadTaskTime, logTime, startTimer, updateTimeEntry } from "./time-actions";
 import { addTaskDriveFile, clearTaskDriveFolder, getTaskDriveTarget, listTaskDriveFiles, removeTaskDriveFile, setTaskDriveFolder } from "./drive-actions";
 
+import { listTaskAttachments } from "./file-actions";
+
 const taskId = "11111111-1111-4111-8111-111111111111";
 const file = { driveFileId: "drive-file", name: "Draft", url: "https://drive.google.com/file/d/test" };
 const folder = { folderId: "folder", name: "Drafts", url: "https://drive.google.com/drive/folders/test" };
 const readers = [
+  ["uploaded files", () => listTaskAttachments(taskId)],
   ["comments", () => listTaskComments(taskId)],
   ["time entries", () => loadTaskTime(taskId)],
   ["Drive files", () => listTaskDriveFiles(taskId)],
@@ -62,6 +66,7 @@ beforeEach(() => {
   state.missing = false;
   state.reads = [];
   state.grants = new Set();
+  state.attachments.mockResolvedValue([{ attachmentId: "upload", originalName: "Private spreadsheet.xlsx" }]);
   state.comments.mockResolvedValue([{ id: "comment", content: "Private comment" }]);
   state.time.mockResolvedValue({ entries: [{ id: "entry", note: "Private note" }], totalSeconds: 1200 });
   state.select.mockImplementation(() => ({ from: (table: unknown) => {
@@ -95,16 +100,19 @@ function expectNoWrites() {
 describe("task details visibility", () => {
   it.each(readers)("denies a private task's %s before fetching its contents", async (_name, read) => {
     await expect(read()).rejects.toThrow(/access denied/i);
+    expect(state.attachments).not.toHaveBeenCalled();
     expect(state.comments).not.toHaveBeenCalled();
     expect(state.time).not.toHaveBeenCalled();
     expect(state.reads).toEqual([tasks]);
   });
 
-  it.each(["project", "assignee", "creator", "manager"])("preserves %s access to comments and time", async (access) => {
+  it.each(["project", "assignee", "creator", "manager"])("preserves %s access to task details", async (access) => {
     if (access === "project") state.task.projectId = "project";
     if (access === "assignee") state.task.assignedTo = state.actor.id;
     if (access === "creator") state.task.createdBy = state.actor.id;
     if (access === "manager") state.actor.role = "manager";
+    await expect(listTaskAttachments(taskId)).resolves.toEqual([{ attachmentId: "upload", originalName: "Private spreadsheet.xlsx" }]);
+    expect(state.attachments).toHaveBeenCalledWith("task", taskId);
     await expect(listTaskComments(taskId)).resolves.toEqual([{ id: "comment", content: "Private comment" }]);
     await expect(loadTaskTime(taskId)).resolves.toMatchObject({ totalSeconds: 1200 });
     await expect(listTaskDriveFiles(taskId)).resolves.toHaveLength(1);
@@ -113,7 +121,9 @@ describe("task details visibility", () => {
 
   it("does not treat a missing task as a readable standalone task", async () => {
     state.missing = true;
+    await expect(listTaskAttachments(taskId)).rejects.toThrow(/access denied/i);
     await expect(listTaskComments(taskId)).rejects.toThrow(/access denied/i);
+    expect(state.attachments).not.toHaveBeenCalled();
     expect(state.comments).not.toHaveBeenCalled();
   });
 });

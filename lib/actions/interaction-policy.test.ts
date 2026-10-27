@@ -80,12 +80,13 @@ describe("client action interaction policy", () => {
   it("keeps chat read receipts as silent background reconciliation", () => {
     expect(interactionModeFor("markChannelRead")).toBe("read");
   });
-  it("keeps chat delivery optimistic and picked, pasted, or dropped uploads progress-based", () => {
+  it("keeps chat messages and quoted replies optimistic, and picked, pasted, or dropped uploads progress-based", () => {
     expect(interactionModeFor("postMessage")).toBe("optimistic");
     expect(interactionModeFor("uploadToMessage")).toBe("progress");
   });
   it("keeps shared Next up selection and ordering optimistic", () => {
     expect(interactionModeFor("setTaskNextUp")).toBe("optimistic");
+    expect(interactionModeFor("setTaskAssignmentDeferred")).toBe("optimistic");
     expect(interactionModeFor("reorderUserTasks")).toBe("optimistic");
   });
   it("keeps reviewed printer-payment confirmation immediate with rollback", () => {

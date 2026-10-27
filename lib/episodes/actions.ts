@@ -19,6 +19,7 @@ import {
   user,
 } from "@/lib/db/schema";
 import { notifyAssignment, revalidateForTask } from "@/lib/tasks/create";
+import { taskAssignmentFields } from "@/lib/tasks/assignment";
 import { updateTaskStatus } from "@/lib/tasks/actions";
 import { reconcileTaskDueDateChange } from "@/lib/tasks/due-date-notifications";
 import {
@@ -214,7 +215,7 @@ export async function setEpisodeStageAssignee(
   await ensureEpisodeWorkflow(episodeId, actor.id);
   const [task] = await db
     .update(tasks)
-    .set({ assignedTo: assigneeId, updatedAt: new Date() })
+    .set({ assignedTo: assigneeId, ...taskAssignmentFields(actor.id, assigneeId, "direct"), updatedAt: new Date() })
     .where(and(eq(tasks.unitId, episodeId), eq(tasks.podcastStage, parsedStage)))
     .returning({ id: tasks.id });
   if (task) await notifyAssignment(task.id, assigneeId, actor.id);
@@ -583,7 +584,7 @@ export async function bulkUpdateEpisodes(
         } else if (op.kind === "stage_assignee") {
           const [task] = await db
             .update(tasks)
-            .set({ assignedTo: op.assigneeId, updatedAt: new Date() })
+            .set({ assignedTo: op.assigneeId, ...taskAssignmentFields(actor.id, op.assigneeId, "direct"), updatedAt: new Date() })
             .where(and(eq(tasks.unitId, episode.id), eq(tasks.podcastStage, op.stage)))
             .returning({ id: tasks.id });
           if (task) {
@@ -614,7 +615,7 @@ export async function bulkUpdateEpisodes(
             if (!assigneeId) continue;
             const changed = await db
               .update(tasks)
-              .set({ assignedTo: assigneeId, updatedAt: new Date() })
+              .set({ assignedTo: assigneeId, ...taskAssignmentFields(actor.id, assigneeId, "system"), updatedAt: new Date() })
               .where(
                 and(
                   eq(tasks.unitId, episode.id),

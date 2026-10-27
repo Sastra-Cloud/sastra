@@ -15,6 +15,7 @@ import {
 } from "@/lib/db/schema";
 import { nextDueDate, type Frequency } from "@/lib/recurring/schedule";
 import { notifyAssignment } from "./create";
+import { taskAssignmentFields } from "./assignment";
 import { materializeRuleById } from "./recurring";
 import { reconcileTaskDueDateChange } from "./due-date-notifications";
 
@@ -149,6 +150,7 @@ export async function updateRecurringTask(
         title: d.title,
         description: d.description?.trim() || null,
         assignedTo: d.assigneeId ?? null,
+        ...taskAssignmentFields(user.id, d.assigneeId ?? null, "system"),
         priority: d.priority,
         updatedAt: new Date(),
       })

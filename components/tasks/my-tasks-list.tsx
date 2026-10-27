@@ -18,6 +18,8 @@ import { daysUntil, dueLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { usePropState } from "@/hooks/use-prop-state";
+import { useTaskAssignmentPlanning } from "@/hooks/use-task-assignment-planning";
+import { TaskAssignmentPlanning } from "./task-assignment-planning";
 import { TaskDetailDialog } from "@/components/tasks/task-detail-dialog";
 import { TaskAttachmentShortcut } from "@/components/tasks/task-attachment-shortcut";
 import { printPaymentFollowUp, selectPersonalWork } from "@/lib/tasks/attention";
@@ -61,12 +63,13 @@ export function MyTasksList({
   const [pending, start] = useTransition();
   const [visibleTasks, setVisibleTasks] = usePropState(tasks);
   const inFlight = useRef(new Set<string>());
+  const planning = useTaskAssignmentPlanning(setVisibleTasks, inFlight);
   const [pendingIds, setPendingIds] = useState(new Set<string>());
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   const detailTask = detailTaskId
     ? visibleTasks.find((task) => task.id === detailTaskId) ?? null
     : null;
-  const { dueToday, remainingDueToday, nextUp, nextUpCount, selectedCount, blockedNextUp, working, attention, later, waiting } = selectPersonalWork(
+  const { dueToday, remainingDueToday, nextUp, nextUpCount, selectedCount, blockedNextUp, fromTeammates, working, attention, later, waiting } = selectPersonalWork(
     visibleTasks, todayIso, timeZone, homePreview ? 3 : Infinity
   );
   const openTasks = visibleTasks.filter(task => task.status !== "done");
@@ -92,6 +95,12 @@ export function MyTasksList({
           title: "Due today",
           description: dueToday.length !== remainingDueToday.length ? `${dueToday.length - remainingDueToday.length} of today's tasks shown in Next up above` : "Today's deadlines and payment follow-ups",
           rows: remainingDueToday,
+        },
+        {
+          id: "home-from-teammates",
+          title: "From teammates",
+          description: "Tasks assigned by a teammate without a due date",
+          rows: fromTeammates.slice(0, 3),
         },
         {
           id: "home-next-tasks",
@@ -185,7 +194,7 @@ export function MyTasksList({
           </Link>
         </p>
       ) : null}
-      {homePreview && dueToday.length === 0 ? <p className="text-sm text-muted-foreground">No tasks due today.</p> : null}
+      {homePreview && dueToday.length === 0 && fromTeammates.length === 0 ? <p className="text-sm text-muted-foreground">No tasks due today.</p> : null}
       {homePreview && nextUpCount === 0 && blockedNextUp.length === 0 && selectedCount > 0 ? <p className="text-xs text-muted-foreground">Your selected Next up tasks are awaiting payment confirmation in My Work.</p> : null}
       {homePreview && groups.every(group => group.rows.length === 0) ? (
         <p className="rounded-xl border bg-card px-4 py-5 text-sm text-muted-foreground">No other tasks need attention right now. Open My Work to see later and waiting work.</p>
@@ -202,17 +211,17 @@ export function MyTasksList({
                 <h2 id={`${group.id}-heading`} className="text-lg font-semibold">
                   {group.title}{" "}
                   <span className="ml-2 text-sm font-normal tabular-nums text-muted-foreground">
-                    {group.id === "home-due-today" ? dueToday.length : group.id === "home-next-up" ? nextUpCount : group.rows.length}
+                    {group.id === "home-due-today" ? dueToday.length : group.id === "home-next-up" ? nextUpCount : group.id === "home-from-teammates" ? fromTeammates.length : group.rows.length}
                   </span>
                 </h2>
                 <p className="text-xs text-muted-foreground">{group.description}</p>
               </div>
-              {group.id === "home-due-today" || group.id === "home-next-up" ? (
+              {group.id === "home-due-today" || group.id === "home-next-up" || group.id === "home-from-teammates" ? (
                 <Link
-                  href={group.id === "home-next-up" ? "/tasks?view=focus#next-up" : "/tasks?view=focus#due-today"}
+                  href={group.id === "home-next-up" ? "/tasks?view=focus#next-up" : group.id === "home-from-teammates" ? "/tasks?view=focus#from-teammates" : "/tasks?view=focus#due-today"}
                   className="inline-flex min-h-10 items-center gap-1 text-sm text-muted-foreground hover:underline"
                 >
-                  {group.id === "home-next-up" ? "View all Next up" : "Open My Work"} <ArrowRight className="size-3.5" />
+                  {group.id === "home-next-up" ? "View all Next up" : group.id === "home-from-teammates" ? `View all ${fromTeammates.length} tasks` : "Open My Work"} <ArrowRight className="size-3.5" />
                 </Link>
               ) : null}
             </div>
@@ -247,7 +256,7 @@ export function MyTasksList({
                           done={false}
                           onToggle={() => markDone(t)}
                           title={t.title}
-                          disabled={pendingIds.has(t.id)}
+                          disabled={pendingIds.has(t.id) || planning.pendingIds.has(t.id)}
                           hoverPreview
                           className="row-span-2 flex size-10 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-success focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:text-success sm:row-auto"
                         />
@@ -315,6 +324,11 @@ export function MyTasksList({
                           ) : null}
                         </div>
                         <TaskAttachmentShortcut task={t} />
+                        {group.id === "home-from-teammates" ? <TaskAssignmentPlanning
+                          task={t}
+                          pending={pendingIds.has(t.id) || planning.pendingIds.has(t.id)}
+                          onDeferredChange={planning.deferAssignment}
+                        /> : null}
                         {t.blockedByTitle ? <p className="mt-1 text-xs text-warning-text">Blocked by {t.blockedByTitle}</p> : null}
                         {sourceLink ? <Link href={sourceLink.href} className="mt-1 block text-xs text-primary hover:underline">{sourceLink.label}</Link> : null}
                       </div>

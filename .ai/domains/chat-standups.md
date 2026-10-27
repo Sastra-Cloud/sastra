@@ -44,6 +44,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/chat/voice-message-player.tsx`
 - `components/chat/voice-recorder.tsx`
 - `lib/chat/access.ts`
+- `lib/chat/actions.test.ts`
 - `lib/chat/actions.ts`
 - `lib/chat/channel-draft.test.ts`
 - `lib/chat/channel-draft.ts`
@@ -89,11 +90,10 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/chat/reaction-summary.ts`
 - `lib/chat/read-client.test.ts`
 - `lib/chat/read-client.ts`
+- `lib/chat/replies.ts`
 - `lib/chat/sidebar-order.test.ts`
 - `lib/chat/sidebar-order.ts`
 - `lib/db/schema/chat.ts`
 - `lib/db/schema/standup.ts`
 - `lib/standup/config-actions.ts`
-- `lib/standup/engine.ts`
-- `lib/standup/heuristic.test.ts`
-... 4 more
+... 6 more

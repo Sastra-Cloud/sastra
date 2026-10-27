@@ -84,6 +84,8 @@ describe("myWorkTaskLocations", () => {
         task("selected", { isNextUp: true }),
         task("today", { dueDate: "2026-10-19" }),
         task("started", { status: "in_progress" }),
+        task("request", { assignedBy: "teammate", assignmentSource: "direct" }),
+        task("deferred", { assignedBy: "teammate", assignmentSource: "direct", assignmentDeferredAt: new Date() }),
         task("overdue", { dueDate: "2026-10-01" }),
         task("far", { dueDate: "2027-03-01" }),
         task("finished", { status: "done", completedAt: new Date("2026-10-15T03:00:00Z") }),
@@ -94,9 +96,11 @@ describe("myWorkTaskLocations", () => {
     expect(Object.fromEntries(locations)).toEqual({
       selected: "In Next up",
       today: "In Due today",
+      request: "In From teammates",
       started: "In Working now",
       overdue: "In Other assigned work",
       far: "In Later",
+      deferred: "In Later",
       finished: "Done Oct 15, 2026",
     });
   });

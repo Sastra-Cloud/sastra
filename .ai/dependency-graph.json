@@ -2093,6 +2093,7 @@
     "vitest",
     "@/lib/chat/actions",
     "@/lib/chat/queries",
+    "@/lib/chat/replies",
     "@/lib/dialog-requests",
     "sonner",
     "./chat-thread",
@@ -2108,6 +2109,7 @@
     "sonner",
     "@/lib/chat/queries",
     "@/lib/chat/clipboard",
+    "@/lib/chat/replies",
     "@/lib/chat/pin-state",
     "@/hooks/use-user-active",
     "@/lib/chat/read-client",
@@ -4127,6 +4129,8 @@
     "@/lib/utils",
     "sonner",
     "@/hooks/use-prop-state",
+    "@/hooks/use-task-assignment-planning",
+    "./task-assignment-planning",
     "@/components/tasks/task-detail-dialog",
     "@/components/tasks/task-attachment-shortcut",
     "@/lib/tasks/attention",
@@ -4175,6 +4179,8 @@
     "@/lib/time",
     "@/lib/utils",
     "@/hooks/use-prop-state",
+    "@/hooks/use-task-assignment-planning",
+    "./task-assignment-planning",
     "@/components/time/active-timer-provider",
     "@/components/section-disclosure",
     "@/lib/tasks/completion-feedback",
@@ -4222,6 +4228,11 @@
     "@/components/ui/label",
     "@/components/ui/textarea",
     "@/hooks/use-prop-state"
+  ],
+  "components/tasks/task-assignment-planning.tsx": [
+    "@/lib/tasks/queries",
+    "@/lib/tasks/assignment",
+    "@/components/ui/button"
   ],
   "components/tasks/task-attachment-shortcut.test.tsx": [
     "react-dom/server",
@@ -4279,6 +4290,9 @@
     "lucide-react",
     "date-fns",
     "@/lib/tasks/queries",
+    "@/lib/files/queries",
+    "@/components/files/file-attachments",
+    "@/lib/tasks/file-actions",
     "@/lib/tasks/actions",
     "@/lib/tasks/comment-actions",
     "@/lib/tasks/drive-actions",
@@ -4748,6 +4762,13 @@
     "@/lib/push/setup-state",
     "@/components/pwa/pwa-provider"
   ],
+  "hooks/use-task-assignment-planning.ts": [
+    "react",
+    "next/navigation",
+    "sonner",
+    "@/lib/tasks/actions",
+    "@/lib/tasks/queries"
+  ],
   "hooks/use-user-active.ts": [
     "react",
     "@/lib/activity/tracker"
@@ -4911,6 +4932,7 @@
     "@/lib/db/schema"
   ],
   "lib/agreements/readiness-engine.ts": [
+    "@/lib/tasks/assignment",
     "drizzle-orm",
     "date-fns-tz",
     "@/lib/db",
@@ -5467,6 +5489,7 @@
     "@/lib/db",
     "@/lib/notifications",
     "@/lib/tasks/create",
+    "@/lib/tasks/assignment",
     "@/lib/db/schema",
     "@/lib/budget/royalty-recurring",
     "@/lib/budget/compute",
@@ -5756,6 +5779,10 @@
     "@/lib/workspace/modules",
     "@/lib/tasks/access"
   ],
+  "lib/chat/actions.test.ts": [
+    "vitest",
+    "./actions"
+  ],
   "lib/chat/actions.ts": [
     "next/cache",
     "drizzle-orm",
@@ -5925,6 +5952,7 @@
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/chat/access",
+    "@/lib/chat/replies",
     "@/lib/chat/channel-members",
     "@/lib/chat/sidebar-order",
     "@/lib/files/queries",
@@ -5961,6 +5989,7 @@
     "@/lib/chat/actions",
     "@/lib/notifications/client-events"
   ],
+  "lib/chat/replies.ts": [],
   "lib/chat/sidebar-order.test.ts": [
     "vitest",
     "./sidebar-order"
@@ -6341,7 +6370,8 @@
     "./auth",
     "./print",
     "./projects",
-    "./enums"
+    "./enums",
+    "@/lib/tasks/assignment"
   ],
   "lib/db/schema/templates.ts": [
     "drizzle-orm/pg-core",
@@ -7088,6 +7118,7 @@
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/tasks/create",
+    "@/lib/tasks/assignment",
     "@/lib/tasks/actions",
     "@/lib/tasks/due-date-notifications",
     "./workflow-service",
@@ -8636,7 +8667,8 @@
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/notifications",
-    "@/lib/tasks/due-date-notifications"
+    "@/lib/tasks/due-date-notifications",
+    "@/lib/tasks/assignment"
   ],
   "lib/projects/print-funding.test.ts": [
     "vitest",
@@ -9158,6 +9190,7 @@
     "@/lib/db",
     "@/lib/db/schema",
     "./access",
+    "./assignment",
     "./queue",
     "./queue-service",
     "@/lib/projects/pipeline",
@@ -9170,13 +9203,15 @@
     "./due-date-notifications",
     "${row.title}"
   ],
+  "lib/tasks/assignment.ts": [],
   "lib/tasks/attention.test.ts": [
     "vitest",
     "./attention"
   ],
   "lib/tasks/attention.ts": [
     "./queries",
-    "date-fns-tz"
+    "date-fns-tz",
+    "./assignment"
   ],
   "lib/tasks/board-order.test.ts": [
     "vitest",
@@ -9204,6 +9239,11 @@
     "sonner",
     "@/lib/projects/pipeline"
   ],
+  "lib/tasks/create.test.ts": [
+    "vitest",
+    "./create",
+    "./attention"
+  ],
   "lib/tasks/create.ts": [
     "next/cache",
     "drizzle-orm",
@@ -9214,7 +9254,8 @@
     "@/lib/activity/log",
     "@/lib/format",
     "@/lib/episodes/workflow",
-    "./queue-service"
+    "./queue-service",
+    "./assignment"
   ],
   "lib/tasks/drive-actions.ts": [
     "next/headers",
@@ -9246,6 +9287,11 @@
     "@/lib/notifications",
     "./due-date-copy"
   ],
+  "lib/tasks/file-actions.ts": [
+    "@/lib/auth/guards",
+    "@/lib/files/queries",
+    "./access"
+  ],
   "lib/tasks/google-picker-client.test.ts": [
     "vitest",
     "./google-picker-client",
@@ -9272,7 +9318,9 @@
     "@/lib/recurring/schedule",
     "@/lib/format",
     "./time-queries",
-    "./search"
+    "./search",
+    "./assignment",
+    "user"
   ],
   "lib/tasks/queue-actions.test.ts": [
     "vitest",
@@ -9304,6 +9352,7 @@
     "@/lib/db/schema",
     "@/lib/recurring/schedule",
     "./create",
+    "./assignment",
     "./recurring",
     "./due-date-notifications"
   ],
@@ -9320,7 +9369,8 @@
     "@/lib/db/schema",
     "./comment-actions",
     "./time-actions",
-    "./drive-actions"
+    "./drive-actions",
+    "./file-actions"
   ],
   "lib/tasks/search-actions.ts": [
     "zod",

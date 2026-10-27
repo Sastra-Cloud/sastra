@@ -145,7 +145,7 @@ function DriveGate({
   if (!ctx.configured) {
     return (
       <p className="text-xs text-muted-foreground">
-        Google Drive isn&apos;t configured on the server yet.
+        Google Drive is not set up for this workspace.
       </p>
     );
   }
@@ -617,7 +617,7 @@ export function DriveUploadButton({
         ) : (
           <Upload className="size-4" />
         )}
-        Upload file
+        Upload to Drive
       </Button>
       <DriveFolderPickerButton
         label="Choose another folder…"

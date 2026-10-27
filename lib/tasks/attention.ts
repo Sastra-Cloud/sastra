@@ -1,5 +1,6 @@
 import type { MyTaskRow } from "./queries";
 import { formatInTimeZone } from "date-fns-tz";
+import { isUndatedTeammateRequest, type TaskAssignmentContext } from "./assignment";
 
 export const TASK_ATTENTION_WINDOW_DAYS = 30;
 
@@ -69,7 +70,7 @@ export function splitTasksByAttention<
   return { attention, later };
 }
 
-export function selectPersonalWork<T extends Pick<MyTaskRow, "id" | "dueDate" | "status"> & PaymentTaskTiming & { isNextUp?: boolean; rank?: number; blockedByTitle?: string | null }>(tasks: T[], todayIso: string, timeZone = "UTC", nextUpLimit = Infinity) {
+export function selectPersonalWork<T extends Pick<MyTaskRow, "id" | "dueDate" | "status"> & PaymentTaskTiming & TaskAssignmentContext & { isNextUp?: boolean; rank?: number; priority?: string; blockedByTitle?: string | null }>(tasks: T[], todayIso: string, timeZone = "UTC", nextUpLimit = Infinity) {
   const open = tasks.filter(task => task.status !== "done");
   const dueToday: T[] = [];
   const waiting: T[] = [];
@@ -99,9 +100,19 @@ export function selectPersonalWork<T extends Pick<MyTaskRow, "id" | "dueDate" | 
   const remainingOrdinary = ordinary.filter(task => !selectedIds.has(task.id));
   const working = remainingOrdinary.filter(task => task.status === "in_progress" || task.status === "review");
   const unstarted = remainingOrdinary.filter(task => task.status !== "in_progress" && task.status !== "review");
-  const { attention, later } = splitTasksByAttention(unstarted, todayIso);
+  const teammateRequests = unstarted.filter(isUndatedTeammateRequest);
+  const fromTeammates = teammateRequests.filter(task => !task.assignmentDeferredAt);
+  const priorityOrder: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
+  const assignmentTime = (task: T) => task.assignedAt ? new Date(task.assignedAt).getTime() || 0 : 0;
+  fromTeammates.sort((a, b) =>
+    (priorityOrder[a.priority ?? "medium"] ?? 2) - (priorityOrder[b.priority ?? "medium"] ?? 2) ||
+    assignmentTime(b) - assignmentTime(a) || (a.rank ?? 0) - (b.rank ?? 0) || a.id.localeCompare(b.id)
+  );
+  const deferred = teammateRequests.filter(task => Boolean(task.assignmentDeferredAt));
+  const requestIds = new Set(teammateRequests.map(task => task.id));
+  const { attention, later } = splitTasksByAttention(unstarted.filter(task => !requestIds.has(task.id)), todayIso);
   // Today's full deadline set stays represented across Next up and Due today.
   // Preserve order within the other groups and never duplicate their task IDs.
   const remainingFollowUps = followUpDue.filter(task => !selectedIds.has(task.id));
-  return { dueToday, remainingDueToday, nextUp, nextUpCount: allNextUp.length, selectedCount: open.filter(task => task.isNextUp).length, blockedNextUp, working, waiting, followUpDue: remainingFollowUps, attention: [...remainingFollowUps, ...attention], later, ordered: [...nextUp, ...remainingDueToday, ...working, ...remainingFollowUps, ...attention] };
+  return { dueToday, remainingDueToday, nextUp, nextUpCount: allNextUp.length, selectedCount: open.filter(task => task.isNextUp).length, blockedNextUp, fromTeammates, working, waiting, followUpDue: remainingFollowUps, attention: [...remainingFollowUps, ...attention], later: [...deferred, ...later], ordered: [...nextUp, ...remainingDueToday, ...fromTeammates, ...working, ...remainingFollowUps, ...attention] };
 }

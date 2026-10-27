@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { deleteMessage, markChannelRead, postMessage, setMessageStatus, toggleReaction } from "@/lib/chat/actions";
 import type { ChatMessageView } from "@/lib/chat/queries";
+import { replyPreview } from "@/lib/chat/replies";
 import { confirmDialog } from "@/lib/dialog-requests";
 import { toast } from "sonner";
 import { ChatThread } from "./chat-thread";
@@ -64,8 +65,10 @@ function render(loading = false, initialMessages: ChatMessageView[] = []) {
     send: all.find((element) => element.props["aria-label"] === "Send")?.props ?? {},
     composer: all.find((element) => "placeholder" in element.props)?.props ?? {},
     editor: all.find(element => "draft" in element.props && "onSave" in element.props)?.props as { draft: MessageEditDraft; onSave: () => void; onCancel: () => void; onChange: (text: string) => void } | undefined,
+    replyComposer: all.find((element) => "data-reply-composer" in element.props),
+    cancelReply: all.find((element) => element.props["aria-label"] === "Cancel reply")?.props.onClick as (() => void) | undefined,
     rows: all.filter((element) => "m" in element.props).map((element) => element.props as {
-      m: ChatMessageView; reactionPending: boolean; editPending: boolean; onEdit: () => void; onReact: (emoji: string) => void; onDelete: () => Promise<void>;
+      m: ChatMessageView; reactionPending: boolean; editPending: boolean; onEdit: () => void; onReact: (emoji: string) => void; onDelete: () => Promise<void>; onReply: () => void;
     }),
   };
 }
@@ -99,7 +102,7 @@ it("records a visit when a cached conversation reopens with already read message
   const message: ChatMessageView = {
     id: "last-message", userId: "me", authorName: "Teammate", authorImage: null,
     content: "Hello", status: "sent", createdAt: "2026-10-20T09:00:00.000Z",
-    isMine: true, reactions: [], attachments: [], editedAt: null,
+    isMine: true, reactions: [], attachments: [], replyTo: null, editedAt: null,
   };
   render(false, [message]);
   const enterConversation = vi.mocked(useEffect).mock.calls.find(
@@ -205,7 +208,7 @@ describe("chat file drops", () => {
 const savedMessage = (): ChatMessageView => ({
   id: 'saved', userId: 'me', authorName: 'Teammate', authorImage: null,
   content: 'Review the headings', createdAt: '2026-10-19T10:00:00Z', editedAt: null, status: 'sent',
-  isMine: true, attachments: [], reactions: [{ emoji: '👍', count: 1, mine: false }],
+  isMine: true, attachments: [], reactions: [{ emoji: '👍', count: 1, mine: false }], replyTo: null,
 });
 
 describe('conversation action feedback', () => {
@@ -252,15 +255,22 @@ describe('conversation action feedback', () => {
     render(false, [{ ...savedMessage(), userId: 'someone-else', isMine: false }]).rows[0].onEdit();
     expect(render().editor).toBeUndefined();
   });
-  it.each([false, true])('shows a pending text message and settles or restores the draft (failure: %s)', async (fail) => {
+  it.each([false, true])('shows a pending reply and settles or restores the draft and reply context (failure: %s)', async (fail) => {
     let finish!: (value: { id: string }) => void;
     let reject!: (reason: Error) => void;
     vi.mocked(postMessage).mockImplementation(() => new Promise((resolve, fail) => { finish = resolve; reject = fail; }));
-    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ messages: [savedMessage()], pins: [] })));
+    const original = { ...savedMessage(), id: 'original', userId: 'other', authorName: 'Alex', content: 'Which headings?' };
+    const quote = replyPreview(original);
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ messages: [original, { ...savedMessage(), replyTo: quote }], pins: [] })));
+    render(false, [original]).rows[0].onReply();
+    expect(render().replyComposer).toBeDefined();
     (render().composer.onChange as (text: string) => void)('Review the headings');
     (render().send.onClick as () => void)();
-    expect(render().rows[0].m.id).toMatch(/^pending-/);
-    expect(render().rows[0].m.status).toBe('uploading');
+    expect(render().rows[1].m.id).toMatch(/^pending-/);
+    expect(render().rows[1].m.status).toBe('uploading');
+    expect(render().rows[1].m.replyTo).toEqual(quote);
+    expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({ replyToId: 'original' }));
+    expect(render().replyComposer).toBeUndefined();
     expect(render().composer.value).toBe('');
     expect(render().send.disabled).toBe(true);
     if (fail) reject(new Error('Please retry.'));
@@ -269,11 +279,43 @@ describe('conversation action feedback', () => {
     await vi.waitFor(() => expect(render().rows.some(row => row.m.id.startsWith('pending-'))).toBe(false));
     if (fail) {
       expect(render().composer.value).toBe('Review the headings');
+      expect(render().replyComposer).toBeDefined();
+      expect(render().rows.map(row => row.m.id)).toEqual(['original']);
       expect(toast.error).toHaveBeenCalledWith('Please retry.');
       expect(render().alerts).toEqual(['Please retry. Your draft is restored.']);
       (render().composer.onChange as (text: string) => void)('Updated draft');
       expect(render().alerts).toEqual([]);
-    } else expect(render().rows[0].m.id).toBe('saved');
+    } else {
+      expect(render().rows[1].m).toMatchObject({ id: 'saved', replyTo: quote });
+      expect(render().replyComposer).toBeUndefined();
+    }
+  });
+
+  it('cancels reply context without losing text or files or sending anything', () => {
+    const original = savedMessage();
+    render(false, [original]).rows[0].onReply();
+    (render().composer.onChange as (text: string) => void)('Keep my draft');
+    const file = powerpoint();
+    render().thread.onDrop!(drag([file]));
+    render().cancelReply!();
+    expect(render().replyComposer).toBeUndefined();
+    expect(render().composer.value).toBe('Keep my draft');
+    expect(render().files[0].props.file).toBe(file);
+    expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it('retains a successfully saved reply when its follow-up refresh fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    const original = savedMessage();
+    render(false, [original]).rows[0].onReply();
+    (render().composer.onChange as (text: string) => void)('This is the reply');
+    (render().send.onClick as () => void)();
+    await vi.waitFor(() => expect(render().rows.some(row => row.m.id.startsWith('pending-'))).toBe(false));
+    expect(render().rows[1].m).toMatchObject({ id: 'message', status: 'sent', replyTo: replyPreview(original) });
+    expect(render().composer.value).toBe('');
+    expect(render().replyComposer).toBeUndefined();
+    expect(render().alerts).toEqual([]);
+    expect(postMessage).toHaveBeenCalledTimes(1);
   });
 
   it('explains a connection failure and keeps the draft ready to retry', async () => {

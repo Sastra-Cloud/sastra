@@ -20,6 +20,7 @@ import {
   user as users,
 } from "@/lib/db/schema";
 import { assertTaskAccess, taskEditPredicate } from "./access";
+import { isUndatedTeammateRequest, taskAssignmentFields } from "./assignment";
 import { assertCompleteTaskQueue, assertQueueRevision } from "./queue";
 import { lockTaskQueues, nextTaskRank, touchTaskQueue } from "./queue-service";
 import { advanceChapterAfterDone, type TaskHandoff } from "@/lib/projects/pipeline";
@@ -225,6 +226,7 @@ export async function createTask(
     {
       actorId: user.id,
       activitySummary: `Created task "${d.title}"`,
+      assignmentSource: "direct",
       revalidate: false,
     }
   );
@@ -381,7 +383,7 @@ export async function assignTask(taskId: string, userId: string | null) {
     }
     const rank = await nextTaskRank(tx, userId);
     const [updated] = await tx.update(tasks)
-      .set({ assignedTo: userId, ...(before?.assignedTo !== userId ? { rank, isNextUp: false } : {}), updatedAt: new Date() })
+      .set({ assignedTo: userId, ...(before?.assignedTo !== userId ? { rank, isNextUp: false, ...taskAssignmentFields(user.id, userId, "direct") } : {}), updatedAt: new Date() })
       .where(eq(tasks.id, taskId))
       .returning({ projectId: tasks.projectId });
     if (payment.royaltyId) await tx.update(royaltyPayments)
@@ -403,6 +405,45 @@ export async function assignTask(taskId: string, userId: string | null) {
   await notifyAssignment(taskId, userId, user.id);
   await revalidateForTask(row?.projectId ?? null);
   return row.revisions;
+}
+
+/** Personal planning only: never change ownership, deadlines, or shared order. */
+export async function setTaskAssignmentDeferred(
+  taskId: string,
+  deferred: boolean,
+  expectedAssignedAt: string | null,
+) {
+  const { user } = await requireUser();
+  taskId = z.string().uuid().parse(taskId);
+  deferred = z.boolean().parse(deferred);
+  const assignedAt = z.string().datetime().nullable().parse(expectedAssignedAt);
+  const [current] = await db.select({
+    assignedTo: tasks.assignedTo, assignedBy: tasks.assignedBy,
+    assignmentSource: tasks.assignmentSource, dueDate: tasks.dueDate,
+    status: tasks.status, isNextUp: tasks.isNextUp, lectioManaged: tasks.lectioManaged,
+  }).from(tasks).where(eq(tasks.id, taskId)).limit(1);
+  if (!current || current.assignedTo !== user.id || !isUndatedTeammateRequest(current) || current.isNextUp) {
+    throw new Error("Only your undated teammate tasks can move to Later. Refresh My Work and try again.");
+  }
+  await assertOrdinaryTask(taskId);
+  await assertSourceControlledStatusAction(taskId);
+  const [row] = await db.update(tasks).set({
+    assignmentDeferredAt: deferred ? new Date() : null,
+  }).where(and(
+    eq(tasks.id, taskId),
+    eq(tasks.assignedTo, user.id),
+    ne(tasks.assignedBy, user.id),
+    eq(tasks.assignmentSource, "direct"),
+    eq(tasks.lectioManaged, false),
+    eq(tasks.status, "todo"),
+    isNull(tasks.dueDate),
+    eq(tasks.isNextUp, false),
+    assignedAt ? eq(tasks.assignedAt, new Date(assignedAt)) : isNull(tasks.assignedAt),
+  )).returning({ assignmentDeferredAt: tasks.assignmentDeferredAt });
+  if (!row) throw new Error("This task changed. Refresh My Work and try again.");
+  revalidatePath("/dashboard");
+  revalidatePath("/tasks");
+  return row;
 }
 
 const updateFieldsSchema = z.object({
@@ -452,7 +493,8 @@ export async function updateTaskFields(
       ...(f.dueDate !== undefined ? { dueDate: f.dueDate || null } : {}),
       ...(f.dueDate !== undefined ? { dueDateIsManual: true } : {}),
       ...(f.assignedTo !== undefined ? { assignedTo: f.assignedTo } : {}),
-      ...(assignmentChanged ? { rank: await nextTaskRank(tx, f.assignedTo ?? null), isNextUp: false } : {}),
+      ...(assignmentChanged ? { rank: await nextTaskRank(tx, f.assignedTo ?? null), isNextUp: false, ...taskAssignmentFields(user.id, f.assignedTo ?? null, "direct") } : {}),
+      ...(f.dueDate ? { assignmentDeferredAt: null } : {}),
       ...(f.priority !== undefined ? { priority: f.priority } : {}),
       ...(f.isMilestone !== undefined ? { isMilestone: f.isMilestone } : {}),
       updatedAt: new Date(),

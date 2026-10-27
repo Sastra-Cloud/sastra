@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { phases, projectMembers, projects, tasks, user } from "@/lib/db/schema";
 import { notify } from "@/lib/notifications";
 import { clearTaskDueDateNotifications } from "@/lib/tasks/due-date-notifications";
+import { taskAssignmentFields } from "@/lib/tasks/assignment";
 
 function ymd(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -97,6 +98,7 @@ export async function advanceChapterAfterDone(
         .set({
           dueDate: ymd(addDays(completed, np.durationDays ?? 0)),
           assignedTo: assignee,
+          ...taskAssignmentFields(null, assignee, "system"),
           updatedAt: new Date(),
         })
         .where(eq(tasks.id, nextTask.id));

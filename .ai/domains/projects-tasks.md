@@ -81,6 +81,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/tasks/my-work-hub.tsx`
 - `components/tasks/personal-task-board.tsx`
 - `components/tasks/recurring-list.tsx`
+- `components/tasks/task-assignment-planning.tsx`
 - `components/tasks/task-attachment-shortcut.test.tsx`
 - `components/tasks/task-attachment-shortcut.tsx`
 - `components/tasks/task-board.tsx`
@@ -95,5 +96,4 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/db/schema/recurring.ts`
 - `lib/db/schema/tasks.ts`
 - `lib/db/schema/templates.ts`
-- `lib/projects/actions.ts`
-... 88 more
+... 92 more

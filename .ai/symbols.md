@@ -1484,6 +1484,10 @@
 
 - RecurringList
 
+## `components/tasks/task-assignment-planning.tsx`
+
+- TaskAssignmentPlanning
+
 ## `components/tasks/task-attachment-shortcut.tsx`
 
 - TaskAttachmentShortcut
@@ -1623,6 +1627,10 @@
 ## `hooks/use-push-setup.ts`
 
 - UsePushSetup, usePushSetup
+
+## `hooks/use-task-assignment-planning.ts`
+
+- useTaskAssignmentPlanning
 
 ## `hooks/use-user-active.ts`
 
@@ -2159,6 +2167,10 @@
 ## `lib/chat/read-client.ts`
 
 - syncChannelRead
+
+## `lib/chat/replies.ts`
+
+- ChatReplyPreview, replyPreview
 
 ## `lib/chat/sidebar-order.ts`
 
@@ -3626,7 +3638,11 @@
 
 ## `lib/tasks/actions.ts`
 
-- TaskFormState, assignTask, createTask, deleteTask, moveTaskToProject, reorderUserTasks, setTaskDependencies, setTaskNextUp, updateTaskFields, updateTaskStatus
+- TaskFormState, assignTask, createTask, deleteTask, moveTaskToProject, reorderUserTasks, setTaskAssignmentDeferred, setTaskDependencies, setTaskNextUp, updateTaskFields, updateTaskStatus
+
+## `lib/tasks/assignment.ts`
+
+- TaskAssignmentContext, TaskAssignmentSource, isUndatedTeammateRequest, taskAssignmentFields
 
 ## `lib/tasks/attention.ts`
 
@@ -3663,6 +3679,10 @@
 ## `lib/tasks/due-date-notifications.ts`
 
 - clearTaskDueDateNotifications, reconcileTaskDueDateChange
+
+## `lib/tasks/file-actions.ts`
+
+- listTaskAttachments
 
 ## `lib/tasks/google-picker-client.ts`
 

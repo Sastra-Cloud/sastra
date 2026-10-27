@@ -68,6 +68,7 @@ export function myWorkTaskLocations(
   place(work.nextUp, "In Next up");
   place(work.blockedNextUp, "In Next up · blocked");
   place(work.remainingDueToday, "In Due today");
+  place(work.fromTeammates, "In From teammates");
   place(work.working, "In Working now");
   place(work.attention, "In Other assigned work");
   place(work.waiting, "In Waiting on confirmation");

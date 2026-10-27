@@ -93,3 +93,6 @@ a component.
 - **Other assigned work**: remaining tasks in My Work, including upcoming and undated tasks.
 - **Needs review** in Correspondence: shared email reviews and unassigned due follow-ups, counted by thread.
 - **Email assistant preferences**: personal controls and approved rules in Profile.
+
+- **From teammates**: undated tasks intentionally assigned by another teammate, including approved assistant requests.
+- **Move to Later** / **Bring back**: personal planning controls for undated teammate tasks.

@@ -2,9 +2,9 @@
 title: "Tasks & the board"
 category: "Work"
 roles: [member, manager, admin]
-keywords: [task permissions, private task, project manager, assigned project management, confirm printer paid, confirm payment in my work, badge breakdown, actions for you, due tasks, search tasks, find task, missing task, lost task, old task, done task, reopen task, next up, shared queue, undated task, due today, today tasks, overdue tasks, your next tasks, suggestions to review, next task, handoff, more options, create task, laptop task form, task, kanban, board, column, to do, in progress, review, done, drag, move, assign, priority, due date, earliest due first, task order, reschedule, edit task, move task to project, milestone, recurring, recurring schedule, google drive, drive loading, cancel drive, small screen, task form scrolling, task attachment, upload file, attach file, working folder, license obligation, printer payment, printing coordinator, proof review, approve proof, reply to printer, budget approval, approve, request changes, wip, time tracking, comment, mention, email task, forwarded email, meeting reminder, booking link, email assistant, task suggestion, learn from email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice, waiting for payment, follow up due, source linked task]
+keywords: [from teammates, teammate request, assigned by, move to later, bring back, task permissions, private task, project manager, assigned project management, confirm printer paid, confirm payment in my work, badge breakdown, actions for you, due tasks, search tasks, find task, missing task, lost task, old task, done task, reopen task, next up, shared queue, undated task, due today, today tasks, overdue tasks, your next tasks, suggestions to review, next task, handoff, more options, create task, laptop task form, task, kanban, board, column, to do, in progress, review, done, drag, move, assign, priority, due date, earliest due first, task order, reschedule, edit task, move task to project, milestone, recurring, recurring schedule, google drive, drive loading, cancel drive, small screen, task form scrolling, task attachment, attachments, upload files, spreadsheet, retry upload, download task file, R2, upload file, attach file, working folder, license obligation, printer payment, printing coordinator, proof review, approve proof, reply to printer, budget approval, approve, request changes, wip, time tracking, comment, mention, email task, forwarded email, meeting reminder, booking link, email assistant, task suggestion, learn from email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice, waiting for payment, follow up due, source linked task]
 order: 30
-summary: "Understand task permissions, follow a shared Next up order without due dates, see real deadlines, search for any task, review email suggestions, confirm printer payments, and use Board and Agenda."
+summary: "Upload task attachments or link Google Drive files. See undated teammate tasks and save requests for later. Understand task permissions, follow a shared Next up order without due dates, see real deadlines, search for any task, review email suggestions, confirm printer payments, and use Board and Agenda."
 ---
 
 Tasks are the unit of work. **My Work** brings your personal tasks and dated
@@ -18,6 +18,18 @@ project also keeps its own task board.
   The summary keeps today's and overdue counts visible. **Due today** then shows
   today's remaining deadlines and payment follow-ups; selected tasks already
   shown above are counted but not duplicated. Dates use the workspace timezone.
+  **From teammates** shows all remaining tasks intentionally assigned by another
+  teammate without a due date. Empty **Next up** and **Due today** panels give way
+  to these requests. This includes tasks they create through an approved
+  assistant action. Your own tasks and automatically generated tasks stay in the
+  regular queue. Requests show their assigner and stay visible after you open them
+  or read their notifications. Higher priorities come first, then newer assignments.
+  Choose **Move to Later** to save a request for later without adding a deadline.
+  Open **Later** and choose **Bring back** to return it. This is personal planning;
+  it does not change the task's status or the manager's **Next up** order.
+  Starting a request moves it to **Working now**. Adding a due date moves it to
+  the matching dated section. Completing it removes it from unfinished work.
+  When a task changes assignee, its previous **Later** choice is cleared.
   **Working now** shows other started work. **Other assigned work** shows the next five
   remaining tasks, with **Show all** for the full queue. **Waiting on
   confirmation**, **Later**, and **Completed today** are collapsed sections with
@@ -28,6 +40,11 @@ project also keeps its own task board.
   filter by project or priority when the board is busy.
 - **Agenda** orders tasks and operational deadlines by date. Managers can filter
   the same view to tasks, project deadlines, rights, or finance obligations.
+
+**Home** has a separate **From teammates** preview with up to three tasks and a
+link to the full section in **My Work**. Other overdue work cannot fill this preview.
+Older requests appear here when their original assignment can be verified. Tasks
+with unknown assignment history remain available in the regular queue and search.
 
 ### Understand your menu badge
 
@@ -58,7 +75,7 @@ description. Results replace the current view until you clear the search, press
 **Esc**, or choose **Focus**, **Board**, or **Agenda**.
 
 - **In My Work** lists your matching tasks and shows where each one is, such as
-  **In Later** or **In Other assigned work**. This finds tasks hidden in a closed
+  **In From teammates**, **In Later**, or **In Other assigned work**. This finds tasks hidden in a closed
   section or after the first five rows.
 - **Other tasks** lists matching tasks that My Work does not show: your tasks
   marked done more than a week ago, tasks assigned to someone else, and tasks
@@ -206,17 +223,36 @@ stay visible when you expand more fields. Saving errors appear beside the button
 While Drive opens, an **Opening Google Drive…** message lets you cancel loading.
 If opening times out or Google reports an error, try **Add or upload files**
 again. Your task fields and selected files stay in the form.
-After creation, open the task to attach more existing Drive files, upload into
-its working folder, change the folder, open an attachment, or remove the task's
-link to it. **Upload file** opens the upload panel immediately and uses the task
-folder, project folder, or shared-drive root as the destination, in that order.
-Choose **Choose another folder** only when you want a different destination.
-Tasks with files show the first filename as a direct **Open in Drive** shortcut
-on task cards and rows; a count shows when more files are attached. In **Task
-details**, the read-first **Task files** section keeps those links beside the
-task description, while upload, folder, and removal controls stay under
-**Manage Google Drive**.
-Removing an attachment from Sastra does not delete the file from Google Drive.
+After creation, open **Task details** to add more files. The **Attachments**
+section stays visible below the task description, even when it is empty.
+Tasks with Drive links show the first filename as a direct **Open in Drive**
+shortcut on task cards and rows; a count shows when more Drive files are linked.
+
+### Attach files to an existing task
+
+Open the task and find **Attachments** below its description.
+
+- Choose **Upload files** to select documents, spreadsheets, or images from your
+  computer. Each file can be up to 50 MB. Uploads save directly to Sastra's file
+  storage (R2 or the workspace's configured storage). You do not need Google Drive
+  or a Google account. This is useful for finished files and reference copies.
+- Choose **Attach from Drive** for a document your team edits in Google Drive.
+  Connect your Google account if prompted. These links open the shared document
+  in Drive, where its sharing permissions still apply.
+- Open **Google Drive options** for the working folder, **Upload to Drive**, or
+  removal of Drive links. Choose **Choose another folder** to upload to a different
+  Drive destination.
+
+Uploads show their filenames and progress while saving. Successfully uploaded
+files appear in the open dialog; you do not need to choose **Save changes**.
+If an upload fails, choose **Retry failed uploads** to retry the saved selection.
+Successful files are not uploaded again. Use the download button beside a file
+to get a copy. Anyone who can view the task can download its uploaded files;
+only people who can edit the task can upload, add notes, or remove files.
+
+Removing an uploaded file requires confirmation. If it has no other attachments,
+Sastra also deletes the stored file. Removing a Drive link from Sastra does not
+delete the file from Google Drive.
 
 Select an assigned task's title on **Home** or in **My Work** to open its
 details. Members can change status, fields, dependencies, project placement,

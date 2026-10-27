@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-vi.mock("@/lib/tasks/actions", () => ({ deleteTask: vi.fn(), updateTaskStatus: vi.fn() }));
+vi.mock("@/lib/tasks/actions", () => ({ deleteTask: vi.fn(), updateTaskStatus: vi.fn(), setTaskAssignmentDeferred: vi.fn() }));
 vi.mock("@/components/tasks/task-detail-dialog", () => ({ TaskDetailDialog: () => null }));
 
 import type { MyTaskRow } from "@/lib/tasks/queries";
@@ -15,6 +15,24 @@ function task(id: string, dueDate: string | null): MyTaskRow {
 const today = "2026-10-06";
 
 describe("Home task preview", () => {
+  it("reserves three teammate requests even after a long overdue backlog, with the complete count and link", () => {
+    const requests = Array.from({ length: 4 }, (_, index) => ({
+      ...task(`teammate-request-${index}`, null), assignedTo: "me", assignedBy: "teammate",
+      assignedByName: "Review teammate", assignmentSource: "direct" as const,
+      assignedAt: new Date(`2026-10-0${6 - index}T10:00:00Z`),
+    }));
+    const html = renderToStaticMarkup(<MyTasksList
+      tasks={[...Array.from({ length: 20 }, (_, index) => task(`overdue-${index}`, "2026-10-01")), ...requests]}
+      homePreview todayIso={today}
+    />);
+    expect(html).toContain("From teammates");
+    expect(html).toContain("View all 4 tasks");
+    expect(html).toContain('href="/tasks?view=focus#from-teammates"');
+    expect(html.indexOf("teammate-request-0")).toBeLessThan(html.indexOf(">overdue-0<"));
+    expect(html).toContain("teammate-request-2");
+    expect(html).not.toContain("teammate-request-3");
+    expect(html.match(/data-task-id="teammate-request-0"/g)).toHaveLength(1);
+  });
   it("reserves the selected undated order ahead of a long deadline list", () => {
     const rows = [
       { ...task("chosen-undated-task", null), isNextUp: true, rank: 0 },

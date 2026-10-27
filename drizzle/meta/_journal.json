@@ -1121,6 +1121,13 @@
       "when": 1792823885899,
       "tag": "0159_lectio_shared_sign_in",
       "breakpoints": true
+    },
+    {
+      "idx": 160,
+      "version": "7",
+      "when": 1793040800574,
+      "tag": "0160_teammate_task_visibility",
+      "breakpoints": true
     }
   ]
 }

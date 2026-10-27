@@ -56,6 +56,8 @@ import { dueLabel } from "@/lib/format";
 import { elapsedSeconds, formatClock, formatDuration } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { usePropState } from "@/hooks/use-prop-state";
+import { useTaskAssignmentPlanning } from "@/hooks/use-task-assignment-planning";
+import { TaskAssignmentPlanning } from "./task-assignment-planning";
 import { useActiveTimer } from "@/components/time/active-timer-provider";
 import { SectionDisclosure } from "@/components/section-disclosure";
 import { showTaskCompleted } from "@/lib/tasks/completion-feedback";
@@ -171,6 +173,7 @@ export function MyWorkHub({
     countDueWorkTasks(initialTasks, currentUserId, todayIso, timeZone)
   );
   const statusInFlight = useRef(new Set<string>());
+  const planning = useTaskAssignmentPlanning(setTasks, statusInFlight);
   const [previousTaskId, setPreviousTaskId] = useState(initialTaskId);
   if (initialTaskId !== previousTaskId) {
     setPreviousTaskId(initialTaskId);
@@ -460,6 +463,8 @@ export function MyWorkHub({
           onStatus={moveTask}
           onTimer={toggleTimer}
           onConfirmPayment={canManage ? confirmPrinterPayment : undefined}
+          onDeferredChange={planning.deferAssignment}
+          planningPendingIds={planning.pendingIds}
         />
       ) : null}
 
@@ -550,7 +555,7 @@ export function MyWorkHub({
 function FocusView({
   tasks, currentUserId, todayIso, timeZone, completedToday, trackedTodaySeconds,
   activeTimer, pending, onOpen, onStatus, onTimer, onConfirmPayment, dueOnly, onShowAll,
-  emailContent, hasEmailContent,
+  emailContent, hasEmailContent, onDeferredChange, planningPendingIds,
 }: {
   tasks: MyWorkTaskRow[];
   currentUserId: string;
@@ -568,6 +573,8 @@ function FocusView({
   onShowAll: () => void;
   emailContent: React.ReactNode;
   hasEmailContent: boolean;
+  onDeferredChange: (task: MyWorkTaskRow, deferred: boolean) => void;
+  planningPendingIds: Set<string>;
 }) {
   const [showLater, setShowLater] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
@@ -576,7 +583,7 @@ function FocusView({
   const open = tasks.filter(task => task.status !== "done");
   const dueWork = selectDueWorkTasks(open, currentUserId, todayIso, timeZone);
   const overdue = dueWork.filter(task => (printPaymentFollowUp(task, todayIso, timeZone)?.date ?? task.dueDate)! < todayIso);
-  const { dueToday, remainingDueToday, nextUp, selectedCount, blockedNextUp, working, waiting, attention, later } = selectPersonalWork(open, todayIso, timeZone);
+  const { dueToday, remainingDueToday, nextUp, selectedCount, blockedNextUp, fromTeammates, working, waiting, attention, later } = selectPersonalWork(open, todayIso, timeZone);
   const hasSecondary = hasEmailContent || waiting.length > 0 || later.length > 0 || completedToday.length > 0;
 
   return (
@@ -638,6 +645,11 @@ function FocusView({
                 tasks={remainingDueToday} totalCount={dueToday.length} todayIso={todayIso} timeZone={timeZone} pending={pending}
                 activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} onConfirmPayment={onConfirmPayment}
                 emptyTitle="Today's selected tasks are shown above in Next up" /> : null}
+              {fromTeammates.length > 0 ? <FocusSection id="from-teammates" title="From teammates"
+                description="Tasks assigned by a teammate without a due date" tasks={fromTeammates}
+                todayIso={todayIso} timeZone={timeZone} pending={pending}
+                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer}
+                onDeferredChange={onDeferredChange} planningPendingIds={planningPendingIds} /> : null}
               {working.length > 0 ? <FocusSection title="Working now" description="In progress and waiting for review"
                 tasks={working} todayIso={todayIso} timeZone={timeZone} pending={pending}
                 activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} onConfirmPayment={onConfirmPayment} /> : null}
@@ -657,10 +669,11 @@ function FocusView({
                 tasks={waiting} todayIso={todayIso} timeZone={timeZone} pending={pending}
                 activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} onConfirmPayment={onConfirmPayment} />
             </SectionDisclosure> : null}
-            {later.length > 0 ? <CollapsibleSection title={`Later · ${later.length}`} description="Farther-future work kept out of your active queue"
+            {later.length > 0 ? <CollapsibleSection title={`Later · ${later.length}`} description="Tasks saved for later and farther-future work"
               open={showLater} onToggle={() => setShowLater(value => !value)}>
               <FocusTaskList tasks={later} todayIso={todayIso} timeZone={timeZone} pending={pending}
-                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} onConfirmPayment={onConfirmPayment} />
+                activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} onConfirmPayment={onConfirmPayment}
+                onDeferredChange={onDeferredChange} planningPendingIds={planningPendingIds} />
             </CollapsibleSection> : null}
             {completedToday.length > 0 ? <CollapsibleSection title={`Completed today · ${completedToday.length}`} description="A quick record of today's progress"
               open={showCompleted} onToggle={() => setShowCompleted(value => !value)} tone="success">
@@ -703,6 +716,8 @@ function FocusSection({
   onStatus,
   onTimer,
   onConfirmPayment,
+  onDeferredChange,
+  planningPendingIds,
   emptyTitle,
 }: {
   id?: string;
@@ -718,6 +733,8 @@ function FocusSection({
   onStatus: (task: MyWorkTaskRow, status: Status) => void;
   onTimer: (task: MyWorkTaskRow) => void;
   onConfirmPayment?: (task: MyWorkTaskRow) => void;
+  onDeferredChange?: (task: MyWorkTaskRow, deferred: boolean) => void;
+  planningPendingIds?: Set<string>;
   emptyTitle?: string;
 }) {
   return (
@@ -740,6 +757,8 @@ function FocusSection({
           onOpen={onOpen}
           onStatus={onStatus}
           onTimer={onTimer} onConfirmPayment={onConfirmPayment}
+          onDeferredChange={onDeferredChange}
+          planningPendingIds={planningPendingIds}
         />
       ) : (
         <div className="rounded-xl border bg-card py-10 text-center text-sm text-muted-foreground">
@@ -762,6 +781,8 @@ function FocusTaskList({
   onStatus,
   onTimer,
   onConfirmPayment,
+  onDeferredChange,
+  planningPendingIds,
 }: {
   tasks: MyWorkTaskRow[];
   showNextUp?: boolean;
@@ -773,6 +794,8 @@ function FocusTaskList({
   onStatus: (task: MyWorkTaskRow, status: Status) => void;
   onTimer: (task: MyWorkTaskRow) => void;
   onConfirmPayment?: (task: MyWorkTaskRow) => void;
+  onDeferredChange?: (task: MyWorkTaskRow, deferred: boolean) => void;
+  planningPendingIds?: Set<string>;
 }) {
   return (
     <ul className="@container/tasklist divide-y overflow-hidden rounded-xl border bg-card" aria-busy={pending}>
@@ -805,7 +828,7 @@ function FocusTaskList({
             ) : (
               <TaskCompleteButton
                 done={done}
-                disabled={task.id.startsWith("optimistic-task-")}
+                disabled={task.id.startsWith("optimistic-task-") || planningPendingIds?.has(task.id)}
                 onToggle={() => onStatus(task, done ? "todo" : "done")}
                 title={task.title}
                 className="flex size-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-success/10 hover:text-success focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
@@ -840,6 +863,11 @@ function FocusTaskList({
                 ) : null}
               </div>
               <TaskAttachmentShortcut task={task} />
+              {onDeferredChange ? <TaskAssignmentPlanning
+                task={task}
+                pending={Boolean(planningPendingIds?.has(task.id))}
+                onDeferredChange={onDeferredChange}
+              /> : null}
               {task.blockedByTitle ? <p className="mt-1 text-xs text-warning-text">Blocked by {task.blockedByTitle}</p> : null}
               {showNextUp && task.isNextUp ? <span className="mt-1 inline-block text-xs font-medium text-primary">Next up</span> : null}
               {sourceLink ? <Link href={sourceLink.href} className="text-xs text-primary hover:underline">{sourceLink.label}</Link> : null}
@@ -864,7 +892,7 @@ function FocusTaskList({
                   type="button"
                   size="icon-xs"
                   variant={timerRunning ? "destructive" : "ghost"}
-                  disabled={task.id.startsWith("optimistic-task-")}
+                  disabled={task.id.startsWith("optimistic-task-") || planningPendingIds?.has(task.id)}
                   onClick={() => onTimer(task)}
                   aria-label={timerRunning ? `Stop timer for ${task.title}` : `Start timer for ${task.title}`}
                   title={timerRunning ? "Stop timer" : "Start timer"}
@@ -880,7 +908,7 @@ function FocusTaskList({
               ) : (
                 <Select
                   value={task.status}
-                  disabled={controlled || task.id.startsWith("optimistic-task-")}
+                  disabled={controlled || task.id.startsWith("optimistic-task-") || planningPendingIds?.has(task.id)}
                   itemToStringLabel={(status) => TASK_STATUS[status].label}
                   onValueChange={(value) => value && onStatus(task, value as Status)}
                 >

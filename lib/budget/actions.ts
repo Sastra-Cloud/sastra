@@ -9,6 +9,7 @@ import { requireRole } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { clearOverdueNotifications } from "@/lib/notifications";
 import { revalidateForTask } from "@/lib/tasks/create";
+import { taskAssignmentFields } from "@/lib/tasks/assignment";
 import {
   activityLog,
   budgetItems,
@@ -1238,6 +1239,7 @@ export async function updatePayment(
           title: taskCopy.title,
           description: taskCopy.description,
           assignedTo: next.invoiceAssigneeId,
+          ...taskAssignmentFields(null, next.invoiceAssigneeId, "system"),
           updatedAt: new Date(),
         })
         .where(eq(tasks.id, payment.invoiceTaskId));

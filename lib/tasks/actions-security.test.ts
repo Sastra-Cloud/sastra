@@ -8,6 +8,7 @@ const state = vi.hoisted(() => ({
     projectId: "11111111-1111-4111-8111-111111111111" as string | null,
     assignedTo: "other" as string | null, createdBy: "member",
     title: "Private draft", dueDate: null, printPaymentId: null as string | null,
+    assignedBy: "teammate", assignmentSource: "direct", status: "todo", isNextUp: false,
   },
   grants: new Set<string>(),
   writeLostRace: false, reassignOnTransaction: false, approval: false,
@@ -41,8 +42,8 @@ vi.mock("@/lib/notifications", () => ({ clearOverdueNotifications: state.clear }
 vi.mock("@/lib/activity/log", () => ({ logActivity: state.activity }));
 vi.mock("@/lib/episodes/workflow-service", () => ({ assertPodcastTaskDependenciesComplete: vi.fn(), notifyReadyEpisodeStages: vi.fn() }));
 
-import { budgetApprovalAssignments, projectManagers, tasks } from "@/lib/db/schema";
-import { deleteTask, moveTaskToProject, setTaskDependencies, updateTaskFields, updateTaskStatus } from "./actions";
+import { budgetApprovalAssignments, projectManagers, tasks, user as users } from "@/lib/db/schema";
+import { deleteTask, moveTaskToProject, setTaskAssignmentDeferred, setTaskDependencies, updateTaskFields, updateTaskStatus } from "./actions";
 
 const taskId = "22222222-2222-4222-8222-222222222222";
 const edits = [
@@ -56,12 +57,12 @@ const edits = [
 beforeEach(() => {
   vi.clearAllMocks();
   state.actor = { id: "member", role: "member" };
-  state.task = { projectId: "11111111-1111-4111-8111-111111111111", assignedTo: "other", createdBy: "member", title: "Private draft", dueDate: null, printPaymentId: null };
+  state.task = { projectId: "11111111-1111-4111-8111-111111111111", assignedTo: "other", createdBy: "member", title: "Private draft", dueDate: null, printPaymentId: null, assignedBy: "teammate", assignmentSource: "direct", status: "todo", isNextUp: false };
   state.writeLostRace = state.reassignOnTransaction = state.approval = false;
   state.taskRows = [];
   state.grants = new Set();
   state.select.mockImplementation(() => ({ from: (table: unknown) => {
-    const rows = table === tasks ? [state.taskRows.shift() ?? { ...state.task }] : table === budgetApprovalAssignments && state.approval ? [{ id: "approval" }] : [];
+    const rows = table === tasks ? [state.taskRows.shift() ?? { ...state.task }] : table === users ? [{ active: true, bot: false }] : table === budgetApprovalAssignments && state.approval ? [{ id: "approval" }] : [];
     const result = Object.assign(Promise.resolve(rows), { limit: () => result, for: () => result });
     return { where: (condition: Parameters<PgDialect["sqlToQuery"]>[0]) => table === projectManagers
       ? { limit: async () => state.grants.has(new PgDialect().sqlToQuery(condition).params.join(":")) ? [{ id: "grant" }] : [] }
@@ -86,6 +87,40 @@ function expectNoEffects() {
 }
 
 describe("task mutation authorization", () => {
+  it("records the assigning actor and clears previous personal planning only when ownership changes", async () => {
+    state.actor.role = "manager";
+    await updateTaskFields(taskId, { assignedTo: "new-owner" });
+    expect(state.set).toHaveBeenCalledWith(expect.objectContaining({
+      assignedBy: "member", assignedAt: expect.any(Date), assignmentSource: "direct", assignmentDeferredAt: null,
+    }));
+    state.set.mockClear();
+    await updateTaskFields(taskId, { assignedTo: "other", title: "Revised" });
+    expect(state.set.mock.calls[0][0]).not.toHaveProperty("assignedBy");
+  });
+
+  it("lets only the assignee defer eligible requests without changing shared work", async () => {
+    await expect(setTaskAssignmentDeferred(taskId, true, null)).rejects.toThrow(/Only your/);
+    expect(state.update).not.toHaveBeenCalled();
+    state.task.assignedTo = state.actor.id;
+    await setTaskAssignmentDeferred(taskId, true, null);
+    expect(state.set).toHaveBeenCalledWith({ assignmentDeferredAt: expect.any(Date) });
+    state.set.mockClear();
+    await setTaskAssignmentDeferred(taskId, false, null);
+    expect(state.set).toHaveBeenCalledWith({ assignmentDeferredAt: null });
+    expect(state.notify).not.toHaveBeenCalled();
+    expect(state.activity).not.toHaveBeenCalled();
+  });
+
+  it("cannot defer manager-selected work and reports concurrent assignment changes", async () => {
+    state.task.assignedTo = state.actor.id;
+    state.task.isNextUp = true;
+    await expect(setTaskAssignmentDeferred(taskId, true, null)).rejects.toThrow(/Only your/);
+    expect(state.update).not.toHaveBeenCalled();
+    state.task.isNextUp = false;
+    state.writeLostRace = true;
+    await expect(setTaskAssignmentDeferred(taskId, true, null)).rejects.toThrow(/task changed/);
+  });
+
   it.each(edits)("denies another member's %s mutation even to the creator", async (_name, run) => {
     await expect(run()).rejects.toThrow(/own tasks/i);
     expectNoEffects();

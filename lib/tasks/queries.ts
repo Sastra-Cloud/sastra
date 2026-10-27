@@ -43,6 +43,7 @@ import { nextDueDate, type Frequency } from "@/lib/recurring/schedule";
 import { daysUntil } from "@/lib/format";
 import { getTeamTrackedSeconds } from "./time-queries";
 import { escapeLikePattern, MY_WORK_RECENT_DONE_DAYS } from "./search";
+import type { TaskAssignmentSource } from "./assignment";
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
@@ -116,6 +117,11 @@ export type TaskRow = {
   updatedAt: Date;
   assignedTo: string | null;
   assigneeName: string | null;
+  assignedBy: string | null;
+  assignedByName: string | null;
+  assignedAt: Date | null;
+  assignmentSource: TaskAssignmentSource;
+  assignmentDeferredAt: Date | null;
   printRunId: string | null;
   printPaymentId: string | null;
   printPaymentStatus: string | null;
@@ -177,6 +183,11 @@ const baseSelect = {
   updatedAt: tasks.updatedAt,
   assignedTo: tasks.assignedTo,
   assigneeName: user.name,
+  assignedBy: tasks.assignedBy,
+  assignedByName: sql<string | null>`(select assigner.name from "user" assigner where assigner.id = ${tasks.assignedBy})`,
+  assignedAt: tasks.assignedAt,
+  assignmentSource: tasks.assignmentSource,
+  assignmentDeferredAt: tasks.assignmentDeferredAt,
   printRunId: tasks.printRunId,
   printPaymentId: tasks.printPaymentId,
   printPaymentStatus: sql<string | null>`(select ${printPayments.status} from ${printPayments} where ${printPayments.id} = ${tasks.printPaymentId})`,

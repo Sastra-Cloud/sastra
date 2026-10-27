@@ -1,4 +1,5 @@
 import "server-only";
+import { taskAssignmentFields } from "@/lib/tasks/assignment";
 
 import { and, asc, eq, ne, inArray } from "drizzle-orm";
 import { formatInTimeZone } from "date-fns-tz";
@@ -196,6 +197,7 @@ export async function reevaluateSharedMouPayments(input?: {
       if (current.taskId) {
         await tx.update(tasks).set({ title, description,
           assignedTo: owner?.id ?? null,
+          ...taskAssignmentFields(null, owner?.id ?? null, "system"),
           status: finished ? "done" : "todo", completedAt: finished ? new Date() : null,
           updatedAt: new Date(),
         }).where(eq(tasks.id, current.taskId));

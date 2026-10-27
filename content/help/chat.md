@@ -2,9 +2,9 @@
 title: "Chat"
 category: "Communication"
 roles: [member, manager, admin]
-keywords: [chat, channel, message, edit message, edited, correct typo, delete message, cancel edit, save changes, mention, general, react, reactions, reaction summary, reaction counts, emoji, emoji picker, frequent emoji, frequently used, praying hands, skin tone, long press, touch and hold, haptic feedback, vibration, copy text, pin, pin message, pinned, pinned messages, unpin, unpin message, pin project, attachment, file, drag and drop, drop files, PowerPoint, ppt, pptx, image, screenshot, paste image, clipboard, inline image, image viewer, zoom, pinch to zoom, lightbox, swipe images, audio, voice message, microphone, recording, transcript, direct message, dm, private message, loading, unread, search, recent projects, members, add member, remove member, private channel, standup conversation, landscape, short screen, composer hidden, mobile, conversation details, message actions, keyboard, newline, grouped messages, last conversation, reopen chat, resume chat]
+keywords: [chat, channel, message, reply, reply to message, quoted reply, original message, edit message, edited, correct typo, delete message, cancel edit, save changes, mention, general, react, reactions, reaction summary, reaction counts, emoji, emoji picker, frequent emoji, frequently used, praying hands, skin tone, long press, touch and hold, haptic feedback, vibration, copy text, pin, pin message, pinned, pinned messages, unpin, unpin message, pin project, attachment, file, drag and drop, drop files, PowerPoint, ppt, pptx, image, screenshot, paste image, clipboard, inline image, image viewer, zoom, pinch to zoom, lightbox, swipe images, audio, voice message, microphone, recording, transcript, direct message, dm, private message, loading, unread, search, recent projects, members, add member, remove member, private channel, standup conversation, landscape, short screen, composer hidden, mobile, conversation details, message actions, keyboard, newline, grouped messages, last conversation, reopen chat, resume chat]
 order: 80
-summary: "Chat reopens your last conversation. Project chat, team channels, direct messages, voice recordings, mentions, mobile reaction gestures, optional haptic feedback, personal emoji suggestions, message editing and deletion, emoji search, pinned messages, drag-and-drop file attachments, and a zoomable image viewer."
+summary: "Chat reopens your last conversation. Project chat, team channels, direct messages, voice recordings, replies to specific messages, mentions, mobile reaction gestures, optional haptic feedback, personal emoji suggestions, message editing and deletion, emoji search, pinned messages, drag-and-drop file attachments, and a zoomable image viewer."
 ---
 
 Chat is real-time messaging for the team. Every project has focused channels,
@@ -75,7 +75,7 @@ the assistant shortcut, theme, and workspace links. In a project's Chat tab,
 Nearby messages from the same teammate are grouped together. Day labels and
 group times use your saved timezone. Your own messages appear on the right,
 without repeating your name and photo. Select **Message actions** immediately
-beside a bubble to react, copy its text, pin, unpin, or delete that message.
+beside a bubble to reply, react, copy its text, pin, unpin, or delete that message.
 On a phone, you can also **touch and hold a message** to open the same menu.
 Scrolling cancels the hold. Supported phones give a brief haptic tap when the
 hold opens the menu; reduced motion disables it. Feedback depends on browser
@@ -137,6 +137,26 @@ On a short screen, such as a phone turned sideways, the project header, tabs,
 and channel tabs can use most of the height. The project chat area then scrolls
 on its own, so you can scroll down to the message box and **Send**. Your draft
 stays in place.
+
+## Replying to a message
+
+Select **Message actions** (the three dots beside a message), then **Reply**.
+The composer shows who you are replying to and a preview of their message.
+Write your reply, attach files or record audio if needed, then select **Send**.
+Use **Cancel reply** to send a regular message instead; your text and attachments
+stay in the composer. Selecting Reply does not send anything.
+
+Sent replies include a quoted preview of the original message. Select the quote
+to scroll to and briefly highlight the original when it is in the recent messages.
+Older originals still have a quoted preview, but cannot be scrolled to from the
+recent thread. Attachment-only originals show the file name or **Voice message**.
+If the original is deleted, the quote shows **Original message unavailable**
+instead of its content.
+
+Replies work in project channels, team channels, and direct messages. A failed
+send restores both your draft and its reply context so you can retry. Replies use
+the conversation's existing notifications; replying does not automatically
+mention the original author. Use **@mention** when you need to notify them.
 
 ## In a channel
 
