@@ -5,12 +5,18 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 const sharedConfig: NextConfig = {
+  experimental: {
+    // Keep prerender workers from competing with the other apps on the host.
+    cpus: 2,
+    staticGenerationMaxConcurrency: 2,
+    turbopackGc: true,
+  },
   typescript: {
     // scripts/build.mjs sets this only after route generation and tsrs pass.
     ignoreBuildErrors: process.env.SASTRA_TSRS_CHECKED === "1",
   },
   // PDFKit loads font metrics relative to its installed package at runtime.
-  serverExternalPackages: ["pdfkit"],
+  serverExternalPackages: ["pdfkit", "exceljs", "mammoth", "mailparser", "imapflow"],
   // React's <ViewTransition> is on by default since Next 16.3; the former
   // experimental.viewTransition flag no longer exists.
   async headers() {
@@ -23,8 +29,8 @@ const sharedConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              // React's development bundles use eval for their debugging runtime.
-              `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""} https://apis.google.com`,
+              // AAC audio fallback uses WebAssembly; this does not allow JavaScript eval in production.
+              `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""} https://apis.google.com 'wasm-unsafe-eval'`,
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://*.r2.cloudflarestorage.com https://*.googleusercontent.com https://*.gstatic.com",
               "font-src 'self' data:",

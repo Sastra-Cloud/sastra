@@ -47,13 +47,18 @@ describe("message actions", () => {
     (render().button("Edit message").onClick as () => void)();
     expect(edit).toHaveBeenCalledOnce();
     expect(render().popover.open).toBe(false);
-    expect(render().menu.finalFocus).toBe(false);
+    expect((render().menu.finalFocus as () => unknown)()).toBe(false);
     hooks.hold!();
-    expect(render().menu.finalFocus).not.toBe(false);
+    expect((render().menu.finalFocus as () => unknown)()).not.toBe(false);
+    const composer = { focus: vi.fn() };
+    (render().surface.ref as { current: unknown }).current = {
+      closest: () => ({ querySelector: () => composer }),
+    };
     (render().button("Reply").onClick as () => void)();
     expect(reply).toHaveBeenCalledOnce();
     expect(render().popover.open).toBe(false);
-    expect(render().menu.finalFocus).toBe(false);
+    expect(composer.focus).toHaveBeenCalledWith({ preventScroll: true });
+    expect((render().menu.finalFocus as () => unknown)()).toBe(composer);
   });
   it("gives haptic feedback only when a touch hold opens the menu", () => {
     render();
@@ -87,9 +92,14 @@ describe("message actions", () => {
     vi.unstubAllGlobals();
   });
   it("quick reply hands focus to the composer", () => {
+    const composer = { focus: vi.fn() };
+    (render().surface.ref as { current: unknown }).current = {
+      closest: () => ({ querySelector: () => composer }),
+    };
     (render().button("Reply to message").onClick as () => void)();
     expect(reply).toHaveBeenCalledOnce();
-    expect(render().menu.finalFocus).toBe(false);
+    expect(composer.focus).toHaveBeenCalledWith({ preventScroll: true });
+    expect((render().menu.finalFocus as () => unknown)()).toBe(composer);
   });
   it("highlights your quick reaction and closes after choosing", () => {
     (render().popover.onOpenChange as (open: boolean) => void)(true);

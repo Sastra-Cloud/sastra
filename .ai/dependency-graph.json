@@ -2099,6 +2099,9 @@
     "./chat-thread",
     "@/lib/chat/edit-actions",
     "@/lib/chat/edit-state",
+    "@/lib/chat/video-client",
+    "@/lib/files/upload-progress",
+    "@/components/chat/voice-recorder",
     "react"
   ],
   "components/chat/chat-thread.tsx": [
@@ -2131,6 +2134,10 @@
     "@/components/chat/chat-navigation-context",
     "@/components/chat/message-pins",
     "@/components/chat/chat-image-gallery",
+    "@/components/chat/chat-video",
+    "@/lib/chat/video",
+    "@/lib/chat/video-client",
+    "@/lib/files/upload-progress",
     "@/lib/chat/conversation",
     "@/lib/chat/composer-key",
     "@/components/chat/message-actions",
@@ -2140,6 +2147,14 @@
     "@/lib/chat/edit-state",
     "@/lib/chat/reaction-state",
     "@/components/chat/use-frequent-reactions"
+  ],
+  "components/chat/chat-video.tsx": [
+    "react",
+    "lucide-react",
+    "@/components/ui/button",
+    "@/components/files/file-link",
+    "@/lib/format",
+    "@/lib/chat/video"
   ],
   "components/chat/chat-workspace-shell.tsx": [
     "react",
@@ -6006,6 +6021,31 @@
     "./sidebar-order"
   ],
   "lib/chat/sidebar-order.ts": [],
+  "lib/chat/video-client.test.ts": [
+    "vitest",
+    "./video-client"
+  ],
+  "lib/chat/video-client.ts": [
+    "./video"
+  ],
+  "lib/chat/video-conversion.test.ts": [
+    "vitest",
+    "./video-conversion"
+  ],
+  "lib/chat/video-conversion.ts": [
+    "mediabunny",
+    "./video",
+    "@mediabunny/aac-encoder"
+  ],
+  "lib/chat/video-preparation.worker.ts": [
+    "./video-conversion",
+    "./video"
+  ],
+  "lib/chat/video.test.ts": [
+    "vitest",
+    "./video"
+  ],
+  "lib/chat/video.ts": [],
   "lib/cron/auth.ts": [
     "node:crypto"
   ],
@@ -7179,6 +7219,10 @@
     "./target-access"
   ],
   "lib/files/crop-image.ts": [],
+  "lib/files/download.test.ts": [
+    "vitest",
+    "@/app/api/files/[id]/download/route"
+  ],
   "lib/files/link-attributes.test.ts": [
     "vitest",
     "./link-attributes"
@@ -7208,6 +7252,11 @@
   "lib/files/upload-client.ts": [
     "sonner"
   ],
+  "lib/files/upload-progress.test.ts": [
+    "vitest",
+    "./upload-progress"
+  ],
+  "lib/files/upload-progress.ts": [],
   "lib/flow.test.ts": [
     "vitest",
     "./flow"

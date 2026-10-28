@@ -2,9 +2,9 @@
 title: "Chat"
 category: "Communication"
 roles: [member, manager, admin]
-keywords: [chat, channel, message, reply, reply to message, quoted reply, original message, edit message, edited, correct typo, delete message, cancel edit, save changes, mention, general, react, reactions, reaction summary, reaction counts, emoji, emoji picker, frequent emoji, frequently used, praying hands, skin tone, right click, context menu, selected text, highlighted text, PWA, quick actions, desktop, Shift F10, long press, touch and hold, haptic feedback, vibration, copy text, pin, pin message, pinned, pinned messages, unpin, unpin message, pin project, attachment, file, drag and drop, drop files, PowerPoint, ppt, pptx, image, screenshot, paste image, clipboard, inline image, image viewer, zoom, pinch to zoom, lightbox, swipe images, audio, voice message, microphone, recording, transcript, direct message, dm, private message, loading, unread, search, recent projects, members, add member, remove member, private channel, standup conversation, landscape, short screen, composer hidden, mobile, conversation details, message actions, keyboard, newline, grouped messages, last conversation, reopen chat, resume chat]
+keywords: [chat, video, video upload, video compression, already compressed, skip compression, preserve video quality, MP4, MOV, screen recording, video quality, cancel preparation, playback, channel, message, reply, reply to message, quoted reply, original message, edit message, edited, correct typo, delete message, cancel edit, save changes, mention, general, react, reactions, reaction summary, reaction counts, emoji, emoji picker, frequent emoji, frequently used, praying hands, skin tone, right click, context menu, selected text, highlighted text, PWA, quick actions, desktop, Shift F10, long press, touch and hold, haptic feedback, vibration, copy text, pin, pin message, pinned, pinned messages, unpin, unpin message, pin project, attachment, file, drag and drop, drop files, PowerPoint, ppt, pptx, image, screenshot, paste image, clipboard, inline image, image viewer, zoom, pinch to zoom, lightbox, swipe images, audio, voice message, microphone, recording, transcript, direct message, dm, private message, loading, unread, search, recent projects, members, add member, remove member, private channel, standup conversation, landscape, short screen, composer hidden, mobile, conversation details, message actions, keyboard, newline, grouped messages, last conversation, reopen chat, resume chat]
 order: 80
-summary: "Chat reopens your last conversation. Project chat, team channels, direct messages, voice recordings, replies to specific messages, mentions, desktop quick actions and right-click menus, mobile reaction gestures, optional haptic feedback, personal emoji suggestions, message editing and deletion, emoji search, pinned messages, drag-and-drop file attachments, and a zoomable image viewer."
+summary: "Chat reopens your last conversation. Project chat, team channels, direct messages, voice recordings, video uploads with local compression and playback, replies to specific messages, mentions, desktop quick actions and right-click menus, mobile reaction gestures, optional haptic feedback, personal emoji suggestions, message editing and deletion, emoji search, pinned messages, drag-and-drop file attachments, and a zoomable image viewer."
 ---
 
 Chat is real-time messaging for the team. Every project has focused channels,
@@ -76,8 +76,9 @@ Nearby messages from the same teammate are grouped together. Day labels and
 group times use your saved timezone. Your own messages appear on the right,
 without repeating your name and photo. Select **Message actions** immediately
 beside a bubble to reply, react, copy its text, pin, unpin, or delete that message.
-On a computer, hover over a bubble to reveal **React**, **Reply**, and **More
-actions** icons. **Reply** goes straight to the composer; **React** opens your
+The three-dot **More actions** button is closest to the bubble. On a computer,
+hover over a bubble to reveal **Reply**, then **React** farther outward.
+**Reply** goes straight to the composer; **React** opens your
 quick emoji choices. You can also **right-click the bubble** to open all its
 actions, including when some message text is highlighted. Right-clicking a link
 keeps the browser's usual menu. You can still copy highlighted text with
@@ -157,7 +158,8 @@ stays in place.
 ## Replying to a message
 
 Select **Message actions** (the three dots beside a message), then **Reply**.
-The composer shows who you are replying to and a preview of their message.
+The composer shows who you are replying to and a preview of their message, and
+the message field is focused so you can start typing immediately.
 Write your reply, attach files or record audio if needed, then select **Send**.
 Use **Cancel reply** to send a regular message instead; your text and attachments
 stay in the composer. Selecting Reply does not send anything.
@@ -183,7 +185,8 @@ mention the original author. Use **@mention** when you need to notify them.
   everyone can find them again. See **Pinned messages** below.
 - **Drag files into the conversation** or select **Attach files** to add them
   to your draft. You can drop several files, including PowerPoint presentations
-  (`.ppt` and `.pptx`), documents, and images. Each file can be up to 50 MB.
+  (`.ppt` and `.pptx`), documents, images, and videos. Each sent file can be up
+  to 50 MB. Videos can start larger; see **Sending videos** below.
   Review the file names, add a message, or remove files before selecting
   **Send**. Dropping files does not upload or send them. Files cannot be added
   while messages are loading, an upload is running, or you are recording audio.
@@ -223,6 +226,44 @@ along with its files and pins. Your answers are not posted to a team channel;
 they feed the standup summary on the **Standups** page.
 
 Creating channels and changing their membership are manager actions.
+
+## Sending videos
+
+Select **Attach files** or drag a video into the conversation. Add a short
+description so others can understand your message without sound.
+
+Choose **Video quality** before selecting **Send**:
+
+- **Standard · smaller file** makes a smaller video, up to 720p.
+- **Higher quality · clearer text** keeps more detail, up to 1080p. Use this
+  for screen recordings where people need to read text.
+- **Original · up to 50 MB** sends an MP4 or MOV without compression. Use this
+  if your browser cannot prepare the video. Some devices may need to download
+  the original to play it.
+
+Videos that are already suitable for chat keep their original quality. Sastra
+checks the file size, picture size, frame rate, and format before compressing.
+Compatible MP4 files skip compression when another encode is unlikely to make
+them much smaller. Small compatible MP4 files also skip compression. Other
+compatible formats may be repackaged as MP4 without changing picture or sound.
+Videos that are too large or use an incompatible format still need preparation.
+
+Standard and Higher quality accept videos up to 500 MB and ten minutes. Sastra
+makes a smaller MP4 on your device after **Send**, before uploading it. Longer
+videos may use a lower resolution to fit the 50 MB upload limit. Your original
+file is not changed. Preparation speed depends on your device and browser.
+Keep this tab open while the video is being prepared and uploaded.
+
+You see preparation progress followed by upload progress. **Cancel preparation**
+stops local processing and restores your message and selected files. No message
+is sent if preparation fails or is cancelled. Failed uploads keep their files
+in the composer for retry. If the video is still too large, shorten it or share
+a link instead. Sastra never removes sound just to finish a conversion.
+
+Sent videos have playback controls directly in the conversation. They do not
+play automatically. Use **Download** to save a copy. If playback fails, select
+**Reload video** or download it. Videos use the conversation's existing private
+file permissions, including direct messages and standup conversations.
 
 ## Viewing images
 

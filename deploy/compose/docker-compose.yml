@@ -34,7 +34,7 @@ services:
   # Applies migrations and the baseline workspace bootstrap, then exits.
   # Runs before the app so the app container can start without MIGRATE_ON_START.
   migrate:
-    image: ghcr.io/sastra-cloud/sastra:${SASTRA_TAG:-0.6.3}
+    image: ghcr.io/sastra-cloud/sastra:${SASTRA_TAG:-0.6.4}
     <<: *app-env
     command: ["sh", "-c", "node scripts/migrate.mjs && node scripts/bootstrap-workspace.mjs"]
     depends_on:
@@ -43,7 +43,7 @@ services:
     restart: "no"
 
   app:
-    image: ghcr.io/sastra-cloud/sastra:${SASTRA_TAG:-0.6.3}
+    image: ghcr.io/sastra-cloud/sastra:${SASTRA_TAG:-0.6.4}
     <<: *app-env
     restart: unless-stopped
     environment:

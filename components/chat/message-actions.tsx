@@ -29,6 +29,7 @@ export function MessageActions({ m, isOwn, pin, time, reactionPending, pinPendin
   const [reactionsOnly, setReactionsOnly] = useState(false);
   const [copying, setCopying] = useState(false);
   const [editHandoff, setEditHandoff] = useState(false);
+  const replyHandoff = useRef(false);
   const copyingRef = useRef(false);
   const surface = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -67,6 +68,7 @@ export function MessageActions({ m, isOwn, pin, time, reactionPending, pinPendin
   }, [picker, sheet]);
   const available = !m.id.startsWith("pending-");
   const hold = useMessageHold(available && !reactionPending && !open && !picker, () => {
+    replyHandoff.current = false;
     setEditHandoff(false);
     setReactionsOnly(false);
     setOpen(true);
@@ -92,24 +94,30 @@ export function MessageActions({ m, isOwn, pin, time, reactionPending, pinPendin
   }
   function openMenu(keyboard = false) {
     if (!available || picker) return;
+    replyHandoff.current = false;
     keyboardOpen.current = keyboard;
     setEditHandoff(false);
     setReactionsOnly(false);
     setOpen(true);
   }
+  function getComposerInput() {
+    return surface.current?.closest("[data-chat-thread]")?.querySelector<HTMLTextAreaElement>("[data-chat-composer] textarea") ?? null;
+  }
   function replyToMessage() {
     if (!available || replyDisabled || !onReply) return;
+    replyHandoff.current = true;
     setEditHandoff(true);
     setOpen(false);
     onReply();
     // Keep this in the gesture so touch keyboards can open as well.
-    surface.current?.closest("[data-chat-thread]")?.querySelector<HTMLTextAreaElement>("[data-chat-composer] textarea")?.focus({ preventScroll: true });
+    getComposerInput()?.focus({ preventScroll: true });
   }
   const itemClass = "flex min-h-11 w-full cursor-default items-center gap-2 rounded-xl px-3 text-sm outline-none data-highlighted:bg-muted data-disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0";
   return <>
     <TooltipProvider delay={450}>
     <Menu.Root open={open} modal={false} triggerId={`${reactionsOnly ? "message-reactions" : "message-actions"}-${m.id}`} onOpenChange={(next, details) => {
       if (next) {
+        replyHandoff.current = false;
         setEditHandoff(false);
         setReactionsOnly(!!(details && details.event.target instanceof Element && details.event.target.closest("[data-message-react-trigger]")));
       }
@@ -135,12 +143,12 @@ export function MessageActions({ m, isOwn, pin, time, reactionPending, pinPendin
         {children}
         <div data-message-tools="" className={cn("conversation-message-tools absolute top-1/2 flex -translate-y-1/2 items-center", isOwn ? "right-full flex-row-reverse pr-2" : "left-full pl-2")}>
           <Tooltip>
-            <Menu.Trigger id={`message-reactions-${m.id}`} data-message-react-trigger=""
-              render={<TooltipTrigger render={<Button ref={reactionTrigger} type="button" variant="ghost" size="icon" />} />} aria-label="React to message"
-              disabled={!available || reactionPending} className="conversation-message-quick size-8 rounded-full text-muted-foreground">
-              <SmilePlus className="size-4" />
+            <Menu.Trigger id={`message-actions-${m.id}`} render={<TooltipTrigger render={<Button ref={trigger} type="button" variant="ghost" size="icon" />} />} disabled={!available}
+              aria-label={`Message actions: ${m.content?.slice(0, 60) || "Attachment"}, ${m.authorName ?? "Teammate"}, ${time}`}
+              className="conversation-message-more size-11 rounded-full text-muted-foreground">
+              <MoreHorizontal className="size-4" />
             </Menu.Trigger>
-            <TooltipContent className="motion-reduce:animate-none">React</TooltipContent>
+            <TooltipContent className="motion-reduce:animate-none">More actions</TooltipContent>
           </Tooltip>
           {onReply ? <Tooltip>
             <TooltipTrigger render={<Button type="button" variant="ghost" size="icon" />} aria-label="Reply to message"
@@ -150,12 +158,12 @@ export function MessageActions({ m, isOwn, pin, time, reactionPending, pinPendin
             <TooltipContent className="motion-reduce:animate-none">Reply</TooltipContent>
           </Tooltip> : null}
           <Tooltip>
-            <Menu.Trigger id={`message-actions-${m.id}`} render={<TooltipTrigger render={<Button ref={trigger} type="button" variant="ghost" size="icon" />} />} disabled={!available}
-              aria-label={`Message actions: ${m.content?.slice(0, 60) || "Attachment"}, ${m.authorName ?? "Teammate"}, ${time}`}
-              className="conversation-message-more size-11 rounded-full text-muted-foreground">
-              <MoreHorizontal className="size-4" />
+            <Menu.Trigger id={`message-reactions-${m.id}`} data-message-react-trigger=""
+              render={<TooltipTrigger render={<Button ref={reactionTrigger} type="button" variant="ghost" size="icon" />} />} aria-label="React to message"
+              disabled={!available || reactionPending} className="conversation-message-quick size-8 rounded-full text-muted-foreground">
+              <SmilePlus className="size-4" />
             </Menu.Trigger>
-            <TooltipContent className="motion-reduce:animate-none">More actions</TooltipContent>
+            <TooltipContent className="motion-reduce:animate-none">React</TooltipContent>
           </Tooltip>
         </div>
       </div>
@@ -163,7 +171,7 @@ export function MessageActions({ m, isOwn, pin, time, reactionPending, pinPendin
         <Menu.Positioner anchor={surface} positionMethod="fixed" side={layout.split ? "bottom" : "top"} align={isOwn ? "end" : "start"}
           sideOffset={layout.split ? ({ anchor }) => -anchor.height - layout.reactionHeight - 8 : 8}
           sticky collisionBoundary={layout.boundary} collisionPadding={12} collisionAvoidance={{ side: "shift", align: "shift" }} className="isolate z-50">
-          <Menu.Popup ref={setMenu} finalFocus={picker || editHandoff ? false : reactionsOnly ? reactionTrigger : trigger} aria-label="Message actions"
+          <Menu.Popup ref={setMenu} finalFocus={() => replyHandoff.current ? getComposerInput() : picker || editHandoff ? false : (reactionsOnly ? reactionTrigger : trigger).current} aria-label="Message actions"
             data-layout={layout.split ? "split" : "compact"}
             style={{ gap: layout.gap, maxHeight: layout.height || "calc(100dvh - 24px)" }}
             className="conversation-message-menu flex w-72 max-w-[calc(100vw-1.5rem)] flex-col rounded-2xl text-popover-foreground outline-none duration-150 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 motion-reduce:animate-none">

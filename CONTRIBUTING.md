@@ -39,7 +39,7 @@ Local checks, CI, and production builds use tsrs, the Rust TypeScript checker.
 Run `pnpm typecheck` (or its alias `pnpm typecheck:tsrs`) for the normal check.
 Run `pnpm typecheck:tsc` to compare with the official TypeScript 7 compiler;
 the two compilers use separate incremental caches. The pinned tsrs release
-targets TypeScript 7.1 development behavior, so investigate diagnostic
+targets TypeScript 7.1 beta behavior, so investigate diagnostic
 differences. Its published binaries support macOS ARM64 and Linux x64/ARM64.
 
 `pnpm build` generates Next.js route types, requires a successful tsrs check,
@@ -87,3 +87,5 @@ contributor license agreement.
 ## Code of conduct
 
 This project follows the Contributor Covenant (`CODE_OF_CONDUCT.md`).
+
+See [build memory policy](docs/build-memory.md) for the default low-memory bundler, cache isolation, and cold/warm validation requirements.

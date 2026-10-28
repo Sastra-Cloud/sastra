@@ -10,12 +10,16 @@ const tsrsPackage = JSON.parse(readFileSync(tsrsPackagePath, "utf8"));
 const tsrsCli = resolve(dirname(tsrsPackagePath), tsrsPackage.bin.tsrs);
 const checkerArgs = [
   "--noEmit",
+  "--checkers",
+  "2",
   "--tsBuildInfoFile",
   "tsconfig.tsrs.tsbuildinfo",
 ];
 
 // The marker belongs only to the bundler child, after tsrs has passed.
 const env = { ...process.env };
+// Bound each JavaScript process; native allocations still need a builder limit.
+env.NODE_OPTIONS = `${env.NODE_OPTIONS ?? ""} --max-old-space-size=2048`.trim();
 delete env.SASTRA_TSRS_CHECKED;
 
 function run(cli, args, childEnv = env) {

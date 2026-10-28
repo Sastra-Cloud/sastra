@@ -27,6 +27,8 @@ describe("Google Picker content security policy", () => {
     for (const phase of ["phase-development-server", "phase-production-build", "phase-production-server"]) {
       const rules = await nextConfig(phase).headers?.();
       const policies = rules?.flatMap(rule => rule.headers.filter(header => header.key === "Content-Security-Policy").map(header => header.value));
+      const appPolicy = rules?.find(rule => rule.source === "/:path*")?.headers.find(header => header.key === "Content-Security-Policy")?.value;
+      expect(appPolicy).toContain("'wasm-unsafe-eval'"); // AAC fallback; JavaScript eval stays development-only below.
       expect(policies?.length).toBeGreaterThan(0);
       for (const policy of policies ?? []) {
         expect(policy.includes("'unsafe-eval'")).toBe(phase === "phase-development-server");

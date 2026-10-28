@@ -47,3 +47,6 @@ next-env.d.ts
 # local printer invoice fixtures + golden files for `pnpm eval` (real invoices —
 # not committed). Layout: printer-quotes/<name>.pdf + printer-quotes/golden/<name>.json
 /printer-quotes
+
+# Local package cache is not source or runtime data.
+.pnpm-store/

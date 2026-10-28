@@ -83,6 +83,7 @@ describe("client action interaction policy", () => {
   it("keeps chat messages and quoted replies optimistic, and picked, pasted, or dropped uploads progress-based", () => {
     expect(interactionModeFor("postMessage")).toBe("optimistic");
     expect(interactionModeFor("uploadToMessage")).toBe("progress");
+    expect(interactionModeFor("prepareChatVideo")).toBe("progress");
   });
   it("keeps shared Next up selection and ordering optimistic", () => {
     expect(interactionModeFor("setTaskNextUp")).toBe("optimistic");

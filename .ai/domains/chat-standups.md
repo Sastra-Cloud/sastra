@@ -22,6 +22,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/chat/chat-navigation-context.tsx`
 - `components/chat/chat-thread.test.tsx`
 - `components/chat/chat-thread.tsx`
+- `components/chat/chat-video.tsx`
 - `components/chat/chat-workspace-shell.tsx`
 - `components/chat/conversation-header.tsx`
 - `components/chat/conversation-jump.tsx`
@@ -94,6 +95,5 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/chat/replies.ts`
 - `lib/chat/sidebar-order.test.ts`
 - `lib/chat/sidebar-order.ts`
-- `lib/db/schema/chat.ts`
-- `lib/db/schema/standup.ts`
-... 7 more
+- `lib/chat/video-client.test.ts`
+... 15 more

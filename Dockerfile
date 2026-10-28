@@ -13,13 +13,14 @@ WORKDIR /app
 FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.cjs ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm install --frozen-lockfile
+    pnpm install --frozen-lockfile --store-dir=/pnpm/store
 
 # ── Build, then prune to prod deps ────────────────────────────────────────────
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN pnpm build
+RUN --mount=type=cache,id=sastra-turbopack-build,target=/app/.next/cache/turbopack,sharing=locked \
+    pnpm build
 RUN pnpm prune --prod
 
 # ── Runner ────────────────────────────────────────────────────────────────────

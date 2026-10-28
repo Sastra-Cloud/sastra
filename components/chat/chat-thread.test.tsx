@@ -9,6 +9,9 @@ import { toast } from "sonner";
 import { ChatThread } from "./chat-thread";
 import { editMessage } from "@/lib/chat/edit-actions";
 import type { MessageEditDraft } from "@/lib/chat/edit-state";
+import { prepareChatVideo } from "@/lib/chat/video-client";
+import { uploadFileBytes } from "@/lib/files/upload-progress";
+import type { VoiceDraft } from "@/components/chat/voice-recorder";
 
 // Exercise the thread's event handlers in the repository's Node test environment.
 // Retain hook state across explicit renders without mounting browser-only children.
@@ -39,6 +42,8 @@ vi.mock("@/components/chat/message-pins", () => ({
 }));
 vi.mock("@/lib/dialog-requests", () => ({ confirmDialog: vi.fn() }));
 vi.mock("@/lib/chat/edit-actions", () => ({ editMessage: vi.fn() }));
+vi.mock("@/lib/chat/video-client", () => ({ prepareChatVideo: vi.fn() }));
+vi.mock("@/lib/files/upload-progress", () => ({ uploadFileBytes: vi.fn() }));
 vi.mock("@/lib/chat/actions", () => ({
   postMessage: vi.fn(), setMessageStatus: vi.fn(), markChannelRead: vi.fn(),
   deleteMessage: vi.fn(), toggleReaction: vi.fn(),
@@ -63,6 +68,10 @@ function render(loading = false, initialMessages: ChatMessageView[] = []) {
     dropHint: all.some((element) => element.props.children === "Drop files to attach"),
     alerts: all.filter((element) => element.props.role === "alert").map((element) => Children.toArray(element.props.children as ReactNode).join("")),
     send: all.find((element) => element.props["aria-label"] === "Send")?.props ?? {},
+    fileProgress: all.find(element => element.props.value && typeof element.props.value === "object" && "phase" in element.props.value)?.props as {
+      value: { phase: string; progress: number | null }; onCancel: () => void;
+    } | undefined,
+    voiceRecorder: all.find(element => "onRecorded" in element.props)?.props as { onRecorded: (draft: VoiceDraft) => void } | undefined,
     composer: all.find((element) => "placeholder" in element.props)?.props ?? {},
     editor: all.find(element => "draft" in element.props && "onSave" in element.props)?.props as { draft: MessageEditDraft; onSave: () => void; onCancel: () => void; onChange: (text: string) => void } | undefined,
     replyComposer: all.find((element) => "data-reply-composer" in element.props),
@@ -91,6 +100,7 @@ beforeEach(() => {
   vi.mocked(postMessage).mockResolvedValue({ id: "message" });
   vi.mocked(setMessageStatus).mockResolvedValue(undefined);
   vi.mocked(confirmDialog).mockResolvedValue(true);
+  vi.mocked(uploadFileBytes).mockResolvedValue(undefined);
 });
 afterEach(() => vi.unstubAllGlobals());
 
@@ -202,6 +212,71 @@ describe("chat file drops", () => {
     expect(render().files.map((element) => element.props.file)).toEqual(fail ? [file] : []);
     if (fail) expect(toast.error).toHaveBeenCalledWith("presentation.pptx: Upload failed. Try again.");
     else expect(fetchMock.mock.calls.map(([url]) => url)).toContain("/api/files/complete");
+  });
+});
+
+describe("video attachment delivery", () => {
+  it("keeps WebM voice messages on the existing audio upload path", async () => {
+    const file = new File(["voice recording"], "voice.webm", { type: "audio/webm;codecs=opus" });
+    const fetchMock = vi.fn(async (url: string) => url.endsWith("/recent") ? Response.json({ messages: [], pins: [] })
+      : url.endsWith("/presign") ? Response.json({ fileId: "voice", uploadUrl: "https://uploads.test/voice" }) : Response.json({}));
+    vi.stubGlobal("fetch", fetchMock);
+    render().voiceRecorder!.onRecorded({ file, url: "blob:voice", durationMs: 1000 });
+    (render().send.onClick as () => void)();
+    await vi.waitFor(() => expect(setMessageStatus).toHaveBeenCalledWith("message", "sent"));
+    expect(prepareChatVideo).not.toHaveBeenCalled();
+    const complete = (fetchMock.mock.calls as unknown as [string, RequestInit][]).find(([url]) => url.endsWith("/complete"))!;
+    expect(JSON.parse(complete[1].body as string)).toMatchObject({ fileId: "voice", label: "voice" });
+  });
+  it.each([false, true])("prepares before posting, uploads the smaller file, and preserves failed originals (failure: %s)", async fail => {
+    const original = new File(["original video bytes"], "phone.mov", { type: "video/quicktime" });
+    const compressed = new File(["mp4"], "phone.mp4", { type: "video/mp4" });
+    let finish!: (value: { file: File }) => void;
+    vi.mocked(prepareChatVideo).mockImplementation((_file, _quality, _signal, onProgress) => {
+      onProgress({ progress: 0.3, height: 720 });
+      return new Promise(resolve => { finish = resolve; });
+    });
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.endsWith("/recent")) return Response.json({ messages: [], pins: [] });
+      if (url.endsWith("/presign")) return fail ? Response.json({ error: "Try again." }, { status: 400 })
+        : Response.json({ fileId: "file", uploadUrl: "https://uploads.test/video" });
+      return Response.json({});
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render().thread.onDrop!(drag([original]));
+    const send = render().send.onClick as () => void;
+    send(); send();
+    expect(prepareChatVideo).toHaveBeenCalledTimes(1);
+    expect(postMessage).not.toHaveBeenCalled();
+    expect(render().fileProgress?.value).toMatchObject({ phase: "preparing", progress: 0.3 });
+    finish({ file: compressed });
+    await vi.waitFor(() => expect(setMessageStatus).toHaveBeenCalledWith("message", fail ? "failed" : "sent"));
+    await vi.waitFor(() => expect(render().send.disabled).toBe(!fail)); // empty composer disables Send after success
+    expect(render().files.map(element => element.props.file)).toEqual(fail ? [original] : []);
+    const presign = (fetchMock.mock.calls as unknown as [string, RequestInit][]).find(([url]) => url.endsWith("/presign"))!;
+    expect(JSON.parse(presign[1].body as string)).toMatchObject({ fileName: "phone.mp4", contentType: "video/mp4", sizeBytes: compressed.size });
+    if (!fail) expect(uploadFileBytes).toHaveBeenCalledWith("https://uploads.test/video", compressed, expect.any(Function));
+  });
+
+  it.each(["cancel", "error"])("restores the draft before any server message on preparation %s", async outcome => {
+    const file = new File(["phone clip"], "clip.mov", { type: "video/quicktime" });
+    let fail!: (error: Error) => void;
+    vi.mocked(prepareChatVideo).mockImplementation((_file, _quality, signal) => new Promise((_resolve, reject) => {
+      fail = reject;
+      signal.addEventListener("abort", () => reject(new DOMException("Cancelled", "AbortError")));
+    }));
+    (render().composer.onChange as (value: string) => void)("Please review this clip");
+    render().thread.onDrop!(drag([file]));
+    (render().send.onClick as () => void)();
+    expect(render().fileProgress?.value.phase).toBe("preparing");
+    if (outcome === "cancel") render().fileProgress!.onCancel();
+    else fail(new Error("This browser cannot prepare this video. Choose Original under 50 MB."));
+    await vi.waitFor(() => expect(render().send.disabled).toBe(false));
+    expect(render().composer.value).toBe("Please review this clip");
+    expect(render().files.map(element => element.props.file)).toEqual([file]);
+    expect(postMessage).not.toHaveBeenCalled();
+    if (outcome === "error") expect(render().alerts.join(" ")).toContain("Choose Original");
+    else expect(toast.error).not.toHaveBeenCalled();
   });
 });
 

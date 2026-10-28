@@ -22,3 +22,6 @@ Dockerfile
 .dockerignore
 docker-compose.yml
 README.md
+
+# Local package cache is not source or runtime data.
+.pnpm-store/

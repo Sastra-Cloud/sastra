@@ -37,7 +37,7 @@ export async function GET(
   }
 
   // `?inline=1` serves the object inline (no attachment disposition) — used for
-  // avatars and other in-page images. Default hands out an attachment download.
+  // images and chat media. Default hands out an attachment download.
   const inline = new URL(request.url).searchParams.get("inline") === "1";
   await recordR2Operation({
     classType: "B",
@@ -65,7 +65,9 @@ export async function GET(
     });
   }
   const url = inline
-    ? await presignGet(file.r2Key)
+    // A video may be paused or need another Range request after five minutes.
+    // Match private wiki playback; each new URL still requires file access above.
+    ? await presignGet(file.r2Key, undefined, file.mimeType.startsWith("video/") ? 60 * 60 : 300)
     : await presignGet(file.r2Key, file.originalName);
   const res = NextResponse.redirect(url);
   if (inline) res.headers.set("Cache-Control", "private, max-age=300");

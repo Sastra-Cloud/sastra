@@ -1,0 +1,29 @@
+name: Remove closed PR caches
+
+# Only fixed cache-deletion commands run with this token. Do not check out or
+# execute PR code here, including for pull requests from forks.
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: closed-pr-cache-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Remove only the closed PR merge-ref caches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh cache delete --all --ref "refs/pull/$PR_NUMBER/merge" \
+            --repo "$GH_REPO" --succeed-on-no-caches

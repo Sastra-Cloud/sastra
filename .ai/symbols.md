@@ -724,6 +724,10 @@
 
 - ChatThread
 
+## `components/chat/chat-video.tsx`
+
+- ChatAttachmentProgress, ChatFileProgress, ChatVideoPlayer, ChatVideoQualityControl
+
 ## `components/chat/chat-workspace-shell.tsx`
 
 - ChatIndexPanel, ChatWorkspaceShell
@@ -2180,6 +2184,18 @@
 
 - compareConversationActivity, compareProjectActivity, dedupeAndSortTeamChannels, selectProjectDestination
 
+## `lib/chat/video-client.ts`
+
+- prepareChatVideo
+
+## `lib/chat/video-conversion.ts`
+
+- convertChatVideo
+
+## `lib/chat/video.ts`
+
+- CHAT_VIDEO_AUDIO_BITRATE, CHAT_VIDEO_INPUT_BYTES, CHAT_VIDEO_MAX_SECONDS, CHAT_VIDEO_TARGET_BYTES, CHAT_VIDEO_UPLOAD_BYTES, ChatVideoProgress, ChatVideoQuality, ChatVideoResult, ChatVideoWorkerRequest, ChatVideoWorkerResponse, chatVideoPlan, isChatVideo, originalChatVideo, shouldPreserveChatVideo
+
 ## `lib/cron/auth.ts`
 
 - isCronRequestAuthorized
@@ -2755,6 +2771,10 @@
 ## `lib/files/upload-client.ts`
 
 - uploadDonationCsv, uploadFile
+
+## `lib/files/upload-progress.ts`
+
+- uploadFileBytes
 
 ## `lib/flow.ts`
 

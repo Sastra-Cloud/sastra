@@ -14,6 +14,7 @@ import {
   Reply,
   Send,
   X,
+  Video,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -75,6 +76,10 @@ import { VoiceMessagePlayer } from "@/components/chat/voice-message-player";
 import { useChatNavigation } from "@/components/chat/chat-navigation-context";
 import { useMessagePins } from "@/components/chat/message-pins";
 import { ChatImageGallery } from "@/components/chat/chat-image-gallery";
+import { ChatFileProgress, ChatVideoPlayer, ChatVideoQualityControl, type ChatAttachmentProgress } from "@/components/chat/chat-video";
+import { CHAT_VIDEO_INPUT_BYTES, isChatVideo, type ChatVideoQuality, type ChatVideoResult } from "@/lib/chat/video";
+import { prepareChatVideo } from "@/lib/chat/video-client";
+import { uploadFileBytes } from "@/lib/files/upload-progress";
 import { conversationDay, continuesMessageGroup } from "@/lib/chat/conversation";
 import { sendOnConversationKey } from "@/lib/chat/composer-key";
 import { MessageActions } from "@/components/chat/message-actions";
@@ -95,7 +100,8 @@ function timeLabel(iso: string, timeZone?: string) {
 async function uploadToMessage(
   file: File,
   messageId: string,
-  label?: "voice"
+  label?: "voice",
+  onProgress?: (progress: number) => void,
 ) {
   const contentType = file.type || "application/octet-stream";
   const presign = await fetch("/api/files/presign", {
@@ -112,12 +118,16 @@ async function uploadToMessage(
     throw new Error(error);
   }
   const { fileId, uploadUrl } = await presign.json();
-  const put = await fetch(uploadUrl, {
-    method: "PUT",
-    headers: { "Content-Type": contentType },
-    body: file,
-  });
-  if (!put.ok) throw new Error("Upload failed");
+  if (onProgress) {
+    await uploadFileBytes(uploadUrl, file, onProgress);
+  } else {
+    const put = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": contentType },
+      body: file,
+    });
+    if (!put.ok) throw new Error("Upload failed");
+  }
   const complete = await fetch("/api/files/complete", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -183,6 +193,11 @@ export function ChatThread({
   const [recordingVoice, setRecordingVoice] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [videoQuality, setVideoQuality] = useState<ChatVideoQuality>("standard");
+  const [fileProgress, setFileProgress] = useState<ChatAttachmentProgress | null>(null);
+  const sendGuard = useRef(false);
+  const sendController = useRef<AbortController | null>(null);
+  const preparedVideos = useRef(new WeakMap<File, { quality: ChatVideoQuality; result: ChatVideoResult }>());
   const [reacting, setReacting] = useState<Set<string>>(new Set());
   const reactingRef = useRef(new Set<string>());
   const reactionVersions = useRef(new Map<string, number>());
@@ -221,6 +236,8 @@ export function ChatThread({
     initialMessages[initialMessages.length - 1]?.id ?? null
   );
   const previousPendingCountRef = useRef(0);
+
+  useEffect(() => () => { sendController.current?.abort(); }, [channelId]);
 
   useEffect(() => {
     if (messages.length === 0) {
@@ -361,11 +378,14 @@ export function ChatThread({
   }, [beginPinsFetch, channelId, receiveMessages]);
 
   async function send() {
-    if (sending || conversationLoading || recordingVoice || editing) return;
+    if (sendGuard.current || sending || conversationLoading || recordingVoice || editing) return;
     const draftText = input;
     const replyAtSend = replyTarget;
     const text = input.trim();
     if (!text && pendingFiles.length === 0 && !voiceDraft) return;
+    sendGuard.current = true;
+    const controller = new AbortController();
+    sendController.current = controller;
     const voiceAtSend = voiceDraft;
     const files = voiceAtSend
       ? [...pendingFiles, voiceAtSend.file]
@@ -393,6 +413,23 @@ export function ChatThread({
     setReplyTarget(null);
     let created = false;
     try {
+      // Prepare serially before creating a server message. Cancellation or a bad
+      // codec must not leave an empty message or send the remaining files.
+      const uploadFiles: File[] = [];
+      for (const file of files) {
+        if (file === voiceAtSend?.file || !isChatVideo(file)) { uploadFiles.push(file); continue; }
+        setFileProgress({ phase: "preparing", fileName: file.name, progress: null });
+        const cached = preparedVideos.current.get(file);
+        const result = cached?.quality === videoQuality ? cached.result
+          : await prepareChatVideo(file, videoQuality, controller.signal, value => {
+            setFileProgress({ phase: "preparing", fileName: file.name, ...value });
+          });
+        controller.signal.throwIfAborted();
+        preparedVideos.current.set(file, { quality: videoQuality, result });
+        uploadFiles.push(result.file);
+      }
+      controller.signal.throwIfAborted();
+      setFileProgress(null);
       const { id } = await postMessage({
         channelId,
         content: text || undefined,
@@ -412,16 +449,26 @@ export function ChatThread({
 
       if (hasFiles) {
         const failedFiles: File[] = [];
-        for (const f of files) {
+        for (const [index, f] of uploadFiles.entries()) {
+          const video = files[index] !== voiceAtSend?.file && isChatVideo(files[index]);
           try {
+            if (video) setFileProgress({ phase: "uploading", fileName: f.name, progress: 0 });
             await uploadToMessage(
               f,
               id,
-              voiceAtSend?.file === f ? "voice" : undefined
+              voiceAtSend?.file === f ? "voice" : undefined,
+              video ? progress => setFileProgress({
+                phase: progress === 1 ? "finishing" : "uploading", fileName: f.name,
+                progress: progress === 1 ? null : progress,
+              }) : undefined,
             );
           } catch (err) {
-            failedFiles.push(f);
-            toast.error(`${f.name}: ${(err as Error).message}`);
+            failedFiles.push(files[index]);
+            const error = err instanceof Error && !(err instanceof TypeError) ? err.message
+              : "Upload failed. Check your connection and try again.";
+            toast.error(`${f.name}: ${error}`);
+          } finally {
+            setFileProgress(null);
           }
         }
         await setMessageStatus(
@@ -444,12 +491,16 @@ export function ChatThread({
         setReplyTarget(replyAtSend);
         setPendingFiles(pendingFiles);
       }
+      if (error instanceof Error && error.name === "AbortError") return;
       const message = error instanceof Error && !(error instanceof TypeError)
         ? error.message
         : "Could not send. Check your connection and try again.";
       if (!created) setSendError(message);
       toast.error(message);
     } finally {
+      setFileProgress(null);
+      sendController.current = null;
+      sendGuard.current = false;
       setSending(false);
     }
   }
@@ -621,7 +672,14 @@ export function ChatThread({
 
   function addPendingFiles(files: File[]) {
     if (attachmentsDisabled || files.length === 0) return;
-    setPendingFiles((current) => [...current, ...files]);
+    const accepted = files.filter(file => {
+      if (isChatVideo(file) && file.size > CHAT_VIDEO_INPUT_BYTES) {
+        toast.error(`${file.name}: Choose a video under 500 MB, shorten it, or share a link.`);
+        return false;
+      }
+      return true;
+    });
+    setPendingFiles((current) => [...current, ...accepted]);
   }
 
   const heightClass = fillAvailable
@@ -813,7 +871,10 @@ export function ChatThread({
               ))}
               </AttachmentGroup>
             ) : null}
-            {sending && pendingFiles.length > 0 ? (
+            {pendingFiles.some(isChatVideo) ? <ChatVideoQualityControl quality={videoQuality} disabled={sending}
+              onChange={quality => { setVideoQuality(quality); setSendError(null); }} /> : null}
+            {fileProgress ? <ChatFileProgress value={fileProgress} onCancel={() => sendController.current?.abort()} />
+              : sending && pendingFiles.length > 0 ? (
               <p role="status" className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Loader2 aria-hidden className="size-3 animate-spin" />
                 Sending attachments…
@@ -957,7 +1018,7 @@ function DraftFileAttachment({
         </div>
       ) : (
         <AttachmentMedia className="bg-primary/10 text-primary">
-          <Paperclip className="size-3.5" />
+          {isChatVideo(file) ? <Video className="size-3.5" /> : <Paperclip className="size-3.5" />}
         </AttachmentMedia>
       )}
       <AttachmentContent className="min-w-0 max-w-64">
@@ -1136,6 +1197,8 @@ function MessageRow({
                     src={`/api/files/${a.fileId}/download?inline=1`}
                     isOwn={isOwn}
                   />
+                ) : a.mimeType.startsWith("video/") ? (
+                  <ChatVideoPlayer key={a.attachmentId} fileId={a.fileId} name={a.originalName} sizeBytes={a.sizeBytes} />
                 ) : a.mimeType.startsWith("image/") ? (
                   a.attachmentId === firstImageId ? (
                     <ChatImageGallery key={a.attachmentId} attachments={m.attachments} />

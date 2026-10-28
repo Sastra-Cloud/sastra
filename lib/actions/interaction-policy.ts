@@ -33,6 +33,7 @@ const PROGRESS_ACTIONS = new Set([
   "draftMouProposal", // Preparing a reviewable partner email never sends it.
   "promptInstall", // Native browser prompt: wait for the person's choice.
   "uploadToMessage", // Picked, pasted, and dropped files upload only after Send, with progress.
+  "prepareChatVideo", // Local video work: real progress, cancellation, and recoverable drafts.
   "submitSupportRequest",
   "sendSupportReply",
   "uploadSupportAttachment",
