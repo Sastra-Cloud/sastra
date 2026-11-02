@@ -21,6 +21,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/budget/invoice-import-button.tsx`
 - `components/budget/mou-payments.tsx`
 - `components/budget/partner-quote-panel.tsx`
+- `components/budget/proposal-budget-builder.tsx`
 - `components/budget/proposal-panel.tsx`
 - `components/budget/reconciliation-panel.tsx`
 - `components/budget/royalties-card.tsx`
@@ -73,6 +74,10 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/budget/pdf.ts`
 - `lib/budget/presentation-input.ts`
 - `lib/budget/presentation.test.ts`
+- `lib/budget/proposal-actions.test.ts`
+- `lib/budget/proposal-actions.ts`
+- `lib/budget/proposal-builder.test.ts`
+- `lib/budget/proposal-builder.ts`
 - `lib/budget/queries.ts`
 - `lib/budget/quotation-file.ts`
 - `lib/budget/reconcile-math.test.ts`
@@ -91,4 +96,4 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/rights/queries.ts`
 - `lib/rights/renewal-recurring.ts`
 - `lib/rights/task-reconciliation.test.ts`
-- `lib/rights/task-reconciliation.ts`
+... 1 more

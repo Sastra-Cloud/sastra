@@ -1,6 +1,6 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { printRuns, projects } from "@/lib/db/schema";
@@ -80,7 +80,7 @@ export async function createRunFromTextQuote(input: {
   const [existingRun] = await db
     .select({ id: printRuns.id })
     .from(printRuns)
-    .where(eq(printRuns.projectId, input.projectId))
+    .where(and(eq(printRuns.projectId, input.projectId), ne(printRuns.kind, "budget_estimate")))
     .limit(1);
   if (existingRun) return null;
 

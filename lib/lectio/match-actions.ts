@@ -29,7 +29,8 @@ export async function findLectioProjectMatches(connectionId: string, input: Proj
     }
     let defaultsApproved = false;
     try { parseProfile(connection.profile); defaultsApproved = true; } catch { /* Existing-project review remains available. */ }
-    return { projects: rankProjectMatches(result.projects.filter(project => (!previous || project.id === previous.remoteProjectId) && !links.some(link => link.remoteId === project.id && link.projectId !== localProjectId)), input), teamName: connection.teamName, allowNew: !previous && defaultsApproved && result.allowCreate === true };
+    const newProjectBlockedReason = previous ? "previous_connection" : !defaultsApproved ? "defaults_required" : result.allowCreate !== true ? "lectio_approval_required" : null;
+    return { projects: rankProjectMatches(result.projects.filter(project => (!previous || project.id === previous.remoteProjectId) && !links.some(link => link.remoteId === project.id && link.projectId !== localProjectId)), input), teamName: connection.teamName, allowNew: newProjectBlockedReason === null, newProjectBlockedReason };
   } catch (error) { return { error: error instanceof IntegrationError ? error.message : "Could not check Lectio projects. Retry before choosing how to connect." }; }
 }
 

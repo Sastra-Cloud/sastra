@@ -2,12 +2,12 @@
 title: "Print runs, printer quote requests & quotes"
 category: "Publishing"
 roles: [manager, admin]
-keywords: [confirm printer paid, confirm payment in my work, publishing, print defaults and printer contacts, active runs, request printer quotes, source page count, full payment, consolidate payments, wrong wire amount, print, print run, reprint, previous print, historical print, old print, collapse print run, show print details, old quote, legacy quote, copy specs, apply specs, measurement unit, millimetres, millimeters, mm, inches, trim size, rfq, quote request, printer, printing coordinator, payment task, payment confirmation task, quantity, tier, total price, price per copy, quote learning, document learning, printing in five steps, print steps, first print run, walk me through printing, how to print, recommended balance, economic elbow, sell-through, lowest cost per copy, total cost, cost per copy, incremental cost, comparison, wire, finance, funding received, printer paid, deposit, balance, proof, proof attachment, proof download, proof files, printer waiting for approval, proofing status, suggested project update, invoice, deposit invoice, final invoice, invoice attachment, attachment preview, preview invoice, estimate vs actual, accept quote, accepted, collapse quotes, hide other quotes, show other quotes, reopen quote, un-accept, unaccept, reject quote, reverse acceptance, ai email draft, generated sign-off, learns from edits, email style, draft tone, awaiting payment, wire requested, run status, print correspondence, printer email, email thread, open thread, view thread, missing price, per copy price, cover pdf, book pdf, artwork not a quote, file note, attachment note, payment follow up, awaiting payment confirmation, confirm printer received payment]
+keywords: [same specs as, reuse book specs, copy book specifications, print estimate size, book details, English page count, book size, English PDF, preliminary print estimate, budget estimate request, estimated printing cost, confirm printer paid, confirm payment in my work, publishing, print defaults and printer contacts, active runs, request printer quotes, source page count, full payment, consolidate payments, wrong wire amount, print, print run, reprint, previous print, historical print, old print, collapse print run, show print details, old quote, legacy quote, copy specs, apply specs, measurement unit, millimetres, millimeters, mm, inches, trim size, rfq, quote request, printer, printing coordinator, payment task, payment confirmation task, quantity, tier, total price, price per copy, quote learning, document learning, printing in five steps, print steps, first print run, walk me through printing, how to print, recommended balance, economic elbow, sell-through, lowest cost per copy, total cost, cost per copy, incremental cost, comparison, wire, finance, funding received, printer paid, deposit, balance, proof, proof attachment, proof download, proof files, printer waiting for approval, proofing status, suggested project update, invoice, deposit invoice, final invoice, invoice attachment, attachment preview, preview invoice, estimate vs actual, accept quote, accepted, collapse quotes, hide other quotes, show other quotes, reopen quote, un-accept, unaccept, reject quote, reverse acceptance, ai email draft, generated sign-off, learns from edits, email style, draft tone, awaiting payment, wire requested, run status, print correspondence, printer email, email thread, open thread, view thread, missing price, per copy price, cover pdf, book pdf, artwork not a quote, file note, attachment note, payment follow up, awaiting payment confirmation, confirm printer received payment]
 order: 70
-summary: "Review active Print runs, quotes, payments, and proofs; confirm printer payments from My Work; expand specifications, setup, and defaults as needed."
+summary: "Request print estimates with editable size and reusable book specs; review quotes, payments, proofs, and payment confirmations."
 ---
 
-Open **Publishing ▸ Print**. Status, the next unpaid payment, proof, funding
+Open the project’s **Print** tab. Status, the next unpaid payment, proof, funding
 warnings, quote comparisons, and active runs come before setup defaults. Use
 **Set up print run** for a new run; it starts expanded when there are no runs.
 Expand **Print defaults and printer contacts** for estimate, trim, recipient,
@@ -32,6 +32,54 @@ skips learning for that quote. Reopening or rejecting an accepted quote
 deactivates its example; managers can also disable or remove examples in
 **Settings ▸ Document learning**. Learning never accepts a quote automatically.
 
+## Early printer estimates for a budget
+
+Managers can open **Estimated printing cost** on the main **Budget ▸ Quotation**
+or **Print** tab for a proposed or active book project. Choose **Request estimate**,
+select a printer with an email address, and enter the copy quantities to price.
+The target-language page count starts from the budget's source pages or word
+count and the project's language expansion factor; you can adjust it for this
+request. Book size starts from the project's Print settings. Change **Width**,
+**Height**, or **Measurement unit** directly under **Book size for this request**.
+These edits apply to this estimate request; they do not change project defaults.
+
+Paper, cover finish, and binding start from this book's saved specifications.
+If this book has none, Sastra suggests the most-used complete set from other
+books. The source book is named beside the form. Project size stays unchanged
+until you edit it or choose another book.
+
+Use **Same specs as…** to search books with saved specifications. Choosing a
+book copies its finished size, text paper/color, cover paper/finish, and binding.
+You can edit every field before preparing the email. Page count, copy quantities,
+PDF, and other notes stay specific to your request. Internal notes and prices
+are not copied. Sastra uses the latest usable production specifications for each
+book, from manager-created, completed, or accepted runs. Unreviewed captured runs
+and preliminary budget estimates are not used as defaults. If there are no
+saved specs, enter them manually.
+
+An **English book PDF** is optional (up to 15 MB). Add text paper/color, cover
+paper/finish, binding, or other specifications if known. The English PDF is a
+reference: the request asks the printer to price the estimated target-language
+pages. **Prepare email for review** saves a personal draft without sending.
+Review the recipient, edit CC for this email, preview the attachment, and confirm
+before **Send estimate request**. Save later edits with **Save draft**, or return
+with **Resume draft**. Sending shows progress; a failed send retains your input.
+
+Replies captured in Correspondence stay linked to the estimate request, even
+if an actual print run has since been created. Prices from the email body or
+an attached quote PDF become suggestions. You can also use **Add quote from text
+or PDF** on the request. Review the source email, specifications, flagged fields,
+copy count, total, and currency, then choose **Use for budget estimate**. The total
+must be in the budget currency; Sastra does not convert currencies.
+
+The selected price updates the main Print / Ship budget line as an **estimate**.
+It creates no order, payment schedule, or actual spend. A later reviewed quote
+for the actual first print run replaces it in the budget; merely creating a run
+or receiving an unreviewed quote does not erase the estimate. Reprints keep
+separate budgets. Actual spend still comes only from recorded paid print payments.
+Select another tier to replace the estimate, or **Remove selected estimate** to
+stop using it. The request and original quote remain in the history.
+
 ## Printing in five steps
 
 New to printing? The Print tab works in this order:
@@ -50,6 +98,11 @@ New to printing? The Print tab works in this order:
 You can stop and come back at any step. Nothing is sent until you confirm.
 
 ## Print settings
+
+To enter source pages or book size, open **Overview ▸ Book details ▸ Edit book
+details**. These values are shared with Budget and Print. You can also edit them
+in **Print defaults and printer contacts**. Existing print runs keep their own
+trim size; change a run's size under **Run specifications and quantity**.
 
 Configure the **trim size**, a **language-expansion factor**, **page estimates**,
 **printer quote request defaults**, and the **finance email / CC** used for wire requests.

@@ -33,6 +33,7 @@
 - `/projects/import/[importId]` -> `app/(app)/projects/import/[importId]/page.tsx`
 - `/projects/import` -> `app/(app)/projects/import/page.tsx`
 - `/projects/new` -> `app/(app)/projects/new/page.tsx`
+- `/projects/new/proposal-budget` -> `app/(app)/projects/new/proposal-budget/page.tsx`
 - `/projects` -> `app/(app)/projects/page.tsx`
 - `/projects/plan/[draftId]` -> `app/(app)/projects/plan/[draftId]/page.tsx`
 - `/projects/plan` -> `app/(app)/projects/plan/page.tsx`

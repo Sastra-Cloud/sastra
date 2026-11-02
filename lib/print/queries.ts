@@ -9,6 +9,7 @@ import {
   inArray,
   isNotNull,
   isNull,
+  ne,
   sql,
 } from "drizzle-orm";
 
@@ -129,6 +130,7 @@ export async function listPrintRuns(projectId: string): Promise<PrintRunRow[]> {
       id: printRuns.id,
       projectId: printRuns.projectId,
       contactId: printRuns.contactId,
+      referenceFileId: printRuns.referenceFileId,
       sourceRunId: printRuns.sourceRunId,
       title: printRuns.title,
       kind: printRuns.kind,
@@ -162,7 +164,7 @@ export async function listPrintRuns(projectId: string): Promise<PrintRunRow[]> {
     })
     .from(printRuns)
     .leftJoin(printContacts, eq(printContacts.id, printRuns.contactId))
-    .where(eq(printRuns.projectId, projectId))
+    .where(and(eq(printRuns.projectId, projectId), ne(printRuns.kind, "budget_estimate")))
     .orderBy(desc(printRuns.createdAt));
 }
 
@@ -536,7 +538,7 @@ export async function getPrintData(projectId: string) {
     sourcePageCount: basis.sourcePageCount,
     contacts,
     runs,
-    quotes,
+    quotes: quotes.filter(quote => runs.some(run => run.id === quote.runId)),
     payments,
     threads,
     proofs,

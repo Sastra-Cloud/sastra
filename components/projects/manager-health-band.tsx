@@ -21,13 +21,6 @@ const RIGHTS: Record<string, { label: string; cls: string }> = {
 };
 
 export type ManagerHealthProps = {
-  budget: {
-    needed: number;
-    committed: number;
-    received: number;
-    spent: number;
-    currency: string;
-  } | null;
   rights: { overallStatus: string; completeByDate: string | null } | null;
   rightsOverdue: boolean;
   velocity: { label: string; value: number }[];
@@ -38,7 +31,6 @@ export type ManagerHealthProps = {
 };
 
 export function ManagerHealthBand({
-  budget,
   rights,
   rightsOverdue,
   velocity,
@@ -47,20 +39,6 @@ export function ManagerHealthBand({
   forecast,
   projectSlug,
 }: ManagerHealthProps) {
-  const money = (n: number, currency: string) =>
-    new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency,
-      maximumFractionDigits: 0,
-    }).format(n);
-  const promisedPct =
-    budget && budget.needed > 0
-      ? Math.round((budget.committed / budget.needed) * 100)
-      : null;
-  const receivedPct =
-    budget && budget.needed > 0
-      ? Math.round((budget.received / budget.needed) * 100)
-      : null;
   const rightsInfo = rights ? RIGHTS[rights.overallStatus] ?? RIGHTS.none : RIGHTS.none;
   const hasVelocity =
     velocity.length >= 2 && velocity.some((point) => point.value > 0);
@@ -75,45 +53,12 @@ export function ManagerHealthBand({
           <div>
             <h2 className="text-sm font-semibold">Project health</h2>
             <p className="text-xs text-muted-foreground">
-              Funding, rights, delivery, and workload for managers.
+              Rights, delivery, and workload for managers.
             </p>
           </div>
         </div>
 
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-x-6 gap-y-4">
-          {/* Budget */}
-          <div className="space-y-1.5">
-            <Link
-              href={`/projects/${projectSlug}/budget`}
-              className="group inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-            >
-              Funding
-              <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-            {budget && budget.needed > 0 ? (
-              <>
-                <p className="text-lg font-semibold tabular-nums">
-                  {money(budget.committed, budget.currency)}
-                  <span className="text-sm font-normal text-muted-foreground">
-                    {" "}
-                    / {money(budget.needed, budget.currency)}
-                  </span>
-                </p>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-                  <div
-                    className="h-full rounded-full bg-success"
-                    style={{ width: `${Math.min(100, promisedPct ?? 0)}%` }}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground tabular-nums">
-                  {promisedPct}% promised · {receivedPct}% received · {money(budget.spent, budget.currency)} spent
-                </p>
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">No budget set</p>
-            )}
-          </div>
-
           {/* Rights */}
           <div className="space-y-1.5">
             <Link

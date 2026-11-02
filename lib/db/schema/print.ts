@@ -75,7 +75,7 @@ export const projectPrintSettings = pgTable(
   (t) => [uniqueIndex("project_print_settings_project_uq").on(t.projectId)]
 );
 
-/** One print job/edition/reprint for a project. */
+/** One print job/edition/reprint, or a planning-only budget_estimate request. */
 export const printRuns = pgTable(
   "print_runs",
   {
@@ -90,6 +90,9 @@ export const printRuns = pgTable(
       }
     ),
     contactId: uuid("contact_id").references(() => printContacts.id, {
+      onDelete: "set null",
+    }),
+    referenceFileId: uuid("reference_file_id").references(() => files.id, {
       onDelete: "set null",
     }),
     title: text("title").notNull(),

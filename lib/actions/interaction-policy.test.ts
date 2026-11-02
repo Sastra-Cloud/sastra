@@ -150,6 +150,8 @@ describe("client action interaction policy", () => {
     expect(interactionModeFor("sendInvoiceEmail")).toBe("progress");
     expect(interactionModeFor("generateMouInvoice")).toBe("progress");
     expect(interactionModeFor("sendPrintRfq")).toBe("progress");
+    expect(interactionModeFor("draftPrintEstimate")).toBe("progress");
+    expect(interactionModeFor("selectPrintEstimateQuote")).toBe("progress");
     expect(interactionModeFor("sendWireRequest")).toBe("progress");
     expect(interactionModeFor("consolidatePrintInvoicePayment")).toBe("progress");
     expect(interactionModeFor("reviewPrintWirePayment")).toBe("read");
@@ -212,6 +214,7 @@ describe("client action interaction policy", () => {
   });
 
   it("keeps project lifecycle changes optimistic", () => {
+    expect(interactionModeFor("createProposalBudget")).toBe("navigation");
     expect(interactionModeFor("updateProjectStatus")).toBe("optimistic");
     expect(interactionModeFor("updateProjectTitle")).toBe("optimistic");
   });
@@ -277,7 +280,7 @@ describe("client action interaction policy", () => {
     );
   });
 
-  it("keeps project print and quotation settings immediate and reversible", () => {
+  it("keeps Overview book details, print defaults, and quotation settings immediate and reversible", () => {
     expect(interactionModeFor("updateBudgetSettings")).toBe("optimistic");
     expect(interactionModeFor("updatePrintSettings")).toBe("optimistic");
   });

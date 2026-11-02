@@ -12,7 +12,8 @@ import { useGuidance } from "@/components/guidance/guidance-provider";
 import { NewProjectForm } from "@/components/projects/new-project-form";
 import { NewProjectGuided } from "@/components/projects/new-project-guided";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { SetupSettings } from "@/components/lectio/setup-settings";
 import { ProjectMatchDialog, type ProjectConnectionChoice } from "@/components/lectio/project-match-dialog";
 import { findLectioProjectMatches } from "@/lib/lectio/match-actions";
 import type { ProjectMatch } from "@/lib/lectio/protocol/project-matches";
@@ -29,6 +30,7 @@ type Props = {
   defaultSourceLanguage: string | null;
   defaultTargetLanguage: string | null;
   defaultPlanTemplateKey: string | null;
+  canConfigureLectio?: boolean;
   lectioOptions?: { id: string; teamName: string; templateId: string | null; automatic: boolean }[];
 };
 
@@ -45,18 +47,21 @@ export function NewProjectEntry(props: Props) {
 
   const router = useRouter();
   const defaults = props.lectioOptions || [];
-  const [syncLectio, setSyncLectio] = useState(defaults.length > 0);
+  const defaultSync = defaults.some(c => c.automatic);
+  const [syncLectio, setSyncLectio] = useState(defaultSync);
+  const [setupOpen, setSetupOpen] = useState(false);
   const [lectioConnectionId, setLectioConnectionId] = useState(defaults.length === 1 ? defaults[0].id : "");
   const [matchOpen, setMatchOpen] = useState(false), [matches, setMatches] = useState<ProjectMatch[] | null>(null), [matchError, setMatchError] = useState<string | null>(null);
   const checkingMatches = useRef(false);
   const [allowNewMatch, setAllowNewMatch] = useState(false);
-  const reviewChoice = useRef<{ key: string; choice: ProjectConnectionChoice } | null>(null);
+  const [newProjectBlockedReason, setNewProjectBlockedReason] = useState<string | null>(null);
+  const reviewChoice = useRef<{ key: string; choice: ProjectConnectionChoice | { type: "local" } } | null>(null);
   const [initialDraft] = useState<ProjectDraft>(() => ({
     title: "", description: "", kind: "book", videoProductionMode: "original",
     status: "planning", priority: "medium", printFundingStatus: "not_assessed",
     sourceLanguage: props.defaultSourceLanguage ?? "", targetLanguage: props.defaultTargetLanguage ?? "",
     startDate: "", dueDate: "", chapters: "",
-    planTemplateId: (defaults.length === 1 ? defaults[0].templateId : null) ?? (props.templates.find(t => t.key === props.defaultPlanTemplateKey) ?? props.templates.find(t => t.key === "book-translation"))?.id ?? "none",
+    planTemplateId: (defaultSync && defaults.length === 1 ? defaults[0].templateId : null) ?? (props.templates.find(t => t.key === props.defaultPlanTemplateKey) ?? props.templates.find(t => t.key === "book-translation"))?.id ?? "none",
   }));
   const [draft, setDraft] = useState(initialDraft);
   const reviewKey = JSON.stringify([lectioConnectionId, draft.title, draft.sourceLanguage, draft.targetLanguage, draft.planTemplateId]);
@@ -65,18 +70,18 @@ export function NewProjectEntry(props: Props) {
     checkingMatches.current = true;
     setMatchOpen(true); setMatches(null); setMatchError(null);
     try { const result = await findLectioProjectMatches(lectioConnectionId, { name: draft.title, sourceLanguage: draft.sourceLanguage, targetLanguage: draft.targetLanguage });
-      if ("error" in result) setMatchError(result.error!); else { setMatches(result.projects); setAllowNewMatch(result.allowNew); }
+      if ("error" in result) setMatchError(result.error!); else { setMatches(result.projects); setAllowNewMatch(result.allowNew); setNewProjectBlockedReason(result.newProjectBlockedReason); }
     } catch { setMatchError("Could not check existing projects. Your project details are still here."); }
     finally { checkingMatches.current = false; }
   }
   const [state, action, pending] = useActionState(async (previous: ProjectFormState): Promise<ProjectFormState> => {
     try {
-      const connect = syncLectio && ["book", "article"].includes(draft.kind);
+      const connect = syncLectio && ["book", "article"].includes(draft.kind) && reviewChoice.current?.choice.type !== "local";
       if (connect && !lectioConnectionId) return { error: "Choose the Lectio team for this project." };
       if (connect && (!draft.title.trim() || !draft.sourceLanguage || !draft.targetLanguage)) return { error: "Add a title and both languages before checking for existing projects." };
       if (connect && reviewChoice.current?.key !== reviewKey) { await checkMatches(); return {}; }
       const data = projectDraftFormData(draft); data.set("lectioConnectionId", connect ? lectioConnectionId : "none");
-      if (connect && reviewChoice.current) { data.set("lectioChoice", reviewChoice.current.choice.type); if (reviewChoice.current.choice.type === "existing") data.set("lectioRemoteProjectId", reviewChoice.current.choice.projectId); }
+      if (connect && reviewChoice.current && reviewChoice.current.choice.type !== "local") { data.set("lectioChoice", reviewChoice.current.choice.type); if (reviewChoice.current.choice.type === "existing") data.set("lectioRemoteProjectId", reviewChoice.current.choice.projectId); }
       const result = await createProject(previous, data); reviewChoice.current = null; return result;
     }
     catch (error) {
@@ -85,7 +90,7 @@ export function NewProjectEntry(props: Props) {
       return { error: "Could not create the project. Your details are still here; check your connection and try again." };
     }
   }, {});
-  const dirty = JSON.stringify(draft) !== JSON.stringify(initialDraft) || syncLectio !== (defaults.length > 0) || lectioConnectionId !== (defaults.length === 1 ? defaults[0].id : "");
+  const dirty = JSON.stringify(draft) !== JSON.stringify(initialDraft) || syncLectio !== defaultSync || lectioConnectionId !== (defaults.length === 1 ? defaults[0].id : "");
   useEffect(() => {
     if (!dirty) return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); };
@@ -101,7 +106,15 @@ export function NewProjectEntry(props: Props) {
     } }}>
       <div className="space-y-4">
         {props.lectioOptions?.length && ["book", "article"].includes(draft.kind) ? <div className="space-y-2 rounded-lg border p-4">
-          <div className="flex items-center justify-between gap-3"><label htmlFor="new-project-lectio-connected" className="text-sm font-medium">Connected to Lectio</label><Switch id="new-project-lectio-connected" aria-label="Connected to Lectio" checked={syncLectio} disabled={pending} onCheckedChange={setSyncLectio} /></div>
+          <fieldset className="space-y-2" disabled={pending}>
+            <legend className="mb-2 text-sm font-medium">Create project in</legend>
+            <label className="flex min-h-11 cursor-pointer items-start gap-3 text-sm"><input type="radio" name="project-destination" className="mt-1" checked={!syncLectio} onChange={() => { setSyncLectio(false); reviewChoice.current = null; }} /><span><span className="block font-medium">Sastra only</span><span className="text-muted-foreground">You can connect it to Lectio later.</span></span></label>
+            <label className="flex min-h-11 cursor-pointer items-start gap-3 text-sm"><input type="radio" name="project-destination" className="mt-1" checked={syncLectio} onChange={() => {
+              setSyncLectio(true); reviewChoice.current = null;
+              const option = defaults.find(c => c.id === lectioConnectionId);
+              if (option?.templateId) setDraft(d => ({ ...d, planTemplateId: option.templateId! }));
+            }} /><span><span className="block font-medium">Sastra and Lectio</span><span className="text-muted-foreground">Create a new Lectio project or connect to an existing one.</span></span></label>
+          </fieldset>
           {syncLectio ? <><label htmlFor="new-project-lectio" className="text-sm font-medium">Lectio team</label>
           <select id="new-project-lectio" disabled={pending} className="min-h-11 w-full rounded-md border bg-background px-3 text-sm" value={lectioConnectionId} onChange={e => {
             const id = e.target.value; setLectioConnectionId(id);
@@ -110,7 +123,7 @@ export function NewProjectEntry(props: Props) {
           <p className="text-xs text-muted-foreground">Before creating this project, check Lectio for an existing match or choose to create a separate project.</p></> : <p className="text-xs text-muted-foreground">Create this project in Sastra without connecting it to Lectio.</p>}
         </div> : null}
         <nav aria-label="Other ways to create a project" className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
-          {[{ href: "/projects/import", label: "Import from document" }, { href: "/projects/plan", label: "Plan with AI" }].map(method => (
+          {[{ href: "/projects/new/proposal-budget", label: "Build a proposal budget" }, { href: "/projects/import", label: "Import from document" }, { href: "/projects/plan", label: "Plan with AI" }].map(method => (
             <Link key={method.href} href={method.href} className="text-primary underline underline-offset-4" onClick={async event => {
               if (pending) { event.preventDefault(); return; }
               if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
@@ -127,9 +140,18 @@ export function NewProjectEntry(props: Props) {
           <NewProjectForm {...props} />
         </>}
       </div>
-      {matchOpen ? <ProjectMatchDialog open onClose={() => setMatchOpen(false)} projects={matches} error={matchError} teamName={props.lectioOptions?.find(c => c.id === lectioConnectionId)?.teamName || ""} allowNew={allowNewMatch} onRetry={() => void checkMatches()} onConfirm={choice => {
+      {matchOpen ? <ProjectMatchDialog open onClose={() => setMatchOpen(false)} projects={matches} error={matchError} teamName={props.lectioOptions?.find(c => c.id === lectioConnectionId)?.teamName || ""} allowNew={allowNewMatch} newProjectBlockedReason={newProjectBlockedReason}
+        onConfigure={props.canConfigureLectio ? () => { setMatchOpen(false); setSetupOpen(true); } : undefined}
+        onCreateLocal={() => {
+          reviewChoice.current = { key: reviewKey, choice: { type: "local" } }; setSyncLectio(false); setMatchOpen(false); startTransition(() => action());
+        }} onRetry={() => void checkMatches()} onConfirm={choice => {
         reviewChoice.current = { key: reviewKey, choice }; setMatchOpen(false); startTransition(() => action());
       }} /> : null}
+      {setupOpen ? <Dialog open onOpenChange={setSetupOpen}><DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-xl"><DialogHeader>
+        <DialogTitle>Set up connected projects</DialogTitle><DialogDescription>Review the template and workflow for new connected projects. Your project details stay saved in this form.</DialogDescription>
+      </DialogHeader><SetupSettings connectionId={lectioConnectionId} onSaved={templateId => {
+        setDraft(d => ({ ...d, planTemplateId: templateId })); reviewChoice.current = null; setSetupOpen(false);
+      }} /></DialogContent></Dialog> : null}
     </ProjectDraftContext.Provider>
   );
 }

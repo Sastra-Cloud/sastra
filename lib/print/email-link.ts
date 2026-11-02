@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, isNull, or } from "drizzle-orm";
+import { and, desc, eq, isNull, ne, or } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {
@@ -153,6 +153,7 @@ async function inferRunId(input: {
       .where(
         and(
           eq(printRuns.projectId, input.projectId),
+          ne(printRuns.kind, "budget_estimate"),
           or(eq(printRuns.contactId, input.contactId), isNull(printRuns.contactId))
         )
       )
@@ -164,7 +165,7 @@ async function inferRunId(input: {
   const runs = await db
     .select({ id: printRuns.id })
     .from(printRuns)
-    .where(eq(printRuns.projectId, input.projectId))
+    .where(and(eq(printRuns.projectId, input.projectId), ne(printRuns.kind, "budget_estimate")))
     .orderBy(desc(printRuns.createdAt))
     .limit(2);
   return runs.length === 1 ? runs[0].id : null;
@@ -180,19 +181,23 @@ export async function linkPrintThread(input: {
   existingProjectId?: string | null;
   runId?: string | null;
 }) {
+  const [existing] = await db.select().from(printThreadLinks)
+    .where(eq(printThreadLinks.threadId, input.threadId)).limit(1);
   const contact = await findPrintContact({
     participantEmails: input.participantEmails,
     participantNames: input.participantNames,
   });
   const projectId = await inferProjectId({
     ...input,
+    existingProjectId: input.existingProjectId ?? existing?.projectId,
     contactId: contact?.id ?? null,
   });
   const shouldLink =
-    !!contact || !!input.runId || (!!projectId && looksLikePrintMessage(input));
+    !!contact || !!input.runId || !!existing?.runId || (!!projectId && looksLikePrintMessage(input));
   if (!shouldLink) return null;
 
-  let runId = input.runId ?? null;
+  // Replies keep the exact request, even after a production run is created.
+  let runId = input.runId ?? (existing?.projectId === projectId ? existing.runId : null) ?? null;
   if (!runId && projectId) {
     runId = await inferRunId({ projectId, contactId: contact?.id ?? null });
   }

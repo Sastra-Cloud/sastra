@@ -17,7 +17,7 @@ export const metadata = { title: "New project" };
 export const dynamic = "force-dynamic";
 
 export default async function NewProjectPage() {
-  await requireRole("manager");
+  const { user } = await requireRole("manager");
   const [templates, workspace] = await Promise.all([
     listPlanTemplates(),
     getWorkspaceSettings(),
@@ -52,6 +52,7 @@ export default async function NewProjectPage() {
           defaultTargetLanguage={workspace.targetLanguage}
           defaultPlanTemplateKey={workspace.defaultPlanTemplateKey}
           lectioOptions={lectioOptions}
+          canConfigureLectio={["admin", "super_admin"].includes(user.role ?? "")}
         />
       </ContentColumn>
     </PageShell>

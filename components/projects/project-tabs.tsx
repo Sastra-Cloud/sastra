@@ -1,21 +1,16 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, BookOpenText } from "lucide-react";
 import { TabScroller } from "@/components/cockpit";
 import { MotionTabLink } from "@/components/motion/tab-link";
 import { navigationIcons } from "@/components/navigation-icons";
 import { projectNavigation, navigationItemActive, type NavigationItem } from "@/lib/navigation";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
 
 export function ProjectTabs({ slug, kind, lectioEnabled = false }: { slug: string; kind?: string | null; lectioEnabled?: boolean }) {
   const pathname = usePathname();
   const rootRef = useRef<HTMLDivElement>(null);
   const sections = projectNavigation(slug, kind);
-  const publishing = sections.publishing.find(item => navigationItemActive(pathname, item));
   useEffect(() => {
     const active = rootRef.current?.querySelector<HTMLElement>('[aria-current="page"]');
     const scroller = active?.closest<HTMLElement>("[data-tab-scroller]");
@@ -32,23 +27,9 @@ export function ProjectTabs({ slug, kind, lectioEnabled = false }: { slug: strin
       <TabScroller aria-label="Project sections">
         {sections.daily.map(tab)}
         {lectioEnabled ? tab({ href: `/projects/${slug}/translation`, label: "Translation", icon: "projects" }) : null}
-        <DropdownMenu>
-          <DropdownMenuTrigger aria-current={publishing ? "page" : undefined} className={cn("inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring", publishing ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-muted-foreground")}>
-            <BookOpenText className="size-4" />Publishing<ChevronDown className="size-3.5" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="min-w-44">
-            {sections.publishing.map(item => {
-              const Icon = navigationIcons[item.icon];
-              return <DropdownMenuItem key={item.href} nativeButton={false} render={<Link href={item.href} />} className="min-h-11 gap-2" aria-current={publishing?.href === item.href ? "page" : undefined}><Icon className="size-4" />{item.label}</DropdownMenuItem>;
-            })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {sections.publishing.map(tab)}
         {tab(sections.members)}
       </TabScroller>
-      {publishing ? <nav aria-label="Publishing sections" className="flex flex-wrap items-center gap-1 border-b pb-2">
-        <span className="mr-2 text-xs text-muted-foreground">Publishing</span>
-        {sections.publishing.map(item => <Link key={item.href} href={item.href} aria-current={publishing.href === item.href ? "page" : undefined} className={cn("inline-flex min-h-10 items-center rounded-md px-3 text-sm hover:bg-muted", publishing.href === item.href ? "bg-primary/10 font-medium text-primary" : "text-muted-foreground")}>{item.label}</Link>)}
-      </nav> : null}
     </div>
   );
 }

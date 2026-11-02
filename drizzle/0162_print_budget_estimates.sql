@@ -1,0 +1,2 @@
+ALTER TABLE "print_runs" ADD COLUMN "reference_file_id" uuid;--> statement-breakpoint
+ALTER TABLE "print_runs" ADD CONSTRAINT "print_runs_reference_file_id_files_id_fk" FOREIGN KEY ("reference_file_id") REFERENCES "public"."files"("id") ON DELETE set null ON UPDATE no action;

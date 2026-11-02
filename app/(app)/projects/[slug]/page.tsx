@@ -13,7 +13,12 @@ import {
   getProjectBySlug,
   listProjectRightsStatus,
 } from "@/lib/projects/queries";
-import { getProjectFundingSummary } from "@/lib/projects/funding-queries";
+import { getProjectFundingOverview } from "@/lib/projects/funding-overview-queries";
+import { ProjectFundingOverview } from "@/components/projects/project-funding-overview";
+import { BookDetails } from "@/components/projects/book-details";
+import { getBudgetPageBasis, getOrCreatePrintSettings } from "@/lib/print/queries";
+import { measurementUnit } from "@/lib/print/estimate";
+import { isBookProjectKind } from "@/lib/projects/print-funding";
 import { getPlanningDefaults } from "@/lib/planning/queries";
 import { durationForKind } from "@/lib/planning/capacity";
 import { listProjectMentionTargets } from "@/lib/mentions/roster";
@@ -148,6 +153,7 @@ export default async function ProjectOverviewPage({
     compliance,
     mentionTargets,
     planningDefaults,
+    bookDetails,
   ] = await Promise.all([
     listAttachments("project", project.id),
     projectClosed ? Promise.resolve([]) : getProjectBlockers(project.id),
@@ -158,6 +164,13 @@ export default async function ProjectOverviewPage({
     getComplianceSummary(project.id),
     listProjectMentionTargets(project.id),
     getPlanningDefaults(),
+    isBookProjectKind(project.kind)
+      ? Promise.all([
+          getBudgetPageBasis(project.id),
+          getOrCreatePrintSettings(project.id),
+          getWorkspaceSettings(),
+        ])
+      : Promise.resolve(null),
   ]);
   const defaultDurationMonths = durationForKind(
     planningDefaults.durationByKind,
@@ -188,6 +201,7 @@ export default async function ProjectOverviewPage({
   const sponsorshipFunds = workspaceManager && project.kind === "book" &&
     moduleEnabled((await getWorkspaceSettings()).enabledModules, "sponsorships")
     ? await listProjectSponsorshipFunds(project.id) : [];
+  const fundingOverview = workspaceManager ? await getProjectFundingOverview(project.id) : null;
   const canViewCorrespondence = can(
     session?.user ?? null,
     "correspondence.view"
@@ -205,21 +219,18 @@ export default async function ProjectOverviewPage({
     : null;
   if (workspaceManager && !projectClosed) {
     const [
-      fundingSummary,
       rightsStatus,
       openTasks,
       velocityWeeks,
       standupView,
       snapshots,
     ] = await Promise.all([
-      getProjectFundingSummary(project.id),
       listProjectRightsStatus(),
       getOpenAssignedTasks(),
       weeklyTaskCompletions(project.id),
       getStandupView(),
       getProjectSnapshots(project.id),
     ]);
-    const bt = fundingSummary?.needed ? fundingSummary : null;
     const rs = rightsStatus.find((r) => r.projectId === project.id) ?? null;
     projectCompleteByDate = rs?.completeByDate ?? null;
     const rightsOverdue = !!(
@@ -282,17 +293,6 @@ export default async function ProjectOverviewPage({
 
     band = (
       <ManagerHealthBand
-        budget={
-          bt
-            ? {
-                needed: bt.needed,
-                committed: bt.committed,
-                received: bt.received,
-                spent: bt.spent,
-                currency: bt.currency,
-              }
-            : null
-        }
         rights={
           rs
             ? { overallStatus: rs.overallStatus, completeByDate: rs.completeByDate }
@@ -374,6 +374,25 @@ export default async function ProjectOverviewPage({
           fileCount={projectFiles.length}
         />
       ) : null}
+
+      {bookDetails ? <BookDetails
+        projectId={project.id}
+        projectSlug={project.slug}
+        canEdit={can(session?.user, "print.manage")}
+        sourceLanguage={project.sourceLanguage ?? bookDetails[2].sourceLanguage}
+        targetLanguage={project.targetLanguage ?? bookDetails[2].targetLanguage}
+        wordCount={bookDetails[0].wordCount}
+        wordsPerPage={bookDetails[0].wordsPerPage}
+        details={{
+          sourcePageCount: bookDetails[0].sourcePageCount,
+          trimWidthIn: bookDetails[1].trimWidthIn,
+          trimHeightIn: bookDetails[1].trimHeightIn,
+          measurementUnit: measurementUnit(bookDetails[1].measurementUnit),
+          languageExpansionFactor: bookDetails[1].languageExpansionFactor,
+        }}
+      /> : null}
+
+      {fundingOverview ? <ProjectFundingOverview funding={fundingOverview} slug={slug} /> : null}
 
       <div className="min-w-0">
         <ProjectStatusUpdate
@@ -599,7 +618,7 @@ export default async function ProjectOverviewPage({
                 </SectionDisclosure>
               ) : null}
 
-            {band ? <SectionDisclosure id="manager-analytics" title="Project analytics" description="Funding, rights, forecast, and team capacity">{band}</SectionDisclosure> : null}
+            {band ? <SectionDisclosure id="manager-analytics" title="Project analytics" description="Rights, forecast, and team capacity">{band}</SectionDisclosure> : null}
 
             {project.description ? (
               <section

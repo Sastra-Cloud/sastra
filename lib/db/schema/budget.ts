@@ -50,7 +50,7 @@ export const budgetItems = pgTable(
     quantity: numeric("quantity", { precision: 14, scale: 2 })
       .notNull()
       .default("0"),
-    unitPrice: numeric("unit_price", { precision: 14, scale: 2 })
+    unitPrice: numeric("unit_price", { precision: 16, scale: 4 })
       .notNull()
       .default("0"),
     amount: numeric("amount", { precision: 14, scale: 2 }).notNull().default("0"),

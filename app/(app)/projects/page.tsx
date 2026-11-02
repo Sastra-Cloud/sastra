@@ -42,6 +42,7 @@ export default async function ProjectsPage() {
               Shared MoUs
             </Link>
           ) : null}
+          {isManager ? <Link href="/projects/new/proposal-budget" className={buttonVariants({ variant: "outline" })}>New proposal budget</Link> : null}
           {isManager ? <Link href="/projects/new" className={buttonVariants()}><Plus className="size-4" />Create project</Link> : null}
         </div>
       </Reveal>

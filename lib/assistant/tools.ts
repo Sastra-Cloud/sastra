@@ -38,6 +38,8 @@ import {
 import { createRecurringTask } from "@/lib/tasks/recurring-actions";
 import { createProject, updateProjectKind } from "@/lib/projects/actions";
 import { createProjectFromBlueprint } from "@/lib/projects/create-from-blueprint";
+import { createProjectFromExisting, previewProjectFromExisting } from "@/lib/projects/create-from-project";
+import { projectCopySchema } from "@/lib/projects/project-copy";
 import {
   blueprintBudgetTotals,
   projectBlueprintSchema,
@@ -1503,6 +1505,38 @@ const TOOLS: ToolDef[] = [
     },
   },
   {
+    name: "create_project_from_existing",
+    description:
+      "Create a NEW project based on an existing project's actual workflow (managers/admins only). Resolve sourceProjectId with list_projects first, including archived projects with scope all if needed. One approval copies the project brief, requirements, priority, languages, phases, unit names, production/print defaults, and optionally budget quantities, rates, partner and quote settings as estimates. The new project starts with NO tasks or people assigned. Funding/spending, signed agreements, approvals, payments, and files are not copied. Use this for a new volume, sequel, or similar project instead of creating a task to create a project. Defaults to Proposal. Do not use for a reprint or a funding portion of the same project.",
+    kind: "write",
+    minRole: "manager",
+    parameters: {
+      type: "object",
+      properties: {
+        sourceProjectId: { type: "string", description: "Existing project id resolved by a read tool." },
+        title: { type: "string", maxLength: 200 },
+        description: { type: "string", maxLength: 2000 },
+        status: { type: "string", enum: ["proposal", "planning", "active", "on_hold"] },
+        startDate: { type: "string", description: "New start date, YYYY-MM-DD. Omit if unknown." },
+        dueDate: { type: "string", description: "New due date, YYYY-MM-DD. Omit if unknown." },
+        copyBudget: { type: "boolean", description: "Copy budget quantities, rates, partner/royalty and quote settings as estimates for review; defaults to true." },
+        reviewedFingerprint: { type: "string", description: "System-owned review token. Omit; the approval preview sets this from live data." },
+      },
+      required: ["sourceProjectId", "title"],
+    },
+    preview: async (_ctx, args) => {
+      delete args.reviewedFingerprint;
+      const preview = await previewProjectFromExisting(projectCopySchema.parse(args));
+      args.reviewedFingerprint = preview.fingerprint;
+      return preview.description;
+    },
+    run: async (_ctx, args) => {
+      if (!args.reviewedFingerprint) throw new Error("Request a project preview before creating the project.");
+      const result = await createProjectFromExisting(projectCopySchema.parse(args), String(args.reviewedFingerprint));
+      return JSON.stringify({ ...result, created: true });
+    },
+  },
+  {
     name: "create_project",
     description:
       "Create a simple new project shell (managers/admins only). Optionally pass kind (book/article/podcast/video_series/other), a project-wide videoProductionMode (original/translation for video_series), units (newline-separated), and dates. Use create_project_with_budget instead when the request includes a budget, partner quote, word count, or a complete repeated-unit workflow.",
@@ -2730,6 +2764,11 @@ export function availableTools(
     "remember",
     "cancel_pending_actions",
     "create_task",
+    // Project creation must remain available on follow-ups such as "yes please"
+    // and on requests that name only a book/volume, without the word "project".
+    "create_project",
+    "create_project_with_budget",
+    "create_project_from_existing",
     "move_task_to_project",
     "assign_task",
     "set_task_status",
@@ -2746,8 +2785,6 @@ export function availableTools(
       [
         "post_chat_message",
         "list_pinned_messages",
-        "create_project",
-        "create_project_with_budget",
         "add_project_member",
         "list_project_roles",
       ].forEach((name) => core.add(name));
@@ -2762,7 +2799,6 @@ export function availableTools(
     }
     if (/\b(royalt|payment|fee|budget|finance|paid)\b/.test(text)) {
       [
-        "create_project_with_budget",
         "list_royalty_payments",
         "configure_royalties",
         "mark_royalty_paid",

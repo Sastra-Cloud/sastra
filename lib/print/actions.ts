@@ -34,6 +34,7 @@ import {
   user,
 } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/gmail";
+import { BUDGET_ESTIMATE_KIND, MAX_REFERENCE_PDF_BYTES } from "./estimate-policy";
 import { getObjectBuffer } from "@/lib/r2";
 import { logActivity } from "@/lib/activity/log";
 import { linkPrintThread } from "@/lib/print/email-link";
@@ -320,7 +321,7 @@ export async function updatePrintSettings(
 
 const runSchema = z.object({
   title: z.string().min(1).max(240).optional(),
-  kind: z.enum(["first_print", "reprint"]).optional(),
+  kind: z.enum(["first_print", "reprint", "budget_estimate"]).optional(),
   status: z.string().min(1).max(80).optional(),
   sourceRunId: z.string().uuid().nullable().optional(),
   printNumber: z.coerce.number().int().min(1).nullable().optional(),
@@ -671,6 +672,7 @@ export async function updatePrintRun(
     estimatedTextPages,
   };
   if (data.title !== undefined) patch.title = data.title.trim();
+  if (data.kind !== undefined && (run.kind === BUDGET_ESTIMATE_KIND || data.kind === BUDGET_ESTIMATE_KIND) && data.kind !== run.kind) return { error: "Create a separate run to move from estimate to production." };
   if (data.kind !== undefined) patch.kind = data.kind;
   if (data.status !== undefined) patch.status = data.status;
   if (data.sourceRunId !== undefined) patch.sourceRunId = data.sourceRunId || null;
@@ -901,8 +903,8 @@ export async function updatePrintQuote(
     .where(eq(printQuotes.id, quoteId))
     .limit(1);
   if (!quote) return { error: "Quote not found." };
-  if (quote.reviewStatus === "accepted")
-    return { error: "Accepted quotes can't be edited." };
+  if (["accepted", "estimated"].includes(quote.reviewStatus))
+    return { error: "Select a different quote before editing this reviewed quote." };
 
   const patch: Partial<typeof printQuotes.$inferInsert> = { updatedAt: new Date() };
   if (data.kind !== undefined) patch.kind = data.kind;
@@ -1343,6 +1345,11 @@ export async function acceptPrintQuote(
   attachedToPayment?: boolean;
 }> {
   const { user } = await requireRole("manager");
+  const [candidate] = await db.select({ runId: printQuotes.runId }).from(printQuotes).where(eq(printQuotes.id, quoteId)).limit(1);
+  if (candidate) {
+    const [run] = await db.select({ kind: printRuns.kind }).from(printRuns).where(eq(printRuns.id, candidate.runId)).limit(1);
+    if (run?.kind === BUDGET_ESTIMATE_KIND) return { error: "Use the budget estimate review to select this quote. Estimates cannot be accepted as orders." };
+  }
   const [quote] = await db
     .update(printQuotes)
     .set({
@@ -1532,6 +1539,7 @@ export async function addPrintPayment(
   const data = paymentSchema.parse(input);
   const [run] = await db.select().from(printRuns).where(eq(printRuns.id, runId)).limit(1);
   if (!run) return { error: "Print run not found." };
+  if (run.kind === BUDGET_ESTIMATE_KIND) return { error: "Budget estimates cannot have payments. Create an actual print run first." };
   const [payment] = await db
     .insert(printPayments)
     .values({
@@ -1678,6 +1686,8 @@ export async function deletePrintPayment(paymentId: string) {
 
 const emailSchema = z.object({
   reviewedAmount: z.string().optional(),
+  reviewedReferenceFileId: z.uuid().nullable().optional(),
+  reviewedRecipientEmail: z.email().optional(),
   subject: z.string().min(1).max(500),
   body: z.string().min(1).max(20000),
   ccEmails: z.union([z.string(), z.array(z.string())]).optional(),
@@ -1811,6 +1821,9 @@ export async function draftWithAi(input: {
 function printRfqPageCountLine(
   run: NonNullable<Awaited<ReturnType<typeof getRunWithProject>>>["run"]
 ) {
+  if (run.kind === BUDGET_ESTIMATE_KIND) {
+    return `Estimated target-language text pages: ${run.quotedTextPages ?? run.estimatedTextPages} (budget estimate only; final layout pending).`;
+  }
   if (run.quotedTextPages && run.quotedTextPages > 0) {
     return `Final target-language text pages: ${run.quotedTextPages}`;
   }
@@ -1820,7 +1833,7 @@ function printRfqPageCountLine(
 
 function withPrintRfqPageCountLine(body: string, pageCountLine: string) {
   const existingPageLine =
-    /^.*(?:estimated|final|quoted).*?(?:khmer\s+)?(?:text\s+)?pages.*$/im;
+    /^(?:.*(?:estimated|final|quoted).*?(?:text\s+)?pages.*|[-*]?\s*text pages\s*:.*)$/im;
   if (existingPageLine.test(body)) {
     return body.replace(existingPageLine, pageCountLine);
   }
@@ -1878,7 +1891,9 @@ export async function draftPrintRfq(runId: string) {
     preferredMeasurementUnit
   );
   const draft = await draftWithAi({
-    purpose: "Request a print quotation from the selected printer contact.",
+    purpose: run.kind === BUDGET_ESTIMATE_KIND
+      ? "Request a preliminary print estimate for budgeting, not an order. The optional English PDF is a reference only; quote the estimated target-language pages, not the English PDF page count."
+      : "Request a print quotation from the selected printer contact.",
     fallback: printRfqFallback({
       contactName: contact?.name,
       projectTitle,
@@ -1913,8 +1928,9 @@ export async function draftPrintRfq(runId: string) {
       estimatedTextPages,
       quotedTextPages: run.quotedTextPages,
       pageCountLine,
-      pageCountStatus:
-        run.quotedTextPages && run.quotedTextPages > 0
+      pageCountStatus: run.kind === BUDGET_ESTIMATE_KIND
+        ? "Preliminary estimated target-language pages for budgeting only; no final layout is available."
+        : run.quotedTextPages && run.quotedTextPages > 0
           ? "Final target-language text page count is available."
           : "Estimated target-language text page count for quote request; final page count is pending after layout/proof.",
       trimSize,
@@ -1928,13 +1944,17 @@ export async function draftPrintRfq(runId: string) {
       notes: run.notes,
       senderName: user.name,
       organizationName: workspace.orgName?.trim() || "Sastra workspace",
+      budgetEstimateOnly: run.kind === BUDGET_ESTIMATE_KIND,
+      englishReferenceAttached: Boolean(run.referenceFileId),
       requestedTone:
         "Short, practical, and polite. Present specifications as a readable list and ask for total price and price per copy for every quantity.",
     },
   });
   return {
     ...draft,
-    body: withPrintRfqPageCountLine(draft.body, pageCountLine),
+    subject: run.kind === BUDGET_ESTIMATE_KIND ? `Budget estimate: ${projectTitle}` : draft.subject,
+    body: withPrintRfqPageCountLine(draft.body, pageCountLine) + (run.kind === BUDGET_ESTIMATE_KIND
+      ? `\n\nThis request is for a preliminary budget estimate only, not a print order.${run.referenceFileId ? " The attached English PDF is for reference; please quote using the estimated target-language page count above." : ""}` : ""),
     recipientEmail: contact?.email ?? null,
     recipientMissingReason: contact
       ? `Add an email address to ${contact.company || contact.name}.`
@@ -1967,6 +1987,25 @@ export async function sendPrintRfq(
         : [...DEFAULT_PRINT_CC_EMAILS];
   const invalid = invalidEmails(cc);
   if (invalid.length) return { error: `Check CC email: ${invalid[0]}` };
+  const attachments = [];
+  if (ctx.run.kind === BUDGET_ESTIMATE_KIND) {
+    if (data.reviewedRecipientEmail !== contact.email) return { error: "The printer email changed. Reopen and review the recipient before sending." };
+    if (data.reviewedReferenceFileId !== ctx.run.referenceFileId) {
+      return { error: "The reference PDF changed. Reopen and review the draft before sending." };
+    }
+    if (ctx.run.referenceFileId) {
+      const file = await getAccessibleExtractionFile(ctx.run.referenceFileId, user.id);
+      if (!file || file.mimeType !== "application/pdf" || file.sizeBytes > MAX_REFERENCE_PDF_BYTES) {
+        return { error: "The English reference PDF is unavailable or exceeds 15 MB. Review the attachment before sending." };
+      }
+      try {
+        attachments.push({ filename: file.originalName, contentType: file.mimeType, content: await getObjectBuffer(file.r2Key) });
+      } catch { return { error: "Could not load the English PDF. Nothing was sent; please try again." }; }
+    }
+    const [claimed] = await db.update(printRuns).set({ status: "sending", updatedAt: new Date() })
+      .where(and(eq(printRuns.id, runId), eq(printRuns.status, "planning"))).returning({ id: printRuns.id });
+    if (!claimed) return { error: "This estimate request is already sending or sent. Create a new request to ask again." };
+  }
   let res;
   try {
     res = await sendEmail({
@@ -1975,8 +2014,11 @@ export async function sendPrintRfq(
       subject: data.subject,
       bodyText: data.body,
       actingUserId: user.id,
+      attachments,
+      idempotencyKey: ctx.run.kind === BUDGET_ESTIMATE_KIND ? `print-estimate:${runId}` : undefined,
     });
   } catch (error) {
+    if (ctx.run.kind === BUDGET_ESTIMATE_KIND) await db.update(printRuns).set({ status: "planning", updatedAt: new Date() }).where(eq(printRuns.id, runId));
     return { error: emailSendError(error) };
   }
   const [thread] = await db

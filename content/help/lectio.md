@@ -2,9 +2,9 @@
 title: "Lectio translation projects"
 category: "Publishing"
 roles: [member, manager, admin]
-keywords: [Lectio, translation, integration, workflow, connect, disconnect, sync, chapters, assignment, translated files, reopen, team, project defaults, schedule, deadlines, start date, Sastra Cloud, paid, self-hosted, modules, shared sign-in, link account, different emails, match teammates, ownership, administrator approval, connection history]
+keywords: [Lectio, translation, integration, workflow, connect, disconnect, sync, chapters, assignment, translated files, reopen, team, project defaults, schedule, deadlines, start date, Sastra Cloud, paid, self-hosted, modules, shared sign-in, link account, different emails, match teammates, ownership, administrator approval, connection history, create project, Sastra only, Sastra and Lectio, create in both systems]
 order: 65
-summary: "Connect eligible managed Sastra to Lectio, review possible project matches before syncing, link accounts with different emails, and manage shared schedules."
+summary: "Create projects in Sastra only or in Sastra and Lectio, review existing matches, link accounts, and manage shared schedules."
 ---
 
 ## Connect your team
@@ -127,10 +127,14 @@ account-link changes appear in Sastra's connection history.
 An administrator can also **Cancel pending connection** if setup was interrupted.
 This releases the team for fresh approval; an old approval cannot restore it.
 
-The Sastra **New project** form supports book and article projects. **Connected to Lectio**
-defaults on when a team is linked; **Connected to Sastra** behaves the same way in Lectio's
-**New project** form. Turn it off to create only the native project. With several linked
-teams in Sastra, choose the intended team explicitly.
+The Sastra **New project** form offers **Sastra only** and **Sastra and Lectio** for
+book and article projects. **Sastra only** creates an independent project, even if
+Lectio is unavailable. You can connect it later from its **Translation** tab.
+**Sastra and Lectio** checks existing projects before you choose to connect one or
+create a new project in both systems. The connection's reviewed default controls
+which option starts selected. With several linked teams, choose the intended team.
+In Lectio's **New project** form, turn off **Connected to Sastra** to create only a
+Lectio project.
 
 Creating a connected project checks for existing matches before creating anything.
 Choose an existing counterpart or explicitly create a separate one. Selecting an existing
@@ -140,9 +144,18 @@ The project's Translation tab shows progress and offers **Sync now** to retry pr
 A Lectio administrator must first allow creation from Sastra under the team's **Security**
 settings. Existing Lectio plan limits still apply.
 
+The project review dialog also offers **Create in Sastra only**, including while
+Lectio is loading or unavailable. This does not create or connect a Lectio project.
+**Create in Sastra and Lectio** stays visible when setup is missing and explains
+the next step. A Sastra administrator can choose **Set up connected projects** to
+review the template and workflow without leaving the form. Save the defaults,
+then choose **Create project** again. Your draft details remain in the form.
+
 Both administrators must approve creation from the reviewed defaults before a separate
-counterpart can be created. Without that approval you can still choose an authorized existing
-project, or turn the connection off. Connecting an existing project to a newly created
+counterpart can be created. A Lectio team administrator allows creation from Sastra
+in the team's **Security** settings. Then choose **Check creation access again** in
+the review dialog. Without approval, you can still choose an authorized existing
+project or create in Sastra only. Connecting an existing project to a newly created
 counterpart waits for mapping review before synchronization starts. Projects created through
 document import or AI planning remain separate; use their Translation tab to review a connection.
 The integration does not buy seats or grant memberships.

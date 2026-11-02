@@ -26,6 +26,7 @@ export function ProjectTranslation({ projectId, projectName, sourceLanguage, tar
   const [connectionId, setConnectionId] = useState(connections.some(c => c.id === initialConnectionId) ? initialConnectionId! : connections.length === 1 ? connections[0].id : "");
   const [remoteId, setRemoteId] = useState(initialRemoteProjectId || ""), [setupOpen, setSetupOpen] = useState(!!initialRemoteProjectId);
   const [matchOpen, setMatchOpen] = useState(false), [matches, setMatches] = useState<ProjectMatch[] | null>(null), [matchError, setMatchError] = useState<string | null>(null), [allowNew, setAllowNew] = useState(true);
+  const [newProjectBlockedReason, setNewProjectBlockedReason] = useState<string | null>(null);
   const [preview, setPreview] = useState<ProjectSnapshot | null>(null), [mapping, setMapping] = useState<Record<string, string>>({});
   const [review, setReview] = useState<ProjectSnapshot | null>(null), [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const [adoptions, setAdoptions] = useState<Record<string, string>>({});
@@ -42,7 +43,7 @@ export function ProjectTranslation({ projectId, projectName, sourceLanguage, tar
     if (!connectionId) { setError("Choose the Lectio team before checking for existing projects."); return; }
     setMatchOpen(true); setMatches(null); setMatchError(null);
     try { const result = await findLectioProjectMatches(connectionId, { name: projectName, sourceLanguage, targetLanguage }, projectId);
-      if ("error" in result) setMatchError(result.error!); else { setMatches(result.projects); setAllowNew(result.allowNew); }
+      if ("error" in result) setMatchError(result.error!); else { setMatches(result.projects); setAllowNew(result.allowNew); setNewProjectBlockedReason(result.newProjectBlockedReason); }
     } catch { setMatchError("Could not check Lectio projects. Retry when connected."); }
   }
   async function loadPreview(id = remoteId) { await work("preview", async () => {
@@ -129,7 +130,7 @@ export function ProjectTranslation({ projectId, projectName, sourceLanguage, tar
         </div> : null}
       </>}
     </section> : <p className="text-sm text-muted-foreground">This project has no connected translation workflow yet.</p>}
-    {matchOpen ? <ProjectMatchDialog open onClose={() => setMatchOpen(false)} projects={matches} error={matchError} teamName={connections.find(c => c.id === connectionId)?.teamName || ""} allowNew={allowNew} onRetry={() => void checkMatches()} onConfirm={choice => {
+    {matchOpen ? <ProjectMatchDialog open onClose={() => setMatchOpen(false)} projects={matches} error={matchError} teamName={connections.find(c => c.id === connectionId)?.teamName || ""} allowNew={allowNew} newProjectBlockedReason={newProjectBlockedReason} onRetry={() => void checkMatches()} onConfirm={choice => {
       setMatchOpen(false);
       if (choice.type === "existing") { setRemoteId(choice.projectId); void loadPreview(choice.projectId); }
       else void work("create", async () => { const result = await createLectioProjectForReview(projectId, connectionId); if ("error" in result) throw new Error(result.error); toast.success("Connection queued. Review workflow mapping after the Lectio project is ready."); router.refresh(); });

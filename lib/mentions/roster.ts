@@ -3,7 +3,7 @@ import "server-only";
 import { and, asc, eq, inArray, or } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { projectMembers, user } from "@/lib/db/schema";
+import { projectManagers, projectMembers, user } from "@/lib/db/schema";
 
 /** A person who can be @mentioned: enough to render the picker and to match. */
 export type MentionTarget = {
@@ -47,30 +47,27 @@ export async function listMentionTargetsByIds(
     .orderBy(asc(user.name));
 }
 
-/**
- * People taggable from a project surface: its members plus managers/admins
- * (who can see every project anyway). Scoping to these avoids notifying — and
- * leaking a snippet to — someone with no access to the project.
- */
+/** Project-role members, scoped project managers, and workspace managers/admins. */
 export async function listProjectMentionTargets(
   projectId: string
 ): Promise<MentionTarget[]> {
-  const memberRows = await db
-    .select({ userId: projectMembers.userId })
-    .from(projectMembers)
+  const members = db.select({ userId: projectMembers.userId }).from(projectMembers)
     .where(eq(projectMembers.projectId, projectId));
-  const memberIds = memberRows.map((m) => m.userId);
+  const managers = db.select({ userId: projectManagers.userId }).from(projectManagers)
+    .where(eq(projectManagers.projectId, projectId));
 
-  const scope = memberIds.length
-    ? or(
-        inArray(user.role, ["manager", "admin", "super_admin"]),
-        inArray(user.id, memberIds)
-      )
-    : inArray(user.role, ["manager", "admin", "super_admin"]);
-
+  // Filter through the user table once so overlapping roles never duplicate a person.
   return db
     .select(selection)
     .from(user)
-    .where(and(eq(user.isBot, false), eq(user.isActive, true), scope))
+    .where(and(
+      eq(user.isBot, false),
+      eq(user.isActive, true),
+      or(
+        inArray(user.role, ["manager", "admin", "super_admin"]),
+        inArray(user.id, members),
+        inArray(user.id, managers)
+      )
+    ))
     .orderBy(asc(user.name));
 }

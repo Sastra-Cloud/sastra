@@ -88,7 +88,7 @@ a component.
 
 - **Daily work**: Home, My Work, and Projects.
 - **Team planning**: the manager area with Overview, Schedule, and Workload.
-- **Publishing**: a project's Rights, Budget, and Print, Episodes, or Videos.
+- Project sections appear as direct tabs: **Rights**, **Budget**, and **Print**, **Episodes**, or **Videos**.
 - **Suggestions to review**: personal email task suggestions awaiting a decision.
 - **Other assigned work**: remaining tasks in My Work, including upcoming and undated tasks.
 - **Needs review** in Correspondence: shared email reviews and unassigned due follow-ups, counted by thread.

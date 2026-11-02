@@ -2,12 +2,12 @@
 title: "Budget & quotation"
 category: "Publishing"
 roles: [member, manager, admin]
-keywords: [continue to partner email, share quote, email quote to partner, download quote, blank download window, save partner quote, quote save after update, undo funding target, restore partner rates, partner visibility, optimistic partner quote, uncheck budget line, selected budget lines, audiobook invoice, partial invoice, invoice budget lines, assistant invoice, add budget line, publishing, content tabs, budget tabs, retained drafts, quotation tab, approvals tab, cash flow tab, payments tab, notes tab, committed funding, funding gap, budget, quotation, quote, internal costs, partner quote, partner safe, assistant project blueprint, create project with budget, conversational project setup, price per copy, per copy invoice, organization donation fee, organization fee, admin fee, donation deduction, fee coverage, funding target, expected net, actual net, available funding, budget attention, next action, section navigation, budget in four steps, what do i do next, walk me through the budget, budget steps, getting started with budget, reprint budget, accepted print quote, add print cost, custom reprint cost, edit budget line, optimistic budget line, unit price, word count, typesetting, funding assigned, raised, to raise, spent, funding, royalties, excel, pdf, export, reconciliation, cashflow, donation mou match, apply donation to mou, shared mou, allocated funding, shared receipt, funding partner, sponsor, funding contact, proposal, funding proposal subject, proposal sign-off, mou proposal, send proposal, proposal history, email attachment, attachment preview, preview quotation, proposed completion date, completion date, suggest a date, completion planner, planning capacity, projects at once, project duration, timeline, deadline, budget approval, approver, approve, request changes, unanimous approval, stale approval, logo, branding, accent color, partners directory, saved partner, paid invoice, upload invoice, past invoice, invoice received, immutable invoice, void invoice, replacement invoice, split payment, edit payment schedule, change mou payment, payment date, invoice owner, royalty payment task, mark royalty paid, link payment, amount difference, overpayment, different amount]
+keywords: [same specs as, reuse book specs, print estimate size, English PDF, preliminary print estimate, budget estimate request, estimated printing cost, proposal budget builder, working estimate, proposed book, available now, funding overview, promised funding, grants, net funding, continue to partner email, share quote, email quote to partner, download quote, blank download window, save partner quote, quote save after update, undo funding target, restore partner rates, partner visibility, optimistic partner quote, uncheck budget line, selected budget lines, audiobook invoice, partial invoice, invoice budget lines, assistant invoice, add budget line, publishing, content tabs, budget tabs, retained drafts, quotation tab, approvals tab, cash flow tab, payments tab, notes tab, committed funding, funding gap, budget, quotation, quote, internal costs, partner quote, partner safe, assistant project blueprint, create project with budget, conversational project setup, price per copy, per copy invoice, organization donation fee, organization fee, admin fee, donation deduction, fee coverage, funding target, expected net, actual net, available funding, budget attention, next action, section navigation, budget in four steps, what do i do next, walk me through the budget, budget steps, getting started with budget, reprint budget, accepted print quote, add print cost, custom reprint cost, edit budget line, optimistic budget line, unit price, word count, typesetting, funding assigned, raised, to raise, spent, funding, royalties, excel, pdf, export, reconciliation, cashflow, donation mou match, apply donation to mou, shared mou, allocated funding, shared receipt, funding partner, sponsor, funding contact, proposal, funding proposal subject, proposal sign-off, mou proposal, send proposal, proposal history, email attachment, attachment preview, preview quotation, proposed completion date, completion date, suggest a date, completion planner, planning capacity, projects at once, project duration, timeline, deadline, budget approval, approver, approve, request changes, unanimous approval, stale approval, logo, branding, accent color, partners directory, saved partner, paid invoice, upload invoice, past invoice, invoice received, immutable invoice, void invoice, replacement invoice, split payment, edit payment schedule, change mou payment, payment date, invoice owner, royalty payment task, mark royalty paid, link payment, amount difference, overpayment, different amount]
 order: 60
-summary: "Manage project budgets, share partner quotes through a reviewed email, and invoice selected costs manually or with the assistant."
+summary: "Build project budgets with reviewed printer estimates, share partner quotations, and track approvals, invoices, funding, and spend."
 ---
 
-Open **Publishing ▸ Budget**. The current scope's quotation, committed funding,
+Open the project’s **Budget** tab. The current scope's quotation, committed funding,
 and funding gap stay visible above the content tabs. **Quotation** is selected
 first. Choose **Approvals**, **Cash flow**, **Payments**, or **Notes** to show
 that section directly. Tabs use a short fade and a sliding indicator. The content
@@ -54,6 +54,13 @@ Proposal status changes and **Adopt recorded** reconciliation actions follow the
 same pattern: the badge or mismatch row changes immediately, then returns if the
 save fails.
 
+For a printer estimate, expand **Estimated printing cost** and choose **Request
+estimate**. Set width, height, and units in the request form. **Same specs as…**
+searches books with saved production specifications and copies size, paper,
+cover finish, and binding. All copied fields remain editable. Page count,
+quantities, and other notes stay specific to this request. Preparing the email
+still does not send it.
+
 ## Budget in four steps
 
 New to budgets? Work through these tabs:
@@ -77,6 +84,26 @@ approve it.
 The **Cash flow** summary shows received, paid out, and net cash first. Monthly
 charts appear after there are at least two months of activity, avoiding empty
 chart space when a project has only one recorded month.
+
+## Proposal budgets before committing to a project
+
+On **Projects**, choose **New proposal budget** to cost a book or project still
+under consideration. Start with a working title and estimated word/page counts,
+select standard costs at workspace rates, or add custom costs. Rates support four
+decimal places, so per-word prices stay accurate after saving and recalculation.
+Unknown word/page quantities can stay blank; the total warns that those costs are
+incomplete. **Save proposal budget** saves it as a Proposal project and opens Budget.
+It creates no tasks, funding, deadlines, or Lectio counterpart, and sends no email.
+
+Refine the budget and partner quotation here. Once approved, change the same
+project to Planning or Active; the existing estimate stays attached.
+
+The project's overview now has a **Project funding** section with available net
+funds after recorded spend, received payments and donations, and outstanding
+promises. Shared MoU/grant allocations and scheduled payments link to their
+records. Gross promises and received cash stay distinct; currencies, reprints,
+and sponsorship balances are not combined. This finance section is available to
+workspace managers and admins.
 
 ## Building the quotation
 
@@ -336,6 +363,38 @@ rights holder into a funding partner.
 The printing line is kept in step with the Print tab: in-app it carries a small
 status badge (**quote** once a printer quote is accepted, otherwise **estimate**
 / **awaiting quote**); that status is not printed on the shared quotation.
+
+## Early printer estimates for a budget
+
+Managers can open **Estimated printing cost** on the main **Budget ▸ Quotation**
+or **Print** tab for a proposed or active book project. Choose **Request estimate**,
+select a printer with an email address, and enter the copy quantities to price.
+The target-language page count starts from the budget's source pages or word
+count and the project's language expansion factor; you can adjust it for this
+request. Trim size comes from the project's Print settings.
+
+An **English book PDF** is optional (up to 15 MB). Add text paper/color, cover
+paper/finish, binding, or other specifications if known. The English PDF is a
+reference: the request asks the printer to price the estimated target-language
+pages. **Prepare email for review** saves a personal draft without sending.
+Review the recipient, edit CC for this email, preview the attachment, and confirm
+before **Send estimate request**. Save later edits with **Save draft**, or return
+with **Resume draft**. Sending shows progress; a failed send retains your input.
+
+Replies captured in Correspondence stay linked to the estimate request, even
+if an actual print run has since been created. Prices from the email body or
+an attached quote PDF become suggestions. You can also use **Add quote from text
+or PDF** on the request. Review the source email, specifications, flagged fields,
+copy count, total, and currency, then choose **Use for budget estimate**. The total
+must be in the budget currency; Sastra does not convert currencies.
+
+The selected price updates the main Print / Ship budget line as an **estimate**.
+It creates no order, payment schedule, or actual spend. A later reviewed quote
+for the actual first print run replaces it in the budget; merely creating a run
+or receiving an unreviewed quote does not erase the estimate. Reprints keep
+separate budgets. Actual spend still comes only from recorded paid print payments.
+Select another tier to replace the estimate, or **Remove selected estimate** to
+stop using it. The request and original quote remain in the history.
 
 ## Requesting internal approval
 

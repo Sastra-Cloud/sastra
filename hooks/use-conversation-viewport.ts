@@ -21,17 +21,22 @@ export function useConversationViewport<T extends HTMLElement>(
       if (viewport && Math.abs(viewport.scale - 1) > 0.01) return;
       const bounds = conversationViewport(
         { height: viewport?.height ?? window.innerHeight, offsetTop: viewport?.offsetTop ?? 0 },
-        element.getBoundingClientRect().top,
+        // Document position stays stable when navigation restores/resets scroll.
+        // A viewport-relative top would add the old page's scroll to the height.
+        element.getBoundingClientRect().top + window.scrollY,
         mobile.matches || mode === "overlay",
         mode === "route" && !mobile.matches ? 28 : 0
       );
-      element.style.setProperty("--conversation-height", `${Math.round(bounds.height)}px`);
+      element.style.setProperty("--conversation-height", `${Math.floor(bounds.height)}px`);
       element.style.setProperty("--conversation-top", `${Math.round(bounds.top)}px`);
     };
     const schedule = () => {
       window.cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(update);
     };
+    // Header/font/layout changes can settle after the initial layout effect.
+    const layout = new ResizeObserver(schedule);
+    layout.observe(element.closest("[data-app-main]") ?? element);
     update();
     viewport?.addEventListener("resize", schedule);
     viewport?.addEventListener("scroll", schedule);
@@ -39,6 +44,7 @@ export function useConversationViewport<T extends HTMLElement>(
     mobile.addEventListener("change", schedule);
     return () => {
       window.cancelAnimationFrame(frame);
+      layout.disconnect();
       viewport?.removeEventListener("resize", schedule);
       viewport?.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);

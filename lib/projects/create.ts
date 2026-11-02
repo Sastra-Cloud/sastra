@@ -30,7 +30,8 @@ export const createProjectSchema = z.object({
 });
 
 /** Shared native/connected creation. Caller validates the input and authorizes the actor. */
-export async function createProjectInTransaction(tx: Parameters<Parameters<Db["transaction"]>[0]>[0], { data, slug, workspace, actorId }: {
+export async function createProjectInTransaction(tx: Parameters<Parameters<Db["transaction"]>[0]>[0], { data, slug, workspace, actorId, projectId }: {
+  projectId?: string;
   data: z.infer<typeof createProjectSchema>; slug: string; workspace: Awaited<ReturnType<typeof getWorkspaceSettings>>; actorId: string;
 }) {
   const planTemplateId =
@@ -44,6 +45,7 @@ export async function createProjectInTransaction(tx: Parameters<Parameters<Db["t
     const [project] = await tx
       .insert(projects)
       .values({
+        id: projectId,
         slug,
         title: data.title,
         description: data.description,

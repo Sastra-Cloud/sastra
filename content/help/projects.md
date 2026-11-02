@@ -2,9 +2,9 @@
 title: "Projects & stages"
 category: "Work"
 roles: [member, manager, admin]
-keywords: [project manager, assigned projects, project management access, delegate projects, sponsorship funds, funds used, available sponsorship funds, publishing, current work, project details, stages and team, create project, shared draft, guided setup, project actions, project, project name, rename project, edit project name, phase, proposal stage, proposed project, project status, planning, active, on hold, book, ebook, ebook only, ebook for now, print, print plan, book format, format plan not set, article, podcast, video series, videos, create project, new project, guided setup, guided project, step by step, one page form, overview, portfolio, filter, sort, print funding, print covered, print funding not assigned, funding assigned, no funding, seeking funding, partially funded, funded, no printing planned yet, due date, start date, schedule, estimated duration, planned finish, timeline, gantt, drive, file note, attachment note, delete project, completed project, project archive, archived project, reprint, status update, recent correspondence, project email, linked email, AI recommendation, daily review, mention, note, shared mou, shared agreement, project type, change project type, set project type, work path, wrong path]
+keywords: [book details, English pages, English page count, source page count, book size, trim size, language expansion factor, proposal budget, estimated budget, proposed book, project funding, available funds, promised funding, grant funding, donations received, net funding, copy project, duplicate project, new volume, project manager, assigned projects, project management access, delegate projects, sponsorship funds, funds used, available sponsorship funds, publishing, current work, project details, stages and team, create project, shared draft, Lectio, Sastra only, Sastra and Lectio, guided setup, project actions, project, project name, rename project, edit project name, phase, proposal stage, proposed project, project status, planning, active, on hold, book, ebook, ebook only, ebook for now, print, print plan, book format, format plan not set, article, podcast, video series, videos, create project, new project, guided setup, guided project, step by step, one page form, overview, portfolio, filter, sort, print funding, print covered, print funding not assigned, funding assigned, no funding, seeking funding, partially funded, funded, no printing planned yet, due date, start date, schedule, estimated duration, planned finish, timeline, gantt, drive, file note, attachment note, delete project, completed project, project archive, archived project, reprint, status update, recent correspondence, project email, linked email, AI recommendation, daily review, mention, note, shared mou, shared agreement, project type, change project type, set project type, work path, wrong path]
 order: 20
-summary: "Create and manage projects, assign members to manage specific projects, and find project settings."
+summary: "Manage projects, edit book pages and size on Overview, assign project managers, and find project settings."
 ---
 
 A **project** is one publishing initiative — a book, a collection of articles,
@@ -31,7 +31,9 @@ choose **Assign project manager**. Confirm the permission change. Repeat this on
 each project they should manage. Only workspace managers, admins, and super admins
 can grant or remove this access.
 
-Assigned project managers can change that project's name, details, schedule,
+Assigned project managers appear in the project chat’s **@mention** picker, even
+without a separate project role. They can add/remove project-role members and
+create or assign tasks in that project. They can change its name, details, schedule,
 stages, tasks, status updates, and project members.
 They can assign tasks and choose **Next up** for tasks in those projects. They
 can also set up a task plan with AI when AI is available. Their workspace role
@@ -49,6 +51,45 @@ access. Confirm removal. Their project job labels stay the same. Adding a job
 label, even one called "Project manager", never grants management permission.
 Grant and removal changes appear immediately after confirmation. A failed save
 restores the previous list and shows an error.
+
+## Build a proposal budget
+
+Choose **New proposal budget** on **Projects**, or **Build a proposal budget** in
+**New project**. Enter a working title, project type, and estimated word or source
+page count. Leave quantities blank when they are not known yet. Include the costs
+you need, review the workspace rates, and add custom costs such as printing or
+freight estimates. The total updates as you edit; it warns when word/page costs
+are incomplete.
+
+**Save proposal budget** creates a **Proposal** project and opens its Budget.
+It creates no operational tasks, dates, funding transactions, or Lectio connection.
+The draft stays in the form if saving fails, and retrying the same save does not
+create another project. Proposal projects stay out of active delivery planning.
+
+Use Budget to refine prices, set the partner quotation, download it, or request
+approval. Nothing is emailed automatically. When the work is approved, change the
+same project's status to **Planning** or **Active** in project settings. Its budget
+and estimate inputs stay attached. Add a task plan when the work is ready to start.
+
+## Project funding at a glance
+
+Workspace managers and admins see **Project funding** near the top of a project's
+overview, including closed projects. It shows the main project's estimated costs,
+gross money received, amounts still promised, and **Available now**.
+Available now is net received funding after deductions minus recorded budget spend.
+A promise is not available cash. Negative balances remain visible.
+
+**Where funding is promised** lists scheduled partner payments and the project's
+allocation from each linked shared MoU or grant, with promised, received, and
+remaining amounts. Open an agreement or scheduled payment from its link. Agreements needing review
+and payments marked received without a matching receipt show a warning.
+**Recent money received** identifies payments and donation-linked receipts.
+**Open funding details** opens Budget's main-project cash and receipt section.
+
+Currencies have separate balances. Reprint budgets and sponsorship funds remain
+separate. Funding assigned on budget lines without a linked source is called out;
+it does not become available cash. Money received is shown even before a quotation
+exists. Project-manager assignments alone do not grant access to this finance view.
 
 ## Creating a project
 
@@ -69,8 +110,20 @@ points in the header:
   extract the project, budget, and rights for review. See *AI planner & document
   import*.
 
+For book and article projects with a linked Lectio team, **New project** offers
+**Sastra only** and **Sastra and Lectio**. Choose **Sastra only** to create without
+connecting to Lectio. Choose **Sastra and Lectio** to review existing matches or
+create a new project in both systems. Missing setup is explained in the review
+dialog. See **Lectio translation projects** for administrator approval and workflow defaults.
+
 Members can browse the whole portfolio on the Projects page but don't create
 projects.
+
+Managers can also ask the **Assistant** to create a new project based on a
+previous project. Name both titles and approve the project preview. It reuses
+project settings, phases, unit names, and languages, with **no tasks or people
+assigned**. Budget quantities, rates, partner details, and quote settings can be
+reused as estimates for review; funding and spending reset to zero. See *The Sastra Assistant* for what carries over.
 
 Managers also have a **Shared MoUs** entry for agreements whose payment depends
 on several projects completing. A covered project shows a manager-only banner
@@ -233,11 +286,34 @@ so the next daily review uses the corrected text.
 
 ## Project tabs
 
-Across the top: **Overview**, **Tasks**, **Chat**, **Publishing**, and **Members**.
-**Publishing** opens Rights, Budget, and Print (books and articles), Episodes
-(podcasts), or Videos (video series). Inside Publishing, the specialist sections
-remain visible as secondary links. **Tasks** has Board and Pipeline views.
+Across the top: **Overview**, **Tasks**, **Chat**, **Rights**, **Budget**,
+**Print**, and **Members**. Each section opens directly, without a Publishing
+submenu. Podcasts show **Episodes** instead of Print; video series show
+**Videos**. **Translation** also appears when the Lectio module is enabled.
+On small screens, scroll the tab row sideways to reach every section.
+**Tasks** has Board and Pipeline views.
 Existing direct links to specialist pages and individual tasks still work.
+
+## Book details: source pages and book size
+
+Book projects show **Book details** at the top of **Overview**. You can see the
+**Source page count**, **Book size (trim size)**, and estimated translated pages.
+The language labels use the project's languages or workspace defaults. You can
+also choose **Project settings ▸ Open book details** to reach this section.
+
+Workspace managers and admins choose **Edit book details** to enter the source
+page count (for example, pages in the English edition), finished width and height,
+measurement unit, and language expansion factor. Leave the source page count
+blank if unknown. Changing inches to millimetres converts the dimensions and
+keeps the same physical size. The live estimate uses source pages × expansion
+factor; if source pages are unknown, it uses the Budget word count and words per
+page. Final pages are confirmed after layout.
+
+Choose **Save book details** to save. Values update immediately; a failed save
+restores the previous summary and keeps your entries for retry. These are the
+same values used by Budget and Print. Saving updates automatic typesetting
+quantities and print page estimates. Existing print runs keep their own book
+size. For paper, binding, and print runs, open **Print**.
 
 ## Project settings and deletion
 

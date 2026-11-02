@@ -15,9 +15,9 @@ async function revalidateProject(projectId: string) {
     .where(eq(projects.id, projectId))
     .limit(1);
   if (p) {
-    revalidatePath(`/projects/${p.slug}/members`);
-    revalidatePath(`/projects/${p.slug}`);
+    revalidatePath(`/projects/${p.slug}`, "layout");
   }
+  revalidatePath("/chat", "layout");
 }
 
 export async function addProjectMember(

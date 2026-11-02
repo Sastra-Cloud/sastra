@@ -43,7 +43,9 @@ vi.mock("@/lib/activity/log", () => ({ logActivity: state.activity }));
 vi.mock("@/lib/episodes/workflow-service", () => ({ assertPodcastTaskDependenciesComplete: vi.fn(), notifyReadyEpisodeStages: vi.fn() }));
 
 import { budgetApprovalAssignments, projectManagers, tasks, user as users } from "@/lib/db/schema";
-import { deleteTask, moveTaskToProject, setTaskAssignmentDeferred, setTaskDependencies, updateTaskFields, updateTaskStatus } from "./actions";
+import { createTask, deleteTask, moveTaskToProject, setTaskAssignmentDeferred, setTaskDependencies, updateTaskFields, updateTaskStatus } from "./actions";
+
+import { insertTaskRow } from "./create";
 
 const taskId = "22222222-2222-4222-8222-222222222222";
 const edits = [
@@ -87,6 +89,21 @@ function expectNoEffects() {
 }
 
 describe("task mutation authorization", () => {
+  it("lets a scoped project manager create work for another teammate, while denying other projects", async () => {
+    const form = new FormData();
+    form.set("projectId", state.task.projectId!);
+    form.set("title", "Review source text");
+    form.set("assignedTo", "other");
+    state.grants.add(`${state.task.projectId}:${state.actor.id}`);
+    vi.mocked(insertTaskRow).mockResolvedValueOnce(taskId);
+    await expect(createTask({}, form)).resolves.toMatchObject({ ok: true, id: taskId, assignedTo: "other" });
+    expect(insertTaskRow).toHaveBeenCalledWith(expect.objectContaining({ projectId: state.task.projectId, assignedTo: "other" }), expect.objectContaining({ actorId: "member" }));
+    vi.mocked(insertTaskRow).mockClear();
+    form.set("projectId", "44444444-4444-4444-8444-444444444444");
+    await expect(createTask({}, form)).rejects.toThrow(/permission/);
+    expect(insertTaskRow).not.toHaveBeenCalled();
+  });
+
   it("records the assigning actor and clears previous personal planning only when ownership changes", async () => {
     state.actor.role = "manager";
     await updateTaskFields(taskId, { assignedTo: "new-owner" });

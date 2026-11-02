@@ -2,7 +2,7 @@
 title: "The Sastra Assistant"
 category: "AI & assistant"
 roles: [member, manager, admin]
-keywords: [assistant, ai, chat, ask, help, ask the assistant, first time, new user, introduction, launcher, sparkle button, assistant tip, hide tip, find the assistant, wiki, tutorial, knowledge, search, projects, current project, acting on project, move task, create project, project blueprint, units, project workflow, project budget, partner quote, completion date, schedule advice, portfolio capacity, portfolio, project status, deadlines, progress, team, health, blockers, rights, licenses, approve, pending action, draft email, default cc, cc recipients, email sign-off, reviewed email, external email, memory, learning, reflection, feedback, regression, eval, budget, voice, dictation, mobile, full screen, agreement chat, ask about agreements, mou, license, citations, source selection, indexing, what can you do, walk me through, guide me, step by step, help me do this, conversation details, keyboard, newline, voice preview, latest messages]
+keywords: [scrolling, short window, copy project, duplicate project, new volume, assistant, ai, chat, ask, help, ask the assistant, first time, new user, introduction, launcher, sparkle button, assistant tip, hide tip, find the assistant, wiki, tutorial, knowledge, search, projects, current project, acting on project, move task, create project, project blueprint, units, project workflow, project budget, partner quote, completion date, schedule advice, portfolio capacity, portfolio, project status, deadlines, progress, team, health, blockers, rights, licenses, approve, pending action, draft email, default cc, cc recipients, email sign-off, reviewed email, external email, memory, learning, reflection, feedback, regression, eval, budget, voice, dictation, mobile, full screen, agreement chat, ask about agreements, mou, license, citations, source selection, indexing, what can you do, walk me through, guide me, step by step, help me do this, conversation details, keyboard, newline, voice preview, latest messages]
 order: 110
 summary: "Ask the in-app assistant to look things up, take actions, and answer how-to questions."
 ---
@@ -15,6 +15,8 @@ keyboard, and send controls have enough room. Use the back arrow to close it.
 Sent messages appear in the transcript immediately while the assistant works. If
 the request fails, the message returns to the composer so it can be retried.
 On phones, the Assistant page uses the same compact conversation layout.
+On a computer, the conversation fits the available window height. Scroll the
+message history to read older replies; the composer stays below it.
 Open **Conversation details** for memory, monthly usage, and **Clear chat**.
 Clearing asks for confirmation. Pending approvals stay in the scrolling
 conversation; showing a draft never sends it. Project context remains above
@@ -113,6 +115,24 @@ body, **Send email** changes to **Sending…**, and Sastra sends those exact fie
 without rewriting them again.
 
 ## Accurate answers only
+
+Managers can ask **“Create a new volume based on this previous project”** and
+name the new and previous titles. The assistant prepares one project approval,
+including when you reply **“yes please”** to an earlier project proposal. It
+creates the actual project rather than a task to create it.
+
+The preview shows the source, new title, status, languages, phase/unit/task
+counts, dates, and budget behavior. The new project defaults to **Proposal**.
+It closely matches the source's brief, requirements, priority, languages, phases,
+unit names, and production/print defaults. The new project has **no tasks and no
+people assigned**. Old dates and completion state do not carry over.
+Budget quantities, rates, partner/royalty settings, and quote presentation are
+copied by default as estimates. Review them in **Budget** for the new project.
+Funding and spending start at zero; approvals, signed agreements, files,
+messages, and payment history stay with the source. You can ask to omit budget
+reuse.
+If the source changes before approval, request a fresh preview. After success,
+the assistant returns a link to the new project.
 
 The assistant answers how-to questions from the help documentation, published
 Wiki pages, and your live data. Draft and trashed Wiki pages are never included.

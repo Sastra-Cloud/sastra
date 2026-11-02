@@ -13,6 +13,37 @@ export type AssistantEvalCase = {
 
 export const ASSISTANT_EVAL_CASES: AssistantEvalCase[] = [
   {
+    name: "new volume creates a project from previous work",
+    role: "manager",
+    userMessage: "Create Example Volume 3 based on the completed Example Volume 2 project.",
+    toolResults: {
+      list_projects: '{"projects":[{"id":"00000000-0000-4000-8000-000000000001","title":"Example Volume 2","status":"completed","kind":"book"}],"truncated":false}',
+    },
+    expectedTools: ["list_projects", "create_project_from_existing"],
+    expectedToolArgs: {
+      list_projects: { scope: "all" },
+      create_project_from_existing: { sourceProjectId: "00000000-0000-4000-8000-000000000001", title: "Example Volume 3" },
+    },
+    forbiddenTools: ["create_task"],
+  },
+  {
+    name: "new volume short confirmation preserves project intent",
+    role: "manager",
+    priorMessages: [
+      { role: "user", content: "New project for Example Volume 3. Can you create it based on Example Volume 2?" },
+      { role: "assistant", content: "I can create Example Volume 3 based on Example Volume 2, using the same workflow and budget structure." },
+    ],
+    userMessage: "yes please",
+    toolResults: {
+      list_projects: '{"projects":[{"id":"00000000-0000-4000-8000-000000000001","title":"Example Volume 2","kind":"book"}],"truncated":false}',
+    },
+    requiredTools: ["list_projects", "create_project_from_existing"],
+    expectedToolArgs: {
+      create_project_from_existing: { sourceProjectId: "00000000-0000-4000-8000-000000000001", title: "Example Volume 3" },
+    },
+    forbiddenTools: ["create_task"],
+  },
+  {
     name: "internal tutorial uses published Wiki",
     role: "member",
     userMessage: "How do we create an InDesign index?",

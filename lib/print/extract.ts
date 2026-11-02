@@ -348,7 +348,7 @@ export async function upsertEmailSuggestedQuote(
   const [accepted] = await db
     .select()
     .from(printQuotes)
-    .where(and(identity, eq(printQuotes.reviewStatus, "accepted")))
+    .where(and(identity, inArray(printQuotes.reviewStatus, ["accepted", "estimated"])))
     .orderBy(desc(printQuotes.updatedAt))
     .limit(1);
   if (
@@ -402,6 +402,7 @@ async function revalidatePrintPaths(projectId: string) {
     .where(eq(projects.id, projectId))
     .limit(1);
   if (!project) return;
+  revalidatePath(`/projects/${project.slug}/budget`);
   revalidatePath(`/projects/${project.slug}/print`);
   revalidatePath(`/projects/${project.slug}`);
 }

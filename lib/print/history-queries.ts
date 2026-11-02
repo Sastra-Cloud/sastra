@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, isNotNull } from "drizzle-orm";
+import { and, eq, isNotNull, ne } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {
@@ -83,7 +83,7 @@ export async function getPrinterHistory(): Promise<PrinterHistory[]> {
         estimatedTextPages: printRuns.estimatedTextPages,
         quotedTextPages: printRuns.quotedTextPages,
       })
-      .from(printRuns),
+      .from(printRuns).where(ne(printRuns.kind, "budget_estimate")),
     db
       .select({
         contactId: printRuns.contactId,

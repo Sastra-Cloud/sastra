@@ -41,7 +41,7 @@ const READS = new Set([
   "search_help_docs",
   "search_wiki",
 ]);
-const WRITES = new Set(["create_task", "draft_email"]);
+const WRITES = new Set(["create_task", "draft_email", "create_project_from_existing"]);
 
 function schema(properties: Record<string, unknown>, required: string[] = []) {
   const all = Object.keys(properties);
@@ -168,6 +168,14 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionFunctionTool[] = [
     ),
   ],
   [
+    "create_project_from_existing",
+    "Propose creating an actual NEW project based on an existing project's workflow and budget structure. Resolve the source id first. One approval; no preparatory task. Defaults to Proposal with the same setup, phases, units and budget estimates, but NO tasks or people assigned. Funding and spending reset to zero.",
+    schema({
+      sourceProjectId: { type: "string" }, title: { type: "string" },
+      copyBudget: { type: "boolean" },
+    }, ["sourceProjectId", "title"]),
+  ],
+  [
     "draft_email",
     "Manager-only external email proposal with full preview and approval.",
     schema(
@@ -227,7 +235,7 @@ async function main() {
         tools: TOOLS.filter(
           (tool) =>
             testCase.role === "manager" ||
-            !["list_email_threads", "get_email_thread", "draft_email"].includes(
+            !["list_email_threads", "get_email_thread", "draft_email", "create_project_from_existing"].includes(
               tool.function.name
             )
         ),

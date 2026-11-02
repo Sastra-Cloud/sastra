@@ -8,7 +8,7 @@ import { parseProfile } from "@/lib/lectio/protocol/profile";
 
 type Options = Exclude<Awaited<ReturnType<typeof listLectioSetup>>, { error: string }>;
 const selectClass = "min-h-11 w-full rounded-md border bg-background px-3 text-sm";
-export function SetupSettings({ connectionId }: { connectionId: string }) {
+export function SetupSettings({ connectionId, onSaved }: { connectionId: string; onSaved?: (templateId: string) => void }) {
   const [options, setOptions] = useState<Options | null>(null), [pending, setPending] = useState(false);
   const [templateId, setTemplateId] = useState(""), [workflowId, setWorkflowId] = useState(""), [handoff, setHandoff] = useState("");
   const [mapping, setMapping] = useState<Record<string, string>>({}), [kind, setKind] = useState<"book" | "article">("book");
@@ -34,6 +34,7 @@ export function SetupSettings({ connectionId }: { connectionId: string }) {
         deliverFiles: files, handoffPhaseTemplateId: handoff || null,
         stageMap: workflow.steps.map(s => ({ stepKey: s.key, phaseId: mapping[s.key] === "ignore" ? null : mapping[s.key] })) }, automatic);
       if ("error" in result) throw new Error(result.error); toast.success("Defaults saved. Existing project mappings and dates stay as reviewed.");
+      onSaved?.(templateId);
     } catch (e) { setError(e instanceof Error ? e.message : "Could not save project defaults."); }
     finally { setPending(false); }
   }

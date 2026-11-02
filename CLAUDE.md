@@ -82,6 +82,29 @@ or counterparties. Snapshot workspace defaults into new projects and preserve
 project overrides. Production bootstrap code may fill missing baseline records
 but may not overwrite settings customized by an admin.
 
+# Required local cleanup after merging
+
+Local cleanup is part of every completed merge and push, including changes
+committed directly to `main`. Complete it before the final handoff without
+waiting for a separate request. Follow `AGENTS.md` → "Required local cleanup
+after merging":
+
+- Inspect worktrees, their local changes and untracked files, branch integration,
+  active use, symlinks, and existing stashes before deleting anything.
+- Remove inactive, clean task/release worktrees and retired local branches only
+  after proving their changes are integrated by ancestry or patch equivalence.
+- Keep the primary checkout, dirty or active worktrees, branches with unique
+  commits, explicit backups, and existing stashes. Never force-remove
+  uncommitted work or follow checkout symlinks into shared files or backups.
+- Run Git cleanup mutations sequentially. Prune stale worktree metadata and
+  obsolete remote-tracking refs; routine local cleanup does not delete remote
+  branches.
+- Remove this task's temporary screenshots, logs, and fixtures, and stop its
+  browser/dev processes when no longer needed. Preserve unrelated local tooling,
+  user files, credentials, and shared caches.
+- Recheck status, worktrees, and stashes. Report removals and anything retained
+  locally in the final handoff.
+
 # UI/UX browser verification reminder
 
 For UI/UX work, follow the agent-browser workflow in `AGENTS.md`: open the local

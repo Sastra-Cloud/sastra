@@ -1,3 +1,4 @@
+import { PrintEstimateSection } from "@/components/print/print-estimate-section";
 import { notFound } from "next/navigation";
 
 import { requireUser } from "@/lib/auth/guards";
@@ -52,6 +53,7 @@ export default async function ProjectPrintPage({
           }
         />
       ) : null}
+      {canEdit ? <PrintEstimateSection projectId={project.id} userId={session.user.id} /> : null}
       <PrintManager
       key={`${data.sourcePageCount ?? 0}:${data.settings.trimWidthIn}:${data.settings.trimHeightIn}:${data.settings.measurementUnit}:${data.settings.languageExpansionFactor}`}
       projectId={project.id}

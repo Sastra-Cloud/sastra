@@ -2,7 +2,7 @@
 title: "Getting started & roles"
 category: "Getting started"
 roles: [member, manager, admin]
-keywords: [daily work, ask the assistant, assistant tip, team planning, publishing, home, your next tasks, onboarding outcomes, next step, hidden tips, invite, invitation, seven days, sign in, login, magic link, 5 minutes, one-time link, password, password reset, one hour, roles, member, manager, admin, super admin, timezone, profile, account, save, saving, sync, retry, page error, page not found, spinner, mobile menu, navigation, today, work, management, workspace, pull to refresh, refresh, guidance, guided setup, tips, dismiss tip, coaching, checklist, across browsers, show helpful guidance, learn the app, passkey, fingerprint, two factor, security code]
+keywords: [scrolling, sidebar, short window, daily work, ask the assistant, assistant tip, team planning, publishing, home, your next tasks, onboarding outcomes, next step, hidden tips, invite, invitation, seven days, sign in, login, magic link, 5 minutes, one-time link, password, password reset, one hour, roles, member, manager, admin, super admin, timezone, profile, account, save, saving, sync, retry, page error, page not found, spinner, mobile menu, navigation, today, work, management, workspace, pull to refresh, refresh, guidance, guided setup, tips, dismiss tip, coaching, checklist, across browsers, show helpful guidance, learn the app, passkey, fingerprint, two factor, security code]
 order: 10
 summary: "Start with Home, complete role-appropriate setup, find assigned work, and restore your personal guidance."
 ---
@@ -45,6 +45,10 @@ email code. The browser stays trusted for 60 days, so this is not a daily
 prompt.
 
 ## Your first steps
+
+On a computer, the main sidebar stays on screen while you scroll the page.
+In a short window, scroll inside the sidebar to reach the rest of its links.
+On a phone or narrow tablet, use the menu button at the top to open navigation.
 
 Home shows the next relevant step, with **Show all steps** to reveal the checklist.
 Administrators confirm workspace defaults, create a project, invite a teammate,

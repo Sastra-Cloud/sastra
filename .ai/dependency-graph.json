@@ -302,6 +302,7 @@
     "@/components/page-skeleton"
   ],
   "app/(app)/projects/[slug]/budget/page.tsx": [
+    "@/components/print/print-estimate-section",
     "next/link",
     "next/navigation",
     "drizzle-orm",
@@ -438,7 +439,12 @@
     "@/lib/auth/guards",
     "@/lib/auth/policy",
     "@/lib/projects/queries",
-    "@/lib/projects/funding-queries",
+    "@/lib/projects/funding-overview-queries",
+    "@/components/projects/project-funding-overview",
+    "@/components/projects/book-details",
+    "@/lib/print/queries",
+    "@/lib/print/estimate",
+    "@/lib/projects/print-funding",
     "@/lib/planning/queries",
     "@/lib/planning/capacity",
     "@/lib/mentions/roster",
@@ -479,6 +485,7 @@
     "@/components/page-skeleton"
   ],
   "app/(app)/projects/[slug]/print/page.tsx": [
+    "@/components/print/print-estimate-section",
     "next/navigation",
     "@/lib/auth/guards",
     "@/lib/auth/policy",
@@ -629,6 +636,14 @@
     "@/lib/workspace/modules",
     "@/lib/lectio/protocol/profile",
     "@/lib/lectio/cloud-eligibility"
+  ],
+  "app/(app)/projects/new/proposal-budget/page.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/lib/auth/guards",
+    "@/lib/workspace/queries",
+    "@/components/cockpit",
+    "@/components/budget/proposal-budget-builder"
   ],
   "app/(app)/projects/page.tsx": [
     "next/link",
@@ -1983,6 +1998,19 @@
     "@/components/ui/label",
     "@/lib/utils"
   ],
+  "components/budget/proposal-budget-builder.tsx": [
+    "next/link",
+    "next/navigation",
+    "react",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/lib/budget/proposal-actions",
+    "@/lib/budget/proposal-builder"
+  ],
   "components/budget/proposal-panel.tsx": [
     "@/components/files/file-link",
     "@/lib/dialog-requests",
@@ -2972,6 +3000,46 @@
     "@/components/ui/dialog",
     "@/components/correspondence/thread-message-list"
   ],
+  "components/print/print-estimate-panel.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "@base-ui/react/combobox",
+    "sonner",
+    "@/lib/print/estimate-actions",
+    "@/lib/print/estimate-review-actions",
+    "@/lib/print/actions",
+    "@/lib/email/draft-actions",
+    "@/lib/email/draft-types",
+    "@/hooks/use-optimistic-action",
+    "@/lib/files/upload-client",
+    "@/lib/print/estimate-policy",
+    "@/lib/print/quote-economics",
+    "@/lib/print/review-flags",
+    "@/lib/dialog-requests",
+    "@/components/email/outgoing-attachment-review",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/badge",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/components/ui/checkbox",
+    "@/lib/print/estimate",
+    "@/lib/print/spec-presets"
+  ],
+  "components/print/print-estimate-section.tsx": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/print/queries",
+    "@/lib/print/estimate",
+    "@/lib/print/estimate-policy",
+    "@/lib/email/draft-store",
+    "./print-estimate-panel",
+    "@/lib/print/spec-preset-queries"
+  ],
   "components/print/print-manager.tsx": [
     "@/components/files/file-link",
     "@/components/section-disclosure",
@@ -3017,6 +3085,19 @@
     "@/components/ui/help-tip",
     "@/lib/print/quote-economics",
     "@/lib/utils"
+  ],
+  "components/projects/book-details.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/hooks/use-optimistic-action",
+    "@/lib/print/actions",
+    "@/lib/print/estimate"
   ],
   "components/projects/book-format-badge.tsx": [
     "lucide-react",
@@ -3066,7 +3147,8 @@
     "@/components/projects/new-project-form",
     "@/components/projects/new-project-guided",
     "@/components/ui/button",
-    "@/components/ui/switch",
+    "@/components/ui/dialog",
+    "@/components/lectio/setup-settings",
     "@/components/lectio/project-match-dialog",
     "@/lib/lectio/match-actions",
     "@/lib/lectio/protocol/project-matches"
@@ -3171,6 +3253,12 @@
     "@/components/ui/button",
     "@/hooks/use-prop-state"
   ],
+  "components/projects/project-funding-overview.tsx": [
+    "next/link",
+    "lucide-react",
+    "@/lib/format",
+    "@/lib/projects/funding-overview"
+  ],
   "components/projects/project-management-provider.tsx": [
     "react",
     "@/lib/auth/policy"
@@ -3191,6 +3279,7 @@
     "@/lib/actions/result",
     "react",
     "next/navigation",
+    "next/link",
     "lucide-react",
     "sonner",
     "@/lib/projects/actions",
@@ -3223,15 +3312,11 @@
   ],
   "components/projects/project-tabs.tsx": [
     "react",
-    "next/link",
     "next/navigation",
-    "lucide-react",
     "@/components/cockpit",
     "@/components/motion/tab-link",
     "@/components/navigation-icons",
-    "@/lib/navigation",
-    "@/components/ui/dropdown-menu",
-    "@/lib/utils"
+    "@/lib/navigation"
   ],
   "components/projects/project-task-views.tsx": [
     "next/link",
@@ -5296,6 +5381,8 @@
     "@/lib/tasks/recurring-actions",
     "@/lib/projects/actions",
     "@/lib/projects/create-from-blueprint",
+    "@/lib/projects/create-from-project",
+    "@/lib/projects/project-copy",
     "@/lib/projects/project-blueprint",
     "@/lib/projects/member-actions",
     "@/lib/chat/actions",
@@ -5721,6 +5808,33 @@
   ],
   "lib/budget/presentation.test.ts": [
     "vitest",
+    "./compute"
+  ],
+  "lib/budget/proposal-actions.test.ts": [
+    "drizzle-orm",
+    "vitest",
+    "./proposal-builder",
+    "./proposal-actions"
+  ],
+  "lib/budget/proposal-actions.ts": [
+    "node:crypto",
+    "drizzle-orm",
+    "next/cache",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/projects/create",
+    "@/lib/slug",
+    "@/lib/workspace/queries",
+    "./compute",
+    "./proposal-builder"
+  ],
+  "lib/budget/proposal-builder.test.ts": [
+    "vitest",
+    "./proposal-builder"
+  ],
+  "lib/budget/proposal-builder.ts": [
+    "zod",
     "./compute"
   ],
   "lib/budget/queries.ts": [
@@ -8055,6 +8169,15 @@
     "./parse"
   ],
   "lib/mentions/parse.ts": [],
+  "lib/mentions/roster.test.ts": [
+    "node:sqlite",
+    "vitest",
+    "drizzle-orm/pg-proxy",
+    "next/cache",
+    "./roster",
+    "@/lib/projects/member-actions",
+    "@/lib/auth/project-access"
+  ],
   "lib/mentions/roster.ts": [
     "drizzle-orm",
     "@/lib/db",
@@ -8338,6 +8461,7 @@
     "@/lib/db",
     "@/lib/db/schema",
     "@/lib/gmail",
+    "./estimate-policy",
     "@/lib/r2",
     "@/lib/activity/log",
     "@/lib/print/email-link",
@@ -8361,11 +8485,16 @@
     "@/lib/document-learning/source",
     "@/lib/db/schema"
   ],
+  "lib/print/budget-sync.test.ts": [
+    "vitest",
+    "drizzle-orm",
+    "./budget-sync"
+  ],
   "lib/print/budget-sync.ts": [
     "drizzle-orm",
     "@/lib/db",
     "@/lib/db/schema",
-    "@/lib/print/estimate",
+    "@/lib/print/estimate-policy",
     "@/lib/print/quote-economics",
     "@/lib/budget/approval-service"
   ],
@@ -8384,6 +8513,11 @@
     "./dates"
   ],
   "lib/print/dates.ts": [],
+  "lib/print/email-link.test.ts": [
+    "vitest",
+    "drizzle-orm",
+    "./email-link"
+  ],
   "lib/print/email-link.ts": [
     "drizzle-orm",
     "@/lib/db",
@@ -8421,6 +8555,53 @@
     "@/lib/print/estimate",
     "@/lib/print/parser",
     "@/lib/print/queries"
+  ],
+  "lib/print/estimate-actions.ts": [
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/imports/file-access",
+    "./actions",
+    "./estimate-policy",
+    "@/lib/email/draft-store",
+    "./queries"
+  ],
+  "lib/print/estimate-draft.test.ts": [
+    "vitest",
+    "./estimate-actions"
+  ],
+  "lib/print/estimate-policy.test.ts": [
+    "vitest",
+    "./estimate-policy"
+  ],
+  "lib/print/estimate-policy.ts": [
+    "./estimate",
+    "./quote-economics"
+  ],
+  "lib/print/estimate-review-actions.test.ts": [
+    "vitest",
+    "drizzle-orm",
+    "./estimate-review-actions"
+  ],
+  "lib/print/estimate-review-actions.ts": [
+    "drizzle-orm",
+    "next/cache",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./budget-sync",
+    "./estimate-policy",
+    "./quote-economics",
+    "@/lib/activity/log",
+    "@/lib/budget/actions",
+    "@/lib/budget/queries"
+  ],
+  "lib/print/estimate-send.test.ts": [
+    "vitest",
+    "./actions"
   ],
   "lib/print/estimate.test.ts": [
     "vitest",
@@ -8534,6 +8715,18 @@
     "@/lib/db",
     "@/lib/db/schema"
   ],
+  "lib/print/spec-preset-queries.ts": [
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./spec-presets"
+  ],
+  "lib/print/spec-presets.test.ts": [
+    "vitest",
+    "./spec-presets"
+  ],
+  "lib/print/spec-presets.ts": [],
   "lib/print/text-extract-schema.ts": [
     "@/lib/print/extract-schema"
   ],
@@ -8607,6 +8800,27 @@
     "./materialize",
     "./project-blueprint"
   ],
+  "lib/projects/create-from-project.test.ts": [
+    "drizzle-orm",
+    "vitest",
+    "./create-from-project",
+    "./project-copy",
+    "@/lib/assistant/agent-util",
+    "@/lib/assistant/tools"
+  ],
+  "lib/projects/create-from-project.ts": [
+    "node:crypto",
+    "drizzle-orm",
+    "next/cache",
+    "@/lib/auth/guards",
+    "@/lib/budget/compute",
+    "@/lib/chat/project-channels",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/slug",
+    "@/lib/workspace/queries",
+    "./project-copy"
+  ],
   "lib/projects/create.ts": [
     "zod",
     "@/lib/db",
@@ -8647,6 +8861,25 @@
     "@/lib/auth/project-access",
     "@/lib/db",
     "@/lib/db/schema"
+  ],
+  "lib/projects/funding-overview-queries.test.ts": [
+    "vitest",
+    "./funding-overview-queries"
+  ],
+  "lib/projects/funding-overview-queries.ts": [
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/workspace/queries",
+    "./funding-overview"
+  ],
+  "lib/projects/funding-overview.test.ts": [
+    "vitest",
+    "./funding-overview"
+  ],
+  "lib/projects/funding-overview.ts": [
+    "@/lib/budget/reconcile-math"
   ],
   "lib/projects/funding-queries.ts": [
     "drizzle-orm",
@@ -8742,6 +8975,13 @@
   "lib/projects/project-blueprint.ts": [
     "zod",
     "@/lib/budget/compute",
+    "./status"
+  ],
+  "lib/projects/project-copy.ts": [
+    "node:crypto",
+    "zod",
+    "@/lib/budget/compute",
+    "@/lib/db/schema",
     "./status"
   ],
   "lib/projects/queries.ts": [
@@ -9239,7 +9479,8 @@
     "vitest",
     "drizzle-orm/pg-core",
     "@/lib/db/schema",
-    "./actions"
+    "./actions",
+    "./create"
   ],
   "lib/tasks/actions.ts": [
     "next/cache",

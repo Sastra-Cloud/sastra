@@ -2,7 +2,7 @@
 title: "Chat"
 category: "Communication"
 roles: [member, manager, admin]
-keywords: [chat, video, video upload, video compression, already compressed, skip compression, preserve video quality, MP4, MOV, screen recording, video quality, cancel preparation, playback, channel, message, reply, reply to message, quoted reply, original message, edit message, edited, correct typo, delete message, cancel edit, save changes, mention, general, react, reactions, reaction summary, reaction counts, emoji, emoji picker, frequent emoji, frequently used, praying hands, skin tone, right click, context menu, selected text, highlighted text, PWA, quick actions, desktop, Shift F10, long press, touch and hold, haptic feedback, vibration, copy text, pin, pin message, pinned, pinned messages, unpin, unpin message, pin project, attachment, file, drag and drop, drop files, PowerPoint, ppt, pptx, image, screenshot, paste image, clipboard, inline image, image viewer, zoom, pinch to zoom, lightbox, swipe images, audio, voice message, microphone, recording, transcript, direct message, dm, private message, loading, unread, search, recent projects, members, add member, remove member, private channel, standup conversation, landscape, short screen, composer hidden, mobile, conversation details, message actions, keyboard, newline, grouped messages, last conversation, reopen chat, resume chat]
+keywords: [scrolling, short window, project manager, scoped project manager, project members, project chat mentions, chat, video, video upload, video compression, already compressed, skip compression, preserve video quality, MP4, MOV, screen recording, video quality, cancel preparation, playback, channel, message, reply, reply to message, quoted reply, original message, edit message, edited, correct typo, delete message, cancel edit, save changes, mention, general, react, reactions, reaction summary, reaction counts, emoji, emoji picker, frequent emoji, frequently used, praying hands, skin tone, right click, context menu, selected text, highlighted text, PWA, quick actions, desktop, Shift F10, long press, touch and hold, haptic feedback, vibration, copy text, pin, pin message, pinned, pinned messages, unpin, unpin message, pin project, attachment, file, drag and drop, drop files, PowerPoint, ppt, pptx, image, screenshot, paste image, clipboard, inline image, image viewer, zoom, pinch to zoom, lightbox, swipe images, audio, voice message, microphone, recording, transcript, direct message, dm, private message, loading, unread, search, recent projects, members, add member, remove member, private channel, standup conversation, landscape, short screen, composer hidden, mobile, conversation details, message actions, keyboard, newline, grouped messages, last conversation, reopen chat, resume chat]
 order: 80
 summary: "Chat reopens your last conversation. Project chat, team channels, direct messages, voice recordings, video uploads with local compression and playback, replies to specific messages, mentions, desktop quick actions and right-click menus, mobile reaction gestures, optional haptic feedback, personal emoji suggestions, message editing and deletion, emoji search, pinned messages, drag-and-drop file attachments, and a zoomable image viewer."
 ---
@@ -180,7 +180,11 @@ mention the original author. Use **@mention** when you need to notify them.
 
 - **@mention** a teammate to notify them: type **@**, pick a name from the
   picker, and they get a notification linking back to your message. See
-  **@mentions**.
+  **@mentions**. Project chat includes active project-role members, assigned
+  project managers, and workspace managers/admins. A project manager does not need
+  a separate production role to appear in the picker. Membership changes update the roster
+  used on the next visit to project chat or the main Chat view. Private conversations keep their own
+  participant list.
 - Attach files inline, add **reactions**, and **pin** important messages so
   everyone can find them again. See **Pinned messages** below.
 - **Drag files into the conversation** or select **Attach files** to add them
@@ -333,3 +337,8 @@ private channel membership controls.
 On a wide screen, messages and the message box stay in a centered column of
 comfortable width, so replies are easy to follow. The channel list stays on the
 left.
+
+The conversation list and message history scroll separately. The conversation
+fits the available window height, with the composer below the message history.
+In a short project Chat view, scroll inside the project panel if you need to
+reach controls below the project header.

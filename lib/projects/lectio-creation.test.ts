@@ -36,9 +36,10 @@ it("revalidates an existing choice before native creation, then opens mapping wi
   expect(mocks.create).toHaveBeenCalledOnce(); expect(mocks.queue).not.toHaveBeenCalled();
 });
 it("preserves native-only creation when the person turns the connection off", async () => {
+  mocks.matches.mockRejectedValue(new Error("Lectio is unavailable"));
   const data = form(); data.set("lectioConnectionId", "none");
   await expect(createProject({}, data)).rejects.toThrow("redirect:/projects/new-book?created=1");
-  expect(mocks.create).toHaveBeenCalledOnce(); expect(mocks.queue).not.toHaveBeenCalled(); expect(mocks.select).not.toHaveBeenCalled();
+  expect(mocks.create).toHaveBeenCalledOnce(); expect(mocks.queue).not.toHaveBeenCalled(); expect(mocks.select).not.toHaveBeenCalled(); expect(mocks.matches).not.toHaveBeenCalled();
 });
 it("rechecks creation consent before committing the native project and queues an approved new counterpart in its transaction", async () => {
   const data = form("new");

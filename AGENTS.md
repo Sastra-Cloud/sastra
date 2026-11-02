@@ -133,10 +133,43 @@ Coolify:
 5. Verify GitHub's remote ref after pushing:
    - `git rev-parse HEAD`
    - `git ls-remote origin refs/heads/main`
-6. Only tell the user the intended changes are merged/pushed when there are no
+6. After the intended changes are merged and pushed, complete the required
+   local cleanup below before the final handoff. Cleanup is part of the merge
+   task; do not wait for a separate user request.
+7. Only tell the user the intended changes are merged/pushed when there are no
    relevant uncommitted local changes left and the remote SHA matches the local
    `HEAD`. Include the short SHA in the response so Coolify deploy logs can be
    compared against it.
+
+## Required local cleanup after merging
+
+Run this after a successful merge and push, including completed changes committed
+directly to `main`. Keep the primary checkout and any work still in progress.
+
+1. Inspect `git worktree list --porcelain`, each candidate worktree's
+   `git status --short`, local branches, and `git stash list`. Check for active
+   use, uncommitted changes, untracked files, and symlinks before removing a
+   checkout. Run Git cleanup mutations sequentially.
+2. Remove inactive, clean task/release worktrees whose changes are integrated
+   into the target branch with `git worktree remove <path>`. Preserve dirty
+   worktrees and existing stashes. Never force-remove uncommitted work or follow
+   symlinks into shared environment files, another checkout, or retained backups.
+3. Delete retired local branches only after proving their changes are integrated:
+   ancestry with `git merge-base --is-ancestor <branch> <target>`, or patch
+   equivalence with `git cherry <target> <branch>` showing no `+` entries.
+   For branches with merge commits, also check for unique merge-resolution
+   changes; `git cherry` alone does not cover them.
+   Preserve branches with unique commits, explicit backup branches, and branches
+   still used by a retained worktree. Do not delete remote branches as part of
+   routine local cleanup.
+4. Prune stale worktree metadata with `git worktree prune` and obsolete
+   remote-tracking refs with `git fetch origin --prune`. Remove temporary
+   screenshots, logs, and fixtures created for the completed task, and stop its
+   browser/dev processes when no longer needed. Preserve unrelated local
+   tooling, user files, credentials, and shared caches.
+5. Recheck `git status --short --branch`, `git worktree list`, and the stash list.
+   Report what was removed and anything intentionally retained, especially dirty
+   worktrees, unique commits, stashes, or unrelated files that remain local.
 
 # Browser automation
 

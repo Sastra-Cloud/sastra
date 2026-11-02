@@ -1,3 +1,4 @@
+import { PrintEstimateSection } from "@/components/print/print-estimate-section";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq, inArray } from "drizzle-orm";
@@ -510,6 +511,7 @@ export default async function ProjectBudgetPage({
         title="Quotation"
         description="Quotation assumptions, line items, funding, and editable totals."
       >
+        {canEdit && !scoped && !allHistory && project.kind !== "podcast" ? <PrintEstimateSection projectId={project.id} userId={session.user.id} /> : null}
         <BudgetManager
           projectId={project.id}
           slug={slug}

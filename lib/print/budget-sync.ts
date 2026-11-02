@@ -1,10 +1,13 @@
 import "server-only";
 
-import { and, asc, eq, isNull, ne } from "drizzle-orm";
+import { and, asc, desc, eq, isNull } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { budgetItems, printQuotes, printRuns } from "@/lib/db/schema";
-import { chooseEstimateQuote } from "@/lib/print/estimate";
+import { budgetItems, printQuotes, printRuns, projects } from "@/lib/db/schema";
+import {
+  chooseBudgetPrintQuote,
+  BUDGET_ESTIMATE_KIND,
+} from "@/lib/print/estimate-policy";
 import { getPrintQuoteTotal } from "@/lib/print/quote-economics";
 import { syncBudgetApprovalState } from "@/lib/budget/approval-service";
 
@@ -21,46 +24,68 @@ import { syncBudgetApprovalState } from "@/lib/budget/approval-service";
  * "use server" actions file) so the quote-extraction pipeline can call it too.
  */
 export async function syncPrintEstimateToBudget(projectId: string) {
-  const [run] = await db
+  // All sync callers serialize with estimate selection. Each writer reads the
+  // latest decision under this lock, so a slow extraction cannot restore an old price.
+  await db.transaction(async (tx) => {
+    await tx
+      .select({ id: projects.id })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .for("update");
+    await writePrintEstimateToBudget(projectId, tx);
+  });
+  await syncBudgetApprovalState(projectId);
+}
+
+async function writePrintEstimateToBudget(
+  projectId: string,
+  executor: Pick<typeof db, "select" | "update" | "insert">,
+) {
+  const runs = await executor
     .select()
     .from(printRuns)
-    .where(
-      and(eq(printRuns.projectId, projectId), eq(printRuns.kind, "first_print"))
-    )
-    .orderBy(asc(printRuns.createdAt))
-    .limit(1);
-
-  const [existing] = await db
-    .select({ id: budgetItems.id })
+    .where(eq(printRuns.projectId, projectId))
+    .orderBy(asc(printRuns.createdAt));
+  const quotes = await executor
+    .select()
+    .from(printQuotes)
+    .where(eq(printQuotes.projectId, projectId))
+    .orderBy(desc(printQuotes.updatedAt));
+  const chosen = chooseBudgetPrintQuote(runs, quotes);
+  const run =
+    runs.find((r) => r.id === chosen?.runId) ??
+    runs.find((r) => r.kind === "first_print" && r.status !== "cancelled");
+  const [existing] = await executor
+    .select()
     .from(budgetItems)
     .where(
       and(
         eq(budgetItems.projectId, projectId),
         eq(budgetItems.category, "print_ship"),
-        isNull(budgetItems.printRunId)
-      )
+        isNull(budgetItems.printRunId),
+      ),
     )
     .limit(1);
 
-  // No primary print run → no project-level print cost line.
+  // Preserve a manual budget line when there is no printer evidence to sync.
   if (!run) {
-    if (existing)
-      await db.delete(budgetItems).where(eq(budgetItems.id, existing.id));
-    await syncBudgetApprovalState(projectId);
+    if (existing?.label.startsWith("Printing —")) {
+      await executor
+        .update(budgetItems)
+        .set({
+          label: "Printing — print run (awaiting quote)",
+          amount: "0.00",
+          unitPrice: "0.00",
+          updatedAt: new Date(),
+        })
+        .where(eq(budgetItems.id, existing.id));
+    }
     return;
   }
 
-  const quotes = await db
-    .select()
-    .from(printQuotes)
-    .where(
-      and(eq(printQuotes.runId, run.id), ne(printQuotes.reviewStatus, "rejected"))
-    );
-  const chosen = chooseEstimateQuote(quotes, run.quantityTarget);
-
   const copies = chosen?.quantityCps ?? run.quantityTarget ?? null;
   const state =
-    chosen?.reviewStatus === "accepted"
+    run.kind !== BUDGET_ESTIMATE_KIND && chosen?.reviewStatus === "accepted"
       ? "finalized"
       : chosen
         ? "estimate"
@@ -89,16 +114,15 @@ export async function syncPrintEstimateToBudget(projectId: string) {
     updatedAt: new Date(),
   };
   if (existing) {
-    await db
+    await executor
       .update(budgetItems)
       .set(values)
       .where(eq(budgetItems.id, existing.id));
   } else {
-    await db
+    await executor
       .insert(budgetItems)
       .values({ projectId, printRunId: null, sortOrder: 6, ...values });
   }
-  await syncBudgetApprovalState(projectId);
 }
 
 /**
@@ -107,7 +131,7 @@ export async function syncPrintEstimateToBudget(projectId: string) {
  * optimistic line without waiting for a route refresh.
  */
 export async function syncAcceptedQuoteToRunBudget(
-  quote: typeof printQuotes.$inferSelect
+  quote: typeof printQuotes.$inferSelect,
 ) {
   const effectiveTotal = getPrintQuoteTotal(quote)?.totalCost ?? 0;
   if (effectiveTotal <= 0) return null;
@@ -124,7 +148,7 @@ export async function syncAcceptedQuoteToRunBudget(
 
   const label = `Reprint ${run.printNumber ?? ""} print / ship`.replace(
     "  ",
-    " "
+    " ",
   );
   const [existing] = await db
     .select({ id: budgetItems.id })
@@ -133,8 +157,8 @@ export async function syncAcceptedQuoteToRunBudget(
       and(
         eq(budgetItems.projectId, quote.projectId),
         eq(budgetItems.printRunId, quote.runId),
-        eq(budgetItems.category, "print_ship")
-      )
+        eq(budgetItems.category, "print_ship"),
+      ),
     )
     .limit(1);
   const values = {

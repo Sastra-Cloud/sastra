@@ -15,6 +15,7 @@ async function revalidateProject(projectId: string) {
     .where(eq(projects.id, projectId)).limit(1);
   if (project) revalidatePath(`/projects/${project.slug}`, "layout");
   revalidatePath("/tasks");
+  revalidatePath("/chat", "layout");
 }
 
 /** Only workspace managers can delegate authority, including on their own projects. */

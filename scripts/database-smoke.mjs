@@ -36,6 +36,17 @@ try {
   assert.equal(after[0].migrations, journal.entries.length);
   const [extension] = await sql`select extversion from pg_extension where extname = 'vector'`;
   assert.ok(extension?.extversion);
+  // Per-word rates must survive storage and recalculation without being rounded to cents.
+  await sql.begin(async tx => {
+    const [project] = await tx`insert into projects(slug,title,status) values ('smoke-rate-precision','Smoke rate precision','proposal') returning id`;
+    const [line] = await tx`insert into budget_items(project_id,label,quantity,unit_price,amount) values (${project.id},'Translation',12000,0.0125,150.00) returning unit_price::text, amount::text`;
+    assert.equal(line.unit_price, '0.0125');
+    assert.equal(line.amount, '150.00');
+    const [recalculated] = await tx`select round(quantity * unit_price,2)::text as amount from budget_items where project_id=${project.id}`;
+    assert.equal(recalculated.amount, line.amount);
+    await tx`delete from budget_items where project_id=${project.id}`;
+    await tx`delete from projects where id=${project.id}`;
+  });
   // Use the same dimensionality and cosine operator as Sastra's Wiki/agreement indexes.
   await sql.begin(async tx => {
     await tx`create temporary table smoke_vectors (id serial primary key, embedding vector(1024)) on commit drop`;

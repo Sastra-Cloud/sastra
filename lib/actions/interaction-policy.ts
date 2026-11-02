@@ -13,6 +13,7 @@ const READ_ACTIONS = new Set(["markChannelRead", "readSchedule", "reviewLectioLi
 const DESTRUCTIVE = /^(delete|remove|revoke|clear|discard|trash)/;
 const PROGRESS = /^(send|submit|draft|generate|publish|refresh|reprocess|repair|retry|upload|extract|startParse|startNow|startReprint|resume|applyImport|commitImport|attachAgreement|createImport|createProjectsFrom|enablePush|disablePush|runAssistant|request|invite|learn|seed)/;
 const PROGRESS_ACTIONS = new Set([
+  "selectPrintEstimateQuote", // Reviewed financial estimate selection; await canonical budget sync.
   "linkLectioProject",
   "createLectioProjectForReview",
   "confirmLectioPerson",
@@ -97,6 +98,7 @@ const CONFIRMED_DESTRUCTIVE_ACTIONS = new Set([
   "cancelSponsorship",
 ]);
 const OPTIMISTIC_ACTIONS = new Set([
+  "updatePrintSettings", // Overview book details and Print share immediate values with rollback.
   "addProjectManager", // Explicit permission confirmation precedes immediate assignment feedback.
   // Message menus retain immediate text/reaction feedback; uploads have their own progress action.
   // Quoted replies use the same optimistic send and restore draft/context on failure.
@@ -128,6 +130,7 @@ const NAVIGATION = new Set([
   "reloadForAppUpdate", // Explicit full reload; never replay a pending mutation.
   "openDirectMessage",
   "createProject",
+  "createProposalBudget", // Save the complete estimate atomically, then open its Budget.
   "createSponsorship",
   "commitPlan",
   "commitProjectPlan",

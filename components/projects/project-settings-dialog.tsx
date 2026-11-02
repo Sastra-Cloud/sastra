@@ -5,6 +5,7 @@ import { thrownMutationMessage } from "@/lib/actions/result";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { AlertTriangle, ChevronDown, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -241,6 +242,11 @@ export function ProjectSettingsDialog({
         </SheetHeader>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 sm:px-5">
+          {canManagePublishing && savedKind === "book" ? <section className="grid gap-2 border-b py-5">
+            <h3 className="text-sm font-semibold">Book details</h3>
+            <p className="text-sm text-muted-foreground">Set source pages, book size, and the language expansion factor on Overview.</p>
+            <Link href={`/projects/${projectSlug}#book-details`} className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4">Open book details</Link>
+          </section> : null}
           <section id="project-name" className="grid gap-4 border-b py-5">
             <div>
               <h3 className="text-sm font-semibold">Project name</h3>

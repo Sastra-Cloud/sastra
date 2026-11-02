@@ -32,6 +32,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `app/(app)/projects/import/page.tsx`
 - `app/(app)/projects/loading.tsx`
 - `app/(app)/projects/new/page.tsx`
+- `app/(app)/projects/new/proposal-budget/page.tsx`
 - `app/(app)/projects/page.tsx`
 - `app/(app)/projects/plan/[draftId]/page.tsx`
 - `app/(app)/projects/plan/page.tsx`
@@ -40,6 +41,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `app/(app)/workload/layout.tsx`
 - `app/(app)/workload/loading.tsx`
 - `app/(app)/workload/page.tsx`
+- `components/projects/book-details.tsx`
 - `components/projects/book-format-badge.tsx`
 - `components/projects/complete-project-button.tsx`
 - `components/projects/manager-health-band.tsx`
@@ -57,6 +59,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/projects/project-card.tsx`
 - `components/projects/project-draft.tsx`
 - `components/projects/project-drive-folder.tsx`
+- `components/projects/project-funding-overview.tsx`
 - `components/projects/project-management-provider.tsx`
 - `components/projects/project-managers.tsx`
 - `components/projects/project-settings-dialog.tsx`
@@ -93,7 +96,4 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/workload/workload-board.tsx`
 - `components/workload/workload-view.tsx`
 - `lib/db/schema/projects.ts`
-- `lib/db/schema/recurring.ts`
-- `lib/db/schema/tasks.ts`
-- `lib/db/schema/templates.ts`
-... 92 more
+... 102 more

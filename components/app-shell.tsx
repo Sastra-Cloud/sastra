@@ -90,16 +90,16 @@ export function AppShell({
     <RouteScrollManager />
     <div
       className={cn(
-        "grid min-h-full bg-background lg:grid-cols-[5rem_minmax(0,1fr)]",
+        "grid min-h-dvh bg-background lg:grid-cols-[5rem_minmax(0,1fr)]",
         collapsed
           ? "xl:grid-cols-[5rem_minmax(0,1fr)]"
           : "xl:grid-cols-[16rem_minmax(0,1fr)]"
       )}
     >
-      <aside className="hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex lg:flex-col">
+      <aside data-app-sidebar className="sticky top-0 hidden h-dvh min-h-0 self-start overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex lg:flex-col">
         <div
           className={cn(
-            "flex items-center px-3",
+            "flex shrink-0 items-center px-3",
             collapsed
               ? "h-28 flex-col justify-center gap-2"
               : "h-16 justify-between gap-3 xl:px-4"
@@ -135,19 +135,19 @@ export function AppShell({
             )}
           </Button>
         </div>
-        <div className={cn("py-3", collapsed ? "px-2" : "px-3")}>
+        <div className={cn("min-h-0 flex-1 overflow-y-auto overscroll-contain py-3", collapsed ? "px-2" : "px-3")}>
           <AppNav
             canManage={canManage}
             isAdmin={isAdminRole(role)}
             collapsed={collapsed}
           />
         </div>
-        <div className={cn("mt-auto py-3", collapsed ? "px-2 text-center" : "px-3 xl:px-4")}>
+        <div className={cn("shrink-0 py-3", collapsed ? "px-2 text-center" : "px-3 xl:px-4")}>
           <SourceLink href={sourceUrl} version={versionLabel} compact={collapsed} />
         </div>
       </aside>
 
-      <div className="flex min-h-full min-w-0 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-col">
         <Topbar
           userId={userId}
           userName={userName}

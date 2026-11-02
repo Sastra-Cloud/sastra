@@ -1128,6 +1128,20 @@
       "when": 1793040800574,
       "tag": "0160_teammate_task_visibility",
       "breakpoints": true
+    },
+    {
+      "idx": 161,
+      "version": "7",
+      "when": 1793590544583,
+      "tag": "0161_proposal_budget_rate_precision",
+      "breakpoints": true
+    },
+    {
+      "idx": 162,
+      "version": "7",
+      "when": 1793640253796,
+      "tag": "0162_print_budget_estimates",
+      "breakpoints": true
     }
   ]
 }

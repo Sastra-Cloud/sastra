@@ -120,6 +120,10 @@
 
 - dynamic, metadata
 
+## `app/(app)/projects/new/proposal-budget/page.tsx`
+
+- dynamic, metadata
+
 ## `app/(app)/projects/page.tsx`
 
 - dynamic, metadata
@@ -688,6 +692,10 @@
 
 - PartnerQuotePanel
 
+## `components/budget/proposal-budget-builder.tsx`
+
+- ProposalBudgetBuilder
+
 ## `components/budget/proposal-panel.tsx`
 
 - ProposalDTO, ProposalPanel
@@ -1068,6 +1076,14 @@
 
 - PrintCorrespondenceCard, PrintThread
 
+## `components/print/print-estimate-panel.tsx`
+
+- EstimateQuote, EstimateRequest, PrintEstimatePanel
+
+## `components/print/print-estimate-section.tsx`
+
+- PrintEstimateSection
+
 ## `components/print/print-manager.tsx`
 
 - PrintManager
@@ -1075,6 +1091,10 @@
 ## `components/print/quote-comparison.tsx`
 
 - QuoteComparison
+
+## `components/projects/book-details.tsx`
+
+- BookDetails
 
 ## `components/projects/book-format-badge.tsx`
 
@@ -1135,6 +1155,10 @@
 ## `components/projects/project-drive-folder.tsx`
 
 - ProjectDriveFolder
+
+## `components/projects/project-funding-overview.tsx`
+
+- ProjectFundingOverview
 
 ## `components/projects/project-management-provider.tsx`
 
@@ -2043,6 +2067,14 @@
 ## `lib/budget/presentation-input.ts`
 
 - BudgetPresentationInput, PartnerQuotePresentation, budgetPresentationSchema
+
+## `lib/budget/proposal-actions.ts`
+
+- createProposalBudget
+
+## `lib/budget/proposal-builder.ts`
+
+- ProposalBudgetDefaults, ProposalBudgetInput, ProposalCost, proposalBudgetSchema, proposalCostRows, proposalCostTotalCents, proposalStandardCosts
 
 ## `lib/budget/queries.ts`
 
@@ -3268,6 +3300,18 @@
 
 - createRunFromTextQuote, parsedTextQuotes, quoteExtractionText
 
+## `lib/print/estimate-actions.ts`
+
+- draftPrintEstimate
+
+## `lib/print/estimate-policy.ts`
+
+- BUDGET_ESTIMATE_KIND, MAX_REFERENCE_PDF_BYTES, chooseBudgetPrintQuote
+
+## `lib/print/estimate-review-actions.ts`
+
+- selectPrintEstimateQuote
+
 ## `lib/print/estimate.ts`
 
 - DEFAULT_FINANCIAL_EMAIL, DEFAULT_LANGUAGE_EXPANSION_FACTOR, DEFAULT_PRINT_CC_EMAILS, DEFAULT_PRINT_TRIM_HEIGHT_IN, DEFAULT_PRINT_TRIM_WIDTH_IN, MeasurementUnit, PrintEstimateInput, chooseEstimateQuote, estimatePrintPages, formatTrimSize, inToMm, measurementFromInches, measurementInputFromInches, measurementInputFromMm, measurementInputToMm, measurementToInches, measurementUnit, mmToIn
@@ -3332,6 +3376,14 @@
 
 - PRINT_RUN_STATUS_ORDER, advancePrintRunStatus
 
+## `lib/print/spec-preset-queries.ts`
+
+- listBookSpecPresets
+
+## `lib/print/spec-presets.ts`
+
+- PrintSpecPreset, bookSpecPresets, suggestedBookSpecs
+
 ## `lib/print/text-extract-schema.ts`
 
 - PRINT_TEXT_QUOTE_JSON_SCHEMA, PRINT_TEXT_QUOTE_SYSTEM_PROMPT
@@ -3360,6 +3412,10 @@
 
 - CreatedProjectBlueprint, createProjectFromBlueprint
 
+## `lib/projects/create-from-project.ts`
+
+- createProjectFromExisting, previewProjectFromExisting
+
 ## `lib/projects/create.ts`
 
 - createProjectInTransaction, createProjectSchema
@@ -3383,6 +3439,14 @@
 ## `lib/projects/drive-actions.ts`
 
 - clearProjectDriveFolder, setProjectDriveFolder
+
+## `lib/projects/funding-overview-queries.ts`
+
+- getProjectFundingOverview
+
+## `lib/projects/funding-overview.ts`
+
+- FundingOverviewInput, ProjectFundingOverview, buildProjectFundingOverview
 
 ## `lib/projects/funding-queries.ts`
 
@@ -3427,6 +3491,10 @@
 ## `lib/projects/project-blueprint.ts`
 
 - ProjectBlueprint, ProjectBlueprintBudgetLine, blueprintBudgetTotals, blueprintUnitNames, blueprintWorkflowKey, budgetGroupForBlueprintCategory, projectBlueprintBudgetLineSchema, projectBlueprintSchema
+
+## `lib/projects/project-copy.ts`
+
+- ProjectCopyInput, ProjectCopyStructure, buildProjectCopyRows, projectCopySchema
 
 ## `lib/projects/queries.ts`
 
