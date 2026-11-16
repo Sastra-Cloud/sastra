@@ -102,7 +102,7 @@ export async function ensureLicenseFeePaymentsForProject(
       ).toFixed(2)}.`,
       row.holderName ? `Licensor: ${row.holderName}.` : null,
       due ? `Due ${due}.` : null,
-      "Mark it paid on the project's Rights or Budget page once settled.",
+      "Mark it paid on the project's Rights & MOUs or Budget page once settled.",
     ]
       .filter(Boolean)
       .join("\n");

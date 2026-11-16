@@ -1,10 +1,11 @@
 "use client";
 
 import { FileLink } from "@/components/files/file-link";
+import { elementTiming, useUsefulWork } from "@/components/observability/use-useful-work";
 
 import { confirmDialog } from "@/lib/dialog-requests";
 
-import { startTransition, useCallback, useEffect, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Download,
   FileText,
@@ -63,8 +64,11 @@ import {
   MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
 import { MentionInput } from "@/components/mentions/mention-input";
-import { MentionText } from "@/components/mentions/mention-text";
+import { MessageText } from "@/components/chat/message-text";
+import { MessageLinkPreview } from "@/components/chat/message-link-preview";
+import { firstMessageLink } from "@/lib/chat/message-links";
 import type { MentionTarget } from "@/lib/mentions/roster";
+import { hasChannelMention } from "@/lib/mentions/parse";
 import { formatBytes } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
@@ -78,19 +82,24 @@ import { useMessagePins } from "@/components/chat/message-pins";
 import { ChatImageGallery } from "@/components/chat/chat-image-gallery";
 import { ChatFileProgress, ChatVideoPlayer, ChatVideoQualityControl, type ChatAttachmentProgress } from "@/components/chat/chat-video";
 import { CHAT_VIDEO_INPUT_BYTES, isChatVideo, type ChatVideoQuality, type ChatVideoResult } from "@/lib/chat/video";
+import { uploadContentType, validateUpload } from "@/lib/files/upload-rules";
 import { prepareChatVideo } from "@/lib/chat/video-client";
 import { uploadFileBytes } from "@/lib/files/upload-progress";
 import { conversationDay, continuesMessageGroup } from "@/lib/chat/conversation";
 import { sendOnConversationKey } from "@/lib/chat/composer-key";
 import { MessageActions } from "@/components/chat/message-actions";
 import { MessageReactions } from "@/components/chat/message-reactions";
+import { MessageReceipt } from "@/components/chat/message-receipt";
 import { MessageEditor } from "@/components/chat/message-editor";
 import { editMessage } from "@/lib/chat/edit-actions";
 import { reconcileDeletedMessages, reconcileMessageEdits, restoreDeletedMessage, type MessageEditDraft } from "@/lib/chat/edit-state";
 import { reconcileReactionMessages } from "@/lib/chat/reaction-state";
 import { useFrequentReactions } from "@/components/chat/use-frequent-reactions";
+import { reuseChatSnapshot } from "@/lib/chat/snapshot";
+import { prepareVoiceMessage } from "@/lib/chat/voice-client";
+import type { PreparedVoice, VoiceMetadata } from "@/lib/chat/voice-metadata";
 
-const NEAR_BOTTOM_PX = 96;
+const EMPTY_MEMBERS: MentionTarget[] = [];
 
 function timeLabel(iso: string, timeZone?: string) {
   const d = new Date(iso);
@@ -102,8 +111,9 @@ async function uploadToMessage(
   messageId: string,
   label?: "voice",
   onProgress?: (progress: number) => void,
+  audioMetadata?: VoiceMetadata,
 ) {
-  const contentType = file.type || "application/octet-stream";
+  const contentType = uploadContentType(file);
   const presign = await fetch("/api/files/presign", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -136,6 +146,7 @@ async function uploadToMessage(
       targetType: "message",
       targetId: messageId,
       label,
+      audioMetadata,
     }),
   });
   if (!complete.ok) {
@@ -152,7 +163,7 @@ export function ChatThread({
   currentUserName,
   currentUserImage,
   initialMessages,
-  members = [],
+  members = EMPTY_MEMBERS,
   variant = "team",
   contextLabel,
   emptyDescription,
@@ -184,6 +195,13 @@ export function ChatThread({
   const conversationLoading =
     loading ||
     (pendingChannelId !== null && pendingChannelId !== channelId);
+  useUsefulWork({
+    active: !conversationLoading,
+    scope: channelId,
+    ready: "chat-composer-ready",
+    visible: { name: "chat-messages-visible", element: "chat-messages" },
+  });
+  const channelMentions = !direct;
   const [messages, setMessages] = useState<ChatMessageView[]>(initialMessages);
   const [pendingMessages, setPendingMessages] = useState<ChatMessageView[]>([]);
   const [input, setInput] = useState("");
@@ -224,14 +242,16 @@ export function ChatThread({
     for (const [id, version] of deletionVersions.current) {
       if (requestedDeletes.get(id) !== version) changedDeletes.add(id);
     }
-    setMessages(current => reconcileDeletedMessages(current, reconcileMessageEdits(current, reconcileReactionMessages(current, incoming, protectedIds), protectedEdits), pendingDeletes, changedDeletes));
+    setMessages(current => reuseChatSnapshot(current, reconcileDeletedMessages(current, reconcileMessageEdits(current, reconcileReactionMessages(current, incoming, protectedIds), protectedEdits), pendingDeletes, changedDeletes)));
   }, []);
   const [draggingFiles, setDraggingFiles] = useState(false);
   const fileDragDepth = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const lastReadRef = useRef<string>("");
-  const isNearBottomRef = useRef(true);
+  const followingLatestRef = useRef(true);
+  const touchYRef = useRef<number | null>(null);
   const previousLatestMessageIdRef = useRef(
     initialMessages[initialMessages.length - 1]?.id ?? null
   );
@@ -241,41 +261,46 @@ export function ChatThread({
 
   useEffect(() => {
     if (messages.length === 0) {
-      void syncChannelRead(channelId, null);
+      void syncChannelRead(channelId, null, currentUserId);
     }
-  }, [channelId, messages.length]);
+  }, [channelId, messages.length, currentUserId]);
 
   // Near-real-time: poll the recent window while the user is active (pauses
   // when the tab is hidden or idle for ten minutes, and catches up on return).
   // Robust across dev/proxies; an SSE endpoint also exists for future use.
   const active = useUserActive();
-  const wasActiveRef = useRef(active);
   useEffect(() => {
-    const resumed = active && !wasActiveRef.current;
-    wasActiveRef.current = active;
     if (!active) return;
     const recentUrl = `/api/chat/${channelId}/recent`;
     let stopped = false;
+    let controller: AbortController | null = null;
 
     const refresh = async () => {
-      if (document.hidden) return;
+      // Slow mobile requests must not pile up or race newer snapshots.
+      if (document.hidden || controller) return;
+      const request = new AbortController();
+      controller = request;
       try {
         const requestedVersions = new Map(reactionVersions.current);
         const requestedEdits = new Map(editVersions.current);
         const requestedDeletes = new Map(deletionVersions.current);
         const receivePins = beginPinsFetch();
-        const r = await fetch(recentUrl);
-        if (!r.ok || stopped) return;
+        const r = await fetch(recentUrl, { signal: request.signal, cache: "no-store" });
+        if (!r.ok || stopped || request.signal.aborted) return;
         const data = await r.json();
         if (stopped) return;
         receiveMessages(data.messages, requestedVersions, requestedEdits, requestedDeletes);
         receivePins(data.pins ?? []);
       } catch {
         /* transient */
+      } finally {
+        if (controller === request) controller = null;
       }
     };
 
-    if (resumed) void refresh();
+    // A route-cache hit can reopen an older snapshot. Catch up immediately on
+    // mount/resume instead of waiting for the first polling interval.
+    void refresh();
     const interval = setInterval(refresh, 2500);
     const onVisible = () => {
       if (!document.hidden) void refresh();
@@ -284,6 +309,7 @@ export function ChatThread({
 
     return () => {
       stopped = true;
+      controller?.abort();
       clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisible);
     };
@@ -293,47 +319,73 @@ export function ChatThread({
   const initialLatestMessageId =
     initialMessages[initialMessages.length - 1]?.id ?? null;
 
-  // Enter a conversation at its newest message. Subsequent polling must not
-  // disturb someone who has deliberately scrolled up to read history.
-  useEffect(() => {
-    previousLatestMessageIdRef.current = initialLatestMessageId;
-    isNearBottomRef.current = true;
-    const frame = window.requestAnimationFrame(() => {
-      const el = scrollRef.current;
-      if (el) el.scrollTop = el.scrollHeight;
-      // Record every visit, including a cached thread reopening with the same
-      // last-read message, so Chat can resume the conversation actually opened.
-      if (initialLatestMessageId) {
-        lastReadRef.current = initialLatestMessageId;
-        void syncChannelRead(channelId, initialLatestMessageId);
-      }
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [channelId, initialLatestMessageId]);
+  const followLatest = useCallback(() => {
+    const viewport = scrollRef.current;
+    if (!followingLatestRef.current || !viewport || viewport.clientHeight === 0) return;
+    const end = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
+    if (Math.abs(viewport.scrollTop - end) > 1) viewport.scrollTop = end;
+  }, []);
 
-  // Follow genuinely new messages only when the reader was already near the
-  // bottom. A poll that returns the same latest message does nothing.
+  // A reopened/cached conversation starts at its newest message. Keep following
+  // as fonts, media, headers and the available viewport settle after this frame.
+  useEffect(() => {
+    let frame = 0;
+    const enter = (lastMessageId = initialLatestMessageId) => {
+      previousLatestMessageIdRef.current = lastMessageId;
+      followingLatestRef.current = true;
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        followLatest();
+        // Record every visit, including reopening an already-read conversation.
+        if (lastMessageId && !document.hidden && !conversationLoading && scrollRef.current?.clientHeight) {
+          lastReadRef.current = lastMessageId;
+          void syncChannelRead(channelId, lastMessageId, currentUserId);
+        }
+      });
+    };
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) enter(previousLatestMessageIdRef.current);
+    };
+    enter();
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("pageshow", onPageShow);
+    };
+  }, [channelId, initialLatestMessageId, currentUserId, followLatest, conversationLoading]);
+
+  useEffect(() => {
+    const viewport = scrollRef.current;
+    const content = contentRef.current;
+    if (!viewport || !content) return;
+    const observer = new ResizeObserver(followLatest);
+    observer.observe(content);
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, [channelId, followLatest]);
+
+  // Follow genuinely new messages only while the reader is following the latest
+  // replies. A poll that returns the same latest message does nothing.
   useEffect(() => {
     const previousId = previousLatestMessageIdRef.current;
     previousLatestMessageIdRef.current = latestMessageId;
     if (
       !latestMessageId ||
       latestMessageId === previousId ||
-      !isNearBottomRef.current
+      !followingLatestRef.current
     ) {
       return;
     }
 
     const frame = window.requestAnimationFrame(() => {
-      const el = scrollRef.current;
-      if (el) el.scrollTop = el.scrollHeight;
-      if (latestMessageId !== lastReadRef.current) {
+      followLatest();
+      if (latestMessageId !== lastReadRef.current && !document.hidden && !conversationLoading && scrollRef.current?.clientHeight) {
         lastReadRef.current = latestMessageId;
-        void syncChannelRead(channelId, latestMessageId);
+        void syncChannelRead(channelId, latestMessageId, currentUserId);
       }
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [channelId, latestMessageId]);
+  }, [channelId, latestMessageId, currentUserId, followLatest, conversationLoading]);
 
   // Sending is an explicit request to return to the newest message.
   useEffect(() => {
@@ -341,29 +393,46 @@ export function ChatThread({
     previousPendingCountRef.current = pendingMessages.length;
     if (pendingMessages.length <= previousCount) return;
 
-    isNearBottomRef.current = true;
+    followingLatestRef.current = true;
     const frame = window.requestAnimationFrame(() => {
-      const el = scrollRef.current;
-      if (el) el.scrollTop = el.scrollHeight;
+      followLatest();
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [pendingMessages.length]);
+  }, [pendingMessages.length, followLatest]);
 
-  function handleThreadScroll() {
+  const handleThreadScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const nearBottom =
-      el.scrollHeight - el.scrollTop - el.clientHeight <= NEAR_BOTTOM_PX;
-    isNearBottomRef.current = nearBottom;
+    const atBottom =
+      el.scrollHeight - el.scrollTop - el.clientHeight <= 1;
+    // Scroll events also come from image/layout shifts and restored positions.
+    // Only an explicit history gesture pauses following; reaching the end opts in.
+    if (el.scrollHeight - el.scrollTop - el.clientHeight <= 1) {
+      followingLatestRef.current = true;
+    }
     if (
-      nearBottom &&
+      atBottom &&
+      !document.hidden &&
+      !conversationLoading &&
+      el.clientHeight > 0 &&
       latestMessageId &&
       latestMessageId !== lastReadRef.current
     ) {
       lastReadRef.current = latestMessageId;
-      void syncChannelRead(channelId, latestMessageId);
+      void syncChannelRead(channelId, latestMessageId, currentUserId);
     }
-  }
+  }, [channelId, currentUserId, latestMessageId, conversationLoading]);
+
+  // Returning to a visible chat can expose the same latest message without a
+  // new-message or scroll event. Preserve deliberate history reading on return.
+  useEffect(() => {
+    document.addEventListener("visibilitychange", handleThreadScroll);
+    window.addEventListener("focus", handleThreadScroll);
+    return () => {
+      document.removeEventListener("visibilitychange", handleThreadScroll);
+      window.removeEventListener("focus", handleThreadScroll);
+    };
+  }, [handleThreadScroll]);
 
   const refreshRecent = useCallback(async () => {
     const requestedVersions = new Map(reactionVersions.current);
@@ -384,6 +453,18 @@ export function ChatThread({
     const text = input.trim();
     if (!text && pendingFiles.length === 0 && !voiceDraft) return;
     sendGuard.current = true;
+    if (channelMentions && hasChannelMention(text, members)) {
+      let confirmed = false;
+      try {
+        confirmed = await confirmDialog(
+          "This message will notify everyone in this channel. Use this for important updates.",
+          { title: "Notify everyone?", confirmLabel: "Send and notify" }
+        );
+      } finally {
+        if (!confirmed) sendGuard.current = false;
+      }
+      if (!confirmed) return;
+    }
     const controller = new AbortController();
     sendController.current = controller;
     const voiceAtSend = voiceDraft;
@@ -416,8 +497,16 @@ export function ChatThread({
       // Prepare serially before creating a server message. Cancellation or a bad
       // codec must not leave an empty message or send the remaining files.
       const uploadFiles: File[] = [];
+      let preparedVoice: PreparedVoice | undefined;
       for (const file of files) {
-        if (file === voiceAtSend?.file || !isChatVideo(file)) { uploadFiles.push(file); continue; }
+        if (file === voiceAtSend?.file) {
+          setFileProgress({ phase: "preparing", fileName: file.name, progress: null, kind: "voice" });
+          preparedVoice = await prepareVoiceMessage(file, voiceAtSend.durationMs, controller.signal);
+          controller.signal.throwIfAborted();
+          uploadFiles.push(preparedVoice.file);
+          continue;
+        }
+        if (!isChatVideo(file)) { uploadFiles.push(file); continue; }
         setFileProgress({ phase: "preparing", fileName: file.name, progress: null });
         const cached = preparedVideos.current.get(file);
         const result = cached?.quality === videoQuality ? cached.result
@@ -456,11 +545,12 @@ export function ChatThread({
             await uploadToMessage(
               f,
               id,
-              voiceAtSend?.file === f ? "voice" : undefined,
-              video ? progress => setFileProgress({
+              voiceAtSend?.file === files[index] ? "voice" : undefined,
+              video || voiceAtSend?.file === files[index] ? progress => setFileProgress({
                 phase: progress === 1 ? "finishing" : "uploading", fileName: f.name,
                 progress: progress === 1 ? null : progress,
               }) : undefined,
+              voiceAtSend?.file === files[index] ? preparedVoice?.metadata : undefined,
             );
           } catch (err) {
             failedFiles.push(files[index]);
@@ -479,7 +569,6 @@ export function ChatThread({
           failedFiles.filter((file) => file !== voiceAtSend?.file)
         );
         if (voiceAtSend && !failedFiles.includes(voiceAtSend.file)) {
-          URL.revokeObjectURL(voiceAtSend.url);
           setVoiceDraft(null);
         }
         await refreshRecent().catch(() => {});
@@ -553,12 +642,12 @@ export function ChatThread({
     });
   }, [refreshRecent, refreshFrequentReactions]);
 
-  function beginEdit(message: ChatMessageView) {
+  const beginEdit = useCallback((message: ChatMessageView) => {
     if (editing || sending || recordingVoice || editingRef.current.has(message.id) || message.userId !== currentUserId || !message.content || message.status !== "sent") return;
     const failed = failedEditDrafts.current.get(message.id);
     setRestoreComposerFocus(false);
     setEditing({ messageId: message.id, originalContent: message.content, originalEditedAt: message.editedAt ?? null, text: failed?.text ?? message.content });
-  }
+  }, [currentUserId, editing, recordingVoice, sending]);
 
   function cancelEdit() {
     if (editing) failedEditDrafts.current.delete(editing.messageId);
@@ -601,7 +690,7 @@ export function ChatThread({
     });
   }
 
-  async function removeMessage(messageId: string) {
+  const removeMessage = useCallback(async (messageId: string) => {
     if (editingRef.current.has(messageId) || deletingRef.current.has(messageId) || confirmingDeletes.current.has(messageId)) return;
     confirmingDeletes.current.add(messageId);
     let confirmed = false;
@@ -630,41 +719,47 @@ export function ChatThread({
       if (editAtDelete) setEditing(current => current ?? editAtDelete);
       toast.error("Could not delete the message.");
     });
-  }
+  }, [editing, pins, refreshFrequentReactions]);
 
-  function togglePin(message: ChatMessageView) {
+  const togglePin = useCallback((message: ChatMessageView) => {
     if (pins.pinFor(message.id)) pins.unpin(message.id);
     else pins.pin(message);
-  }
+  }, [pins]);
 
-  function startReply(message: ChatMessageView) {
+  const startReply = useCallback((message: ChatMessageView) => {
     if (conversationLoading || sending || recordingVoice || editing || message.id.startsWith("pending-")) return;
     setReplyTarget(replyPreview(message));
     setSendError(null);
-  }
+  }, [conversationLoading, editing, recordingVoice, sending]);
 
-  function showOriginal(messageId: string) {
+  const showOriginal = useCallback((messageId: string) => {
     const element = scrollRef.current?.querySelector<HTMLElement>(`[data-message-id="${CSS.escape(messageId)}"]`);
     if (!element) {
       toast.info("This message is older than the recent messages shown here.");
       return;
     }
+    followingLatestRef.current = false;
     element.scrollIntoView({ block: "center", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
     element.focus({ preventScroll: true });
     element.dataset.pinHighlight = "true";
     window.setTimeout(() => { delete element.dataset.pinHighlight; }, 1800);
-  }
+  }, []);
 
-  const visibleMessages = [...messages, ...pendingMessages];
+  // Another person's message whose only attachment failed has nothing to
+  // show. The sender still sees it, so they know to try again.
+  const visibleMessages = useMemo(
+    () => [...messages, ...pendingMessages].filter(
+      (m) => m.isMine || m.status !== "failed" || Boolean(m.content) || m.attachments.length > 0,
+    ),
+    [messages, pendingMessages],
+  );
 
   function discardVoiceDraft() {
     if (!voiceDraft) return;
-    URL.revokeObjectURL(voiceDraft.url);
     setVoiceDraft(null);
   }
 
   function acceptVoiceDraft(nextDraft: VoiceDraft) {
-    if (voiceDraft) URL.revokeObjectURL(voiceDraft.url);
     setVoiceDraft(nextDraft);
   }
 
@@ -675,6 +770,15 @@ export function ChatThread({
     const accepted = files.filter(file => {
       if (isChatVideo(file) && file.size > CHAT_VIDEO_INPUT_BYTES) {
         toast.error(`${file.name}: Choose a video under 500 MB, shorten it, or share a link.`);
+        return false;
+      }
+      // Videos are made smaller before upload, so their size is checked above.
+      // Refuse other files the server will not store now, before a message
+      // exists: a refused file must not leave an empty failed message or stay
+      // in the composer and fail the next message too.
+      const refused = isChatVideo(file) ? null : validateUpload(uploadContentType(file), file.size);
+      if (refused) {
+        toast.error(`${file.name}: ${refused}`);
         return false;
       }
       return true;
@@ -696,9 +800,148 @@ export function ChatThread({
       ? "Share a status note, decision, or file for the project team."
       : "Share an update, decision, or file with the team.";
 
-  return (
+  // Draft keystrokes must not reformat dates, parse links/mentions, or render
+  // the history's menus and attachments. Keep the transcript element tree
+  // until its data or available actions actually change.
+  const messageRows = useMemo(() => (
+    visibleMessages.map((m, index) => (
+      <MessageScrollerItem
+        key={m.id}
+        data-message-id={m.id}
+        tabIndex={-1}
+        className={cn(
+          "rounded-xl transition-colors duration-500 motion-reduce:transition-none data-[pin-highlight=true]:bg-primary/10",
+          continuesMessageGroup(visibleMessages[index - 1], m, timeZone) ? "pt-1" : "pt-3",
+          m.id.startsWith("pending-") && "optimistic-item-in"
+        )}
+      >
+        {(!visibleMessages[index - 1] || conversationDay(visibleMessages[index - 1].createdAt, timeZone) !== conversationDay(m.createdAt, timeZone)) ? (
+          <p className="mb-3 pt-1 text-center text-[11px] leading-4 text-muted-foreground"><time dateTime={m.createdAt}>{new Date(m.createdAt).toLocaleDateString("en", { timeZone, dateStyle: "medium" })}</time></p>
+        ) : null}
+        <MessageRow
+          m={m}
+          isOwn={m.userId === currentUserId}
+          members={members}
+          currentUserId={currentUserId}
+          pin={pins.pinFor(m.id)}
+          pinPending={pins.isPending(m.id)}
+          // This callback runs on a reaction gesture, never during render.
+          // eslint-disable-next-line react-hooks/refs
+          onReact={(emoji) => reactTo(m.id, emoji)}
+          // Deferred message actions read their guards only after a gesture.
+          // eslint-disable-next-line react-hooks/refs
+          onDelete={() => removeMessage(m.id)}
+          // eslint-disable-next-line react-hooks/refs
+          onEdit={() => beginEdit(m)}
+          editDisabled={editing !== null || sending || recordingVoice || savingEdits.has(m.id)}
+          editPending={savingEdits.has(m.id)}
+          onTogglePin={() => togglePin(m)}
+          onReply={() => startReply(m)}
+          onShowOriginal={showOriginal}
+          replyDisabled={conversationLoading || sending || recordingVoice || editing !== null}
+          showAuthor={!direct && !continuesMessageGroup(visibleMessages[index - 1], m, timeZone)}
+          showTime={!continuesMessageGroup(m, visibleMessages[index + 1] ?? { userId: null, createdAt: m.createdAt }, timeZone)}
+          direct={direct}
+          channelMentions={channelMentions}
+          timeZone={timeZone}
+          reactionPending={reacting.has(m.id)}
+          frequentEmojis={frequentEmojis}
+          // The chat opens at the newest message, so that is the first one painted.
+          timingId={index === visibleMessages.length - 1 ? "chat-messages" : undefined}
+        />
+      </MessageScrollerItem>
+    ))
+  ), [visibleMessages, timeZone, currentUserId, members, pins, reactTo,
+    removeMessage, beginEdit, editing, sending, recordingVoice, savingEdits,
+    togglePin, startReply, showOriginal, conversationLoading, direct,
+    channelMentions, reacting, frequentEmojis]);
+
+  // Keep the scroll controller, observers, and viewport out of draft updates,
+  // as well as the message rows. The input is a sibling of this stable tree.
+  const transcript = useMemo(() => (
     <MessageScrollerProvider>
-      <section
+      <MessageScroller className="flex-1">
+        <MessageScrollerViewport
+          ref={scrollRef}
+          onScroll={handleThreadScroll}
+          onWheel={(event) => { if (event.deltaY < 0) followingLatestRef.current = false; }}
+          onTouchStart={(event) => { touchYRef.current = event.touches.length === 1 ? event.touches[0].clientY : null; }}
+          onTouchMove={(event) => {
+            const y = event.touches.length === 1 ? event.touches[0].clientY : null;
+            if (y !== null && touchYRef.current !== null && y > touchYRef.current) followingLatestRef.current = false;
+            touchYRef.current = y;
+          }}
+          onTouchEnd={() => { touchYRef.current = null; }}
+          onKeyDown={(event) => {
+            if (event.defaultPrevented || (event.target as Element).closest("input,textarea,select,audio,video,[contenteditable=true],[role=menu]")) return;
+            if (["ArrowUp", "PageUp", "Home"].includes(event.key) || (event.key === " " && event.shiftKey)) followingLatestRef.current = false;
+          }}
+          onPointerDown={(event) => {
+            // A scrollbar drag is another deliberate history-reading gesture.
+            if (event.target !== event.currentTarget) return;
+            const viewport = event.currentTarget;
+            const gutter = viewport.offsetWidth - viewport.clientWidth;
+            if (gutter <= 0) return;
+            const bounds = viewport.getBoundingClientRect();
+            if (event.clientX >= bounds.right - gutter || event.clientX <= bounds.left + gutter) followingLatestRef.current = false;
+          }}
+          onFocusCapture={(event) => {
+            // Quote/pin navigation focuses the message row, not a child control.
+            if (event.target.hasAttribute("data-message-id")) followingLatestRef.current = false;
+          }}
+          aria-hidden={conversationLoading}
+          inert={conversationLoading}
+          className={cn(
+            // Padding grows with the card so messages keep a readable 64rem measure.
+            "p-3 transition-opacity duration-150 md:py-5 md:pl-[max(1.25rem,calc((100%-64rem)/2))] md:pr-[max(1.25rem,calc((100%-64rem)/2))]",
+            conversationLoading && "opacity-0"
+          )}
+        >
+          <MessageScrollerContent
+            ref={contentRef}
+            className={cn("gap-0", fillAvailable && "max-lg:justify-end")}
+          >
+            <Marker
+              variant="separator"
+              className={cn(
+                "text-[0.7rem] font-semibold uppercase tracking-[0.18em]",
+                fillAvailable && "max-lg:hidden"
+              )}
+            >
+              <MarkerContent>{contextLabel ?? resolvedContextLabel}</MarkerContent>
+            </Marker>
+
+            {visibleMessages.length === 0 ? (
+              <Marker className="mx-auto my-auto w-full max-w-sm flex-col items-center justify-center px-5 py-8 text-center md:px-6 md:py-10">
+                <MarkerIcon className="size-10 rounded-xl bg-primary/12 p-2 text-primary">
+                  <Send className="size-5" />
+                </MarkerIcon>
+                <MarkerContent className="mt-3 space-y-1">
+                  <span {...elementTiming("chat-messages")} className="block font-heading text-lg font-semibold text-foreground">
+                    Start the thread
+                  </span>
+                  <span className="block text-sm text-muted-foreground">
+                    {emptyDescription ?? resolvedEmptyDescription}
+                  </span>
+                </MarkerContent>
+              </Marker>
+            ) : (
+              messageRows
+            )}
+          </MessageScrollerContent>
+        </MessageScrollerViewport>
+        {!conversationLoading ? (
+          <MessageScrollerButton direction="end" className="bottom-3" onClick={() => { followingLatestRef.current = true; }} />
+        ) : null}
+        {conversationLoading ? <ConversationLoadingState /> : null}
+      </MessageScroller>
+    </MessageScrollerProvider>
+  ), [conversationLoading, handleThreadScroll, fillAvailable, contextLabel,
+    resolvedContextLabel, visibleMessages.length, emptyDescription,
+    resolvedEmptyDescription, messageRows]);
+
+  return (
+    <section
         aria-busy={conversationLoading}
         data-chat-thread
         onDragEnter={(event) => {
@@ -742,98 +985,7 @@ export function ChatThread({
             </p>
           </div>
         ) : null}
-        <MessageScroller className="flex-1">
-          <MessageScrollerViewport
-            ref={scrollRef}
-            onScroll={handleThreadScroll}
-            aria-hidden={conversationLoading}
-            inert={conversationLoading}
-            className={cn(
-              // Padding grows with the card so messages keep a readable 64rem measure.
-              "p-3 transition-opacity duration-150 md:py-5 md:pl-[max(1.25rem,calc((100%-64rem)/2))] md:pr-[max(1.25rem,calc((100%-64rem)/2))]",
-              conversationLoading && "opacity-0"
-            )}
-          >
-            <MessageScrollerContent
-              className={cn("gap-0", fillAvailable && "max-lg:justify-end")}
-            >
-              <Marker
-                variant="separator"
-                className={cn(
-                  "text-[0.7rem] font-semibold uppercase tracking-[0.18em]",
-                  fillAvailable && "max-lg:hidden"
-                )}
-              >
-                <MarkerContent>{contextLabel ?? resolvedContextLabel}</MarkerContent>
-              </Marker>
-
-              {visibleMessages.length === 0 ? (
-                <Marker className="mx-auto my-auto w-full max-w-sm flex-col items-center justify-center px-5 py-8 text-center md:px-6 md:py-10">
-                  <MarkerIcon className="size-10 rounded-xl bg-primary/12 p-2 text-primary">
-                    <Send className="size-5" />
-                  </MarkerIcon>
-                  <MarkerContent className="mt-3 space-y-1">
-                    <span className="block font-heading text-lg font-semibold text-foreground">
-                      Start the thread
-                    </span>
-                    <span className="block text-sm text-muted-foreground">
-                      {emptyDescription ?? resolvedEmptyDescription}
-                    </span>
-                  </MarkerContent>
-                </Marker>
-              ) : (
-                visibleMessages.map((m, index) => (
-                  <MessageScrollerItem
-                    key={m.id}
-                    data-message-id={m.id}
-                    tabIndex={-1}
-                    className={cn(
-                      "rounded-xl transition-colors duration-500 motion-reduce:transition-none data-[pin-highlight=true]:bg-primary/10",
-                      continuesMessageGroup(visibleMessages[index - 1], m, timeZone) ? "pt-1" : "pt-3",
-                      m.id.startsWith("pending-") && "optimistic-item-in"
-                    )}
-                  >
-                    {(!visibleMessages[index - 1] || conversationDay(visibleMessages[index - 1].createdAt, timeZone) !== conversationDay(m.createdAt, timeZone)) ? (
-                      <p className="mb-3 pt-1 text-center text-[11px] leading-4 text-muted-foreground"><time dateTime={m.createdAt}>{new Date(m.createdAt).toLocaleDateString("en", { timeZone, dateStyle: "medium" })}</time></p>
-                    ) : null}
-                    <MessageRow
-                      m={m}
-                      isOwn={m.userId === currentUserId}
-                      members={members}
-                      currentUserId={currentUserId}
-                      pin={pins.pinFor(m.id)}
-                      pinPending={pins.isPending(m.id)}
-                      // This callback runs on a reaction gesture, never during render.
-                      // eslint-disable-next-line react-hooks/refs
-                      onReact={(emoji) => reactTo(m.id, emoji)}
-                      // Deferred message actions read their guards only after a gesture.
-                      // eslint-disable-next-line react-hooks/refs
-                      onDelete={() => removeMessage(m.id)}
-                      // eslint-disable-next-line react-hooks/refs
-                      onEdit={() => beginEdit(m)}
-                      editDisabled={editing !== null || sending || recordingVoice || savingEdits.has(m.id)}
-                      editPending={savingEdits.has(m.id)}
-                      onTogglePin={() => togglePin(m)}
-                      onReply={() => startReply(m)}
-                      onShowOriginal={showOriginal}
-                      replyDisabled={conversationLoading || sending || recordingVoice || editing !== null}
-                      showAuthor={!direct && !continuesMessageGroup(visibleMessages[index - 1], m, timeZone)}
-                      showTime={!continuesMessageGroup(m, visibleMessages[index + 1] ?? { userId: null, createdAt: m.createdAt }, timeZone)}
-                      direct={direct}
-                      timeZone={timeZone}
-                      reactionPending={reacting.has(m.id)}
-                      frequentEmojis={frequentEmojis}
-                    />
-                  </MessageScrollerItem>
-                ))
-              )}
-            </MessageScrollerContent>
-          </MessageScrollerViewport>
-          {!conversationLoading ? (
-            <MessageScrollerButton direction="end" className="bottom-3" />
-          ) : null}
-          {conversationLoading ? <ConversationLoadingState /> : null}
-        </MessageScroller>
+        {transcript}
 
         {replyTarget && !editing ? (
           <div className="flex shrink-0 items-center gap-2 border-t bg-muted/40 px-3 py-2" data-reply-composer>
@@ -894,6 +1046,11 @@ export function ChatThread({
             {sendError} Your draft is restored.
           </p>
         ) : null}
+        {channelMentions && !editing && hasChannelMention(input, members) ? (
+          <p role="status" className="shrink-0 border-t bg-primary/5 px-3 py-2 text-xs text-foreground lg:px-4">
+            <strong>@channel</strong> notifies everyone in this channel. Use it for important updates.
+          </p>
+        ) : null}
         {editing ? <MessageEditor draft={editing} members={members}
           onChange={text => setEditing(current => current ? { ...current, text, error: undefined } : current)}
           onCancel={cancelEdit} onSave={saveEdit} /> : <div
@@ -937,6 +1094,7 @@ export function ChatThread({
                   setSendError(null);
                 }}
                 members={members}
+                channelMentions={channelMentions}
                 onPaste={(event) => {
                   if (attachmentsDisabled) return;
                   const images = clipboardImageFiles(event.clipboardData);
@@ -979,8 +1137,7 @@ export function ChatThread({
             </>
           ) : null}
         </div>}
-      </section>
-    </MessageScrollerProvider>
+    </section>
   );
 }
 
@@ -1043,7 +1200,7 @@ function DraftFileAttachment({
 function ConversationLoadingState() {
   return (
     <div
-      className="absolute inset-0 z-10 flex items-center justify-center bg-card/82 backdrop-blur-[1px]"
+      className="absolute inset-0 z-10 flex items-center justify-center bg-card/82 backdrop-blur-[1px] low-power:backdrop-filter-none"
       role="status"
       aria-live="polite"
       aria-label="Loading messages"
@@ -1077,14 +1234,18 @@ function MessageRow({
   showAuthor,
   showTime,
   direct,
+  channelMentions,
   timeZone,
   reactionPending,
   frequentEmojis,
   onEdit,
   editDisabled,
   editPending,
+  timingId,
 }: {
   m: ChatMessageView;
+  /** Element Timing name for useful-work measurement (see use-useful-work). */
+  timingId?: string;
   isOwn: boolean;
   members: MentionTarget[];
   currentUserId: string;
@@ -1099,6 +1260,7 @@ function MessageRow({
   showAuthor: boolean;
   showTime: boolean;
   direct: boolean;
+  channelMentions: boolean;
   timeZone?: string;
   reactionPending: boolean;
   frequentEmojis: string[];
@@ -1106,9 +1268,9 @@ function MessageRow({
   editDisabled: boolean;
   editPending: boolean;
 }) {
-  const firstImageId = m.attachments.find((attachment) =>
-    attachment.mimeType.startsWith("image/")
-  )?.attachmentId;
+  const previewUrl = m.content ? firstMessageLink(m.content) : null;
+  const hasImages = m.attachments.some((attachment) => attachment.mimeType.startsWith("image/"));
+  const otherAttachments = m.attachments.filter((attachment) => !attachment.mimeType.startsWith("image/"));
   const initials = (m.authorName ?? "?")
     .split(" ")
     .map((s) => s[0])
@@ -1142,7 +1304,7 @@ function MessageRow({
               <img src={photo} alt="" className="size-full object-cover" />
             ) : initials}
           </MessageAvatar> : null}
-          {m.content || m.replyTo ? (
+          {m.content || m.replyTo || hasImages ? (
             <Bubble
               variant={isOwn ? "default" : "secondary"}
               align={isOwn ? "end" : "start"}
@@ -1151,58 +1313,64 @@ function MessageRow({
               <BubbleContent
                 className={cn(
                   "min-h-11 whitespace-pre-wrap py-2.5 text-[15px] leading-relaxed lg:text-sm",
+                  hasImages && "w-min p-1 whitespace-normal",
                   isOwn
                     ? "conversation-own-bubble bg-primary text-primary-foreground"
                     : "conversation-incoming-bubble text-foreground"
                 )}
               >
-              {m.replyTo ? (
-                <button
-                  type="button"
-                  disabled={m.replyTo.unavailable}
-                  onClick={() => onShowOriginal(m.replyTo!.messageId)}
-                  aria-label={m.replyTo.unavailable ? "Original message unavailable" : `View original message from ${m.replyTo.authorName ?? "Teammate"}`}
-                  className={cn("flex min-h-11 w-full min-w-0 items-start gap-2 rounded-md px-2.5 py-2 text-left whitespace-normal transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current disabled:cursor-default motion-reduce:transition-none", m.content && "mb-2", isOwn ? "bg-black/15 hover:bg-black/20" : "bg-muted hover:bg-muted/80")}
-                >
-                  <Reply aria-hidden className="mt-0.5 size-3.5 shrink-0" />
-                  <span className="min-w-0 flex-1">
-                    {!m.replyTo.unavailable ? <span className="block truncate text-xs font-semibold">{m.replyTo.authorName ?? "Teammate"}</span> : null}
-                    <span className="line-clamp-2 text-xs leading-relaxed [overflow-wrap:anywhere]">{m.replyTo.preview}</span>
-                  </span>
-                </button>
-              ) : null}
-                {m.content ? <MentionText
-                  text={m.content}
-                  members={members}
-                  currentUserId={currentUserId}
-                  tone={isOwn ? "onPrimary" : "default"}
-                  className="conversation-mention"
-                /> : null}
+                {hasImages ? <ChatImageGallery attachments={m.attachments} /> : null}
+                {m.content || m.replyTo ? (
+                  <div {...(timingId ? elementTiming(timingId) : undefined)} className={hasImages ? "px-2 py-1.5 whitespace-pre-wrap" : undefined}>
+                    {m.replyTo ? (
+                      <button
+                        type="button"
+                        disabled={m.replyTo.unavailable}
+                        onClick={() => onShowOriginal(m.replyTo!.messageId)}
+                        aria-label={m.replyTo.unavailable ? "Original message unavailable" : `View original message from ${m.replyTo.authorName ?? "Teammate"}`}
+                        className={cn("flex min-h-11 w-full min-w-0 items-start gap-2 rounded-md px-2.5 py-2 text-left whitespace-normal transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current disabled:cursor-default motion-reduce:transition-none", m.content && "mb-2", isOwn ? "bg-black/15 hover:bg-black/20" : "bg-muted hover:bg-muted/80")}
+                      >
+                        <Reply aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+                        <span className="min-w-0 flex-1">
+                          {!m.replyTo.unavailable ? <span className="block truncate text-xs font-semibold">{m.replyTo.authorName ?? "Teammate"}</span> : null}
+                          <span className="line-clamp-2 text-xs leading-relaxed [overflow-wrap:anywhere]">{m.replyTo.preview}</span>
+                        </span>
+                      </button>
+                    ) : null}
+                    {m.content ? <MessageText
+                      text={m.content}
+                      members={members}
+                      currentUserId={currentUserId}
+                      tone={isOwn ? "onPrimary" : "default"}
+                      className="conversation-mention"
+                      channelMentions={channelMentions}
+                    /> : null}
+                    {previewUrl && m.status === "sent" && !editPending ? <MessageLinkPreview key={`${m.id}:${previewUrl}`} messageId={m.id} url={previewUrl} isOwn={isOwn} /> : null}
+                  </div>
+                ) : null}
               </BubbleContent>
 
             </Bubble>
           ) : null}
 
-          {m.attachments.length > 0 ? (
+          {otherAttachments.length > 0 ? (
             <AttachmentGroup
               className={cn(
                 "max-w-full flex-wrap gap-2 overflow-visible py-0",
                 isOwn ? "justify-end" : "justify-start"
               )}
             >
-              {m.attachments.map((a) => (
+              {otherAttachments.map((a) => (
                 a.mimeType.startsWith("audio/") && a.label === "voice" ? (
                   <VoiceMessagePlayer
                     key={a.attachmentId}
+                    id={a.attachmentId}
                     src={`/api/files/${a.fileId}/download?inline=1`}
                     isOwn={isOwn}
+                    metadata={a.audioMetadata}
                   />
                 ) : a.mimeType.startsWith("video/") ? (
                   <ChatVideoPlayer key={a.attachmentId} fileId={a.fileId} name={a.originalName} sizeBytes={a.sizeBytes} />
-                ) : a.mimeType.startsWith("image/") ? (
-                  a.attachmentId === firstImageId ? (
-                    <ChatImageGallery key={a.attachmentId} attachments={m.attachments} />
-                  ) : null
                 ) : (
                 <Attachment
                   key={a.attachmentId}
@@ -1236,9 +1404,10 @@ function MessageRow({
         </MessageActions>
 
         <MessageReactions reactions={m.reactions} isOwn={isOwn} pending={reactionPending} onReact={onReact} />
-        {showTime || m.editedAt ? <div className={cn("flex items-center gap-1.5 px-1 text-[11px] tabular-nums text-muted-foreground", isOwn && "self-end")}>
-          <time dateTime={m.createdAt}>{timeLabel(m.createdAt, timeZone)}</time>
+        {showTime || m.editedAt || (isOwn && m.status === "sent") ? <div className={cn("flex flex-wrap items-center gap-1.5 px-1 text-[11px] tabular-nums text-muted-foreground", isOwn && "self-end justify-end")}>
+          {showTime || m.editedAt ? <time dateTime={m.createdAt}>{timeLabel(m.createdAt, timeZone)}</time> : null}
           {m.editedAt ? <span title={`Edited ${new Date(m.editedAt).toLocaleString("en", { timeZone })}`}>Edited</span> : null}
+          <MessageReceipt message={m} direct={direct} />
         </div> : null}
 
       </MessageContent>

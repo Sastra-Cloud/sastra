@@ -128,7 +128,7 @@ export const workspaceSettings = pgTable("workspace_settings", {
   registrationNumber: text("registration_number"),
   taxId: text("tax_id"),
   paymentInstructions: text("payment_instructions"),
-  invoicePaymentDetails: jsonb("invoice_payment_details").$type<{ issuerName?: string; logoFileId?: string | null; title: string; fields: Array<{ label: string; value: string }> }>(),
+  invoicePaymentDetails: jsonb("invoice_payment_details").$type<{ issuerName?: string; logoFileId?: string | null; colors?: { accentColor: string; tableHeaderColor: string }; title: string; fields: Array<{ label: string; value: string }> }>(),
   preparedByNote: text("prepared_by_note"),
   workDays: integer("work_days")
     .array()

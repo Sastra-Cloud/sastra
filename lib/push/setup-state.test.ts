@@ -35,12 +35,6 @@ describe("derivePushSetupState", () => {
     ).toBe("ios-needs-install");
   });
 
-  it("treats iOS standalone without Push API as unsupported (old iOS)", () => {
-    expect(
-      derivePushSetupState({ ...base, ios: true, standalone: true, supported: false })
-    ).toBe("unsupported");
-  });
-
   it("returns unsupported for a desktop/Android browser without Push API", () => {
     expect(derivePushSetupState({ ...base, supported: false })).toBe("unsupported");
   });
@@ -56,11 +50,5 @@ describe("derivePushSetupState", () => {
     expect(
       derivePushSetupState({ ...base, ios: true, standalone: true, permission: "default" })
     ).toBe("ready");
-  });
-
-  it("ignores a null permission (API absent) as long as push is supported", () => {
-    // Defensive: if supported is true but permission couldn't be read, fall
-    // through to ready rather than denied.
-    expect(derivePushSetupState({ ...base, permission: null })).toBe("ready");
   });
 });

@@ -105,6 +105,20 @@ describe("attachment target authorization", () => {
     expect(mocks.values).toHaveBeenCalledWith({ fileId, targetType: "rights_item", targetId, label: "supporting" });
   });
 
+  it("persists bounded voice metadata only on an owned recording in an accessible conversation", async () => {
+    mocks.messageAccess.mockResolvedValue(true);
+    rows([{ id: fileId, uploadedBy: member.id, purpose: "workspace_attachment", status: "pending", mimeType: "audio/webm;codecs=opus", r2Key: "fixture/voice", sizeBytes: 100 }]);
+    mocks.head.mockResolvedValue({ contentType: "audio/webm;codecs=opus", size: 100 });
+    const set = vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) }));
+    mocks.update.mockReturnValue({ set });
+    const audioMetadata = { durationMs: 1400, peaks: Array(34).fill(0.5) };
+    expect((await POST(request({ targetType: "message", targetId, label: "voice", audioMetadata }))).status).toBe(200);
+    expect(set).toHaveBeenCalledWith(expect.objectContaining({ status: "ready", audioMetadata }));
+    mocks.head.mockClear();
+    expect((await POST(request({ targetType: "message", targetId, label: "voice", audioMetadata: { ...audioMetadata, peaks: [Infinity] } }))).status).toBe(400);
+    expect(mocks.head).not.toHaveBeenCalled();
+  });
+
   it("completes project uploads for scoped managers and rejects uploads after revocation", async () => {
     mocks.grants.add(`${targetId}:${member.id}`);
     expect((await POST(request({ targetType: "project", targetId }))).status).toBe(200);

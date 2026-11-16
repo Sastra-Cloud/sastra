@@ -1,6 +1,4 @@
-import { WorkspaceBrandingCard } from "@/components/settings/workspace-branding-card";
 import { WorkspaceSettingsForm } from "@/components/settings/workspace-settings-form";
-import { InvoiceSequenceCard } from "@/components/settings/invoice-sequence-card";
 import { HostedPlanCard } from "@/components/settings/hosted-plan-card";
 import { requireRole } from "@/lib/auth/guards";
 import { seatUsage } from "@/lib/hosted/entitlements";
@@ -36,18 +34,7 @@ export default async function WorkspaceSettingsPage() {
           accountUrl={hostedAccountUrl()}
         /></div>
       ) : null}
-      <div className="max-w-5xl"><WorkspaceBrandingCard
-        settings={{
-          logoFileId: workspace.logoFileId,
-          accentColor: workspace.accentColor,
-          orgName: workspace.orgName,
-          orgAliases: workspace.orgAliases,
-          internalEmailDomains: workspace.internalEmailDomains,
-          preparedByNote: workspace.preparedByNote,
-        }}
-      /></div>
-      <WorkspaceSettingsForm settings={workspace} />
-      <div className="max-w-5xl"><InvoiceSequenceCard sequence={invoiceSequence} /></div>
+      <WorkspaceSettingsForm settings={workspace} sequence={invoiceSequence} />
     </div>
   );
 }

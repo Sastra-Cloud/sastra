@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import {
   CalendarDays,
   Check,
@@ -19,13 +20,14 @@ import {
   Square,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { MotionProvider } from "@/components/motion/motion-provider";
 import { toast } from "sonner";
 
 import type { AgendaItem } from "@/lib/agenda/bucket";
 import { bucketAgenda } from "@/lib/agenda/bucket";
 import type { MyWorkTaskRow } from "@/lib/tasks/queries";
 import type { ActiveTimer } from "@/lib/tasks/time-queries";
-import { printPaymentFollowUp, selectPersonalWork } from "@/lib/tasks/attention";
+import { previewAttentionTasks, printPaymentFollowUp, selectPersonalWork } from "@/lib/tasks/attention";
 import { isSourceControlledTask, taskSourceLink } from "@/lib/tasks/task-source";
 import {
   isCompletedOn,
@@ -40,7 +42,7 @@ import { startTimer, stopTimer } from "@/lib/tasks/time-actions";
 import { AgendaRow } from "@/components/agenda/agenda-view";
 import { PriorityBadge, TASK_STATUS, TASK_STATUS_ORDER } from "@/components/badges";
 import { CreateTaskDialog } from "@/components/tasks/create-task-dialog";
-import { PersonalTaskBoard } from "@/components/tasks/personal-task-board";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TaskCompleteButton } from "@/components/tasks/task-complete-button";
 import { TaskDetailDialog } from "@/components/tasks/task-detail-dialog";
 import { TaskAttachmentShortcut } from "@/components/tasks/task-attachment-shortcut";
@@ -72,9 +74,20 @@ import {
   TaskSearchResults,
   useOtherTaskSearch,
 } from "@/components/tasks/task-search";
+import type { TaskSearchScope } from "@/lib/tasks/search";
 import { useNavigationBadgeAdjustment, useNavigationBadges } from "@/components/navigation-badges-provider";
 import { countDueWorkTasks, selectDueWorkTasks } from "@/lib/navigation/badges";
 import { MyWorkAttentionSummary } from "@/components/tasks/my-work-attention-summary";
+import { TaskPinButton } from "./pinned-tasks-provider";
+
+const PersonalTaskBoard = dynamic(
+  () => import("@/components/tasks/personal-task-board").then(module => module.PersonalTaskBoard),
+  { loading: () => <div role="status" aria-label="Loading board" aria-busy="true"><Skeleton className="h-72 w-full rounded-xl" /></div> },
+);
+
+function warmBoard() {
+  void import("@/components/tasks/personal-task-board").catch(() => {});
+}
 
 // House ease + spring for list reflow when a completed row leaves.
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -166,6 +179,8 @@ export function MyWorkHub({
   const [pending, startTransition] = useTransition();
   const [tasks, setTasks] = usePropState(initialTasks);
   const [searchQuery, setSearchQuery] = useState("");
+  // Kept while the page is open; a new visit starts with all tasks again.
+  const [searchScope, setSearchScope] = useState<TaskSearchScope>("all");
   const searching = searchQuery.trim().length > 0;
   const otherTasks = useOtherTaskSearch(searchQuery, initialTasks);
   useNavigationBadgeAdjustment("dueTasks",
@@ -381,6 +396,9 @@ export function MyWorkHub({
                 key={item.value}
                 type="button"
                 onClick={() => changeView(item.value)}
+                onPointerEnter={item.value === "board" ? warmBoard : undefined}
+                onFocus={item.value === "board" ? warmBoard : undefined}
+                onTouchStart={item.value === "board" ? warmBoard : undefined}
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex min-h-10 items-center justify-center gap-2 rounded-md px-3 text-sm font-medium transition-[background-color,color,box-shadow]",
@@ -399,6 +417,7 @@ export function MyWorkHub({
           <TaskSearchField
             value={searchQuery}
             onValueChange={setSearchQuery}
+            scope={searchScope}
             className="min-w-0 flex-1 md:max-w-sm"
           />
           <CreateTaskDialog
@@ -431,6 +450,8 @@ export function MyWorkHub({
       {searching ? (
         <TaskSearchResults
           query={searchQuery}
+          scope={searchScope}
+          onScopeChange={setSearchScope}
           tasks={tasks}
           other={otherTasks}
           todayIso={todayIso}
@@ -579,11 +600,11 @@ function FocusView({
   const [showLater, setShowLater] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
   const [showAllAttention, setShowAllAttention] = useState(false);
-  const runningSeconds = useLiveElapsed(activeTimer?.startedAt ?? null);
   const open = tasks.filter(task => task.status !== "done");
   const dueWork = selectDueWorkTasks(open, currentUserId, todayIso, timeZone);
   const overdue = dueWork.filter(task => (printPaymentFollowUp(task, todayIso, timeZone)?.date ?? task.dueDate)! < todayIso);
   const { dueToday, remainingDueToday, nextUp, selectedCount, blockedNextUp, fromTeammates, working, waiting, attention, later } = selectPersonalWork(open, todayIso, timeZone);
+  const attentionPreview = previewAttentionTasks(attention, todayIso, timeZone);
   const hasSecondary = hasEmailContent || waiting.length > 0 || later.length > 0 || completedToday.length > 0;
 
   return (
@@ -591,7 +612,7 @@ function FocusView({
       {activeTimer ? (
         <div className="flex flex-col gap-3 rounded-xl border border-success/30 bg-success/8 px-4 py-3 sm:flex-row sm:items-center">
           <span className="relative flex size-3 shrink-0" aria-hidden>
-            <span className="absolute inline-flex size-full animate-ping motion-reduce:animate-none rounded-full bg-success opacity-60" />
+            <span className="absolute inline-flex size-full animate-ping motion-reduce:animate-none low-power:animate-none rounded-full bg-success opacity-60" />
             <span className="relative inline-flex size-3 rounded-full bg-success" />
           </span>
           <div className="min-w-0 flex-1">
@@ -599,7 +620,7 @@ function FocusView({
             <p className="truncate text-sm font-semibold">{activeTimer.taskTitle}</p>
           </div>
           <span className="self-start rounded-full bg-background/70 px-2.5 py-1 font-mono text-sm font-semibold tabular-nums sm:self-auto">
-            {formatClock(runningSeconds)}
+            <LiveElapsedClock startedAt={activeTimer.startedAt} />
           </span>
           <Button
             type="button"
@@ -654,10 +675,10 @@ function FocusView({
                 tasks={working} todayIso={todayIso} timeZone={timeZone} pending={pending}
                 activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} onConfirmPayment={onConfirmPayment} /> : null}
               <FocusSection title="Other assigned work" description="Overdue work, payment follow-ups, upcoming tasks, and undated work"
-                tasks={showAllAttention ? attention : attention.slice(0, 5)} totalCount={attention.length}
+                tasks={showAllAttention ? attention : attentionPreview} totalCount={attention.length}
                 todayIso={todayIso} timeZone={timeZone} pending={pending}
                 activeTimerTaskId={activeTimer?.taskId ?? null} onOpen={onOpen} onStatus={onStatus} onTimer={onTimer} onConfirmPayment={onConfirmPayment} emptyTitle="No other work needs attention right now" />
-              {attention.length > 5 ? <Button variant="ghost" onClick={() => setShowAllAttention(value => !value)}>
+              {attention.length > attentionPreview.length ? <Button variant="ghost" onClick={() => setShowAllAttention(value => !value)}>
                 {showAllAttention ? "Show fewer tasks" : `Show all ${attention.length} tasks`}
               </Button> : null}
             </>}
@@ -799,6 +820,7 @@ function FocusTaskList({
 }) {
   return (
     <ul className="@container/tasklist divide-y overflow-hidden rounded-xl border bg-card" aria-busy={pending}>
+      <MotionProvider>
       <AnimatePresence initial={false}>
         {tasks.map((task) => {
         const followUp = printPaymentFollowUp(task, todayIso, timeZone);
@@ -840,7 +862,7 @@ function FocusTaskList({
                 onClick={() => onOpen(task)}
                 disabled={task.id.startsWith("optimistic-task-")}
                 className={cn(
-                  "line-clamp-2 text-left text-sm font-semibold hover:underline sm:block sm:truncate",
+                  "line-clamp-2 max-w-full text-left text-sm font-semibold hover:underline sm:block sm:truncate",
                   done && "text-muted-foreground line-through"
                 )}
               >
@@ -874,6 +896,7 @@ function FocusTaskList({
               <p className={cn("mt-1 text-xs @[40rem]/tasklist:hidden", due.tone === "overdue" ? "font-medium text-destructive" : due.tone === "soon" ? "font-medium text-warning-text" : "text-muted-foreground")}>{due.tone === "none" ? "No due date" : due.text}</p>
             </div>
             <div className={cn("flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center", canConfirmPayment && "w-full flex-row justify-end @[40rem]/tasklist:w-auto")}>
+              <TaskPinButton task={task} />
               <div className="hidden items-center gap-2 @[40rem]/tasklist:flex">
                 <span
                   className={cn(
@@ -929,18 +952,22 @@ function FocusTaskList({
         );
         })}
       </AnimatePresence>
+      </MotionProvider>
     </ul>
   );
 }
 
-function useLiveElapsed(startedAt: string | null) {
+/**
+ * The running timer's clock. It owns the once-a-second tick so the task lists
+ * around it do not re-render every second while a timer runs.
+ */
+function LiveElapsedClock({ startedAt }: { startedAt: string }) {
   const [, setTick] = useState(0);
   useEffect(() => {
-    if (!startedAt) return;
     const id = window.setInterval(() => setTick((value) => value + 1), 1000);
     return () => window.clearInterval(id);
-  }, [startedAt]);
-  return startedAt ? elapsedSeconds(startedAt, new Date()) : 0;
+  }, []);
+  return <>{formatClock(elapsedSeconds(startedAt, new Date()))}</>;
 }
 
 function CollapsibleSection({
@@ -996,7 +1023,7 @@ function AgendaView({ items, todayIso }: { items: AgendaItem[]; todayIso: string
     { value: "all", label: "All", icon: CalendarDays },
     { value: "tasks", label: "My tasks", icon: ListChecks },
     { value: "deadlines", label: "Deadlines", icon: Flag },
-    { value: "rights", label: "Rights", icon: ShieldCheck },
+    { value: "rights", label: "Rights & MOUs", icon: ShieldCheck },
     { value: "finance", label: "Finance", icon: CircleDollarSign },
   ];
 

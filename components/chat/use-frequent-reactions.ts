@@ -1,23 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useSyncExternalStore } from "react";
 import { reactionSuggestions } from "@/lib/chat/reaction-suggestions";
+import { FrequentReactionsContext } from "./frequent-reactions-provider";
+
+const emptySnapshot = () => null;
+const emptySubscribe = () => () => {};
 
 export function useFrequentReactions(userId: string) {
-  const [usage, setUsage] = useState<{ userId: string; emojis: string[] } | null>(null);
-  const [revision, setRevision] = useState(0);
-  const refresh = useCallback(() => setRevision(value => value + 1), []);
+  const context = useContext(FrequentReactionsContext);
+  const cache = context?.userId === userId ? context : null;
+  const emojis = useSyncExternalStore(cache?.subscribe ?? emptySubscribe, cache?.getSnapshot ?? emptySnapshot, emptySnapshot);
+  const refresh = useCallback(() => { void cache?.load(true); }, [cache]);
   useEffect(() => {
-    const controller = new AbortController();
-    void fetch("/api/chat/reactions", { cache: "no-store", signal: controller.signal })
-      .then(async response => {
-        if (!response.ok) return;
-        const data = await response.json();
-        if (!controller.signal.aborted && Array.isArray(data.emojis)) {
-          setUsage({ userId, emojis: data.emojis.filter((item: unknown): item is string => typeof item === "string") });
-        }
-      }).catch(() => { /* Defaults remain available if the personal list cannot load. */ });
-    return () => controller.abort();
-  }, [userId, revision]);
-  return { emojis: reactionSuggestions(usage?.userId === userId ? usage.emojis : []), refresh };
+    void cache?.load();
+    const revalidate = () => { void cache?.load(); };
+    window.addEventListener("focus", revalidate);
+    window.addEventListener("online", revalidate);
+    return () => { window.removeEventListener("focus", revalidate); window.removeEventListener("online", revalidate); };
+  }, [cache]);
+  const suggestions = useMemo(() => reactionSuggestions(emojis ?? []), [emojis]);
+  return { emojis: suggestions, refresh };
 }

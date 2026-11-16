@@ -70,10 +70,44 @@ describe("last visited conversation", () => {
     // private membership must belong to this teammate; standups are separate.
     expect(query).toContain('inner join "chat_channels"');
     expect(query).toContain('"channel_reads"."user_id" = $2');
-    expect(query).toContain('(\"chat_channels\".\"kind\" in ($5, $6) and \"chat_channel_members\".\"user_id\" = $7)');
-    expect(params).toEqual([
-      "teammate", "teammate", "general", "project", "direct", "custom", "teammate", 1,
-    ]);
-    expect(query).toContain('order by "channel_reads"."updated_at" desc, "chat_channels"."id" asc limit $8');
+    expect(query).toContain('from "project_people"');
+    expect(query).toContain('"project_people"."project_id" = "chat_channels"."project_id"');
+    expect(query).toContain('"chat_channel_members"."user_id" =');
+    expect(params).toEqual(expect.arrayContaining(["teammate", "general", "project", "direct", "custom", "standup"]));
+    expect(query).toMatch(/order by "channel_reads"\."updated_at" desc, "chat_channels"\."id" asc limit/);
   });
+});
+
+// A false acknowledgement can make a sender assume a teammate has seen work.
+it("adds confirmed readers only through their saved cursor, with current membership enforced", async () => {
+  const first = "019a84a1-0000-7000-8000-000000000001";
+  const second = "019a84a1-0000-7000-8000-000000000002";
+  const third = "019a84a1-0000-7000-8000-000000000003";
+  mocks.execute.mockImplementation(async (query: string) => {
+    if (query.includes('from "channel_reads"')) return { rows: [
+      ["alex", "Alex", first], ["sam", "Sam", third],
+    ] };
+    if (query.includes('from "chat_messages"')) return { rows: [
+      [third, "me", "Sender", null, "New reply", null, "sent", "2026-11-11 12:02:00", null],
+      [second, "alex", "Alex", null, "Incoming", null, "sent", "2026-11-11 12:01:00", null],
+      [first, "me", "Sender", null, "First reply", null, "sent", "2026-11-11 12:00:00", null],
+    ] };
+    return { rows: [] };
+  });
+  const messages = await getRecentMessages("private-channel", "me");
+  expect(messages.map(message => message.seenBy)).toEqual([
+    [{ id: "alex", name: "Alex" }, { id: "sam", name: "Sam" }],
+    [],
+    [{ id: "sam", name: "Sam" }],
+  ]);
+  expect(mocks.requireChannelAccess).toHaveBeenCalledWith("private-channel", "me");
+  const [query, params] = mocks.execute.mock.calls.find(([query]) => query.includes('from "channel_reads"'))!;
+  // pg-proxy cannot enforce joins: this guards the privacy predicate only.
+  expect(query).toContain('"channel_reads"."channel_id" =');
+  expect(query).toContain('"channel_reads"."user_id" <>');
+  expect(query).toContain('"user"."is_active" =');
+  expect(query).toContain('from "project_people"');
+  expect(query).toContain('project_chat_person.id = "channel_reads"."user_id"');
+  expect(query).toContain('"chat_channel_members"."user_id" = "channel_reads"."user_id"');
+  expect(params).toEqual(expect.arrayContaining(["private-channel", "me", true, first, "project", "direct", "custom", "standup"]));
 });

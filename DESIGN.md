@@ -69,3 +69,28 @@ control or data surface.
 - Do not orchestrate page-load reveals or count recurring metrics up from zero.
   Content is visible before animation begins.
 - Respect `prefers-reduced-motion`; no feature may depend on animation.
+- Under reduced motion, movement and resizing apply at once while opacity and
+  color still fade. Reduced motion means gentler, not absent, feedback.
+- Navigation between routes does not animate its active indicator: the main
+  nav and route tabs use a static pill. A sliding indicator would run on the
+  main thread while the next screen renders. In-page tabs may still slide.
+- Use the shared curve as `ease-settle` (or `var(--motion-ease)` in CSS)
+  instead of retyping the cubic-bezier.
+
+## Slower devices
+
+- `lib/ui/device-tier.ts` sets `data-low-power` on `<html>` for devices with
+  little memory or few cores, and for people who ask for reduced transparency.
+- Every backdrop blur declares a plain fallback with the `low-power:` variant,
+  for example `low-power:bg-background low-power:backdrop-filter-none`.
+  Looping decorative animations add `low-power:animate-none`.
+- The variant only removes decoration. No feature may depend on it.
+- Animate `transform` and `opacity`. A value that ticks every second lives in
+  its own small component so the screen around it does not re-render.
+- Keep large libraries off screens that do not use them. Charts load their
+  drawing code on demand (`components/portfolio/charts`), and `MotionProvider`
+  wraps only the part of a screen that animates, never the root layout.
+- Measure before and after with `pnpm test:browser:performance` (4x CPU
+  slowdown). The React Compiler was trialled on 2026-11-14 and not adopted:
+  at most 11% less main-thread time on one interaction, for a bundling step
+  more than twice as long and about 3% more page JavaScript.

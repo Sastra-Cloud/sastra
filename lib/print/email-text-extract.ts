@@ -21,6 +21,7 @@ import {
   markJobSucceeded,
 } from "@/lib/print/extraction-jobs";
 import { normalizePrintQuoteExtract } from "@/lib/print/extract-schema";
+import { withQuoteSourceFlag } from "@/lib/print/estimate-intake";
 import type { ParsedPrinterQuote } from "@/lib/print/parser";
 import { quoteRevisionKey } from "@/lib/print/quote-reconciliation";
 import type { PrintExtractionSource, PrintReviewFlag } from "@/lib/print/review-flags";
@@ -121,6 +122,61 @@ async function insertQuotes(
   return { created, firstQuoteId };
 }
 
+/** Read and cross-check tiers without saving a print run, quote, or budget. */
+export async function extractTextQuoteSuggestions(input: {
+  bodyText: string;
+  projectId: string;
+  runId: string;
+  actorUserId: string | null;
+}): Promise<{ quotes: QuoteToInsert[]; usedAi: boolean; aiError: string | null }> {
+  const sourceText = input.bodyText.trim();
+  const regexQuotes = parsedTextQuotes(sourceText, { includeQuotedHistory: true });
+  // Manual intake is an explicit AI request and can use formats the pattern
+  // parser does not know. Automatic email extraction keeps its gate below.
+  if (!sourceText) return { quotes: [], usedAi: false, aiError: null };
+  const currencyStated = currencyStatedIn(sourceText);
+  let aiQuotes: ParsedPrinterQuote[] | null = null;
+  let aiError: string | null = null;
+  try {
+    aiQuotes = await aiExtractTextQuotes(sourceText, {
+      projectId: input.projectId,
+      runId: input.runId,
+      actorUserId: input.actorUserId,
+    });
+  } catch (err) {
+    aiError = extractionErrorMessage(err);
+  }
+
+  let toInsert: QuoteToInsert[];
+  const usedAi = !!(aiQuotes && aiQuotes.length);
+  if (usedAi) {
+    // Reconcile the AI tiers against the deterministic regex tiers: backfill any
+    // price the model dropped (a smushed "0.61per cpy") and re-add any tier it
+    // omitted entirely, so a priced tier is never lost. Recoveries are flagged.
+    toInsert = reconcileTextQuotes(aiQuotes!, regexQuotes, { currencyStated });
+  } else {
+    // AI failed or returned nothing → fall back to the pattern parser so a quote
+    // we could read before is never lost. Flag it as AI-failed for review.
+    toInsert = regexQuotes.map((quote) => ({
+      quote,
+      source: "regex_fallback" as const,
+      flags: [
+        {
+          field: "_extraction",
+          kind: "ai_failed" as const,
+          note: aiError ?? "AI returned no quotes; used the pattern parser.",
+        },
+        ...selfCheckFlags(quote, { currencyStated }),
+      ],
+    }));
+  }
+
+  return {
+    quotes: toInsert.map(item => ({ ...item, flags: withQuoteSourceFlag(item.flags, sourceText) })),
+    usedAi, aiError,
+  };
+}
+
 /**
  * AI-first extraction of printer quote tiers from an email body, cross-checked
  * against the regex parser. Runs only when the text is quote-like (the regex
@@ -170,42 +226,12 @@ export async function runTextQuoteExtraction(input: {
     await bumpJobAttempt(jobId);
   }
 
-  const currencyStated = currencyStatedIn(sourceText);
-  let aiQuotes: ParsedPrinterQuote[] | null = null;
-  let aiError: string | null = null;
-  try {
-    aiQuotes = await aiExtractTextQuotes(sourceText, {
-      projectId: run.projectId,
-      runId: run.id,
-      actorUserId: input.actorUserId,
-    });
-  } catch (err) {
-    aiError = extractionErrorMessage(err);
-  }
-
-  let toInsert: QuoteToInsert[];
-  const usedAi = !!(aiQuotes && aiQuotes.length);
-  if (usedAi) {
-    // Reconcile the AI tiers against the deterministic regex tiers: backfill any
-    // price the model dropped (a smushed "0.61per cpy") and re-add any tier it
-    // omitted entirely, so a priced tier is never lost. Recoveries are flagged.
-    toInsert = reconcileTextQuotes(aiQuotes!, regexQuotes, { currencyStated });
-  } else {
-    // AI failed or returned nothing → fall back to the pattern parser so a quote
-    // we could read before is never lost. Flag it as AI-failed for review.
-    toInsert = regexQuotes.map((quote) => ({
-      quote,
-      source: "regex_fallback" as const,
-      flags: [
-        {
-          field: "_extraction",
-          kind: "ai_failed" as const,
-          note: aiError ?? "AI returned no quotes; used the pattern parser.",
-        },
-        ...selfCheckFlags(quote, { currencyStated }),
-      ],
-    }));
-  }
+  const { quotes: toInsert, usedAi, aiError } = await extractTextQuoteSuggestions({
+    bodyText: sourceText,
+    projectId: run.projectId,
+    runId: run.id,
+    actorUserId: input.actorUserId,
+  });
 
   const { created, firstQuoteId } = await insertQuotes(run, toInsert, {
     sourceThreadId: input.sourceThreadId,

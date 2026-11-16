@@ -1,7 +1,7 @@
 "use client";
 
 import { confirmDialog } from "@/lib/dialog-requests";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronLeft, Loader2, Plus, Send, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -47,6 +47,31 @@ export function PlannerWorkspace({
   const [revision, setRevision] = useState(0);
   const viewportRef = useConversationViewport<HTMLDivElement>(mode === "interview" || !!plan);
   const { scrollRef, onScroll, canJump, scrollToLatest } = useConversationScroll(`${convo.length}:${busy}`, mode === "interview" || !!plan);
+
+  const messageRows = useMemo(() => (
+    convo
+    .filter((m) => m.role !== "system")
+    .map((m, i) => (
+      <div
+        key={i}
+        className={cn(
+          "flex",
+          m.role === "user" ? "justify-end" : "justify-start"
+        )}
+      >
+        <div
+          className={cn(
+            "max-w-[min(85%,65ch)] whitespace-pre-wrap rounded-xl px-3 py-2 text-[15px] leading-relaxed lg:text-sm",
+            m.role === "user"
+              ? "conversation-own-bubble bg-primary text-primary-foreground"
+              : "bg-secondary"
+          )}
+        >
+          {m.content}
+        </div>
+      </div>
+    ))
+  ), [convo]);
 
   async function send() {
     const text = input.trim();
@@ -97,28 +122,7 @@ export function PlannerWorkspace({
       <div className="relative flex min-h-0 flex-1 flex-col">
           <div ref={scrollRef} onScroll={onScroll} data-conversation-scroll role="region" aria-label="Messages" tabIndex={0} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 lg:rounded-xl lg:border lg:p-4">
             <div className="flex min-h-full flex-col justify-end gap-3">
-            {convo
-              .filter((m) => m.role !== "system")
-              .map((m, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "flex",
-                    m.role === "user" ? "justify-end" : "justify-start"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "max-w-[min(85%,65ch)] whitespace-pre-wrap rounded-xl px-3 py-2 text-[15px] leading-relaxed lg:text-sm",
-                      m.role === "user"
-                        ? "conversation-own-bubble bg-primary text-primary-foreground"
-                        : "bg-secondary"
-                    )}
-                  >
-                    {m.content}
-                  </div>
-                </div>
-              ))}
+            {messageRows}
             {busy ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" /> thinking…

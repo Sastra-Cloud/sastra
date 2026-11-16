@@ -1,9 +1,11 @@
+import { uploadContentType } from "@/lib/files/upload-rules";
+
 /** XHR is used for byte-level upload progress; fetch currently has no portable upload progress API. */
 export function uploadFileBytes(url: string, file: File, onProgress: (progress: number) => void): Promise<void> {
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
     request.open("PUT", url);
-    request.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+    request.setRequestHeader("Content-Type", uploadContentType(file));
     request.timeout = 10 * 60 * 1000;
     request.upload.onprogress = event => {
       if (event.lengthComputable && event.total > 0) onProgress(Math.min(0.99, event.loaded / event.total));

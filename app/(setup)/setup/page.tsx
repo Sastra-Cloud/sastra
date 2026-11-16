@@ -18,7 +18,7 @@ export default async function SetupPage() {
   if (workspaceSetupComplete(workspace)) redirect("/dashboard");
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,color-mix(in_oklch,var(--brand-orange)_12%,transparent),transparent_36%),var(--background)] px-4 py-8 sm:py-12">
+    <main className="min-h-svh bg-[radial-gradient(circle_at_top_left,color-mix(in_oklch,var(--brand-orange)_12%,transparent),transparent_36%),var(--background)] px-4 py-8 sm:py-12">
       <div className="absolute right-4 top-4"><ThemeToggle /></div>
       <div className="mx-auto grid w-full max-w-5xl overflow-hidden rounded-2xl border bg-card shadow-xl lg:grid-cols-[0.75fr_1.25fr]">
         <aside className="relative overflow-hidden bg-primary px-6 py-8 text-primary-foreground sm:px-10 lg:py-12">

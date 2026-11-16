@@ -11,7 +11,7 @@ import {
 import type { ProjectChannelListItem } from "@/lib/chat/queries";
 import { TabScroller } from "@/components/cockpit";
 import { useChatNavigation } from "@/components/chat/chat-navigation-context";
-import { MotionTabLink } from "@/components/motion/tab-link";
+import { TabLink } from "@/components/tab-link";
 import { cn } from "@/lib/utils";
 
 const ICONS: Record<string, typeof Hash> = {
@@ -43,7 +43,7 @@ export function ProjectChannelTabs({
         const active = channel.id === activeId;
         const Icon = ICONS[channel.name.toLowerCase()] ?? Hash;
         return (
-          <MotionTabLink
+          <TabLink
             key={channel.id}
             href={
               mode === "chat"
@@ -51,7 +51,6 @@ export function ProjectChannelTabs({
                 : `/projects/${slug}/chat?channel=${channel.id}`
             }
             active={active}
-            layoutId={`channel-tab-active-${mode}`}
             pendingIndicator
             onNavigate={() => {
               beginNavigation(channel.id);
@@ -72,7 +71,7 @@ export function ProjectChannelTabs({
                 {channel.unread > 9 ? "9+" : channel.unread}
               </span>
             ) : null}
-          </MotionTabLink>
+          </TabLink>
         );
       })}
     </TabScroller>

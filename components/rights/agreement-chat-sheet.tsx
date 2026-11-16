@@ -196,6 +196,9 @@ export function AgreementChatSheet({
       ),
     [snapshot.documents]
   );
+  const messageRows = useMemo(() => snapshot.messages.map(message => (
+    <Message key={message.id} message={message} snapshot={snapshot} />
+  )), [snapshot]);
   const [selectedIds, setSelectedIds] = useState<string[]>(readyIds);
   const [input, setInput] = useState("");
   const [busy, startTransition] = useTransition();
@@ -463,8 +466,8 @@ export function AgreementChatSheet({
                         ? "Retry the failed source below. Sastra reuses parsed text when available, so you do not need to upload the file again."
                         : "Ask a manager to retry the source or upload an accessible copy."
                     : canManage
-                      ? "Upload an MoU or License in the matching Rights step, then return here to ask questions."
-                      : "Ask a manager to attach an MoU or License to this project's Rights page."}
+                      ? "Upload an MoU or License on the Rights & MOUs tab, then return here to ask questions."
+                      : "Ask a manager to attach an MoU or License to this project's Rights & MOUs page."}
                 </p>
               </div>
               {failedDocuments.length > 0 ? (
@@ -535,9 +538,7 @@ export function AgreementChatSheet({
             </div>
           ) : (
             <div className="flex min-h-full flex-col justify-end gap-4">
-              {snapshot.messages.map((message) => (
-                <Message key={message.id} message={message} snapshot={snapshot} />
-              ))}
+              {messageRows}
               {busy ? (
                 <div
                   role="status"

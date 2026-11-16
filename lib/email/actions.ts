@@ -6,6 +6,7 @@ import { after } from "next/server";
 import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 
+import { addDefaultProjectPeople } from "@/lib/projects/people";
 import { requireRole } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import {
@@ -469,6 +470,7 @@ export async function createProjectFromThread(
       linkedManually: true,
     });
 
+    await addDefaultProjectPeople(tx, created.id, user.id);
     await seedProjectDefaults(tx, created.id, workspace);
     return created;
   });
@@ -594,6 +596,7 @@ export async function createProjectsFromThread(
       await ensureThreadProjectLink(tx, parsed.data.threadId, project.id, {
         linkedManually: true,
       });
+      await addDefaultProjectPeople(tx, project.id, user.id);
       await seedProjectDefaults(tx, project.id, workspace);
       primaryId = primaryId ?? project.id;
       results.push(project);

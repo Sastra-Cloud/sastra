@@ -10,6 +10,7 @@ import { db } from "@/lib/db";
 import { donationAllocations, activityLog, files, invoiceDeliveries, invoices, partners, projects, sponsorshipFundUses, sponsorshipLines, sponsorshipReceiptAllocations, sponsorshipReceipts, sponsorships } from "@/lib/db/schema";
 import { allocateSponsorshipCents, decimalAmount, fundUseInputSchema, moneyCents, receiptInputSchema, sponsorshipInputSchema, sponsorshipProjectShares, sponsorshipTotalCents, type SponsorshipFundUseInput, type SponsorshipInput, type SponsorshipReceiptInput } from "./compute";
 import { getInvoiceIssuerSnapshot } from "@/lib/workspace/queries";
+import { findOrCreatePartnerContact } from "@/lib/partners/find-or-create";
 import { nextInvoiceNumber } from "@/lib/budget/invoice-number";
 import { buildInvoicePdf } from "@/lib/budget/pdf";
 import { buildKey, deleteObject, getObjectBuffer, putObject } from "@/lib/r2";
@@ -18,6 +19,7 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 async function invalidate(id: string, projectIds: string[] = []) {
   revalidatePath("/sponsorships");
+  revalidatePath("/settings/partners");
   revalidatePath(`/sponsorships/${id}`);
   if (projectIds.length) {
     const rows = await db.select({ id: projects.id, slug: projects.slug }).from(projects).where(inArray(projects.id, [...new Set(projectIds)]));
@@ -65,6 +67,11 @@ export async function createSponsorship(id: string, input: SponsorshipInput): Pr
       const [existing] = await tx.select().from(sponsorships).where(eq(sponsorships.id, id));
       return existing?.createdBy === user.id ? { id } : { error: "Refresh and try again." };
     }
+    const link = await findOrCreatePartnerContact(tx, {
+      org: parsed.data.recipientName, partnerId: parsed.data.partnerId,
+      email: parsed.data.recipientEmail, billingAddress: parsed.data.recipientAddress, createdBy: user.id,
+    });
+    await tx.update(sponsorships).set({ partnerId: link.partnerId }).where(eq(sponsorships.id, id));
     await insertLines(tx, id, parsed.data);
     await tx.insert(activityLog).values({ actorId: user.id, entityType: "sponsorship", entityId: id, action: "create", summary: `Created sponsorship: ${parsed.data.title}` });
     return { id };
@@ -83,7 +90,11 @@ export async function updateSponsorship(id: string, version: number, input: Spon
     if (!record || record.status !== "draft" || record.version !== version) return { error: "The sponsorship changed. Refresh and review it before saving." };
     const error = await validateLinks(tx, parsed.data);
     if (error) return { error };
-    await tx.update(sponsorships).set({ ...recordFields(parsed.data), version: version + 1, updatedAt: new Date() }).where(eq(sponsorships.id, id));
+    const link = await findOrCreatePartnerContact(tx, {
+      org: parsed.data.recipientName, partnerId: parsed.data.partnerId,
+      email: parsed.data.recipientEmail, billingAddress: parsed.data.recipientAddress, createdBy: user.id,
+    });
+    await tx.update(sponsorships).set({ ...recordFields(parsed.data), partnerId: link.partnerId, version: version + 1, updatedAt: new Date() }).where(eq(sponsorships.id, id));
     await tx.delete(sponsorshipLines).where(eq(sponsorshipLines.sponsorshipId, id));
     await insertLines(tx, id, parsed.data);
     await tx.insert(activityLog).values({ actorId: user.id, entityType: "sponsorship", entityId: id, action: "update", summary: `Updated sponsorship: ${parsed.data.title}` });

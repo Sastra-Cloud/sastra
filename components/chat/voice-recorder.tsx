@@ -19,7 +19,6 @@ const MAX_VOICE_BYTES = 12 * 1024 * 1024;
 
 export type VoiceDraft = {
   file: File;
-  url: string;
   durationMs: number;
 };
 
@@ -66,6 +65,7 @@ export function VoiceRecorderControl({
   const startedAtRef = useRef(0);
   const discardRef = useRef(false);
   const extensionRef = useRef("webm");
+  const mountedRef = useRef(true);
 
   function releaseStream() {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -89,7 +89,9 @@ export function VoiceRecorderControl({
   }
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
       stopTimer();
       const recorder = recorderRef.current;
       if (recorder && recorder.state !== "inactive") {
@@ -122,6 +124,13 @@ export function VoiceRecorderControl({
           noiseSuppression: true,
         },
       });
+      if (!mountedRef.current) {
+        stream.getTracks().forEach(track => track.stop());
+        return;
+      }
+      // Own the stream before constructing MediaRecorder so constructor failures
+      // also release the microphone.
+      streamRef.current = stream;
       const format = recordingFormat();
       const recorder = format.mime
         ? new MediaRecorder(stream, {
@@ -132,7 +141,8 @@ export function VoiceRecorderControl({
 
       streamRef.current = stream;
       recorderRef.current = recorder;
-      extensionRef.current = format.extension;
+      extensionRef.current = recorder.mimeType.startsWith("audio/mp4") ? "m4a"
+        : recorder.mimeType.startsWith("audio/ogg") ? "ogg" : format.extension;
       chunksRef.current = [];
       discardRef.current = false;
       startedAtRef.current = Date.now();
@@ -154,7 +164,7 @@ export function VoiceRecorderControl({
           recorderRef.current = null;
           chunksRef.current = [];
           releaseStream();
-          if (discardRef.current || blob.size === 0) return;
+          if (!mountedRef.current || discardRef.current || blob.size === 0) return;
           if (blob.size > MAX_VOICE_BYTES) {
             toast.error(
               "This recording is unusually large. Try a shorter voice message."
@@ -173,7 +183,6 @@ export function VoiceRecorderControl({
           );
           onRecorded({
             file,
-            url: URL.createObjectURL(blob),
             durationMs,
           });
         },
@@ -202,13 +211,14 @@ export function VoiceRecorderControl({
       }, 250);
     } catch (error) {
       releaseStream();
+      if (!mountedRef.current) return;
       toast.error(
         error instanceof DOMException && error.name === "NotAllowedError"
           ? "Microphone access was denied. Allow it in your browser settings to record."
           : "Could not start voice recording."
       );
     } finally {
-      setStarting(false);
+      if (mountedRef.current) setStarting(false);
     }
   }
 
@@ -279,6 +289,21 @@ export function VoiceDraftPreview({
   disabled?: boolean;
   onDiscard: () => void;
 }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  // The preview owns this URL, so sending/discarding or leaving the conversation
+  // releases the audio blob. Reconnecting a cached route creates a fresh URL.
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const url = URL.createObjectURL(draft.file);
+    audio.src = url;
+    return () => {
+      audio.removeAttribute("src");
+      audio.load();
+      URL.revokeObjectURL(url);
+    };
+  }, [draft.file]);
+
   return (
     <div className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-2 rounded-xl border bg-card px-3 py-2.5">
       <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -304,7 +329,7 @@ export function VoiceDraftPreview({
       <audio
         controls
         preload="metadata"
-        src={draft.url}
+        ref={audioRef}
         className="col-span-3 h-8 w-full max-w-md"
       >
         Your browser does not support audio playback.

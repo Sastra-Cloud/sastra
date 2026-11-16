@@ -4,7 +4,7 @@ import { FileLink } from "@/components/files/file-link";
 
 import { confirmDialog } from "@/lib/dialog-requests";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   CalendarClock,
@@ -40,11 +40,13 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   draftMouProposal,
   sendMouProposal,
-  updateProposalStatus,
   updateProposedCompletionDate,
 } from "@/lib/proposals/actions";
 import { learnFromEmailEdit } from "@/lib/print/actions";
 import { usePropState } from "@/hooks/use-prop-state";
+import { useSettle, useSuccessBeat } from "@/hooks/use-settle";
+import { DoneCheck } from "@/components/ui/done-check";
+import { PROPOSAL_ANSWER_LABELS, proposalAnswer } from "@/lib/budget/funding-path";
 import { EmailDraftControls } from "@/components/email/email-draft-controls";
 import {
   discardEmailDraft,
@@ -66,6 +68,7 @@ export type ProposalDTO = {
   budgetApprovalRequestId: string | null;
   fileId: string | null;
   status: string;
+  fundingPath?: string | null;
   sentAt: string;
   sentByName: string | null;
 };
@@ -89,15 +92,15 @@ function statusVariant(status: string): "default" | "secondary" | "outline" {
   return "secondary";
 }
 
-const selectClass =
-  "h-8 rounded-lg border border-input bg-transparent px-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
-
 export function ProposalPanel({
+  quotationId,
+  quotationFingerprint,
   projectId,
   projectSlug,
   printRunId,
   partnerQuoteMode,
   partnerQuoteTotal,
+  hasPrintOptions = false,
   currency,
   canEdit,
   fundingEmail,
@@ -108,12 +111,18 @@ export function ProposalPanel({
   realCompletionDeadline,
   initialEmailDraft,
   proposals,
+  autoDraft = false,
 }: {
+  /** Start the email draft once, right after a guided proposal is saved. */
+  autoDraft?: boolean;
+  quotationId?: string;
+  quotationFingerprint?: string;
   projectId: string;
   projectSlug: string;
   printRunId?: string | null;
   partnerQuoteMode: "itemized" | "per_copy" | null;
   partnerQuoteTotal: number;
+  hasPrintOptions?: boolean;
   currency: string;
   canEdit: boolean;
   fundingEmail: string | null;
@@ -132,21 +141,24 @@ export function ProposalPanel({
   const [pending, start] = useTransition();
   const [drafting, setDrafting] = useState(false);
   const [draftMutationPending, startDraftMutation] = useTransition();
+  const { settle } = useSettle();
+  const sentBeat = useSuccessBeat();
   const [discardingDraft, setDiscardingDraft] = useState(false);
   const [savedEmailDraft, setSavedEmailDraft] = useState(initialEmailDraft);
-  const [review, setReview] = useState({ recipientEmail, confirmed: false });
-  if (review.recipientEmail !== recipientEmail) {
-    setReview({ recipientEmail, confirmed: false });
+  const reviewKey = `${recipientEmail}:${quotationFingerprint ?? "default"}`;
+  const [review, setReview] = useState({ key: reviewKey, confirmed: false });
+  if (review.key !== reviewKey) {
+    setReview({ key: reviewKey, confirmed: false });
   }
-  const confirmed = review.recipientEmail === recipientEmail && review.confirmed;
+  const confirmed = review.key === reviewKey && review.confirmed;
   function setConfirmed(confirmed: boolean) {
-    setReview({ recipientEmail, confirmed });
+    setReview({ key: reviewKey, confirmed });
   }
   const [visibleProposals, setVisibleProposals] = usePropState(proposals);
   const [sendingProposalId, setSendingProposalId] = useState<string | null>(
     null
   );
-  const [proposedDate, setProposedDate] = useState(proposedCompletionDate ?? "");
+  const [proposedDate, setProposedDate] = usePropState(proposedCompletionDate ?? "");
 
   function saveProposedDate(value: string) {
     const previous = proposedDate;
@@ -174,6 +186,7 @@ export function ProposalPanel({
   const attachmentName = `${projectSlug}-partner-quotation.${
     perCopyAttachment ? "pdf" : "xlsx"
   }`;
+  const quotationQuery = quotationId ? `&quotation=${encodeURIComponent(quotationId)}` : "";
   const runQuery = printRunId
     ? `&run=${encodeURIComponent(printRunId)}`
     : "";
@@ -185,11 +198,11 @@ export function ProposalPanel({
         : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       previewUrl: perCopyAttachment
         ? `/api/projects/${projectSlug}/budget/partner-pdf?inline=1${runQuery}`
-        : `/api/projects/${projectSlug}/budget/export?audience=partner${runQuery}`,
+        : `/api/projects/${projectSlug}/budget/export?audience=partner${runQuery}${quotationQuery}`,
       description: "Partner-safe quotation",
     },
   ];
-  const draftContextId = printRunId ?? projectId;
+  const draftContextId = quotationId ?? printRunId ?? projectId;
   const currentDraftValue: EmailDraftValue | null = compose
     ? {
         toAddresses: recipientEmail ? [recipientEmail] : [],
@@ -209,6 +222,7 @@ export function ProposalPanel({
     : false;
 
   function startDraft() {
+    if (drafting) return;
     if (savedEmailDraft) {
       setCompose({
         cc: savedEmailDraft.ccAddresses.join(", "),
@@ -225,7 +239,7 @@ export function ProposalPanel({
     setDrafting(true);
     start(async () => {
       try {
-        const res = await draftMouProposal(projectId, printRunId);
+        const res = await draftMouProposal(projectId, printRunId, quotationId);
         if ("error" in res) {
           toast.error(res.error);
           return;
@@ -245,6 +259,17 @@ export function ProposalPanel({
       }
     });
   }
+
+  const autoDrafted = useRef(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!autoDraft || autoDrafted.current || !canEdit) return;
+    autoDrafted.current = true;
+    cardRef.current?.scrollIntoView({ block: "start" });
+    startDraft();
+    // Runs once when the guided save asks for the draft.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoDraft, canEdit]);
 
   function saveDraft() {
     if (!currentDraftValue) return;
@@ -338,6 +363,7 @@ export function ProposalPanel({
         const res = await sendMouProposal(
           projectId,
           {
+            quotationFingerprint,
             subject: outgoing.subject,
             body: outgoing.body,
             ccEmails: outgoing.cc
@@ -345,7 +371,8 @@ export function ProposalPanel({
               .map((e) => e.trim())
               .filter(Boolean),
           },
-          printRunId
+          printRunId,
+          quotationId
         );
         if (res?.error) {
           setVisibleProposals((current) =>
@@ -384,8 +411,13 @@ export function ProposalPanel({
           }).catch(() => {});
         }
         toast.success("Proposal sent");
-        setSavedEmailDraft(null);
-        setCompose(null);
+        // Confirm on the button the person pressed, then close the email and
+        // leave them looking at the new row in the history.
+        await sentBeat.play();
+        settle(() => {
+          setSavedEmailDraft(null);
+          setCompose(null);
+        }, `[data-proposal-row="${res.proposal.id}"]`);
         router.refresh();
       } catch (err) {
         setVisibleProposals((current) =>
@@ -398,14 +430,14 @@ export function ProposalPanel({
   }
 
   return (
-    <Card id="partner-email" tabIndex={-1} className="scroll-mt-32" aria-labelledby="partner-email-heading">
+    <Card ref={cardRef} id={quotationId ? `partner-email-${quotationId}` : "partner-email"} tabIndex={-1} className="scroll-mt-32" aria-labelledby={`partner-email-heading-${quotationId ?? "default"}`}>
       <CardHeader>
-        <CardTitle id="partner-email-heading" className="flex items-center gap-2">
+        <CardTitle id={`partner-email-heading-${quotationId ?? "default"}`} className="flex items-center gap-2">
           <Mail className="size-4" />
           Email quote to partner
         </CardTitle>
         <CardDescription>
-          Email the funding partner the saved {money(partnerQuoteTotal, currency)} quotation.
+          {hasPrintOptions ? "Email the funding partner the saved quotation with alternative print quantities." : <>Email the funding partner the saved {money(partnerQuoteTotal, currency)} quotation.</>}{" "}
           Review the recipient, message, and attachment. Nothing goes out until you confirm.
         </CardDescription>
         {canEdit && !compose ? (
@@ -413,9 +445,14 @@ export function ProposalPanel({
             <Button
               size="sm"
               disabled={pending || drafting}
+              aria-busy={drafting}
               onClick={startDraft}
             >
-              <Mail className="size-4" />
+              {drafting ? (
+                <span className="motion-safe:animate-spin" aria-hidden="true">
+                  <Loader2 className="size-4" />
+                </span>
+              ) : <Mail className="size-4" />}
               {drafting
                 ? "Drafting…"
                 : savedEmailDraft
@@ -426,6 +463,19 @@ export function ProposalPanel({
         ) : null}
       </CardHeader>
       <CardContent className="space-y-4">
+        {drafting ? (
+          <div role="status" aria-live="polite" className="flex items-center gap-3 rounded-lg border border-primary/25 bg-primary/5 p-4">
+            <span className="shrink-0 text-primary motion-safe:animate-spin" aria-hidden="true">
+              <Loader2 className="size-6" />
+            </span>
+            <div className="min-w-0 space-y-1">
+              <p className="font-medium">Writing your proposal email…</p>
+              <p className="text-sm text-muted-foreground">
+                You can review and edit it before sending. Nothing is sent yet.
+              </p>
+            </div>
+          </div>
+        ) : null}
         {realCompletionDeadline ? (
           <div className="flex items-start gap-2 rounded-lg border border-dashed bg-background/50 p-3 text-sm text-muted-foreground">
             <CalendarClock className="mt-0.5 size-4 shrink-0" />
@@ -437,12 +487,12 @@ export function ProposalPanel({
           </div>
         ) : canEdit ? (
           <div className="space-y-1.5">
-            <Label htmlFor="proposed-completion">
-              Proposed completion date <span className="text-muted-foreground">(optional)</span>
+            <Label htmlFor={`proposed-completion-${quotationId ?? "default"}`}>
+              {quotationId ? "Proposed project completion date" : "Proposed completion date"} <span className="text-muted-foreground">(optional)</span>
             </Label>
             <div className="flex flex-wrap items-center gap-2">
               <Input
-                id="proposed-completion"
+                id={`proposed-completion-${quotationId ?? "default"}`}
                 type="date"
                 className="w-auto"
                 value={proposedDate}
@@ -455,6 +505,7 @@ export function ProposalPanel({
               />
             </div>
             <p className="text-xs text-muted-foreground">
+              {quotationId ? "This date is shared across the project’s partner proposals. " : ""}
               Leave this blank to draft without a timeline. If set, it is
               offered as your target before a license or MoU establishes a real
               deadline.
@@ -487,10 +538,10 @@ export function ProposalPanel({
         {canEdit && !hasEmail ? (
           <p className="rounded-lg border border-dashed bg-background/50 p-3 text-sm text-muted-foreground">
             You can draft now. Before sending,{" "}
-            <a href="#funding-partner" className="font-medium text-primary underline underline-offset-4">
+            <a href={quotationId ? "#partner-proposals" : "#funding-partner"} className="font-medium text-primary underline underline-offset-4">
               add the funding contact email
             </a>{" "}
-            in Quotation.
+            in this partner quotation.
           </p>
         ) : null}
 
@@ -585,12 +636,18 @@ export function ProposalPanel({
                   }
                   onClick={send}
                 >
-                  {sendingProposalId ? (
+                  {sentBeat.done ? (
+                    <DoneCheck />
+                  ) : sendingProposalId ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : (
                     <Send className="size-4" />
                   )}
-                  {sendingProposalId ? "Sending…" : "Send proposal"}
+                  {sentBeat.done
+                    ? "Sent"
+                    : sendingProposalId
+                      ? "Sending…"
+                      : "Send proposal"}
                 </Button>
               </div>
             </div>
@@ -602,11 +659,12 @@ export function ProposalPanel({
             No proposals sent yet.
           </p>
         ) : (
-          <ul className="divide-y rounded-lg border">
+          <ul className="divide-y overflow-hidden rounded-lg border">
             {visibleProposals.map((p) => (
               <li
                 key={p.id}
-                className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5"
+                data-proposal-row={p.id}
+                className="flex scroll-mt-32 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
@@ -615,7 +673,11 @@ export function ProposalPanel({
                         ? `${p.recipientName} · ${p.recipientEmail}`
                         : p.recipientEmail}
                     </span>
-                    <Badge variant={statusVariant(p.status)}>{p.status}</Badge>
+                    <Badge variant={statusVariant(p.status)}>
+                      {p.status === "sending"
+                        ? "Sending"
+                        : PROPOSAL_ANSWER_LABELS[proposalAnswer(p)]}
+                    </Badge>
                   </div>
                   <p className="mt-0.5 truncate text-xs text-muted-foreground">
                     {money(p.totalAmount, p.currency)} ·{" "}
@@ -638,45 +700,6 @@ export function ProposalPanel({
                     <Download className="size-3.5" />
                     File
                   </FileLink>
-                ) : null}
-                {canEdit && p.status !== "sending" ? (
-                  <select
-                    className={selectClass}
-                    value={p.status}
-                    disabled={pending}
-                    onChange={(e) => {
-                      const status = e.target.value as "sent" | "accepted" | "declined";
-                      const previous = p.status;
-                      setVisibleProposals((current) =>
-                        current.map((proposal) =>
-                          proposal.id === p.id ? { ...proposal, status } : proposal
-                        )
-                      );
-                      start(async () => {
-                        try {
-                          await updateProposalStatus(p.id, status);
-                          router.refresh();
-                        } catch (error) {
-                          setVisibleProposals((current) =>
-                            current.map((proposal) =>
-                              proposal.id === p.id
-                                ? { ...proposal, status: previous }
-                                : proposal
-                            )
-                          );
-                          toast.error(
-                            error instanceof Error
-                              ? error.message
-                              : "Could not update the proposal status."
-                          );
-                        }
-                      });
-                    }}
-                  >
-                    <option value="sent">Sent</option>
-                    <option value="accepted">Accepted</option>
-                    <option value="declined">Declined</option>
-                  </select>
                 ) : null}
               </li>
             ))}

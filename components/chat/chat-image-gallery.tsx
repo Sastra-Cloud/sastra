@@ -1,14 +1,12 @@
 "use client";
 
-import { FileLink } from "@/components/files/file-link";
-
 import { Component, lazy, Suspense, useState, type ReactNode } from "react";
-import { Download, ImageOff, Loader2 } from "lucide-react";
+import { ImageOff, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { chatMessageImages, type ChatImage } from "@/lib/chat/images";
 import type { Attachment } from "@/lib/files/queries";
-import { formatBytes } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 const ChatImageViewer = lazy(() => import("./chat-image-viewer"));
 
@@ -17,6 +15,8 @@ type Selection = { images: ChatImage[]; index: number; trigger: HTMLElement };
 export function ChatImageGallery({ attachments }: { attachments: Attachment[] }) {
   const images = chatMessageImages(attachments);
   const [selection, setSelection] = useState<Selection | null>(null);
+  const grouped = images.length > 1;
+  const visibleImages = images.slice(0, 4);
 
   function closeViewer() {
     const trigger = selection?.trigger;
@@ -31,13 +31,22 @@ export function ChatImageGallery({ attachments }: { attachments: Attachment[] })
 
   return (
     <>
-      {images.map((image, index) => (
-        <ImagePreview
-          key={image.attachmentId}
-          image={image}
-          onOpen={(trigger) => setSelection({ images, index, trigger })}
-        />
-      ))}
+      <div
+        role={grouped ? "group" : undefined}
+        aria-label={grouped ? `${images.length} images` : undefined}
+        className={cn("max-w-full overflow-hidden rounded-lg", grouped && "grid w-112 grid-cols-2 gap-1")}
+      >
+        {visibleImages.map((image, index) => (
+          <ImagePreview
+            key={image.attachmentId}
+            image={image}
+            grouped={grouped}
+            featured={images.length === 3 && index === 0}
+            remaining={index === 3 ? images.length - visibleImages.length : 0}
+            onOpen={(trigger) => setSelection({ images, index, trigger })}
+          />
+        ))}
+      </div>
       {selection ? (
         <ViewerErrorBoundary
           fallback={<ViewerNotice failed image={selection.images[selection.index]} onClose={closeViewer} />}
@@ -57,72 +66,57 @@ export function ChatImageGallery({ attachments }: { attachments: Attachment[] })
 
 function ImagePreview({
   image,
+  grouped,
+  featured,
+  remaining,
   onOpen,
 }: {
   image: ChatImage;
+  grouped: boolean;
+  featured: boolean;
+  remaining: number;
   onOpen: (trigger: HTMLElement) => void;
 }) {
   const [previewFailed, setPreviewFailed] = useState(false);
-  const [width, setWidth] = useState(640);
 
   return (
-    <figure
-      className="max-w-full min-w-0 shrink-0 self-start overflow-hidden rounded-xl border bg-background/80"
-      style={{ width }}
+    <button
+      data-message-image=""
+      type="button"
+      aria-label={`View image ${image.name}${remaining ? `, ${remaining} more ${remaining === 1 ? "image" : "images"}` : ""}`}
+      aria-haspopup="dialog"
+      onClick={(event) => onOpen(event.currentTarget)}
+      className={cn(
+        "relative block max-w-full min-w-0 cursor-zoom-in overflow-hidden bg-background/80 focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+        grouped ? "aspect-square w-full" : "aspect-[10/7] w-160",
+        featured && "col-span-2 aspect-[2/1]"
+      )}
     >
-      <button
-        data-message-image=""
-        type="button"
-        aria-label={`View image ${image.name}`}
-        aria-haspopup="dialog"
-        onClick={(event) => onOpen(event.currentTarget)}
-        className="block w-full cursor-zoom-in bg-muted/40 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
-      >
-        {!previewFailed ? (
-          // Authenticated private images keep using the protected file route.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={image.src}
-            alt={image.name}
-            loading="lazy"
-            onLoad={(event) => {
-              const { naturalWidth, naturalHeight } = event.currentTarget;
-              if (naturalWidth && naturalHeight) {
-                // Larger screenshots use the conversation width; portrait and
-                // small images retain their proportions without being enlarged.
-                const scale = Math.min(1, 640 / naturalWidth, 448 / naturalHeight);
-                setWidth(naturalWidth * scale);
-              }
-            }}
-            onError={() => setPreviewFailed(true)}
-            className="block h-auto max-h-112 w-full object-contain outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
-          />
-        ) : (
-          <span className="flex min-h-28 items-center justify-center gap-2 p-4 text-sm text-muted-foreground">
-            <ImageOff aria-hidden className="size-5" />
-            Open image
-          </span>
-        )}
-      </button>
-      <figcaption className="flex min-w-0 items-center gap-2 py-1 pl-3 pr-1">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-medium" title={image.name}>{image.name}</p>
-          <p className="text-xs text-muted-foreground">
-            {previewFailed ? "Preview unavailable · " : ""}{formatBytes(image.sizeBytes)}
-          </p>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-11 shrink-0"
-          nativeButton={false}
-          render={<FileLink href={image.downloadUrl} />}
-          aria-label={`Download ${image.name}`}
-        >
-          <Download className="size-4" />
-        </Button>
-      </figcaption>
-    </figure>
+      {!previewFailed ? (
+        // Authenticated private images keep using the protected file route.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={image.src}
+          alt={image.name}
+          loading="lazy"
+          decoding="async"
+          onError={() => setPreviewFailed(true)}
+          className={cn(
+            // Reserve the preview frame before private media loads. Its natural
+            // dimensions must not resize the bubble and move the whole thread.
+            "absolute inset-0 size-full outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10",
+            grouped ? "object-cover" : "object-contain"
+          )}
+        />
+      ) : (
+        <span className="flex min-h-28 h-full flex-col items-center justify-center gap-2 p-3 text-sm text-foreground">
+          <ImageOff aria-hidden className="size-5 shrink-0" />
+          <span className="line-clamp-2 max-w-full break-all">{image.name}</span>
+          <span className="text-xs">Open image</span>
+        </span>
+      )}
+      {remaining > 0 ? <span aria-hidden className="absolute inset-0 flex items-center justify-center bg-black/60 text-2xl font-semibold text-white">+{remaining}</span> : null}
+    </button>
   );
 }
 

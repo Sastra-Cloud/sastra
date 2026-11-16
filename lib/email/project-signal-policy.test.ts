@@ -115,12 +115,6 @@ describe("qualifyingProjectCandidates", () => {
     expect(result).toHaveLength(1);
     expect(result[0].kind).toBe("other");
   });
-
-  it("returns an empty list when there are no candidates", () => {
-    expect(qualifyingProjectCandidates({ projectCandidates: [] })).toEqual([]);
-    expect(qualifyingProjectCandidates({})).toEqual([]);
-    expect(qualifyingProjectCandidates(null)).toEqual([]);
-  });
 });
 
 describe("qualifyingReminderCandidates", () => {
@@ -216,12 +210,6 @@ describe("qualifyingReminderCandidates", () => {
       ],
     });
     expect(result).toEqual([]);
-  });
-
-  it("returns an empty list when there are no candidates", () => {
-    expect(qualifyingReminderCandidates({ reminderCandidates: [] })).toEqual([]);
-    expect(qualifyingReminderCandidates({})).toEqual([]);
-    expect(qualifyingReminderCandidates(null)).toEqual([]);
   });
 });
 

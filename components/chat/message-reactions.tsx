@@ -41,7 +41,7 @@ export function MessageReactions({ reactions, isOwn, pending, onReact }: {
         <ul className="min-h-0 space-y-1 overflow-y-auto overscroll-contain p-1" aria-label="All message reactions">
           {summary.ordered.map(reaction => <li key={reaction.emoji}><button type="button" disabled={pending} aria-pressed={reaction.mine}
             aria-label={`${reaction.mine ? "Remove your" : "Add your"} ${reaction.emoji} reaction, ${reaction.count} ${reaction.count === 1 ? "reaction" : "reactions"}`}
-            onClick={() => { if (!pending) onReact(reaction.emoji); }}
+            onClick={() => { if (pending) return; setOpen(false); onReact(reaction.emoji); }}
             className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring active:bg-muted aria-pressed:border-primary/50 aria-pressed:bg-primary/10 disabled:opacity-60">
             <span aria-hidden="true" className="text-2xl leading-none">{reaction.emoji}</span>
             {reaction.mine ? <span aria-hidden="true" className="inline-flex items-center gap-1 text-xs font-medium"><Check className="size-3.5" />Yours</span> : null}

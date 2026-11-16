@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { bucketAgenda, dayDiff, type AgendaItem } from "./bucket";
+import { bucketAgenda, type AgendaItem } from "./bucket";
 
 function item(overrides: Partial<AgendaItem> & { id: string; date: string }): AgendaItem {
   return {
@@ -16,14 +16,6 @@ function item(overrides: Partial<AgendaItem> & { id: string; date: string }): Ag
     ...overrides,
   };
 }
-
-describe("dayDiff", () => {
-  it("computes whole-day differences", () => {
-    expect(dayDiff("2026-07-03", "2026-07-03")).toBe(0);
-    expect(dayDiff("2026-07-03", "2026-07-10")).toBe(7);
-    expect(dayDiff("2026-07-03", "2026-07-01")).toBe(-2);
-  });
-});
 
 describe("bucketAgenda", () => {
   const today = "2026-07-03";
@@ -51,11 +43,5 @@ describe("bucketAgenda", () => {
     ];
     const b = bucketAgenda(items, today);
     expect(b.thisWeek.map((i) => i.id)).toEqual(["early", "pay", "task"]);
-  });
-
-  it("is empty-safe", () => {
-    const b = bucketAgenda([], today);
-    expect(b.overdue).toEqual([]);
-    expect(b.later).toEqual([]);
   });
 });

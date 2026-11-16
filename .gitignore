@@ -50,3 +50,8 @@ next-env.d.ts
 
 # Local package cache is not source or runtime data.
 .pnpm-store/
+
+# Real-browser suite output (pnpm test:browser, pnpm test:browser:performance)
+/test-results/
+/playwright-report/
+/browser-performance-report/

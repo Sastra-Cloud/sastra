@@ -163,3 +163,71 @@ jobs:
 
       # The container job compiles this commit and checks the production image.
       # Keep a single full compilation instead of building again in verify.
+  browser:
+    # Real-browser regressions against a production build. Drafts are
+    # validated when marked ready for review. See docs/browser-verification.md.
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.6-pg18-bookworm@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
+        env:
+          POSTGRES_USER: sastra
+          POSTGRES_PASSWORD: smoke-only
+          POSTGRES_DB: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U sastra -d postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      # The runner creates, fills, and drops its own sastra_browser_* database
+      # and refuses anything that is not a loopback throwaway database.
+      SASTRA_DISPOSABLE_DATABASE: "true"
+      SASTRA_BROWSER_DATABASE_SERVER_URL: postgres://sastra:smoke-only@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Safety guards
+        run: pnpm test:browser:guards
+
+      - name: Install browsers
+        run: pnpm exec playwright install --with-deps chromium webkit
+
+      - name: Browser regressions (Chromium and WebKit)
+        run: pnpm test:browser
+
+      # Informational only: absolute timings depend on the runner, so this
+      # never fails the build on a slow number. It reports, it does not gate.
+      - name: Performance report
+        continue-on-error: true
+        env:
+          SASTRA_BROWSER_REUSE_BUILD: "true"
+          SASTRA_BROWSER_REPORT_DIR: ${{ runner.temp }}/browser-performance
+        run: pnpm test:browser:performance
+
+      - name: Show performance report
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/browser-performance/performance.md" ]; then
+            cat "$RUNNER_TEMP/browser-performance/performance.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-performance
+          path: ${{ runner.temp }}/browser-performance/performance.*
+          if-no-files-found: ignore
+          retention-days: 14

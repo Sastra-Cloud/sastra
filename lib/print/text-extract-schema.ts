@@ -23,6 +23,7 @@ export const PRINT_TEXT_QUOTE_SYSTEM_PROMPT = [
   "You extract structured printer-quote data from the plain text of an email for a book-printing job.",
   "Use only the vendor, location, organization, and currency evidence present in the email or trusted workspace context.",
   "The email may be a forwarded or quoted reply — ignore quote markers ('>'), signatures, and prior-message headers; extract only the printer's quotation.",
+  "An internal planning note may explicitly reuse another book's quote. Extract the stated prices and specifications for the target book; a comparison book is source context, not a different target. Do not invent fresh printer confirmation, dates, contacts, or payment requests.",
   "A single email often lists SEVERAL quantity tiers (e.g. '1000 cps @ USD 1.76 per cpy, 2000 cps @ USD 1.42'). Return ONE entry in `quotes` per distinct quantity tier, each with its own `quantityCps` and `unitPrice`.",
   "Return EVERY quantity tier you can see, even one whose price is formatted differently or looks malformed. Never skip or merge a tier.",
   "A per-copy price may be written tightly against the unit with no space, e.g. '0.61per cpy', 'USD0.61/copy', or '0.5per cpy.' — read the number anyway (0.61, 0.61, 0.5). Trailing punctuation and 'cpy'/'copy' are not part of the number.",

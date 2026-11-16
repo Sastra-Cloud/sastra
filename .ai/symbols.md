@@ -78,7 +78,7 @@
 
 ## `app/(app)/projects/[slug]/members/page.tsx`
 
-- dynamic
+- dynamic, metadata
 
 ## `app/(app)/projects/[slug]/page.tsx`
 
@@ -304,6 +304,10 @@
 
 - POST
 
+## `app/api/chat/messages/[messageId]/link-preview/route.ts`
+
+- GET, runtime
+
 ## `app/api/chat/reactions/route.ts`
 
 - GET, dynamic
@@ -427,6 +431,10 @@
 ## `app/api/notifications/recent/route.ts`
 
 - GET, dynamic
+
+## `app/api/observability/performance/route.ts`
+
+- POST, dynamic
 
 ## `app/api/presence/heartbeat/route.ts`
 
@@ -616,6 +624,10 @@
 
 - ForgotPasswordForm
 
+## `components/auth/google-drive-connect-button.tsx`
+
+- GoogleDriveConnectButton
+
 ## `components/auth/login-form.tsx`
 
 - LoginForm
@@ -664,6 +676,10 @@
 
 - BudgetSection, BudgetSectionDefinition, BudgetTabs
 
+## `components/budget/budget-setup-guide.tsx`
+
+- BudgetSetupGuide, SetupPartnerOption
+
 ## `components/budget/cashflow-card.tsx`
 
 - CashflowCard
@@ -676,6 +692,14 @@
 
 - DonationMouLink
 
+## `components/budget/funding-partner-notice.tsx`
+
+- FundingPartnerNotice, FundingPartnerSummary
+
+## `components/budget/funding-path-panel.tsx`
+
+- FundingPathPanel, FundingPathPaymentDTO, FundingPathProposalDTO, FundingPathReceiptDTO
+
 ## `components/budget/funding-receipts.tsx`
 
 - FundingReceipts, Receipt
@@ -686,11 +710,23 @@
 
 ## `components/budget/mou-payments.tsx`
 
-- MouPayments, Payment
+- MouPayments, Payment, PaymentProposalOption
+
+## `components/budget/partner-print-options.tsx`
+
+- PartnerPrintOptions
+
+## `components/budget/partner-quotations-panel.tsx`
+
+- PartnerQuotationsPanel
 
 ## `components/budget/partner-quote-panel.tsx`
 
 - PartnerQuotePanel
+
+## `components/budget/payment-amount-field.tsx`
+
+- PaymentAmountField
 
 ## `components/budget/proposal-budget-builder.tsx`
 
@@ -752,6 +788,10 @@
 
 - CreateChannelDialog
 
+## `components/chat/frequent-reactions-provider.tsx`
+
+- FrequentReactionsContext, FrequentReactionsProvider
+
 ## `components/chat/message-actions.tsx`
 
 - MessageActions
@@ -760,6 +800,10 @@
 
 - MessageEditor
 
+## `components/chat/message-link-preview.tsx`
+
+- MessageLinkPreview
+
 ## `components/chat/message-pins.tsx`
 
 - MessagePinsProvider, PinnedMessagesButton, useMessagePins
@@ -767,6 +811,14 @@
 ## `components/chat/message-reactions.tsx`
 
 - MessageReactions
+
+## `components/chat/message-receipt.tsx`
+
+- MessageReceipt
+
+## `components/chat/message-text.tsx`
+
+- MessageText
 
 ## `components/chat/new-direct-message-popover.tsx`
 
@@ -799,6 +851,10 @@
 ## `components/chat/voice-message-player.tsx`
 
 - VoiceMessagePlayer
+
+## `components/chat/voice-playback-provider.tsx`
+
+- VoicePlaybackProvider, useVoicePlayer
 
 ## `components/chat/voice-recorder.tsx`
 
@@ -864,6 +920,10 @@
 
 - OnboardingChecklist
 
+## `components/dashboard/streamed-sections.tsx`
+
+- StreamedManagerReview, StreamedOnboarding
+
 ## `components/donations/donation-csv-format-dialog.tsx`
 
 - DonationCsvFormatDialog
@@ -910,11 +970,15 @@
 
 ## `components/guidance/guidance-provider.tsx`
 
-- GuidanceProvider, useGuidance, useGuidedElement
+- GuidanceProvider, GuidanceSnapshot, useGuidance, useGuidedElement
 
 ## `components/guidance/guided-steps.tsx`
 
 - GuidedStep, GuidedSteps
+
+## `components/guidance/step-list.tsx`
+
+- StepList
 
 ## `components/guidance/walk-me-through.tsx`
 
@@ -1016,10 +1080,6 @@
 
 - Reveal, StaggerGroup, StaggerItem
 
-## `components/motion/tab-link.tsx`
-
-- MotionTabLink
-
 ## `components/navigation-badges-provider.tsx`
 
 - NavigationBadgesProvider, useNavigationBadgeAdjustment, useNavigationBadges
@@ -1027,6 +1087,10 @@
 ## `components/navigation-icons.ts`
 
 - navigationIcons
+
+## `components/navigation-link.tsx`
+
+- NavigationLink
 
 ## `components/notifications/notification-bell.tsx`
 
@@ -1036,17 +1100,37 @@
 
 - NotificationsList
 
+## `components/observability/performance-reporter.tsx`
+
+- PerformanceReporter
+
+## `components/observability/use-useful-work.ts`
+
+- elementTiming, useUsefulWork
+
 ## `components/page-skeleton.tsx`
 
 - ChatChannelSkeleton, ConversationLoadingSkeleton, DashboardSkeleton, OverviewSkeleton, ProjectBudgetSkeleton, ProjectChatSkeleton, ProjectEpisodesSkeleton, ProjectMembersSkeleton, ProjectOverviewSkeleton, ProjectPipelineSkeleton, ProjectPrintSkeleton, ProjectRightsSkeleton, ProjectTaskPlanSkeleton, ProjectTasksSkeleton, ProjectWorkspaceSkeleton, ProjectsSkeleton, StandupsSkeleton, WorkloadSkeleton
+
+## `components/partners/partner-fields.tsx`
+
+- PartnerFields, PartnerValues, emptyPartnerValues
 
 ## `components/portfolio/capacity-heatmap.tsx`
 
 - CapacityHeatmap, CapacityPerson
 
+## `components/portfolio/charts/rag-donut-chart.tsx`
+
+- RagDonutChart
+
 ## `components/portfolio/charts/rag-donut.tsx`
 
 - RagDonut
+
+## `components/portfolio/charts/trend-line-chart.tsx`
+
+- TrendLineChart
 
 ## `components/portfolio/charts/trend-line.tsx`
 
@@ -1076,6 +1160,10 @@
 
 - PrintCorrespondenceCard, PrintThread
 
+## `components/print/print-estimate-intake.tsx`
+
+- PrintEstimateIntake
+
 ## `components/print/print-estimate-panel.tsx`
 
 - EstimateQuote, EstimateRequest, PrintEstimatePanel
@@ -1087,6 +1175,10 @@
 ## `components/print/print-manager.tsx`
 
 - PrintManager
+
+## `components/print/print-run-guide.tsx`
+
+- PrintRunGuide, PrintRunGuideLastRun
 
 ## `components/print/quote-comparison.tsx`
 
@@ -1107,10 +1199,6 @@
 ## `components/projects/manager-health-band.tsx`
 
 - ManagerHealthBand, ManagerHealthProps
-
-## `components/projects/members-manager.tsx`
-
-- MembersManager
 
 ## `components/projects/new-project-entry.tsx`
 
@@ -1167,6 +1255,10 @@
 ## `components/projects/project-managers.tsx`
 
 - ProjectManagers
+
+## `components/projects/project-people-manager.tsx`
+
+- ProjectPeopleManager
 
 ## `components/projects/project-settings-dialog.tsx`
 
@@ -1304,6 +1396,10 @@
 
 - CopyAddressButton
 
+## `components/settings/default-project-people.tsx`
+
+- DefaultProjectPeople
+
 ## `components/settings/dependency-security-check-button.tsx`
 
 - DependencySecurityCheckButton
@@ -1311,6 +1407,10 @@
 ## `components/settings/dictionary-manager.tsx`
 
 - DictionaryManager
+
+## `components/settings/document-colors-fields.tsx`
+
+- DocumentColorsFields
 
 ## `components/settings/document-learning-manager.tsx`
 
@@ -1476,6 +1576,10 @@
 
 - SupportWorkspace
 
+## `components/tab-link.tsx`
+
+- TabLink
+
 ## `components/tasks/create-task-dialog.tsx`
 
 - CreateTaskDialog
@@ -1511,6 +1615,14 @@
 ## `components/tasks/personal-task-board.tsx`
 
 - PersonalTaskBoard
+
+## `components/tasks/pinned-tasks-panel.tsx`
+
+- PinnedTasksPanel
+
+## `components/tasks/pinned-tasks-provider.tsx`
+
+- PinnedTasksCanvas, PinnedTasksProvider, PinnedTasksToggle, PinnedTasksWorkspace, TaskPinButton, usePinnedTasks
 
 ## `components/tasks/recurring-list.tsx`
 
@@ -1583,6 +1695,10 @@
 ## `components/ui/app-dialogs.tsx`
 
 - AppDialogs
+
+## `components/ui/done-check.tsx`
+
+- DoneCheck
 
 ## `components/ui/help-tip.tsx`
 
@@ -1660,6 +1776,10 @@
 
 - UsePushSetup, usePushSetup
 
+## `hooks/use-settle.ts`
+
+- useSettle, useSuccessBeat
+
 ## `hooks/use-task-assignment-planning.ts`
 
 - useTaskAssignmentPlanning
@@ -1667,6 +1787,14 @@
 ## `hooks/use-user-active.ts`
 
 - useUserActive
+
+## `lib/actions/client-action-discovery.test.ts`
+
+- useExample
+
+## `lib/actions/client-action-discovery.ts`
+
+- ClientActionScan, scanClientActions, scanClientSource
 
 ## `lib/actions/interaction-policy.ts`
 
@@ -2024,6 +2152,22 @@
 
 - QuotationBranding, buildQuotationWorkbook
 
+## `lib/budget/funding-partner-actions.ts`
+
+- saveAgreementFundingPartner
+
+## `lib/budget/funding-partner-pick.ts`
+
+- AgreementContact, FundingPartnerFields, ImportedParty, SavedPartner, importedParty, pickAgreementFundingPartner
+
+## `lib/budget/funding-partner.ts`
+
+- resolveAgreementFundingPartner
+
+## `lib/budget/funding-path.ts`
+
+- EXPECTED_PAYMENT_BASIS_LABELS, ExpectedPaymentBasis, FUNDING_PATHS, FundingNextStep, FundingPathPayment, FundingPathProposal, FundingPathReceipt, FundingPathRow, PROPOSAL_ANSWER_LABELS, ProposalAnswer, ProposalFundingPath, basisForFundingPath, buildFundingPath, expectedPaymentTriggerLabel, fundingPathAttention, openDonationPromiseCents, proposalAnswer, splitAgreedAmount
+
 ## `lib/budget/invoice-description.ts`
 
 - describeInvoiceWork
@@ -2052,6 +2196,22 @@
 
 - PartnerLinePatch, PartnerQuoteLine, PartnerRateChange, PartnerRateResult, applyPartnerLinePatch, applyPartnerRates
 
+## `lib/budget/partner-quotation-actions.ts`
+
+- deletePartnerQuotation, savePartnerQuotation
+
+## `lib/budget/partner-quotation-context.ts`
+
+- getPartnerQuotationContext
+
+## `lib/budget/partner-quotation-queries.ts`
+
+- listPartnerQuotations
+
+## `lib/budget/partner-quotations.ts`
+
+- PartnerQuotationDTO, PartnerQuotationError, PartnerQuotationInput, PartnerQuotationLine, assignedLineCents, partnerQuotationSchema, partnerQuotationVersion, publicLineCents, quotationTotalCents, reviewQuotationLines, reviewQuotationPrintOptions
+
 ## `lib/budget/partner-quote-save.ts`
 
 - savePartnerQuote
@@ -2059,6 +2219,10 @@
 ## `lib/budget/partner-rate-actions.ts`
 
 - applySuggestedPartnerRates, undoSuggestedPartnerRates
+
+## `lib/budget/payment-percentage.ts`
+
+- PaymentPercentageCalculation, PercentagePayment, isOutgoingPaymentTerms, percentageAmountCents, suggestPercentagePayments
 
 ## `lib/budget/pdf.ts`
 
@@ -2068,21 +2232,25 @@
 
 - BudgetPresentationInput, PartnerQuotePresentation, budgetPresentationSchema
 
+## `lib/budget/print-options.ts`
+
+- PartnerPrintCandidate, PartnerPrintOption, addPartnerPrintOptions, fundPartnerPrintOptions, fundPartnerPrintOptionsForRates, partnerBaseItems, partnerPrintOptionSchema, partnerQuotePrices, reviewPartnerPrintOptions
+
 ## `lib/budget/proposal-actions.ts`
 
 - createProposalBudget
 
 ## `lib/budget/proposal-builder.ts`
 
-- ProposalBudgetDefaults, ProposalBudgetInput, ProposalCost, proposalBudgetSchema, proposalCostRows, proposalCostTotalCents, proposalStandardCosts
+- ProposalBudgetDefaults, ProposalBudgetInput, ProposalCost, proposalBudgetSchema, proposalCostRows, proposalCostSchema, proposalCostTotalCents, proposalStandardCosts
 
 ## `lib/budget/queries.ts`
 
-- BudgetLine, BudgetPresentation, BudgetSettings, FundingReceipt, Invoice, MouPayment, RoyaltyPaymentRow, getBudgetData, getBudgetPresentation, getOrCreateBudgetSettings, getProjectBudget, listInvoices, listPayments, listReceipts, listRoyaltyPayments
+- BudgetLine, BudgetPresentation, BudgetSettings, FundingReceipt, Invoice, MouPayment, RoyaltyPaymentRow, getBudgetData, getBudgetPresentation, getOrCreateBudgetSettings, getPartnerPrintCandidates, getProjectBudget, listInvoices, listPayments, listReceipts, listRoyaltyPayments
 
 ## `lib/budget/quotation-file.ts`
 
-- buildPartnerQuotationBuffer, buildQuotationBuffer
+- buildAllocatedQuotationBuffer, buildPartnerQuotationBuffer, buildQuotationBuffer
 
 ## `lib/budget/reconcile-math.ts`
 
@@ -2100,6 +2268,18 @@
 
 - ensureRoyaltyPaymentForProject, generateDueRoyaltyPayments
 
+## `lib/budget/setup-actions.ts`
+
+- createGuidedBudget
+
+## `lib/budget/setup.ts`
+
+- BudgetSetupBasis, BudgetSetupInput, BudgetSetupPartner, SetupCostDraft, budgetSetupRows, budgetSetupSchema, budgetSetupTotalCents, setupCostsWaitingForSize, setupStandardCosts
+
+## `lib/budget/steps.ts`
+
+- BudgetStepsInput, buildBudgetSteps
+
 ## `lib/capacity.ts`
 
 - CapacityInput, LoadTone, openLoadClass, overdueClass, utilizationClass, utilizationPct, utilizationTone
@@ -2115,6 +2295,10 @@
 ## `lib/capacity/roles.ts`
 
 - CapacityByPath, CapacityInput, CapacityView, PathCapacityView, PersonCapacity, RoleCapacity, computeCapacity, computeCapacityByPath
+
+## `lib/chat/access-sql.ts`
+
+- channelAccessCondition, projectChatAccessCondition
 
 ## `lib/chat/access.ts`
 
@@ -2156,6 +2340,10 @@
 
 - MessageEditDraft, reconcileDeletedMessages, reconcileMessageEdits, restoreDeletedMessage
 
+## `lib/chat/frequent-reactions-cache.ts`
+
+- createFrequentReactionsCache
+
 ## `lib/chat/haptics.ts`
 
 - messageHoldHaptic
@@ -2164,9 +2352,17 @@
 
 - ChatImage, chatMessageImages
 
+## `lib/chat/link-preview.ts`
+
+- getLinkPreview, getLinkPreviewImage, parseLinkPreview
+
 ## `lib/chat/message-hold.ts`
 
 - createMessageHold
+
+## `lib/chat/message-links.ts`
+
+- firstMessageLink, messageLinkSegments
 
 ## `lib/chat/navigation.ts`
 
@@ -2183,6 +2379,10 @@
 ## `lib/chat/pins.ts`
 
 - AccessiblePin, getMessagePin, listAccessiblePins, listChannelPins
+
+## `lib/chat/preview-fetch.ts`
+
+- fetchPreviewResource, isPublicPreviewAddress
 
 ## `lib/chat/project-channels.ts`
 
@@ -2216,6 +2416,10 @@
 
 - compareConversationActivity, compareProjectActivity, dedupeAndSortTeamChannels, selectProjectDestination
 
+## `lib/chat/snapshot.ts`
+
+- reuseChatSnapshot
+
 ## `lib/chat/video-client.ts`
 
 - prepareChatVideo
@@ -2227,6 +2431,26 @@
 ## `lib/chat/video.ts`
 
 - CHAT_VIDEO_AUDIO_BITRATE, CHAT_VIDEO_INPUT_BYTES, CHAT_VIDEO_MAX_SECONDS, CHAT_VIDEO_TARGET_BYTES, CHAT_VIDEO_UPLOAD_BYTES, ChatVideoProgress, ChatVideoQuality, ChatVideoResult, ChatVideoWorkerRequest, ChatVideoWorkerResponse, chatVideoPlan, isChatVideo, originalChatVideo, shouldPreserveChatVideo
+
+## `lib/chat/voice-client.ts`
+
+- prepareVoiceMessage
+
+## `lib/chat/voice-metadata.ts`
+
+- PreparedVoice, VOICE_MAX_BYTES, VOICE_MAX_MS, VOICE_PEAK_COUNT, VoiceMetadata
+
+## `lib/chat/voice-playback.ts`
+
+- recoverVoiceDuration
+
+## `lib/chat/voice-player.ts`
+
+- VoicePlayback, VoicePlayer, VoiceSource
+
+## `lib/chat/voice-preparation.ts`
+
+- prepareVoiceFile
 
 ## `lib/cron/auth.ts`
 
@@ -2310,7 +2534,7 @@
 
 ## `lib/db/schema/budget.ts`
 
-- BudgetApprovalDecision, BudgetApprovalRequestStatus, BudgetPresentationMode, budgetApprovalAssignments, budgetApprovalRequests, budgetItems, budgetScopePresentations, fundingReceipts, invoiceDeliveries, invoiceSequences, invoices, mouPaymentProjects, mouPayments, projectBudgetSettings, proposalSubmissions, royaltyPayments, sharedMouReceiptAllocations, sharedMouReceipts
+- BudgetApprovalDecision, BudgetApprovalRequestStatus, BudgetPresentationMode, budgetApprovalAssignments, budgetApprovalRequests, budgetItems, budgetScopePresentations, fundingReceipts, invoiceDeliveries, invoiceSequences, invoices, mouPaymentProjects, mouPayments, projectBudgetSettings, projectPartnerQuotations, proposalSubmissions, royaltyPayments, sharedMouReceiptAllocations, sharedMouReceipts
 
 ## `lib/db/schema/chat.ts`
 
@@ -2394,7 +2618,7 @@
 
 ## `lib/db/schema/projects.ts`
 
-- phases, podcastStageSettings, projectManagers, projectMembers, projects, units
+- defaultProjectPeople, phases, podcastStageSettings, projectManagers, projectMembers, projectPeople, projects, units
 
 ## `lib/db/schema/recurring.ts`
 
@@ -2418,7 +2642,7 @@
 
 ## `lib/db/schema/tasks.ts`
 
-- taskComments, taskDependencies, taskDriveFiles, taskQueues, tasks
+- taskComments, taskDependencies, taskDriveFiles, taskPins, taskQueues, tasks
 
 ## `lib/db/schema/templates.ts`
 
@@ -2526,11 +2750,15 @@
 
 ## `lib/donations/match.ts`
 
-- MatchDonation, MatchProject, MatchReceivable, MatchSharedReceivable, buildDonationSuggestion
+- MatchDonation, MatchDonationPromise, MatchProject, MatchReceivable, MatchSharedReceivable, buildDonationSuggestion
 
 ## `lib/donations/mou-link.ts`
 
 - DonationMouLinkOption, donationMouLinkOptions
+
+## `lib/donations/proposal-match.ts`
+
+- DonationProposalCandidate, donorMatchesParty, proposalForDonation
 
 ## `lib/donations/queries.ts`
 
@@ -2788,6 +3016,10 @@
 
 - PixelCrop, cropToFile, readFileAsDataURL, validateImageFile
 
+## `lib/files/fetch-download.ts`
+
+- DownloadResult, fetchDownload
+
 ## `lib/files/link-attributes.ts`
 
 - fileLinkAttributes
@@ -2807,6 +3039,10 @@
 ## `lib/files/upload-progress.ts`
 
 - uploadFileBytes
+
+## `lib/files/upload-rules.ts`
+
+- MAX_FILE_BYTES, isAllowedMime, uploadContentType, validateUpload
 
 ## `lib/flow.ts`
 
@@ -2879,6 +3115,10 @@
 ## `lib/guidance/state.ts`
 
 - GuidanceMutation, guidanceMutationKey, updateGuidanceDismissals
+
+## `lib/guidance/steps.ts`
+
+- GuideStep, GuideStepAction, GuideStepDraft, GuideStepStatus, GuideSteps, finalizeSteps, plural
 
 ## `lib/help/content.ts`
 
@@ -3132,13 +3372,17 @@
 
 - getMentionTargets
 
+## `lib/mentions/menu-position.ts`
+
+- mentionMenuPosition
+
 ## `lib/mentions/notify.ts`
 
 - NotifyMentionsInput, notifyMentions
 
 ## `lib/mentions/parse.ts`
 
-- MentionSegment, MentionUser, findMentionedIds, handlesFor, hasMention, tokenizeMentions
+- MentionSegment, MentionUser, findMentionedIds, handlesFor, hasChannelMention, hasMention, tokenizeMentions
 
 ## `lib/mentions/roster.ts`
 
@@ -3163,6 +3407,10 @@
 ## `lib/notifications/client-events.ts`
 
 - NOTIFICATIONS_CHANGED_EVENT, requestNotificationRefresh
+
+## `lib/notifications/client-feed.ts`
+
+- BellItem, createNotificationFeed
 
 ## `lib/notifications/email-policy.ts`
 
@@ -3212,9 +3460,25 @@
 
 - ComplianceSummary, ObligationRow, getComplianceSummary, listObligations
 
+## `lib/observability/performance-buffer.ts`
+
+- createReportBuffer
+
+## `lib/observability/performance-intake.ts`
+
+- PerformanceIntakeDependencies, createRateLimiter, handlePerformanceReport, performanceMonitoringEnabled
+
+## `lib/observability/performance-report.ts`
+
+- MAX_OBSERVATIONS_PER_REPORT, MAX_REPORT_BYTES, MetricName, NAVIGATION_KINDS, NavigationKind, PerformanceObservation, PerformanceReport, ROUTE_CATEGORIES, RouteCategory, USEFUL_WORK_NAMES, USEFUL_WORK_ROUTES, UsefulWorkName, WEB_VITAL_NAMES, WebVitalName, isRouteCategory, isValidMetricValue, observationForWebVital, parsePerformanceReport, routeCategoryForPath
+
 ## `lib/observability/sentry-scrub.ts`
 
 - scrubSentryEvent
+
+## `lib/observability/useful-work.ts`
+
+- createUsefulWorkTracker, installUsefulWorkTracking, noteClientNavigation, observeVisibleElement, usefulWork
 
 ## `lib/onboarding/queries.ts`
 
@@ -3239,6 +3503,10 @@
 ## `lib/partners/actions.ts`
 
 - addPartnerContact, createPartner, deletePartner, deletePartnerContact, setPrimaryPartnerContact, updatePartner, updatePartnerContact
+
+## `lib/partners/find-or-create.ts`
+
+- findOrCreatePartnerContact
 
 ## `lib/partners/queries.ts`
 
@@ -3294,7 +3562,7 @@
 
 ## `lib/print/email-text-extract.ts`
 
-- runTextQuoteExtraction
+- extractTextQuoteSuggestions, runTextQuoteExtraction
 
 ## `lib/print/email-text-quote.ts`
 
@@ -3304,13 +3572,21 @@
 
 - draftPrintEstimate
 
+## `lib/print/estimate-intake-actions.ts`
+
+- createPrintEstimateFromText
+
+## `lib/print/estimate-intake.ts`
+
+- pastedEstimateSourceText, reusedQuoteFlag, withQuoteSourceFlag
+
 ## `lib/print/estimate-policy.ts`
 
-- BUDGET_ESTIMATE_KIND, MAX_REFERENCE_PDF_BYTES, chooseBudgetPrintQuote
+- BUDGET_ESTIMATE_KIND, BUDGET_ESTIMATE_SOURCE_RUN_KINDS, MAX_REFERENCE_PDF_BYTES, canUseAsBudgetEstimate, chooseBudgetPrintQuote, reviewedFirstPrintQuote
 
 ## `lib/print/estimate-review-actions.ts`
 
-- selectPrintEstimateQuote
+- selectPrintEstimateQuote, stopUsingPrintEstimateQuote
 
 ## `lib/print/estimate.ts`
 
@@ -3322,7 +3598,7 @@
 
 ## `lib/print/extract.ts`
 
-- SuggestedQuoteMeta, SuggestedQuoteSaveResult, extractPrintInvoice, insertSuggestedQuote, runPrintQuoteExtraction, syncAcceptedInvoiceFiles, upsertEmailSuggestedQuote
+- SuggestedQuoteSaveResult, extractPrintInvoice, insertSuggestedQuote, runPrintQuoteExtraction, syncAcceptedInvoiceFiles, upsertEmailSuggestedQuote
 
 ## `lib/print/extraction-jobs.ts`
 
@@ -3338,7 +3614,7 @@
 
 ## `lib/print/parser.ts`
 
-- ParsedPrinterQuote, extractLatestProofUrl, isoDate, parsePrinterQuoteText, parsePrinterQuoteTextVariants, reconcilePrintPaymentAmounts, resolveFinalPrintPaymentAmount
+- ParsedPrinterQuote, cleanQuoteTitle, extractLatestProofUrl, isoDate, parsePrinterQuoteText, parsePrinterQuoteTextVariants, reconcilePrintPaymentAmounts, resolveFinalPrintPaymentAmount
 
 ## `lib/print/payment-task-copy.ts`
 
@@ -3366,7 +3642,7 @@
 
 ## `lib/print/quote-run-specs.ts`
 
-- PrintRunSpecPatch, QuoteProductionSpecs, quoteHasProductionSpecs, quoteRunSpecPatch
+- PrintRunSpecPatch, QuoteProductionSpecs, quoteHasProductionSpecs, quoteRunSpecPatch, runQuotedTextPages
 
 ## `lib/print/review-flags.ts`
 
@@ -3383,6 +3659,14 @@
 ## `lib/print/spec-presets.ts`
 
 - PrintSpecPreset, bookSpecPresets, suggestedBookSpecs
+
+## `lib/print/steps.ts`
+
+- PrintStepsInput, buildPrintSteps
+
+## `lib/print/suggested-quote-values.ts`
+
+- SuggestedQuoteMeta, suggestedQuoteValues
 
 ## `lib/print/text-extract-schema.ts`
 
@@ -3476,6 +3760,14 @@
 
 - OverdueInput, OverdueSummary, computeOverdue
 
+## `lib/projects/people-actions.ts`
+
+- addProjectPerson, applyDefaultProjectPeople, previewDefaultProjectPeople, removeProjectPerson, saveDefaultProjectPeople
+
+## `lib/projects/people.ts`
+
+- addDefaultProjectPeople, listDefaultProjectPeople, listProjectPeople
+
 ## `lib/projects/phase-actions.ts`
 
 - shiftPhase, updatePhaseDates
@@ -3546,11 +3838,19 @@
 
 ## `lib/proposals/actions.ts`
 
-- draftMouProposal, sendMouProposal, updateProposalStatus, updateProposedCompletionDate
+- draftMouProposal, sendMouProposal, updateProposedCompletionDate
+
+## `lib/proposals/answer-actions.ts`
+
+- linkReceiptToProposal, setProposalAnswer
+
+## `lib/proposals/answer-plan.ts`
+
+- PlannedExpectedPayment, ProposalAnswerInput, ProposalAnswerPlan, ProposalAnswerValue, planProposalAnswer, proposalAnswerInput
 
 ## `lib/proposals/queries.ts`
 
-- ProposalRow, listProposals
+- ProposalRow, listProposals, openDonationPromisesByProject
 
 ## `lib/push/client.ts`
 
@@ -3590,7 +3890,7 @@
 
 ## `lib/r2/index.ts`
 
-- MAX_DONATION_CSV_BYTES, MAX_FILE_BYTES, ObjectTooLargeError, buildDonationImportKey, buildKey, buildWikiImageKey, buildWikiImageStagingKey, buildWikiVideoCaptionKey, buildWikiVideoKey, buildWikiVideoPosterKey, deleteObject, getObjectBuffer, getObjectPrefix, headObject, isAllowedMime, presignGet, presignPut, putObject, readBodyBounded, validateUpload
+- MAX_DONATION_CSV_BYTES, ObjectTooLargeError, buildDonationImportKey, buildKey, buildWikiImageKey, buildWikiImageStagingKey, buildWikiVideoCaptionKey, buildWikiVideoKey, buildWikiVideoPosterKey, deleteObject, getObjectBuffer, getObjectPrefix, headObject, presignGet, presignPut, putObject, readBodyBounded
 
 ## `lib/recurring/schedule.ts`
 
@@ -3738,7 +4038,7 @@
 
 ## `lib/tasks/attention.ts`
 
-- TASK_ATTENTION_WINDOW_DAYS, printPaymentFollowUp, selectPersonalWork, splitTasksByAttention
+- TASK_ATTENTION_WINDOW_DAYS, previewAttentionTasks, printPaymentFollowUp, selectPersonalWork, splitTasksByAttention
 
 ## `lib/tasks/board-order.ts`
 
@@ -3784,6 +4084,10 @@
 
 - AgendaFilter, MyWorkView, isCompletedOn, matchesAgendaFilter, normalizeMyWorkView
 
+## `lib/tasks/pin-actions.ts`
+
+- getTaskPinSnapshot, setTaskPinned
+
 ## `lib/tasks/queries.ts`
 
 - DependencyEdge, MyTaskRow, MyWorkTaskRow, OpenTaskBlocker, PipelineData, RecurringTaskRow, TaskComment, TaskRow, TeamLoadPerson, WeeklyCount, getMyTasks, getMyWorkTasks, getOpenAssignedTasks, getOpenTaskBlockers, getProjectDependencyEdges, getProjectPipeline, getProjectTasks, getStandaloneTasks, getTaskComments, getTaskQueueStates, getTeamLoad, listProjectMilestones, listRecurringTasks, searchTasksOutsideMyWork, weeklyTaskCompletions
@@ -3810,7 +4114,7 @@
 
 ## `lib/tasks/search.ts`
 
-- MY_WORK_RECENT_DONE_DAYS, TASK_SEARCH_LIMIT, escapeLikePattern, matchesTaskSearch, myWorkTaskLocations, otherTaskReason, rankTaskSearchMatches, taskSearchTerms
+- MY_WORK_RECENT_DONE_DAYS, TASK_SEARCH_LIMIT, TaskSearchScope, escapeLikePattern, matchesTaskSearch, myWorkTaskLocations, otherTaskReason, rankTaskSearchMatches, splitOtherTaskResults, taskSearchTerms
 
 ## `lib/tasks/task-source.ts`
 
@@ -3856,6 +4160,14 @@
 
 - generateToken, hashToken
 
+## `lib/ui/device-tier.ts`
+
+- installDeviceTier, isLowPowerDevice
+
+## `lib/ui/settle.ts`
+
+- SettleTarget, flashResult, settle
+
 ## `lib/users/avatar-data.ts`
 
 - MAX_AVATAR_BYTES, StoredAvatar, decodeAvatarDataUrl
@@ -3900,6 +4212,10 @@
 
 - WorkspaceSettingsInput, completeWorkspaceSetup, removeWorkspaceLogo, setWorkspaceLogo, setWorkspaceModule, updateInvoiceSequence, updateWorkspaceBranding, updateWorkspaceSettings
 
+## `lib/workspace/document-colors.ts`
+
+- DocumentColors, documentColors, documentColorsSchema
+
 ## `lib/workspace/module-guard.ts`
 
 - requireWorkspaceModule
@@ -3911,6 +4227,10 @@
 ## `lib/workspace/queries.ts`
 
 - InvoiceIssuerSnapshot, WorkspaceAiContext, WorkspaceSettings, getInvoiceIssuerSnapshot, getInvoiceSequenceSettings, getWorkspaceAiContext, getWorkspaceLogoFile, getWorkspaceSettings, workspaceSetupComplete
+
+## `scripts/browser-tests-lib.mjs`
+
+- assertDisposableTarget, assertNoLocalEnvFiles, cleanEnv, createDisposableDatabase, createTlsProxy, dropDisposableDatabase, freePort, isLoopbackHost, makeTempDir, randomToken, removeTempDir, resolveServerUrl, runSync, startServer, startStack, stopServer, waitForReady
 
 ## `scripts/database-preflight.mjs`
 

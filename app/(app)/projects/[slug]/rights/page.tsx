@@ -21,8 +21,10 @@ import { ComplianceCard } from "@/components/rights/compliance-card";
 import { ProjectCorrespondence } from "@/components/rights/project-correspondence";
 import { ProjectSurfaceNotes } from "@/components/projects/project-surface-notes";
 import { getAgreementChatSnapshot } from "@/lib/agreement-chat/actions";
+import { getProjectFundingOverview } from "@/lib/projects/funding-overview-queries";
+import { ProjectFundingOverview } from "@/components/projects/project-funding-overview";
 
-export const metadata = { title: "Rights" };
+export const metadata = { title: "Rights & MOUs" };
 export const dynamic = "force-dynamic";
 
 export default async function ProjectRightsPage({
@@ -47,6 +49,7 @@ export default async function ProjectRightsPage({
     obligations,
     mentionTargets,
     agreementChat,
+    funding,
   ] = await Promise.all([
       listHoldersWithContacts(),
       listAssignableUsers(),
@@ -62,6 +65,7 @@ export default async function ProjectRightsPage({
       listObligations(project.id),
       listProjectMentionTargets(project.id),
       getAgreementChatSnapshot(project.id),
+      canEdit ? getProjectFundingOverview(project.id) : Promise.resolve(null),
     ]);
   const threads = canEdit
     ? await listThreads({ projectId: project.id, limit: 20 })
@@ -101,6 +105,7 @@ export default async function ProjectRightsPage({
       }))}
       creatorName={creator?.name ?? null}
       agreementChat={agreementChat}
+      fundingSummary={funding && (funding.sources.length > 0 || funding.receipts.length > 0 || funding.excludedPayments.length > 0) ? <ProjectFundingOverview funding={funding} slug={slug} view="agreement" title="Agreement funding" id="agreement-funding" /> : null}
     />
       <ComplianceCard
         projectId={project.id}
@@ -114,8 +119,8 @@ export default async function ProjectRightsPage({
         projectId={project.id}
         slug={slug}
         surface="rights"
-        title="Rights notes"
-        emptyText="No rights notes yet."
+        title="Rights & MOUs notes"
+        emptyText="No Rights & MOUs notes yet."
         currentUserId={user.id}
         canModerate={canEdit}
         members={mentionTargets}

@@ -47,13 +47,13 @@ export function appNavigation(access: Access): NavigationGroup[] {
 export function settingsNavigation(access: Access): NavigationGroup[] {
   return visibleGroups([
     { label: "Personal", items: [
-      { href: "/settings/profile", label: "Profile", icon: "profile", description: "Your name, timezone, guidance, timer, and email assistant preferences." },
+      { href: "/settings/profile", label: "Profile", icon: "profile", description: "Your name, timezone, Google Drive connection, guidance, timer, and email assistant preferences." },
       { href: "/settings/security", label: "Security", icon: "security", access: "admin", description: "Passkeys and account security." },
       { href: "/settings/notifications", label: "Notifications", icon: "notifications", description: "Choose which work alerts you receive." },
     ] },
     { label: "Workspace", items: [
       { href: "/settings/dictionary", label: "Voice dictionary", icon: "dictionary", description: "Names and words used in voice input." },
-      { href: "/settings/team", label: "Team", icon: "members", access: "manager", description: "Invite teammates and manage workspace roles." },
+      { href: "/settings/team", label: "Team", icon: "members", access: "manager", description: "Invite teammates, manage workspace roles, and choose the default project team." },
       { href: "/settings/workspace", label: "Workspace", icon: "workspace", access: "admin", description: "Organization identity and defaults for new projects." },
       { href: "/settings/modules", label: "Modules", icon: "settings", access: "admin", description: "Enable optional tools, including book sponsorships." },
       ...(moduleEnabled(access.enabledModules ?? [], "lectio") ? [{ href: "/settings/lectio", label: "Lectio", icon: "projects", access: "admin" as const, description: "Connect translation projects and teams." }] : []),
@@ -88,12 +88,12 @@ export function projectNavigation(slug: string, kind?: string | null) {
       { href: `${base}/chat`, label: "Chat", icon: "chat" },
     ],
     publishing: [
-      { href: `${base}/rights`, label: "Rights", icon: "security" },
+      { href: `${base}/rights`, label: "Rights & MOUs", icon: "security" },
       { href: `${base}/budget`, label: "Budget", icon: "budget" },
       isEpisodicKind(kind)
         ? { href: `${base}/episodes`, label: kind === "video_series" ? "Videos" : "Episodes", icon: kind === "video_series" ? "video" : "episodes" }
         : { href: `${base}/print`, label: "Print", icon: "print" },
     ],
-    members: { href: `${base}/members`, label: "Members", icon: "members" },
+    members: { href: `${base}/members`, label: "People", icon: "members" },
   };
 }

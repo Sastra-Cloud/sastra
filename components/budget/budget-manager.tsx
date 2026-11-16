@@ -2,7 +2,7 @@
 
 import { confirmDialog } from "@/lib/dialog-requests";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -28,7 +28,7 @@ import {
   updateBudgetLine,
   updateBudgetSettings,
 } from "@/lib/budget/actions";
-import { addPartnerContact, createPartner } from "@/lib/partners/actions";
+import { PartnerFields as PartnerDetailsFields, emptyPartnerValues, type PartnerValues } from "@/components/partners/partner-fields";
 import {
   budgetGroupLabel,
   committedFundingTotal,
@@ -36,7 +36,6 @@ import {
   grossTargetCents,
   lineAmount,
   lineQuantity,
-  partnerQuoteTotalCents,
   type BudgetUnit,
 } from "@/lib/budget/compute";
 import { Badge } from "@/components/ui/badge";
@@ -47,9 +46,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { usePropState } from "@/hooks/use-prop-state";
+import { useSettle } from "@/hooks/use-settle";
 import { useOptimisticAction } from "@/hooks/use-optimistic-action";
+import { BudgetSetupGuide } from "./budget-setup-guide";
 import { PartnerQuotePanel } from "@/components/budget/partner-quote-panel";
 import { applyPartnerLinePatch, applyPartnerRates, type PartnerLinePatch, type PartnerRateResult } from "@/lib/budget/partner-line-state";
+import { partnerQuotePrices, type PartnerPrintCandidate } from "@/lib/budget/print-options";
+import type { PartnerQuotePresentation } from "@/lib/budget/presentation-input";
 
 // The print/ship line stores its status in the label, e.g. "Printing — 3,000
 // copies (finalized)". Show that status as an in-app badge and keep the label
@@ -87,13 +90,7 @@ export type BudgetLineDTO = {
   isAutoQuantity: boolean;
 };
 
-export type BudgetPresentationDTO = {
-  mode: "itemized" | "per_copy";
-  deductionBps: number;
-  publicDescription: string | null;
-  perCopyQuantity: number | null;
-  perCopyUnitPrice: string | null;
-};
+export type BudgetPresentationDTO = PartnerQuotePresentation;
 
 export type BudgetSettingsDTO = {
   wordCount: number;
@@ -278,6 +275,7 @@ export function BudgetManager({
   presentation = null,
   totalAvailable = 0,
   aggregateReadOnly = false,
+  printCandidates = [],
 }: {
   projectId: string;
   slug: string;
@@ -295,6 +293,7 @@ export function BudgetManager({
   presentation?: BudgetPresentationDTO | null;
   totalAvailable?: number;
   aggregateReadOnly?: boolean;
+  printCandidates?: PartnerPrintCandidate[];
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -322,6 +321,7 @@ export function BudgetManager({
   });
   const items = itemMutation.state;
   const [pendingRateIds, setPendingRateIds] = useState<Set<string>>(() => new Set());
+  const [setupSkipped, setSetupSkipped] = useState(false);
 
   const run = (fn: () => Promise<unknown>, ok?: string, rollback?: () => void) =>
     start(async () => {
@@ -568,7 +568,7 @@ export function BudgetManager({
   const deductionReserveCents =
     minimumFundingTargetCents - internalCostCents;
   const itemizedPartnerTotal =
-    partnerQuoteTotalCents(items) / 100;
+    partnerQuotePrices(items, presentation?.printOptions).minimumCents / 100;
   const partnerTotal =
     presentation?.mode === "per_copy"
       ? (presentation.perCopyQuantity ?? 0) *
@@ -612,7 +612,65 @@ export function BudgetManager({
         }
       : undefined;
 
+  // Guided setup is offered until the main budget has a cost of its own (a
+  // printing cost synced from a printer estimate does not count).
+  const needsSetup =
+    canEdit &&
+    !printRunId &&
+    !aggregateReadOnly &&
+    items.every((item) => item.category === "print_ship");
+  // When setup finishes, the guide is replaced by the budget it created. Show
+  // the person where their costs are instead of leaving the view where it was.
+  const { flash } = useSettle();
+  const hadSetup = useRef(needsSetup);
+  useEffect(() => {
+    if (hadSetup.current && !needsSetup) {
+      flash("[data-budget-group]", { anchor: "#budget-costs" });
+    }
+    hadSetup.current = needsSetup;
+  }, [needsSetup, flash]);
+  const setupGuide = needsSetup && !setupSkipped ? (
+    <div id="budget-setup" tabIndex={-1} className="scroll-mt-32 focus-visible:outline-none">
+      <BudgetSetupGuide
+        projectId={projectId}
+        currency={currency}
+        rates={settings}
+        wordCount={settings.wordCount}
+        sourcePageCount={settings.sourcePageCount}
+        wordsPerPage={settings.wordsPerPage}
+        languageExpansionFactor={settings.languageExpansionFactor}
+        partners={partners}
+        savedPartner={
+          settings.partnerName
+            ? {
+                partnerId: settings.partnerId ?? null,
+                contactId: settings.partnerContactId ?? null,
+                name: settings.partnerName,
+                firstName: settings.partnerContactFirstName ?? "",
+                lastName: settings.partnerContactLastName ?? "",
+                email: settings.partnerContactEmail ?? "",
+              }
+            : null
+        }
+        deductionBps={presentation?.deductionBps ?? null}
+        showPrintingNote={projectKind !== "podcast" && projectKind !== "video_series"}
+        onSkip={() => setSetupSkipped(true)}
+      />
+    </div>
+  ) : null;
+  const resumeSetup = needsSetup && setupSkipped ? (
+    <Button
+      id="budget-setup"
+      variant="link"
+      className="scroll-mt-32 px-1"
+      onClick={() => setSetupSkipped(false)}
+    >
+      Use guided setup
+    </Button>
+  ) : null;
+
   if (items.length === 0 && !hasAgreementFundingContext) {
+    if (setupGuide) return <div aria-busy={pending}>{setupGuide}</div>;
     return (
       <div className="space-y-4" aria-busy={pending}>
         <Card
@@ -669,6 +727,7 @@ export function BudgetManager({
                 Add standard budget items
               </Button>
             ) : null}
+            {resumeSetup}
           </CardContent>
         </Card>
         {canEdit ? (
@@ -726,7 +785,7 @@ export function BudgetManager({
           help="The internal costs needed to deliver this budget scope."
         />
         <Stat
-          label="Partner quote"
+          label={presentation?.mode === "itemized" && presentation.printOptions?.length ? "Partner quote from" : "Partner quote"}
           value={money(fundingTarget, currency)}
           help="What the partner sees and is asked to fund."
           detail={
@@ -741,7 +800,7 @@ export function BudgetManager({
         <Stat
           label="Committed"
           value={money(raised, currency)}
-          help="Funding committed so far: the larger of the agreement payment schedule or line-level assigned funding, plus non-MoU donations received."
+          help="Funding committed so far: the larger of promised money (expected payments and promised donations) or line-level assigned funding, plus other funding received."
         />
         <Stat
           label="Received"
@@ -764,7 +823,9 @@ export function BudgetManager({
         </p>
       ) : null}
 
-      <div className="border-b pb-1">
+      {setupGuide}
+
+      <div id="budget-costs" className="scroll-mt-32 border-b pb-1">
         <div className="space-y-1">
           <h3 className="font-semibold">Main budget plan</h3>
           <p className="text-sm text-muted-foreground">
@@ -802,7 +863,7 @@ export function BudgetManager({
         </Card>
       )}
 
-      {items.length === 0 ? (
+      {items.length === 0 && !setupGuide ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
             <p className="text-sm text-muted-foreground text-pretty">
@@ -819,6 +880,7 @@ export function BudgetManager({
                 Add standard budget items
               </Button>
             ) : null}
+            {resumeSetup}
           </CardContent>
         </Card>
       ) : null}
@@ -830,7 +892,7 @@ export function BudgetManager({
         const subtotal = groupItems.reduce((s, i) => s + Number(i.amount), 0);
         const groupLabel = budgetGroupLabel(group, projectKind);
         return (
-          <Card key={group} className="overflow-hidden">
+          <Card key={group} data-budget-group={group} className="overflow-hidden">
             <CardContent className="p-0">
               <div className="md:hidden">
                 <div className="border-b bg-muted/40 px-3 py-2 text-xs font-medium text-muted-foreground">
@@ -1036,6 +1098,7 @@ export function BudgetManager({
           onUpdateRates={savePartnerRates}
           isLinePending={(id) => itemMutation.isPending(id) || pendingRateIds.has(id)}
           linesPending={itemMutation.pending}
+          printCandidates={printCandidates}
         />
       ) : null}
 
@@ -1126,8 +1189,8 @@ function FundingPartnerCard({
   const [editing, setEditing] = useState(false);
   const [addingPartner, setAddingPartner] = useState(false);
 
-  const [partnerId, setPartnerId] = useState(settings.partnerId ?? "");
-  const [partnerContactId, setPartnerContactId] = useState(
+  const [partnerId, setPartnerId] = usePropState(settings.partnerId ?? "");
+  const [partnerContactId, setPartnerContactId] = usePropState(
     settings.partnerContactId ?? ""
   );
   const [name, setName] = useState(settings.partnerName ?? "");
@@ -1152,7 +1215,7 @@ function FundingPartnerCard({
   function persist(overrides: PartnerFields = {}) {
     startBusy(async () => {
       try {
-        await updateBudgetSettings(projectId, {
+        const result = await updateBudgetSettings(projectId, {
           partnerId: (overrides.partnerId ?? partnerId) || null,
           partnerContactId: (overrides.partnerContactId ?? partnerContactId) || null,
           partnerName: overrides.name ?? name,
@@ -1163,7 +1226,8 @@ function FundingPartnerCard({
         });
         setEditing(false);
         router.refresh();
-        toast.success("Funding partner saved");
+        if (result.invoiceRefreshError) toast.error(result.invoiceRefreshError);
+        else toast.success("Funding partner saved");
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Could not save.");
       }
@@ -1184,10 +1248,9 @@ function FundingPartnerCard({
     setName(partner.name);
     const primary =
       partner.contacts.find((c) => c.isPrimary) ?? partner.contacts[0] ?? null;
-    if (primary) {
-      setPartnerContactId(primary.id);
-      fillFromContact(primary);
-    }
+    setPartnerContactId(primary?.id ?? "");
+    fillFromContact(primary);
+    setNote("");
   }
 
   function selectContact(id: string) {
@@ -1210,7 +1273,16 @@ function FundingPartnerCard({
   function unlink() {
     setPartnerId("");
     setPartnerContactId("");
-    persist({ partnerId: "", partnerContactId: "" });
+    startBusy(async () => {
+      try {
+        await updateBudgetSettings(projectId, { partnerId: null, partnerContactId: null });
+        router.refresh();
+      } catch (err) {
+        setPartnerId(settings.partnerId ?? "");
+        setPartnerContactId(settings.partnerContactId ?? "");
+        toast.error(err instanceof Error ? err.message : "Could not unlink the partner.");
+      }
+    });
   }
 
   function cancelEdit() {
@@ -1225,48 +1297,32 @@ function FundingPartnerCard({
     setEditing(false);
   }
 
-  function createNewPartner(values: {
-    org: string;
-    first: string;
-    last: string;
-    email: string;
-  }) {
+  function createNewPartner(values: PartnerValues) {
     startBusy(async () => {
       try {
-        const { id } = await createPartner({ name: values.org });
-        let contactId = "";
-        if (values.first || values.last || values.email) {
-          const contact = await addPartnerContact(id, {
-            firstName: values.first || undefined,
-            lastName: values.last || undefined,
-            email: values.email || undefined,
-            isPrimary: true,
-          });
-          contactId = contact.id;
-        }
-        setPartnerId(id);
-        setPartnerContactId(contactId);
-        setName(values.org);
-        setFirstName(values.first);
-        setLastName(values.last);
-        setEmail(values.email);
-        await updateBudgetSettings(projectId, {
-          partnerId: id,
-          partnerContactId: contactId || null,
-          partnerName: values.org,
-          partnerContactFirstName: values.first,
-          partnerContactLastName: values.last,
+        const result = await updateBudgetSettings(projectId, {
+          partnerId: null,
+          partnerContactId: null,
+          partnerName: values.name,
+          partnerContactFirstName: values.firstName,
+          partnerContactLastName: values.lastName,
           partnerContactEmail: values.email,
-          partnerContact: note,
+          partnerContact: values.phone,
+          partnerDetails: { website: values.website, billingAddress: values.billingAddress,
+            notes: values.notes, phone: values.phone, role: values.role },
         });
+        setName(values.name);
+        setFirstName(values.firstName);
+        setLastName(values.lastName);
+        setEmail(values.email);
+        setNote(values.phone);
         setAddingPartner(false);
         setEditing(false);
         router.refresh();
-        toast.success("Partner added & linked");
+        if (result.invoiceRefreshError) toast.error(result.invoiceRefreshError);
+        else toast.success("Partner added & linked");
       } catch (err) {
-        toast.error(
-          err instanceof Error ? err.message : "Could not add the partner."
-        );
+        toast.error(err instanceof Error ? err.message : "Could not add the partner. Your details are still here.");
       }
     });
   }
@@ -1279,7 +1335,7 @@ function FundingPartnerCard({
             <span className="rounded-lg border bg-muted/40 p-2 text-muted-foreground">
               <Handshake className="size-4" />
             </span>
-            <p className="text-sm font-medium">Funding partner</p>
+            <p className="text-sm font-medium">Default funding partner</p>
           </div>
           {canEdit && !editing ? (
             <Button
@@ -1294,6 +1350,8 @@ function FundingPartnerCard({
             </Button>
           ) : null}
         </div>
+
+        {canEdit ? <p className="text-xs text-muted-foreground">For separate partner shares, open <a href="#partner-proposals" className="text-primary underline underline-offset-4">Partners &amp; proposals</a>.</p> : null}
 
         {editing ? (
           addingPartner ? (
@@ -1393,6 +1451,7 @@ function FundingPartnerCard({
                 </Field>
               </div>
 
+              <p className="text-xs text-muted-foreground">New partners and contacts are saved to Partners when you save these details.</p>
               <div className="flex gap-2">
                 <Button size="sm" disabled={busy} onClick={() => persist()}>
                   Save partner
@@ -2001,76 +2060,27 @@ function MobileBudgetRow({
   );
 }
 
-function NewPartnerForm({
-  disabled,
-  onCancel,
-  onCreate,
-}: {
+function NewPartnerForm({ disabled, onCancel, onCreate }: {
   disabled: boolean;
   onCancel: () => void;
-  onCreate: (values: {
-    org: string;
-    first: string;
-    last: string;
-    email: string;
-  }) => void;
+  onCreate: (values: PartnerValues) => void;
 }) {
-  const [org, setOrg] = useState("");
-  const [first, setFirst] = useState("");
-  const [last, setLast] = useState("");
-  const [email, setEmail] = useState("");
-
+  const [values, setValues] = useState<PartnerValues>(emptyPartnerValues);
   return (
-    <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
-      <p className="text-xs font-medium">New funding partner</p>
-      <Input
-        value={org}
-        onChange={(e) => setOrg(e.target.value)}
-        placeholder="Organization / sponsor name"
-        autoFocus
-      />
-      <div className="grid gap-2 sm:grid-cols-3">
-        <Input
-          value={first}
-          onChange={(e) => setFirst(e.target.value)}
-          placeholder="Contact first name"
-        />
-        <Input
-          value={last}
-          onChange={(e) => setLast(e.target.value)}
-          placeholder="Last name"
-        />
-        <Input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
-        />
-      </div>
-      <div className="flex items-center gap-2">
-        <Button
-          type="button"
-          size="sm"
-          disabled={disabled || !org.trim()}
-          onClick={() =>
-            onCreate({
-              org: org.trim(),
-              first: first.trim(),
-              last: last.trim(),
-              email: email.trim(),
-            })
-          }
-        >
-          {disabled ? "Adding…" : "Add & use"}
+    <form className="space-y-4 rounded-lg border bg-muted/20 p-3" onSubmit={(event) => {
+      event.preventDefault();
+      if (!disabled && values.name.trim()) onCreate(values);
+    }}>
+      <p className="text-sm font-medium">New funding partner</p>
+      <PartnerDetailsFields value={values} onChange={setValues} disabled={disabled} />
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="submit" size="sm" disabled={disabled || !values.name.trim()}>
+          {disabled ? "Saving partner…" : "Add & use"}
         </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={onCancel}>
-          Cancel
-        </Button>
-        <span className="text-[11px] text-muted-foreground">
-          Saved to the Partners directory.
-        </span>
+        <Button type="button" size="sm" variant="ghost" disabled={disabled} onClick={onCancel}>Cancel</Button>
+        <span className="text-xs text-muted-foreground">Saved to the Partners directory.</span>
       </div>
-    </div>
+    </form>
   );
 }
 
@@ -2092,6 +2102,18 @@ function SettingsCard({
   const [workDescription, setWorkDescription] = useState(
     settings.workDescription ?? ""
   );
+  // "Enter book size" in Budget steps links here; open the closed section.
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    const reveal = () => {
+      if (window.location.hash === "#quotation-settings" && detailsRef.current) {
+        detailsRef.current.open = true;
+      }
+    };
+    reveal();
+    window.addEventListener("hashchange", reveal);
+    return () => window.removeEventListener("hashchange", reveal);
+  }, []);
 
   const rateFields = [
     ["rateTranslation", "Translation /word"],
@@ -2119,9 +2141,9 @@ function SettingsCard({
   ].filter(Boolean) as string[];
 
   return (
-    <Card>
+    <Card id="quotation-settings" className="scroll-mt-32">
       <CardContent className="p-0">
-        <details className="group">
+        <details ref={detailsRef} className="group">
           <summary
             className={cn(
               "flex list-none cursor-pointer items-center gap-3 rounded-xl px-4 py-3",

@@ -67,9 +67,9 @@ export async function GET(
   const url = inline
     // A video may be paused or need another Range request after five minutes.
     // Match private wiki playback; each new URL still requires file access above.
-    ? await presignGet(file.r2Key, undefined, file.mimeType.startsWith("video/") ? 60 * 60 : 300)
+    ? await presignGet(file.r2Key, undefined, /^(audio|video)\//.test(file.mimeType) ? 60 * 60 : 300)
     : await presignGet(file.r2Key, file.originalName);
   const res = NextResponse.redirect(url);
-  if (inline) res.headers.set("Cache-Control", "private, max-age=300");
+  if (inline) res.headers.set("Cache-Control", file.mimeType.startsWith("audio/") ? "private, no-store" : "private, max-age=300");
   return res;
 }

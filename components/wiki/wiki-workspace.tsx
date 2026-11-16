@@ -314,7 +314,7 @@ function WikiNavigation({
                         ) : null}
                       </Link>
                       {canEdit && subject.pages.length > 1 ? (
-                        <span className="shrink-0 opacity-0 transition-opacity group-hover/page:opacity-100 focus-within:opacity-100">
+                        <span className="shrink-0 opacity-0 transition-opacity group-hover/page:opacity-100 focus-within:opacity-100 pointer-coarse:opacity-100">
                           <MoveButtons
                             label={page.title}
                             first={pageIndex === 0}

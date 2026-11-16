@@ -63,7 +63,7 @@ export function ProjectTitleHeading({
         }}
         default="none"
       >
-        <span className="min-w-0 text-pretty">{title}</span>
+        <span className="min-w-0 text-pretty wrap-anywhere">{title}</span>
       </ViewTransition>
       {canEdit ? (
         <Button

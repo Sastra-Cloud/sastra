@@ -5,7 +5,7 @@ import { useLayoutEffect, useState, type RefObject } from "react";
 /** Keep both panels in view, leaving the selected message between them when possible. */
 export function useMessageMenuLayout(open: boolean, reactionsOnly: boolean, surface: RefObject<HTMLDivElement | null>, popup: HTMLDivElement | null,
   reactions: RefObject<HTMLDivElement | null>, commands: RefObject<HTMLDivElement | null>, close: () => void) {
-  const [layout, setLayout] = useState({ split: false, gap: 0, reactionHeight: 60, height: 0,
+  const [layout, setLayout] = useState({ split: false, gap: 0, reactionHeight: 60, height: 0, width: 0,
     boundary: undefined as { x: number; y: number; width: number; height: number } | undefined });
   useLayoutEffect(() => {
     if (!open || !popup || !surface.current || !reactions.current) return;
@@ -15,6 +15,15 @@ export function useMessageMenuLayout(open: boolean, reactionsOnly: boolean, surf
     function update() {
       const bubble = element.getBoundingClientRect();
       const scrollBounds = scroller?.getBoundingClientRect();
+      const viewportLeft = viewport?.offsetLeft ?? 0;
+      const viewportRight = viewportLeft + (viewport?.width ?? window.innerWidth);
+      let left = Math.max(viewportLeft, scrollBounds?.left ?? viewportLeft);
+      let right = Math.min(viewportRight, scrollBounds?.right ?? viewportRight);
+      // Prefer the transcript, but let a very narrow pane use the visible screen.
+      if (right - left < 304) {
+        left = viewportLeft;
+        right = viewportRight;
+      }
       let top = Math.max(viewport?.offsetTop ?? 0, scrollBounds?.top ?? 0) + 12;
       let bottom = Math.min((viewport?.offsetTop ?? 0) + (viewport?.height ?? window.innerHeight), scrollBounds?.bottom ?? window.innerHeight) - 12;
       // When the keyboard leaves almost no transcript, use the visible screen.
@@ -25,10 +34,10 @@ export function useMessageMenuLayout(open: boolean, reactionsOnly: boolean, surf
       const reactionHeight = reactions.current?.offsetHeight ?? 60;
       const commandHeight = commands.current?.scrollHeight ?? 0;
       const split = !reactionsOnly && bubble.top - reactionHeight - 8 >= top && bubble.bottom + commandHeight + 8 <= bottom;
-      const boundary = { x: viewport?.offsetLeft ?? 0, y: top - 12, width: viewport?.width ?? window.innerWidth, height: bottom - top + 24 };
-      const next = { split, gap: split ? bubble.height + 16 : 0, reactionHeight, height: Math.max(100, bottom - top), boundary };
+      const boundary = { x: left, y: top - 12, width: right - left, height: bottom - top + 24 };
+      const next = { split, gap: split ? bubble.height + 16 : 0, reactionHeight, height: Math.max(100, bottom - top), width: right - left - 24, boundary };
       setLayout(current => current.split === next.split && current.gap === next.gap && current.reactionHeight === next.reactionHeight && current.height === next.height &&
-        current.boundary?.x === boundary.x && current.boundary.y === boundary.y && current.boundary.width === boundary.width ? current : next);
+        current.width === next.width && current.boundary?.x === boundary.x && current.boundary.y === boundary.y && current.boundary.width === boundary.width ? current : next);
     }
     function onScroll(event: Event) {
       // Scroll gestures outside dismiss it. Focus/resize can scroll the anchor
@@ -46,12 +55,14 @@ export function useMessageMenuLayout(open: boolean, reactionsOnly: boolean, surf
     document.addEventListener("wheel", onScroll, { capture: true, passive: true });
     document.addEventListener("touchmove", onScroll, { capture: true, passive: true });
     viewport?.addEventListener("resize", update);
+    viewport?.addEventListener("scroll", update);
     return () => {
       observer.disconnect();
       window.removeEventListener("resize", update);
       document.removeEventListener("wheel", onScroll, true);
       document.removeEventListener("touchmove", onScroll, true);
       viewport?.removeEventListener("resize", update);
+      viewport?.removeEventListener("scroll", update);
     };
   }, [open, reactionsOnly, surface, popup, reactions, commands, close]);
   return layout;

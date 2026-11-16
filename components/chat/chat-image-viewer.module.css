@@ -16,6 +16,10 @@
   bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
 }
 
+.viewer :global(.yarl__slide_image) {
+  -webkit-touch-callout: default;
+}
+
 .viewer :global(.yarl__toolbar) {
   position: fixed;
   top: env(safe-area-inset-top, 0px);

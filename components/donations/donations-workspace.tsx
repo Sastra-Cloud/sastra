@@ -1219,7 +1219,7 @@ function DonationReviewPanel({
           marksInvoiceReceived
             ? "Funding posted and invoice payments recorded."
             : marksMouReceived
-              ? "Project funding posted and the matching MoU payment marked received."
+              ? "Project funding posted and the matching expected payment marked received."
               : remainingCents !== 0
                 ? "Project funding posted. The remainder stays unallocated."
                 : "Project funding posted."
@@ -1589,7 +1589,7 @@ function DonationReviewPanel({
                         <p className="flex items-start gap-2">
                           <Link2 className="mt-0.5 size-3.5 shrink-0 text-info" />
                           <span>
-                            Exact MoU payment match. Confirming this allocation
+                            Exact expected payment match. Confirming this allocation
                             will mark that payment received.
                           </span>
                         </p>

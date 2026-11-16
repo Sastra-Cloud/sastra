@@ -4,6 +4,7 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { fileAttachments, files } from "@/lib/db/schema";
+import type { VoiceMetadata } from "@/lib/chat/voice-metadata";
 
 export type Attachment = {
   attachmentId: string;
@@ -13,6 +14,7 @@ export type Attachment = {
   sizeBytes: number;
   label: string | null;
   notes: string | null;
+  audioMetadata?: VoiceMetadata | null;
 };
 
 type AttachTarget =
@@ -41,6 +43,7 @@ export async function listAttachmentsByTargets(
       originalName: files.originalName,
       mimeType: files.mimeType,
       sizeBytes: files.sizeBytes,
+      audioMetadata: files.audioMetadata,
       label: fileAttachments.label,
       notes: fileAttachments.notes,
     })
@@ -62,6 +65,7 @@ export async function listAttachmentsByTargets(
       originalName: r.originalName,
       mimeType: r.mimeType,
       sizeBytes: r.sizeBytes,
+      audioMetadata: r.audioMetadata,
       label: r.label,
       notes: r.notes,
     });
@@ -81,6 +85,7 @@ export async function listAttachments(
       originalName: files.originalName,
       mimeType: files.mimeType,
       sizeBytes: files.sizeBytes,
+      audioMetadata: files.audioMetadata,
       label: fileAttachments.label,
       notes: fileAttachments.notes,
     })

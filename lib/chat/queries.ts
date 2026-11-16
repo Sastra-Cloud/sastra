@@ -5,6 +5,7 @@ import {
   asc,
   desc,
   eq,
+  gte,
   inArray,
   isNull,
   ne,
@@ -25,6 +26,7 @@ import {
   projects,
   user,
 } from "@/lib/db/schema";
+import { channelAccessCondition, projectChatAccessCondition } from "./access-sql";
 import { requireChannelAccess } from "@/lib/chat/access";
 import { replyPreview, type ChatReplyPreview } from "@/lib/chat/replies";
 import {
@@ -60,6 +62,8 @@ export type ChatMessageView = {
   reactions: ChatReaction[];
   attachments: Attachment[];
   replyTo: ChatReplyPreview | null;
+  /** Confirmed readers other than the sender; absent on local pending messages. */
+  seenBy?: { id: string; name: string }[];
 };
 
 /** How many of a conversation's newest messages the thread loads and polls. */
@@ -105,10 +109,11 @@ export async function getRecentMessages(
 
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
+  const firstOwnMessage = rows.find((row) => row.userId === currentUserId);
   const replyIds = [...new Set(rows.flatMap((row) => row.replyToId ? [row.replyToId] : []))];
   // Load parents separately from the recent window, with the same channel and
   // deletion boundary. Never follow an arbitrary legacy/corrupt cross-chat id.
-  const originals = replyIds.length > 0 ? await db
+  const [originals, reactionRows, readers] = await Promise.all([replyIds.length > 0 ? db
     .select({
       id: chatMessages.id,
       authorName: user.name,
@@ -120,10 +125,8 @@ export async function getRecentMessages(
       inArray(chatMessages.id, replyIds),
       eq(chatMessages.channelId, channelId),
       isNull(chatMessages.deletedAt)
-    )) : [];
-
-
-  const reactionRows = await db
+    )) : Promise.resolve([]),
+    db
     .select({
       messageId: messageReactions.messageId,
       emoji: messageReactions.emoji,
@@ -134,7 +137,30 @@ export async function getRecentMessages(
     .where(inArray(messageReactions.messageId, ids))
     .groupBy(messageReactions.messageId, messageReactions.emoji)
     // Keep counts from moving pills around when a fresh aggregation arrives.
-    .orderBy(asc(sql`min(${messageReactions.createdAt})`), asc(messageReactions.emoji));
+    .orderBy(asc(sql`min(${messageReactions.createdAt})`), asc(messageReactions.emoji)),
+    // One read-cursor query for the whole window, never one query per message.
+    // Removed private-channel members and inactive accounts are not readers.
+    firstOwnMessage ? db.select({
+      id: user.id,
+      name: user.name,
+      lastReadMessageId: channelReads.lastReadMessageId,
+    })
+      .from(channelReads)
+      .innerJoin(user, eq(user.id, channelReads.userId))
+      .innerJoin(chatChannels, eq(chatChannels.id, channelReads.channelId))
+      .leftJoin(chatChannelMembers, and(
+        eq(chatChannelMembers.channelId, channelReads.channelId),
+        eq(chatChannelMembers.userId, channelReads.userId)
+      ))
+      .where(and(
+        eq(channelReads.channelId, channelId),
+        ne(channelReads.userId, currentUserId),
+        eq(user.isActive, true),
+        gte(channelReads.lastReadMessageId, firstOwnMessage.id),
+        channelAccessCondition(channelReads.userId)
+      ))
+      .orderBy(asc(user.name), asc(user.id)) : Promise.resolve([]),
+  ]);
 
   const reactionMap = new Map<string, ChatReaction[]>();
   for (const r of reactionRows) {
@@ -160,6 +186,11 @@ export async function getRecentMessages(
     createdAt: r.createdAt.toISOString(),
     editedAt: r.editedAt?.toISOString() ?? null,
     isMine: r.userId === currentUserId,
+    // Messages use time-ordered UUIDs, just like the saved unread cursor.
+    seenBy: r.userId === currentUserId && r.status === "sent"
+      ? readers.filter(reader => reader.lastReadMessageId !== null && reader.lastReadMessageId >= r.id)
+        .map(({ id, name }) => ({ id, name }))
+      : [],
     reactions: reactionMap.get(r.id) ?? [],
     attachments: attachMap.get(r.id) ?? [],
     replyTo: r.replyToId ? replies.get(r.replyToId) ?? {
@@ -212,7 +243,7 @@ export async function getChannelById(
     })
     .from(chatChannels)
     .leftJoin(projects, eq(projects.id, chatChannels.projectId))
-    .where(eq(chatChannels.id, channelId))
+    .where(and(eq(chatChannels.id, channelId), channelAccessCondition(currentUserId)))
     .limit(1);
   if (!c) return null;
   if (!isMemberScopedChannel(c.kind)) {
@@ -454,7 +485,7 @@ export async function listProjectChannels(
         and ${chatMessages.deletedAt} is null
         and ${chatMessages.id} > coalesce(${channelReads.lastReadMessageId}, '00000000-0000-0000-0000-000000000000'::uuid)`
     )
-    .where(and(eq(chatChannels.projectId, projectId), eq(chatChannels.kind, "project")))
+    .where(and(eq(chatChannels.projectId, projectId), eq(chatChannels.kind, "project"), projectChatAccessCondition(projectId, currentUserId)))
     .groupBy(chatChannels.id, chatChannels.name)
     .orderBy(projectChannelOrderSql(), asc(chatChannels.name));
 }
@@ -516,6 +547,7 @@ export async function listProjectChatSummaries(
     .where(
       and(
         eq(chatChannels.kind, "project"),
+        projectChatAccessCondition(chatChannels.projectId, currentUserId),
         notInArray(projects.status, ["completed", "cancelled"])
       )
     )
@@ -696,13 +728,8 @@ export async function getLastVisitedChannelId(currentUserId: string) {
     .where(
       and(
         eq(channelReads.userId, currentUserId),
-        or(
-          inArray(chatChannels.kind, ["general", "project"]),
-          and(
-            inArray(chatChannels.kind, ["direct", "custom"]),
-            eq(chatChannelMembers.userId, currentUserId)
-          )
-        )
+        ne(chatChannels.kind, "standup"),
+        channelAccessCondition(currentUserId)
       )
     )
     .orderBy(desc(channelReads.updatedAt), asc(chatChannels.id))

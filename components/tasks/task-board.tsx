@@ -660,7 +660,7 @@ function CardBody({
             type="button"
             onClick={onOpen}
             // Drag still works from here (via the parent card); a plain click opens details.
-            className="min-w-0 flex-1 cursor-pointer text-left text-sm font-medium leading-snug text-pretty hover:underline"
+            className="min-w-0 flex-1 cursor-pointer text-left text-sm font-medium leading-snug text-pretty wrap-anywhere hover:underline"
           >
             {t.isMilestone ? (
               <Flag className="mr-1 inline size-3.5 text-warning" />
@@ -668,7 +668,7 @@ function CardBody({
             {t.title}
           </button>
         ) : (
-          <p className="min-w-0 flex-1 text-sm font-medium leading-snug text-pretty">
+          <p className="min-w-0 flex-1 text-sm font-medium leading-snug text-pretty wrap-anywhere">
             {t.isMilestone ? (
               <Flag className="mr-1 inline size-3.5 text-warning" />
             ) : null}
@@ -686,7 +686,7 @@ function CardBody({
                 setTitleValue(t.title);
                 setEditing(true);
               }}
-              className="flex size-6 items-center justify-center rounded text-muted-foreground/50 opacity-0 transition-opacity hover:text-muted-foreground focus-visible:opacity-100 group-hover/card:opacity-100"
+              className="flex size-6 items-center justify-center rounded text-muted-foreground/50 opacity-0 transition-opacity hover:text-muted-foreground focus-visible:opacity-100 group-hover/card:opacity-100 pointer-coarse:opacity-100"
             >
               <Pencil className="size-3.5" />
             </button>

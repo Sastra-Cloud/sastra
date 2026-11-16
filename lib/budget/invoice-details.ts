@@ -2,10 +2,16 @@ import "server-only";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { documentImports, partners, projectBudgetSettings, projects, sharedMouGroups, sharedMouMemberships } from "@/lib/db/schema";
+import { resolveAgreementFundingPartner } from "./funding-partner";
 import { describeInvoiceWork } from "./invoice-description";
 import type { BudgetInvoiceSnapshot } from "./line-invoice";
 
-export async function getMouInvoiceDetails(input: { projectId: string; sharedMouGroupId: string | null; trigger: string; publicDescription?: string | null; budgetInvoice?: BudgetInvoiceSnapshot | null }) {
+/**
+ * Who an expected payment's invoice is billed to, and what it says it covers.
+ * `contactEmail` is set only when the partner comes from the signed agreement
+ * because Budget has none saved; callers use it to address the invoice email.
+ */
+export async function getMouInvoiceDetails(input: { projectId: string; sharedMouGroupId: string | null; trigger: string; publicDescription?: string | null; budgetInvoice?: BudgetInvoiceSnapshot | null }): Promise<{ recipientName: string | null; billingAddress: string; description: string; contactEmail?: string | null }> {
   if (input.budgetInvoice && !input.sharedMouGroupId) {
     return {
       recipientName: input.budgetInvoice.recipientName,
@@ -19,7 +25,12 @@ export async function getMouInvoiceDetails(input: { projectId: string; sharedMou
     input.sharedMouGroupId ? db.select().from(sharedMouGroups).where(eq(sharedMouGroups.id, input.sharedMouGroupId)).limit(1) : Promise.resolve([]),
   ]);
   const group = groups[0];
-  const name = group ? group.counterparty?.trim() || null : budget?.partnerName?.trim() || null;
+  // Budget's saved partner wins. Without one, bill the partner named by the
+  // signed agreement, the same party the Budget page shows.
+  const agreementPartner = !group && !budget?.partnerName?.trim()
+    ? await resolveAgreementFundingPartner(input.projectId)
+    : null;
+  const name = group ? group.counterparty?.trim() || null : budget?.partnerName?.trim() || agreementPartner?.partnerName || null;
   // Shared agreements match their counterparty, never an unrelated anchor project's partner.
   const matches = !group && budget?.partnerId
     ? await db.select().from(partners).where(eq(partners.id, budget.partnerId)).limit(1)
@@ -37,6 +48,7 @@ export async function getMouInvoiceDetails(input: { projectId: string; sharedMou
   return {
     recipientName: group ? name : partner?.name || name,
     billingAddress: partner?.billingAddress ?? "",
+    ...(agreementPartner ? { contactEmail: agreementPartner.partnerContactEmail } : {}),
     description: describeInvoiceWork({ trigger: input.trigger, agreement: group?.name || "the MoU", works, fallback: input.publicDescription }),
   };
 }

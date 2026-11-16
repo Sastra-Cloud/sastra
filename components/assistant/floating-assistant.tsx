@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Sparkles } from "lucide-react";
+import dynamic from "next/dynamic";
+import { Sparkles, X } from "lucide-react";
 
 import {
   getAssistantSnapshot,
@@ -14,11 +15,34 @@ import {
   showAssistantTip,
   type AssistantOpenDetail,
 } from "@/lib/assistant/launcher";
-import { AssistantWorkspace } from "@/components/assistant/assistant-workspace";
 import { useGuidance } from "@/components/guidance/guidance-provider";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetClose, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useConversationViewport } from "@/hooks/use-conversation-viewport";
+import { usePinnedTasks } from "@/components/tasks/pinned-tasks-provider";
+
+const AssistantWorkspace = dynamic(
+  () => import("@/components/assistant/assistant-workspace").then(module => module.AssistantWorkspace),
+  { loading: () => <AssistantLoading /> },
+);
+
+function AssistantLoading() {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex shrink-0 justify-end p-3">
+        <SheetClose render={<Button variant="ghost" size="icon" aria-label="Close assistant" />}>
+          <X className="size-4" />
+        </SheetClose>
+      </div>
+      <div role="status" className="flex flex-1 items-center justify-center text-sm text-muted-foreground">Loading assistant…</div>
+    </div>
+  );
+}
+
+function warmAssistant() {
+  // Start code and snapshot loading together; hover/focus can warm it earlier.
+  void import("@/components/assistant/assistant-workspace").catch(() => {});
+}
 
 /** Pull the project slug out of a /projects/<slug>/... route, if we're on one. */
 function projectSlugFromPath(pathname: string): string | null {
@@ -39,11 +63,8 @@ const TIP_DELAY_MS = 1200;
  */
 export function FloatingAssistant({
   userName,
-  introduced = false,
 }: {
   userName: string;
-  /** The person has asked the assistant something before. */
-  introduced?: boolean;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -51,6 +72,11 @@ export function FloatingAssistant({
   // task the user asks for is filed into the scope they're currently viewing.
   const runScope = searchParams.get("run");
   const [open, setOpen] = useState(false);
+  const setAssistantOpen = usePinnedTasks()?.setAssistantOpen;
+  useEffect(() => {
+    setAssistantOpen?.(open);
+    return () => setAssistantOpen?.(false);
+  }, [open, setAssistantOpen]);
   const viewportRef = useConversationViewport<HTMLDivElement>(open, "overlay");
   const [snapshot, setSnapshot] = useState<AssistantSnapshot | null>(null);
   const [loading, setLoading] = useState(false);
@@ -63,8 +89,8 @@ export function FloatingAssistant({
   );
 
   const guidance = useGuidance();
-  const showTip = showAssistantTip({
-    introduced,
+  const showTip = guidance.hydrated && showAssistantTip({
+    introduced: guidance.assistantIntroduced,
     guidanceEnabled: guidance.enabled,
     isDismissed: guidance.isDismissed,
   });
@@ -91,6 +117,7 @@ export function FloatingAssistant({
   const handleOpenChange = useCallback(
     (next: boolean) => {
       if (next) {
+        warmAssistant();
         loadedProjectSlug.current = projectSlug;
         void refresh();
         // Opening it once (from the launcher, a "Walk me through this" button,
@@ -190,6 +217,8 @@ export function FloatingAssistant({
             aria-describedby={showTip && tipReady ? tipBodyId : undefined}
             title="Assistant"
             onClick={() => handleOpenChange(true)}
+            onPointerEnter={warmAssistant}
+            onFocus={warmAssistant}
             className="size-12 rounded-full shadow-lg transition-[background-color,scale] hover:scale-105 active:scale-95"
           >
             <Sparkles className="size-5" />
@@ -226,9 +255,7 @@ export function FloatingAssistant({
                 onClose={() => handleOpenChange(false)}
               />
             ) : (
-              <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-                {loading ? "Loading…" : null}
-              </div>
+              loading ? <AssistantLoading /> : null
             )}
           </div>
         </SheetContent>

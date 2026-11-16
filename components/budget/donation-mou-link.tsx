@@ -30,13 +30,15 @@ export function DonationMouLink({
 }) {
   const router = useRouter();
   const id = useId();
-  const exact = options.filter((option) => Math.round(Number(option.amount) * 100) === Math.round(Number(receiptAmount) * 100));
+  const exact = options.filter((option) => !option.amountUnset && Math.round(Number(option.amount) * 100) === Math.round(Number(receiptAmount) * 100));
   const [open, setOpen] = useState(false);
   const [paymentId, setPaymentId] = useState(exact.length === 1 ? exact[0].paymentId : "");
+  const [manuallySelected, setManuallySelected] = useState(false);
   const [reason, setReason] = useState("");
   const [pending, start] = useTransition();
   const selected = options.find((option) => option.paymentId === paymentId);
-  const differenceCents = selected
+  // A payment with no amount yet takes the amount received, so nothing differs.
+  const differenceCents = selected && !selected.amountUnset
     ? Math.round(Number(receiptAmount) * 100) - Math.round(Number(selected.amount) * 100)
     : 0;
 
@@ -45,11 +47,13 @@ export function DonationMouLink({
     start(async () => {
       try {
         const result = await confirmDonationMouPaymentMatch({
+          returnTo: window.location.pathname + window.location.search + window.location.hash,
           allocationId,
           paymentId: selected.paymentId,
           expectedPaymentAmount: Number(selected.amount),
           expectedReceiptAmount: Number(receiptAmount),
           differenceReason: reason.trim() || undefined,
+          setPaymentAmountFromReceipt: selected.amountUnset || undefined,
         });
         if (result.error) throw new Error(result.error);
         onLinked(selected);
@@ -62,27 +66,33 @@ export function DonationMouLink({
   }
 
   if (!open) return (
-    <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => setOpen(true)}>
+    <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => {
+      // Amounts may have just been saved on the Payments tab while this
+      // retained Cash flow panel stayed mounted. Use the current choices.
+      setPaymentId(current => manuallySelected && options.some(option => option.paymentId === current)
+        ? current : exact.length === 1 ? exact[0].paymentId : "");
+      setOpen(true);
+    }}>
       <Link2 className="size-3.5" />
-      Link to MoU payment
+      Link to expected payment
     </Button>
   );
 
   return (
     <div className="mt-3 space-y-3 rounded-lg border bg-muted/25 p-3" aria-label="Review donation payment link">
       <div className="grid gap-1.5">
-        <Label htmlFor={`${id}-payment`}>Scheduled MoU payment</Label>
+        <Label htmlFor={`${id}-payment`}>Expected payment</Label>
         <select
           id={`${id}-payment`}
           value={paymentId}
           disabled={pending}
-          onChange={(event) => { setPaymentId(event.target.value); setReason(""); }}
+          onChange={(event) => { setPaymentId(event.target.value); setManuallySelected(true); setReason(""); }}
           className="h-10 w-full min-w-0 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <option value="">Choose payment</option>
           {options.map((option) => (
             <option key={option.paymentId} value={option.paymentId}>
-              {option.label} · {money(option.amount, option.currency)}
+              {option.label} · {option.amountUnset ? "no amount yet" : money(option.amount, option.currency)}
             </option>
           ))}
         </select>
@@ -90,7 +100,7 @@ export function DonationMouLink({
       {selected ? (
         <>
           <dl className="grid gap-2 text-sm sm:grid-cols-3">
-            <div><dt className="text-xs text-muted-foreground">Expected</dt><dd className="font-medium tabular-nums">{money(selected.amount, currency)}</dd></div>
+            <div><dt className="text-xs text-muted-foreground">Expected</dt><dd className="font-medium tabular-nums">{selected.amountUnset ? "No amount yet" : money(selected.amount, currency)}</dd></div>
             <div><dt className="text-xs text-muted-foreground">Already received</dt><dd className="font-medium tabular-nums">{money(receiptAmount, currency)}</dd></div>
             <div><dt className="text-xs text-muted-foreground">Difference</dt><dd className="font-medium tabular-nums">{money(Math.abs(differenceCents) / 100, currency)}{differenceCents > 0 ? " more" : differenceCents < 0 ? " less" : ""}</dd></div>
           </dl>
@@ -101,7 +111,11 @@ export function DonationMouLink({
               <p className="text-xs text-muted-foreground">Confirm only if this completes the payment. Leave part payments open.</p>
             </div>
           ) : null}
-          <p className="text-xs text-muted-foreground">This links the existing receipt and marks the payment received. The recorded amounts stay unchanged.</p>
+          <p className="text-xs text-muted-foreground">
+            {selected.amountUnset
+              ? `This expected payment has no amount yet. Linking saves ${money(receiptAmount, currency)} as its amount and marks it received.`
+              : "This links the existing receipt and marks the payment received. The recorded amounts stay unchanged."}
+          </p>
         </>
       ) : null}
       <div className="flex flex-wrap justify-end gap-2">

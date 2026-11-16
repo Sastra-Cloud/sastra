@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { OutgoingAttachmentReview } from "@/components/email/outgoing-attachment-review";
+import { useSettle, useSuccessBeat } from "@/hooks/use-settle";
+import { DoneCheck } from "@/components/ui/done-check";
 
 export function SponsorshipEmail({ detail, defaultCc, onClose }: { detail: SponsorshipDetail; defaultCc: string[]; onClose: () => void }) {
   const { activeInvoice: invoice, invoiceFile, draft } = detail;
@@ -26,6 +28,8 @@ export function SponsorshipEmail({ detail, defaultCc, onClose }: { detail: Spons
   const [dirty, setDirty] = useState(false);
   const [pending, start] = useTransition();
   const [operation, setOperation] = useState<"save" | "send" | null>(null);
+  const { settle } = useSettle();
+  const sentBeat = useSuccessBeat();
   if (!invoice) return null;
   const invoiceId = invoice.id;
   const projectId = invoice.projectId;
@@ -49,7 +53,10 @@ export function SponsorshipEmail({ detail, defaultCc, onClose }: { detail: Spons
         const result = await sendInvoiceEmail(invoiceId, { confirmed: true, reviewedFileId: snapshotFileId ?? undefined,
           recipientEmail: to.trim(), ccEmails, subject, body });
         if (result.error) { setError(result.error); return; }
-        toast.success("Sponsorship invoice sent."); onClose();
+        toast.success("Sponsorship invoice sent.");
+        // Confirm on the button, then close the email and show the invoice.
+        await sentBeat.play();
+        settle(onClose, "[data-sponsorship-invoice]");
       } catch { setError("Delivery may be unresolved. Check Correspondence before sending again. Your email draft is saved if the save completed."); }
       finally { setOperation(null); router.refresh(); }
     });
@@ -72,7 +79,7 @@ export function SponsorshipEmail({ detail, defaultCc, onClose }: { detail: Spons
       {saved && <p role="status" className="mr-auto text-xs text-muted-foreground">Draft saved</p>}
       <Button variant="ghost" disabled={pending} onClick={async () => { if (!dirty || await confirmDialog("Close without saving your email changes?")) onClose(); }}>Close email</Button>
       <Button variant="outline" disabled={pending || (to.trim() !== "" && !validEmail.test(to.trim())) || !ccEmails.every(value => validEmail.test(value))} onClick={() => mutate("save")}>{pending && operation === "save" ? "Saving draft…" : "Save draft"}</Button>
-      <Button disabled={pending || !reviewed || !emailValid || invoice.status !== "issued"} onClick={() => mutate("send")}>{pending && operation === "send" ? "Sending invoice…" : "Confirm and send invoice"}</Button>
+      <Button disabled={pending || !reviewed || !emailValid || invoice.status !== "issued"} onClick={() => mutate("send")}>{sentBeat.done ? <><DoneCheck />Sent</> : pending && operation === "send" ? "Sending invoice…" : "Confirm and send invoice"}</Button>
     </div>
   </section>;
 }

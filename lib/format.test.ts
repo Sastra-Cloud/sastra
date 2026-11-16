@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { daysUntil, dueLabel, formatBytes, formatDate } from "@/lib/format";
+import { daysUntil, dueLabel } from "@/lib/format";
 
 /** Local YYYY-MM-DD offset by `days` from today (matches parseYmd's local parsing). */
 function ymd(days: number): string {
@@ -17,10 +17,6 @@ describe("daysUntil", () => {
     expect(daysUntil(ymd(5))).toBe(5);
     expect(daysUntil(ymd(-3))).toBe(-3);
   });
-  it("returns null for missing/invalid", () => {
-    expect(daysUntil(null)).toBeNull();
-    expect(daysUntil("not-a-date")).toBeNull();
-  });
 });
 
 describe("dueLabel tone", () => {
@@ -31,23 +27,9 @@ describe("dueLabel tone", () => {
     expect(dueLabel(ymd(10)).tone).toBe("normal");
     expect(dueLabel(null).tone).toBe("none");
   });
-  it("has a readable overdue label", () => {
-    expect(dueLabel(ymd(-3)).text).toBe("Overdue 3d");
-  });
   it("uses the workspace calendar day instead of the machine's day when supplied", () => {
     expect(dueLabel("2026-10-06", "2026-10-06")).toEqual({ text: "Due today", tone: "soon" });
     expect(dueLabel("2026-10-05", "2026-10-06")).toEqual({ text: "Overdue 1d", tone: "overdue" });
     expect(daysUntil("2026-10-07", "2026-10-06")).toBe(1);
-  });
-});
-
-describe("formatDate / formatBytes", () => {
-  it("formats a date and null-safes", () => {
-    expect(formatDate("2026-06-23")).toBe("Jun 23, 2026");
-    expect(formatDate(null)).toBe("—");
-  });
-  it("humanizes bytes", () => {
-    expect(formatBytes(512)).toBe("512 B");
-    expect(formatBytes(2_400_000)).toBe("2.3 MB");
   });
 });

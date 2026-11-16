@@ -5,12 +5,13 @@ const fetchMock = vi.fn<typeof fetch>();
 const input = {
   printRunId: null, mode: "itemized" as const, deductionPercent: 13,
   publicDescription: "Audio Book Production", perCopyQuantity: null, perCopyUnitPrice: null,
+  printOptions: [{ sourceQuoteId: "00000000-0000-4000-8000-000000000001", quantity: 1000, printingCostCents: 156000, partnerAmountCents: 180000, label: "Printing", currency: "USD" }],
 };
 beforeEach(() => { vi.stubGlobal("fetch", fetchMock); fetchMock.mockReset(); });
 afterEach(() => vi.unstubAllGlobals());
 
 it("saves through a stable URL and reconciles with server-normalized quotation settings", async () => {
-  const presentation = { mode: "itemized", deductionBps: 1300, publicDescription: "Audio Book Production", perCopyQuantity: null, perCopyUnitPrice: null };
+  const presentation = { mode: "itemized", deductionBps: 1300, publicDescription: "Audio Book Production", perCopyQuantity: null, perCopyUnitPrice: null, printOptions: input.printOptions };
   fetchMock.mockResolvedValue(Response.json({ ok: true, presentation }));
   expect(await savePartnerQuote("example-book", input)).toEqual(presentation);
   const [url, request] = fetchMock.mock.calls[0];

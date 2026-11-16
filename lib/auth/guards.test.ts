@@ -19,7 +19,8 @@ vi.mock("@/lib/chat/access", () => ({ canAccessChannel: mocks.canAccessChannel }
 vi.mock("@/lib/chat/queries", () => ({ getRecentMessages: mocks.messages }));
 vi.mock("@/lib/chat/pins", () => ({ listChannelPins: mocks.pins }));
 
-import { getSession, requireUser } from "./guards";
+import { getSession, requireUser, requireDonationAdmin } from "./guards";
+import { isAdminAssured } from "./assurance";
 import { GET as getPortfolio } from "@/app/api/reports/portfolio/route";
 import { GET as getRecentChat } from "@/app/api/chat/[channelId]/recent/route";
 
@@ -63,6 +64,29 @@ describe("application session activity", () => {
   it("keeps missing sessions unauthenticated", async () => {
     mocks.authSession.mockResolvedValue(null);
     expect(await getSession()).toBeNull();
+  });
+});
+
+describe("donation security-check return path", () => {
+  it("keeps an admin's Budget receipt context without bypassing assurance", async () => {
+    mocks.authSession.mockResolvedValue({ ...activeSession, user: { ...activeSession.user, role: "admin" } });
+    vi.mocked(isAdminAssured).mockResolvedValue(false);
+    const next = "/projects/a-book/budget?run=main#cash-reconciliation";
+    await expect(requireDonationAdmin(next)).rejects.toMatchObject({ digest: expect.stringContaining(encodeURIComponent(next)) });
+    expect(mocks.select).not.toHaveBeenCalled();
+    vi.mocked(isAdminAssured).mockResolvedValue(true);
+    expect((await requireDonationAdmin(next)).user.role).toBe("admin");
+  });
+
+  it("rejects non-admins and never redirects verification to an untrusted destination", async () => {
+    await expect(requireDonationAdmin("/projects/a-book/budget")).rejects.toMatchObject({ digest: expect.stringContaining("/dashboard") });
+    expect(isAdminAssured).not.toHaveBeenCalled();
+    mocks.authSession.mockResolvedValue({ ...activeSession, user: { ...activeSession.user, role: "admin" } });
+    vi.mocked(isAdminAssured).mockResolvedValue(false);
+    for (const next of ["https://example.org", "//example.org", "/\\example.org", "/projects/%2f%2fexample.org/budget", "/projects/book/budget?redirect=evil"]) {
+      await expect(requireDonationAdmin(next)).rejects.toMatchObject({ digest: expect.stringContaining("next=%2Fdonations") });
+    }
+    expect(mocks.select).not.toHaveBeenCalled();
   });
 });
 

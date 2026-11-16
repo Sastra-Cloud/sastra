@@ -10,15 +10,11 @@ import { cn } from "@/lib/utils";
 import { HealthDot } from "@/components/badges";
 import { MyTasksList } from "@/components/tasks/my-tasks-list";
 import { CreateTaskDialog } from "@/components/tasks/create-task-dialog";
-import { ManagerReviewQueue } from "@/components/dashboard/manager-review-queue";
+import { StreamedManagerReview, StreamedOnboarding } from "@/components/dashboard/streamed-sections";
 import { getManagerAttention } from "@/lib/dashboard/attention";
 import { PrintFundingBadge } from "@/components/projects/print-funding-badge";
 import { PushNudge } from "@/components/pwa/push-nudge";
-import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist";
-import {
-  getOnboardingSignals,
-  type OnboardingSignals,
-} from "@/lib/onboarding/queries";
+import { getOnboardingSignals } from "@/lib/onboarding/queries";
 
 import { can, canManage } from "@/lib/auth/policy";
 import { projectOptionLabel } from "@/lib/projects/visibility";
@@ -37,15 +33,19 @@ export default async function DashboardPage() {
   // otherwise), so experienced users pay nothing for it.
   const guidanceEnabled =
     (user as { guidanceLevel?: string }).guidanceLevel !== "off";
-  const onboardingSignals: OnboardingSignals | null = guidanceEnabled
-    ? await getOnboardingSignals(user.id)
-    : null;
+  // Secondary work starts now, beside the reads that tasks need, but nothing
+  // below waits for it. The no-op catch only stops an unhandled-rejection
+  // warning on this copy; the original rejection still reaches the page, which
+  // shows a recovery message for that section alone.
+  const onboardingSignals = guidanceEnabled ? getOnboardingSignals(user.id) : null;
+  onboardingSignals?.catch(() => undefined);
   const [myTasks, users, projects, workspace] = await Promise.all([
     getMyTasks(user.id), listAssignableUsers(),
     listProjects({ includeDashboardActivity: true }), getWorkspaceSettings(),
   ]);
   const reviewItems = canReviewCorrespondence
-    ? await getManagerAttention(projects, users.length) : [];
+    ? getManagerAttention(projects, users.length) : null;
+  reviewItems?.catch(() => undefined);
 
   const todayIso = formatInTimeZone(new Date(), workspace.timezone, "yyyy-MM-dd");
 
@@ -56,10 +56,11 @@ export default async function DashboardPage() {
     0,
     3
   );
-  // Empty regions are omitted so wide screens never reserve an empty track.
-  const hasManager = reviewItems.length > 0;
+  // The side rail exists when it has projects, or when a manager's review list
+  // is still loading. A rail that ends up empty is hidden, and the grid then
+  // gives its track back (see the `:has()` classes below).
   const hasProjects = activeProjects.length > 0;
-  const hasSecondary = hasManager || hasProjects;
+  const hasSecondary = hasProjects || reviewItems !== null;
   const projectOptions = projects.map((project) => ({
     id: project.id,
     name: projectOptionLabel(project),
@@ -73,7 +74,7 @@ export default async function DashboardPage() {
             <h1 className="font-heading text-3xl font-semibold tracking-tight text-pretty">
               Home
             </h1>
-            <p className="mt-1 max-w-2xl text-pretty text-muted-foreground">
+            <p className="mt-1 max-w-2xl text-pretty wrap-anywhere text-muted-foreground">
               Welcome, {user.name.split(" ")[0]}. Here&apos;s what&apos;s next.
             </p>
           </div>
@@ -87,22 +88,21 @@ export default async function DashboardPage() {
         />
       </section>
 
-      {onboardingSignals ? (
-        <OnboardingChecklist
-          role={user.role as string}
-          signals={onboardingSignals}
-        />
-      ) : null}
-
       <div className="@container/home min-w-0">
         <div
           className={cn(
-            "grid min-w-0 items-start gap-8 @[100rem]/home:gap-12",
+            "group/grid grid min-w-0 items-start gap-8 @[100rem]/home:gap-12",
             hasSecondary &&
-              "@[76rem]/home:grid-cols-[minmax(0,1fr)_26rem]"
+              "@[76rem]/home:has-[>aside:not(:empty)]:grid-cols-[minmax(0,1fr)_26rem]"
           )}
         >
-          <div className={cn("min-w-0 space-y-5", !hasSecondary && "@[76rem]/home:max-w-5xl")}>
+          <div
+            className={cn(
+              "min-w-0 space-y-5",
+              "@[76rem]/home:max-w-5xl",
+              hasSecondary && "@[76rem]/home:group-has-[>aside:not(:empty)]/grid:max-w-none"
+            )}
+          >
             <MyTasksList
               tasks={myTasks}
               homePreview
@@ -118,8 +118,7 @@ export default async function DashboardPage() {
           </div>
 
           {hasSecondary ? (
-            <aside aria-label="Workspace updates" className="min-w-0 space-y-8 @[76rem]/home:border-l @[76rem]/home:pl-6">
-              <ManagerReviewQueue items={reviewItems} limit={3} />
+            <aside aria-label="Workspace updates" className="min-w-0 space-y-8 empty:hidden @[76rem]/home:border-l @[76rem]/home:pl-6">
               {hasProjects ? (
                 <section className="space-y-2" aria-labelledby="active-projects-heading">
                   <div className="flex items-baseline justify-between">
@@ -215,10 +214,16 @@ export default async function DashboardPage() {
                   </ul>
                 </section>
               ) : null}
+              {reviewItems ? <StreamedManagerReview items={reviewItems} limit={3} /> : null}
             </aside>
           ) : null}
         </div>
       </div>
+
+      {/* Late guidance must not move the tasks or project links above it. */}
+      {onboardingSignals ? (
+        <StreamedOnboarding role={user.role as string} signals={onboardingSignals} />
+      ) : null}
 
       {/* Self-hides unless this device can still install/enable push. */}
       <PushNudge />

@@ -71,7 +71,7 @@ export async function buildPortfolioWorkbook(): Promise<ExcelJS.Workbook> {
     { header: "Due", key: "due", width: 11 },
     { header: "Forecast", key: "forecast", width: 12 },
     { header: "Projected finish", key: "projected", width: 15 },
-    { header: "Rights", key: "rights", width: 12 },
+    { header: "Rights & MOUs", key: "rights", width: 18 },
   ]);
 
   for (const p of rows) {
@@ -131,7 +131,7 @@ export async function buildRightsWorkbook(): Promise<ExcelJS.Workbook> {
 
   const wb = new ExcelJS.Workbook();
   wb.creator = "Sastra";
-  const ws = sheetWithHeader(wb, "Rights", [
+  const ws = sheetWithHeader(wb, "Rights & MOUs", [
     { header: "Project", key: "project", width: 34 },
     { header: "Project status", key: "pstatus", width: 13 },
     { header: "Overall", key: "overall", width: 12 },

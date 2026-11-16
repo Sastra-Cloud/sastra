@@ -19,17 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import { NOTIFICATIONS_CHANGED_EVENT } from "@/lib/notifications/client-events";
 import { useUserActive } from "@/hooks/use-user-active";
-
-type Item = {
-  id: string;
-  type: string;
-  title: string;
-  body: string | null;
-  project: string | null;
-  link: string | null;
-  readAt: string | null;
-  createdAt: string;
-};
+import { createNotificationFeed, type BellItem } from "@/lib/notifications/client-feed";
 
 function timeAgo(iso: string) {
   const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -43,42 +33,37 @@ export function NotificationBell() {
   const router = useRouter();
   const [isOpen, setOpen] = useState(false);
   const [unread, setUnread] = useState(0);
-  const [items, setItems] = useState<Item[]>([]);
+  const [items, setItems] = useState<BellItem[]>([]);
+  const [detailsStatus, setDetailsStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [feed] = useState(() => createNotificationFeed(data => {
+    setUnread(data.unread);
+    if (data.items) setItems(data.items);
+  }, setDetailsStatus));
 
-  const load = async () => {
-    try {
-      const r = await fetch("/api/notifications/recent");
-      if (r.ok) {
-        const d = await r.json();
-        setUnread(d.unread);
-        setItems(d.items);
-      }
-    } catch {
-      /* ignore */
-    }
-  };
+  useEffect(() => { feed.start(); return () => feed.stop(); }, [feed]);
 
   useEffect(() => {
-    const refresh = () => void load();
+    const refresh = () => void feed.load(isOpen, true);
     window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
     return () => window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
-  }, []);
+  }, [feed, isOpen]);
 
   // Refresh every 20 seconds while the user is active. An idle or hidden tab
   // stops asking (push notifications still arrive), and catches up at once
   // when the user comes back.
   const active = useUserActive();
   useEffect(() => {
-    if (!active) return;
-    const now = window.setTimeout(() => void load(), 0);
+    if (!active) { feed.cancel(); return; }
+    const now = window.setTimeout(() => void feed.load(isOpen), 0);
     const i = setInterval(() => {
-      if (!document.hidden) void load();
+      if (!document.hidden) void feed.load(isOpen);
     }, 20000);
     return () => {
       clearTimeout(now);
       clearInterval(i);
+      feed.cancel();
     };
-  }, [active]);
+  }, [active, feed, isOpen]);
 
   // Keep the installed-app icon badge in sync with the unread count from the
   // foreground (the service worker sets it on push delivery). Reading an item or
@@ -87,7 +72,8 @@ export function NotificationBell() {
     setAppBadge(unread);
   }, [unread]);
 
-  const openItem = async (it: Item) => {
+  const openItem = async (it: BellItem) => {
+    const resume = !it.readAt ? feed.pause() : null;
     // Opening work must not wait for the read-receipt request or refresh the old route.
     if (it.link) {
       setOpen(false);
@@ -104,12 +90,15 @@ export function NotificationBell() {
         setUnread((u) => u + 1);
         setItems((arr) => arr.map((x) => (x.id === it.id ? it : x)));
         toast.error("Could not mark the notification as read.");
+      } finally {
+        resume?.();
+        void feed.load(false, true);
       }
     }
   };
 
   return (
-    <Popover open={isOpen} onOpenChange={(open) => { setOpen(open); if (open) void load(); }}>
+    <Popover open={isOpen} onOpenChange={setOpen}>
       <PopoverTrigger
         render={
           <Button variant="ghost" size="icon" aria-label="Notifications" className="relative" />
@@ -125,7 +114,7 @@ export function NotificationBell() {
           </span>
         ) : null}
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0">
+      <PopoverContent align="end" className="w-80 p-0" aria-busy={detailsStatus === "loading" || undefined}>
         <div className="flex items-center justify-between border-b px-3 py-2">
           <span className="text-sm font-semibold">Notifications</span>
           {unread > 0 ? (
@@ -133,6 +122,7 @@ export function NotificationBell() {
               type="button"
               className="text-xs text-muted-foreground hover:text-foreground"
               onClick={async () => {
+                const resume = feed.pause();
                 const previousUnread = unread;
                 const previousItems = items;
                 setUnread(0);
@@ -145,6 +135,9 @@ export function NotificationBell() {
                   setUnread(previousUnread);
                   setItems(previousItems);
                   toast.error("Could not mark notifications as read.");
+                } finally {
+                  resume();
+                  void feed.load(true, true);
                 }
               }}
             >
@@ -154,8 +147,11 @@ export function NotificationBell() {
         </div>
         <div className="max-h-80 overflow-y-auto">
           {items.length === 0 ? (
-            <p className="px-3 py-8 text-center text-sm text-muted-foreground">
-              You&apos;re all caught up.
+            detailsStatus === "error" ? <div className="space-y-2 px-3 py-6 text-center text-sm" role="alert">
+              <p>Could not load notifications.</p>
+              <Button variant="outline" size="sm" onClick={() => void feed.load(true, true)}>Try again</Button>
+            </div> : <p className="px-3 py-8 text-center text-sm text-muted-foreground" role={detailsStatus === "loading" ? "status" : undefined}>
+              {detailsStatus === "loading" ? "Loading notifications…" : "You're all caught up."}
             </p>
           ) : (
             items.map((it) => (

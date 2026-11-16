@@ -13,6 +13,7 @@ a component.
 | --- | --- | --- | --- |
 | A book/podcast/video effort being planned | **project** | job, initiative | |
 | A unit of work someone does | **task** | work item, to-do, ticket | |
+| Personal task references beside the current page | **Pinned tasks** | focus queue, task tray | Pinning does not change the shared Next up order. |
 | A group of related tasks in a workflow | **stage** | phase, step | "phase" appears in AI-plan data; UI copy says **stage** |
 | A reusable workflow blueprint | **template** | preset, workflow (as a noun for the blueprint) | |
 | A person in the workspace | **teammate** / **team member** | user | "user" is fine in code, never in UI copy |
@@ -41,6 +42,9 @@ a component.
 | The document sent to a partner for funding | **proposal** | pitch, offer | |
 | Checking real amounts against the plan | **reconciliation** | true-up, settle | domain term; explain once in a `HelpTip` |
 | Money received from a partner | **funding received** | receipt, inflow | |
+| What a partner decided about a proposal | **partner's answer** | status, outcome, response | Signs an MoU · Agreed without an MoU · Gives a donation · Declined · Waiting for answer |
+| Money a partner promised for a set amount, with or without an MoU | **expected payment** | MoU payment, receivable, scheduled payment | label each one **MoU** or **No MoU**; Shared MoU installments keep "installment" |
+| A partner's promise to give without an MoU or invoice | **donation** (answer: "Gives a donation") | gift, pledge | the money arrives through Donations |
 | Author/rights payment tied to sales | **royalty** | cut, share | |
 | Signed funding agreement with a partner | **MoU** | agreement (when it's specifically the MoU) | spell out once: "MoU (a funding agreement)" |
 | Fee the organization keeps from a donation | **organization donation fee** | admin fee, overhead | matches Settings copy |
@@ -65,6 +69,7 @@ a component.
 | Make a new record | **Add** (inline) / **Create** (top-level) | New, Insert | "Add quote", "Create project" |
 | Remove permanently | **Delete** | Remove, Destroy, Trash | confirm first |
 | Save without publishing | **Save** | Persist, Store | |
+| A teammate has viewed a chat message | **Seen** / **Seen by** | Read receipt (in UI) | Single check means sent; double check means seen. |
 | Make visible/active to others | **Publish** / **Send** | Push, Release | |
 | Not started / in progress / done | **To do** / **In progress** / **Done** | Open / WIP / Complete | match the task board |
 
@@ -74,6 +79,8 @@ a component.
 | --- | --- | --- |
 | The per-user coaching switch | **guidance** ("Show helpful guidance") | Profile setting |
 | A step-by-step helper for a big task | **guided setup** / **guided steps** | wizards; always skippable |
+| The live list of what is done and what is next | **steps** ("Budget steps", "Printing steps") | Computed from saved records; **Hide steps** / **Show steps** |
+| A printer quote amount, in guidance text | **price** | "4 prices are waiting for your review." The record is still a printer quote. |
 | A dismissible on-screen tip block | **tip** (coach card) | |
 
 ## Destinations
@@ -88,7 +95,7 @@ a component.
 
 - **Daily work**: Home, My Work, and Projects.
 - **Team planning**: the manager area with Overview, Schedule, and Workload.
-- Project sections appear as direct tabs: **Rights**, **Budget**, and **Print**, **Episodes**, or **Videos**.
+- Project sections appear as direct tabs: **Rights & MOUs**, **Budget**, and **Print**, **Episodes**, or **Videos**.
 - **Suggestions to review**: personal email task suggestions awaiting a decision.
 - **Other assigned work**: remaining tasks in My Work, including upcoming and undated tasks.
 - **Needs review** in Correspondence: shared email reviews and unassigned due follow-ups, counted by thread.

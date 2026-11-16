@@ -8,5 +8,5 @@ export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const emojis = await getFrequentReactions(session.user.id);
-  return NextResponse.json({ emojis }, { headers: { "Cache-Control": "private, no-store" } });
+  return NextResponse.json({ userId: session.user.id, emojis }, { headers: { "Cache-Control": "private, no-store" } });
 }

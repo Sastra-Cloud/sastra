@@ -45,7 +45,6 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/projects/book-format-badge.tsx`
 - `components/projects/complete-project-button.tsx`
 - `components/projects/manager-health-band.tsx`
-- `components/projects/members-manager.tsx`
 - `components/projects/new-project-entry.tsx`
 - `components/projects/new-project-form.tsx`
 - `components/projects/new-project-guided.tsx`
@@ -59,15 +58,16 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/projects/project-card.tsx`
 - `components/projects/project-draft.tsx`
 - `components/projects/project-drive-folder.tsx`
+- `components/projects/project-funding-overview.test.tsx`
 - `components/projects/project-funding-overview.tsx`
 - `components/projects/project-management-provider.tsx`
 - `components/projects/project-managers.tsx`
+- `components/projects/project-people-manager.tsx`
 - `components/projects/project-settings-dialog.tsx`
 - `components/projects/project-surface-notes.tsx`
 - `components/projects/project-tabs.tsx`
 - `components/projects/project-task-views.tsx`
 - `components/projects/project-title-context.tsx`
-- `components/projects/project-workspace-frame.test.tsx`
 - `components/projects/project-workspace-frame.tsx`
 - `components/projects/projects-browser.tsx`
 - `components/projects/projects-route-loading.tsx`
@@ -79,13 +79,14 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/tasks/learn-terms.ts`
 - `components/tasks/my-tasks-list.test.tsx`
 - `components/tasks/my-tasks-list.tsx`
-- `components/tasks/my-work-attention-summary.test.tsx`
 - `components/tasks/my-work-attention-summary.tsx`
 - `components/tasks/my-work-hub.tsx`
 - `components/tasks/personal-task-board.tsx`
+- `components/tasks/pinned-tasks-panel.tsx`
+- `components/tasks/pinned-tasks-provider.test.tsx`
+- `components/tasks/pinned-tasks-provider.tsx`
 - `components/tasks/recurring-list.tsx`
 - `components/tasks/task-assignment-planning.tsx`
-- `components/tasks/task-attachment-shortcut.test.tsx`
 - `components/tasks/task-attachment-shortcut.tsx`
 - `components/tasks/task-board.tsx`
 - `components/tasks/task-complete-button.tsx`
@@ -95,5 +96,4 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/tasks/tasks-hub.tsx`
 - `components/workload/workload-board.tsx`
 - `components/workload/workload-view.tsx`
-- `lib/db/schema/projects.ts`
-... 102 more
+... 107 more

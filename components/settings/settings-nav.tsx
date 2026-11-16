@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { NavigationLink as Link } from "@/components/navigation-link";
 import { usePathname } from "next/navigation";
 import { Check, ChevronDown, Settings2, type LucideIcon } from "lucide-react";
 import { useWorkspaceModules } from "./workspace-modules-provider";
 import { settingsNavigation } from "@/lib/navigation";
 import { navigationIcons } from "@/components/navigation-icons";
 
-import { MotionTabLink } from "@/components/motion/tab-link";
+import { TabLink } from "@/components/tab-link";
 import {
   Sheet,
   SheetContent,
@@ -53,11 +53,11 @@ export function SettingsNav({
       {/* Desktop: a grouped vertical sidebar */}
       <nav
         aria-label="Settings sections"
-        className="hidden lg:max-h-[calc(100dvh-5rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:pr-1 lg:sticky lg:top-20 lg:flex lg:flex-col lg:gap-5"
+        className="hidden lg:max-h-[calc(100dvh-12rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:scroll-py-3 lg:pb-4 lg:pr-1 lg:sticky lg:top-20 lg:flex lg:flex-col lg:gap-5"
       >
         <Link href="/settings" aria-current={pathname === "/settings" ? "page" : undefined} className="min-h-10 rounded-lg px-3 py-2 text-sm font-medium text-primary hover:bg-muted">Find a setting</Link>
         {groups.map((group) => (
-          <div key={group.label} className="flex flex-col gap-1">
+          <div key={group.label} className="flex shrink-0 flex-col gap-1">
             <p className="px-3 text-xs font-medium text-muted-foreground">
               {group.label}{group.label !== "Personal" ? " · shared" : ""}
             </p>
@@ -65,16 +65,15 @@ export function SettingsNav({
               {group.tabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
-                  <MotionTabLink
+                  <TabLink
                     key={tab.href}
                     href={tab.href}
                     active={active?.href === tab.href}
-                    layoutId="settings-tab-active"
                     className="w-full justify-start"
                   >
                     <Icon className="size-4 shrink-0" />
                     {tab.label}
-                  </MotionTabLink>
+                  </TabLink>
                 );
               })}
             </div>
@@ -114,13 +113,13 @@ function MobileNav({ groups, active }: { groups: Group[]; active?: Tab }) {
         side="bottom"
         className="max-h-[82dvh] gap-0 overflow-hidden rounded-t-2xl p-0 pb-[env(safe-area-inset-bottom)]"
       >
-        <SheetHeader className="border-b pr-14">
+        <SheetHeader className="shrink-0 border-b pr-14">
           <SheetTitle>Settings</SheetTitle>
           <SheetDescription>Choose what you want to manage.</SheetDescription>
         </SheetHeader>
         <nav
           aria-label="Settings sections"
-          className="space-y-5 overflow-y-auto overscroll-contain px-3 py-4"
+          className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-3 py-4 pb-6"
         >
           <Link href="/settings" onNavigate={() => setOpen(false)} className="flex min-h-12 items-center rounded-lg px-3 text-sm font-medium text-primary hover:bg-muted">Find a setting</Link>
           {groups.map((group) => (

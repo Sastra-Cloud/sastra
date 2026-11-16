@@ -1,3 +1,6 @@
+import { PartnerQuotationsPanel } from "@/components/budget/partner-quotations-panel";
+import { listPartnerQuotations } from "@/lib/budget/partner-quotation-queries";
+import { budgetApprovalFingerprint } from "@/lib/budget/approval-fingerprint";
 import { PrintEstimateSection } from "@/components/print/print-estimate-section";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -9,8 +12,6 @@ import { db } from "@/lib/db";
 import {
   projects,
   files,
-  rightsContacts,
-  rightsHolders,
   rightsItems,
 } from "@/lib/db/schema";
 import { getProjectHeader, listAssignableUsers } from "@/lib/projects/queries";
@@ -21,11 +22,13 @@ import {
 } from "@/lib/episodes/queries";
 import {
   getBudgetData,
+  getPartnerPrintCandidates,
   listInvoices,
   listPayments,
   listReceipts,
   listRoyaltyPayments,
 } from "@/lib/budget/queries";
+import { partnerQuotePrices } from "@/lib/budget/print-options";
 import { listLicenseFeePayments } from "@/lib/rights/queries";
 import { getProjectAiSpend } from "@/lib/ai/usage-queries";
 import { getBudgetReconciliation } from "@/lib/budget/reconcile";
@@ -44,7 +47,18 @@ import { ReconciliationPanel } from "@/components/budget/reconciliation-panel";
 import { BudgetManager } from "@/components/budget/budget-manager";
 import { ProposalPanel } from "@/components/budget/proposal-panel";
 import { listProposals } from "@/lib/proposals/queries";
+import { agendaToday } from "@/lib/agenda/queries";
+import { FundingPathPanel } from "@/components/budget/funding-path-panel";
+import {
+  buildFundingPath,
+  fundingPathAttention,
+  openDonationPromiseCents,
+  PROPOSAL_ANSWER_LABELS,
+  proposalAnswer,
+} from "@/lib/budget/funding-path";
 import { listPartnersWithContacts } from "@/lib/partners/queries";
+import { resolveAgreementFundingPartner } from "@/lib/budget/funding-partner";
+import { FundingPartnerNotice } from "@/components/budget/funding-partner-notice";
 import { FundingReceipts } from "@/components/budget/funding-receipts";
 import { donationMouLinkOptions } from "@/lib/donations/mou-link";
 import { MouPayments } from "@/components/budget/mou-payments";
@@ -61,7 +75,8 @@ import {
 } from "@/lib/budget/approval-queries";
 import { BudgetApprovalPanel } from "@/components/budget/budget-approval-panel";
 import { BudgetAttentionSummary } from "@/components/budget/budget-attention-summary";
-import { GuidancePanel } from "@/components/guidance/guidance-panel";
+import { StepList } from "@/components/guidance/step-list";
+import { buildBudgetSteps } from "@/lib/budget/steps";
 import { WalkMeThrough } from "@/components/guidance/walk-me-through";
 import {
   BudgetSection,
@@ -71,12 +86,15 @@ import { buildBudgetAttentionSummary } from "@/lib/budget/attention";
 import { toCents } from "@/lib/budget/reconcile-math";
 import {
   committedFundingTotal,
+  expectedNetCents,
   receivedContributionsTotal,
-  partnerQuoteTotalCents,
 } from "@/lib/budget/compute";
 import { listEmailDraftsForProject } from "@/lib/email/draft-store";
 import { getWorkspaceSettings } from "@/lib/workspace/queries";
 import { listDonationFundingReceiptLinks } from "@/lib/donations/queries";
+import { getProjectFundingOverview } from "@/lib/projects/funding-overview-queries";
+import { ProjectFundingOverview } from "@/components/projects/project-funding-overview";
+import { isOutgoingPaymentTerms } from "@/lib/budget/payment-percentage";
 
 export const metadata = { title: "Budget" };
 export const dynamic = "force-dynamic";
@@ -121,6 +139,7 @@ export default async function ProjectBudgetPage({
         : activeReprint;
   const selectedRunId = selectedRun?.id;
   const scoped = Boolean(selectedRunId);
+  const fundingOverviewPromise = canEdit && !scoped ? getProjectFundingOverview(project.id) : Promise.resolve(null);
   const emailDrafts = canEdit
     ? await listEmailDraftsForProject(session.user.id, project.id)
     : [];
@@ -144,11 +163,14 @@ export default async function ProjectBudgetPage({
       ])
     : [null, null, []];
 
-  const [{ settings, items, presentation }, projectPrintSettings] =
+  const [{ settings, items, presentation }, projectPrintSettings, printCandidates] =
     await Promise.all([
       getBudgetData(project.id, selectedRunId, allHistory),
       getOrCreatePrintSettings(project.id),
+      canEdit && project.kind !== "podcast" ? getPartnerPrintCandidates(project.id, selectedRunId) : Promise.resolve([]),
     ]);
+  const partnerQuotations = canEdit ? await listPartnerQuotations(project.id, selectedRunId) : [];
+  const partnerApprovalStates = canEdit ? await Promise.all(partnerQuotations.map(async quote => ({ id: quote.id, state: await getBudgetApprovalState(project.id, selectedRunId, quote.id) }))) : [];
   const acceptedPrintQuote = selectedRunId
     ? (await listPrintQuotes(project.id)).find(
         (quote) =>
@@ -220,7 +242,10 @@ export default async function ProjectBudgetPage({
     // The signed agreement's completion deadline, if any — supersedes the
     // project's proposed completion date in proposals.
     db
-      .select({ completeByDate: rightsItems.completeByDate })
+      .select({
+        completeByDate: rightsItems.completeByDate,
+        mouStatus: rightsItems.mouStatus,
+      })
       .from(rightsItems)
       .where(eq(rightsItems.projectId, project.id))
       .limit(1),
@@ -249,6 +274,7 @@ export default async function ProjectBudgetPage({
     : 0;
 
   const totalReceived = receipts.reduce((s, r) => s + Number(r.amount), 0);
+  const fundingOverview = await fundingOverviewPromise;
   const totalAvailable = receipts.reduce(
     (sum, receipt) =>
       sum +
@@ -281,89 +307,101 @@ export default async function ProjectBudgetPage({
     ...donationLinkedReceiptIds,
   ]);
   const receivedContributions = receivedContributionsTotal(receipts, payments);
-  const scheduledFunding = payments.reduce(
+  const scheduledFunding = payments.filter(payment => !isOutgoingPaymentTerms(payment.notes)).reduce(
     (sum, payment) => sum + Number(payment.amount),
     0
   );
+  // Funding path: each sent proposal, the partner's answer, and its money.
+  const paymentReceiptIds = new Set(
+    payments.flatMap((payment) => (payment.receiptId ? [payment.receiptId] : []))
+  );
+  const fundingProposals = proposals.map((proposal) => ({
+    id: proposal.id,
+    partnerLabel:
+      proposal.partnerName?.trim() ||
+      proposal.recipientName?.trim() ||
+      proposal.recipientEmail,
+    recipientEmail: proposal.recipientEmail,
+    scopeLabel:
+      partnerQuotations.find((quote) => quote.id === proposal.partnerQuotationId)
+        ?.title ?? null,
+    currency: proposal.currency,
+    totalAmount: proposal.totalAmount,
+    status: proposal.status,
+    fundingPath: proposal.fundingPath,
+    agreedAmount: proposal.agreedAmount,
+    answeredOn: proposal.answeredOn,
+    answerNote: proposal.answerNote,
+    sentAt: proposal.sentAt.toISOString(),
+  }));
+  const fundingPathInput = {
+    proposals: fundingProposals,
+    payments: payments.map((payment) => ({
+      id: payment.id,
+      proposalId: payment.proposalId,
+      amount: payment.amount,
+      paidAt: payment.paidAt,
+      receiptId: payment.receiptId,
+    })),
+    receipts: receipts.map((receipt) => ({
+      id: receipt.id,
+      proposalId: receipt.proposalId,
+      amount: receipt.amount,
+    })),
+  };
+  const fundingAttention = fundingPathAttention(buildFundingPath(fundingPathInput));
+  // Promised money = expected payments plus donations a partner promised but
+  // has not given yet. Both count as committed funding.
+  const promisedFunding =
+    scheduledFunding + openDonationPromiseCents(fundingPathInput) / 100;
+  const proposalOptions = fundingProposals.map((proposal) => ({
+    id: proposal.id,
+    label: `${proposal.partnerLabel} · ${new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: proposal.currency,
+    }).format(Number(proposal.totalAmount))} · ${
+      PROPOSAL_ANSWER_LABELS[proposalAnswer(proposal)]
+    }`,
+    fundingPath: proposal.fundingPath,
+  }));
   const partnerQuoteTotal = presentation
     ? presentation.mode === "per_copy"
       ? (presentation.perCopyQuantity ?? 0) *
         Number(presentation.perCopyUnitPrice ?? 0)
-      : partnerQuoteTotalCents(items) / 100
+      : partnerQuotePrices(items, presentation.printOptions).minimumCents / 100
     : items.reduce((sum, item) => sum + Number(item.amount), 0);
   // Imports committed before funded licenses linked their payer to Budget can
   // still show the agreement party immediately. New imports persist this link;
   // this fallback is read-only and only applies when a real receivable exists.
   let budgetSettings = settings;
-  if (scheduledFunding > 0 && !settings.partnerName) {
-    const [rights] = await db
-      .select({
-        agreementType: rightsItems.agreementType,
-        mouHolderId: rightsItems.mouHolderId,
-        mouContactId: rightsItems.mouContactId,
-        licenseHolderId: rightsItems.licenseHolderId,
-        licenseContactId: rightsItems.licenseContactId,
-      })
-      .from(rightsItems)
-      .where(eq(rightsItems.projectId, project.id))
-      .limit(1);
-    const holderId =
-      rights?.agreementType === "license_only"
-        ? rights.licenseHolderId
-        : rights?.mouHolderId;
-    const contactId =
-      rights?.agreementType === "license_only"
-        ? rights.licenseContactId
-        : rights?.mouContactId;
-    const [[holder], [contact]] = await Promise.all([
-      holderId
-        ? db
-            .select({ name: rightsHolders.name })
-            .from(rightsHolders)
-            .where(eq(rightsHolders.id, holderId))
-            .limit(1)
-        : Promise.resolve([]),
-      contactId
-        ? db
-            .select({
-              name: rightsContacts.name,
-              email: rightsContacts.email,
-              phone: rightsContacts.phone,
-            })
-            .from(rightsContacts)
-            .where(eq(rightsContacts.id, contactId))
-            .limit(1)
-        : Promise.resolve([]),
-    ]);
-    if (holder?.name) {
-      const savedPartner = partnerOptions.find(
-        (partner) =>
-          partner.name.trim().toLowerCase() === holder.name.trim().toLowerCase()
-      );
-      const savedContact = contact?.email
-        ? savedPartner?.contacts.find(
-            (candidate) =>
-              candidate.email?.trim().toLowerCase() ===
-              contact.email?.trim().toLowerCase()
-          )
-        : savedPartner?.contacts.find((candidate) => candidate.isPrimary) ??
-          savedPartner?.contacts[0];
-      const contactName = (contact?.name ?? "").split(/\s+/).filter(Boolean);
+  // Where the partner shown on this page comes from: saved on Budget, read from
+  // the signed agreement (not saved yet), or not known at all.
+  let fundingPartnerSource: "saved" | "agreement" | "none" = settings.partnerName?.trim() ? "saved" : "none";
+  if (promisedFunding > 0 && !settings.partnerName?.trim()) {
+    const agreementPartner = await resolveAgreementFundingPartner(project.id, partnerDir);
+    if (agreementPartner) {
+      fundingPartnerSource = "agreement";
       budgetSettings = {
         ...settings,
-        partnerName: holder.name,
-        partnerContactFirstName:
-          savedContact?.firstName ?? contactName[0] ?? null,
-        partnerContactLastName:
-          savedContact?.lastName ??
-          (contactName.length > 1 ? contactName.slice(1).join(" ") : null),
-        partnerContactEmail: savedContact?.email ?? contact?.email ?? null,
-        partnerContact: contact?.phone ?? null,
-        partnerId: savedPartner?.id ?? null,
-        partnerContactId: savedContact?.id ?? null,
+        partnerName: agreementPartner.partnerName,
+        partnerContactFirstName: agreementPartner.partnerContactFirstName,
+        partnerContactLastName: agreementPartner.partnerContactLastName,
+        partnerContactEmail: agreementPartner.partnerContactEmail,
+        partnerContact: agreementPartner.partnerContact,
+        partnerId: agreementPartner.partnerId,
+        partnerContactId: agreementPartner.partnerContactId,
       };
     }
   }
+  const fundingPartnerSummary = {
+    source: fundingPartnerSource,
+    name: budgetSettings.partnerName?.trim() || null,
+    contactName:
+      [budgetSettings.partnerContactFirstName, budgetSettings.partnerContactLastName]
+        .filter(Boolean)
+        .join(" ") || null,
+    email: budgetSettings.partnerContactEmail?.trim() || null,
+  };
   const invoiceByPayment = new Map(
     invoices
       .filter(
@@ -374,7 +412,13 @@ export default async function ProjectBudgetPage({
         {
           id: invoice.id,
           invoiceNumber: invoice.invoiceNumber,
+          recipientName: invoice.recipientName,
           recipientEmail: invoice.recipientEmail,
+          description: invoice.description,
+          issueDate: invoice.issueDate,
+          dueDate: invoice.dueDate,
+          status: invoice.status,
+          generated: !invoice.sourceFileId,
           file:
             invoiceFileById.get(
               invoice.sourceFileId ?? invoice.renderedFileId ?? ""
@@ -403,7 +447,7 @@ export default async function ProjectBudgetPage({
     (payment) =>
       Boolean(payment.dueDate) &&
       payment.dueDate! < todayIso &&
-      !payment.receiptId
+      !payment.receiptId && !payment.paidAt && Number(payment.amount) > 0 && !isOutgoingPaymentTerms(payment.notes)
   );
   const offQuotationCents = reconciliation
     ? reconciliation.offQuotationCents.royalties +
@@ -417,17 +461,15 @@ export default async function ProjectBudgetPage({
     approvalState?.active?.assignments.filter(
       (assignment) => assignment.decision !== "approved"
     ).length ?? 0;
-  const committedTotal = committedFundingTotal(items.reduce((sum, item) => sum + Number(item.amountSecured), 0), scheduledFunding, receivedContributions);
+  const committedTotal = committedFundingTotal(items.reduce((sum, item) => sum + Number(item.amountSecured), 0), promisedFunding, receivedContributions);
   const attentionSummary = buildBudgetAttentionSummary({
     currency: settings.currency,
     quotationTotalCents: Math.round(partnerQuoteTotal * 100),
-    committedFundingCents: Math.round(
-      committedFundingTotal(
-        items.reduce((sum, item) => sum + Number(item.amountSecured), 0),
-        scheduledFunding,
-        receivedContributions
-      ) * 100
-    ),
+    committedFundingCents: Math.round(committedTotal * 100),
+    fundingReviewCount: fundingOverview?.balances.filter(balance => balance.needsReview).length ?? 0,
+    proposalsWaitingCount: fundingAttention.waitingCount,
+    oldestProposalWaitingDays: fundingAttention.oldestWaitingDays,
+    agreedWithoutPaymentsCount: fundingAttention.agreedWithoutPaymentsCount,
     approvalStatus: approvalState?.active?.status ?? null,
     pendingApprovalCount,
     overdueReceivableCount: overdueReceivables.length,
@@ -462,8 +504,55 @@ export default async function ProjectBudgetPage({
           },
         }
       : attentionSummary;
+  // Budget steps: where this project is on the path from costs to funding.
+  const costCents = items.reduce((sum, item) => sum + toCents(item.amount), 0);
+  const partnerQuoteCents = Math.round(partnerQuoteTotal * 100);
+  const budgetSteps =
+    canEdit && !scoped && !allHistory
+      ? buildBudgetSteps({
+          currency: settings.currency,
+          printing:
+            project.kind === "podcast" || project.kind === "video_series"
+              ? "none"
+              : project.kind === "book"
+                ? "expected"
+                : "optional",
+          wordCount: budgetSettings.wordCount,
+          sourcePageCount: budgetSettings.sourcePageCount,
+          items,
+          hasPartnerQuote: Boolean(presentation),
+          partnerQuoteCents,
+          coverageCents:
+            presentation &&
+            !(presentation.mode === "itemized" && presentation.printOptions.length)
+              ? expectedNetCents(partnerQuoteCents, presentation.deductionBps) -
+                costCents
+              : null,
+          approval: {
+            required: approvalState?.approvalRequired ?? false,
+            status: approvalState?.active?.status ?? null,
+            canSend: approvalState?.canSend ?? false,
+          },
+          unsentQuotationCount: partnerQuotations.filter(
+            (quote) =>
+              !proposals.some((proposal) => proposal.partnerQuotationId === quote.id)
+          ).length,
+          sentProposalCount: proposals.length,
+          waitingCount: fundingAttention.waitingCount,
+          oldestWaitingDays: fundingAttention.oldestWaitingDays,
+          agreedWithoutPaymentsCount: fundingAttention.agreedWithoutPaymentsCount,
+          hasFunding: payments.length > 0 || receipts.length > 0,
+          printHref: `/projects/${slug}/print`,
+        })
+      : null;
+  const budgetIsEmpty = items.every((item) => item.category === "print_ship");
+  const printEstimate =
+    canEdit && !scoped && !allHistory && project.kind !== "podcast" ? (
+      <PrintEstimateSection projectId={project.id} userId={session.user.id} />
+    ) : null;
   const budgetSections = [
     { id: "planning", label: "Quotation" },
+    ...(canEdit ? [{ id: "partner-proposals", label: "Partners & proposals", attentionCount: partnerApprovalStates.reduce((sum, { state }) => sum + (state.active?.assignments.filter(a => a.decision !== "approved").length ?? 0), 0) + fundingAttention.agreedWithoutPaymentsCount }] : []),
     ...(!allHistory ? [{ id: "decisions", label: "Approvals", attentionCount: pendingApprovalCount }] : []),
     { id: "cash-reconciliation", label: "Cash flow", attentionCount: overdueReceivables.length + reconciliationIssueCount },
     { id: "agreements-fees", label: "Payments" },
@@ -484,25 +573,36 @@ export default async function ProjectBudgetPage({
         selectedRunId={selectedRunId ?? null}
         allHistory={allHistory}
       />
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <h2 className="pt-2 text-lg font-semibold">Budget</h2>
-        {canEdit && !scoped && !allHistory ? (
-        <GuidancePanel
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-3">
+      <h2 className="text-lg font-semibold">Budget</h2>
+      {budgetSteps ? (
+        <StepList
           guidanceKey="budget-whats-next"
-          slug="budget"
-          heading="Budget in four steps"
-          title="New to budgets? Here is the flow"
-          compact
-          className="ml-auto max-w-full has-[details[open]]:w-full"
-          action={
-            <WalkMeThrough prompt="Please walk me through the budget for this project, step by step. Explain in simple words what I should do next." />
+          className="col-span-2"
+          collapsedClassName="col-span-1 col-start-2 row-start-1"
+          title="Budget steps"
+          doneMessage="All budget steps are done."
+          guide={budgetSteps}
+          footer={
+            <>
+              <WalkMeThrough
+                variant="ghost"
+                prompt="Please walk me through the budget for this project, step by step. Explain in simple words what I should do next."
+              />
+              <Link
+                href="/help/budget"
+                className="inline-flex min-h-11 items-center font-medium text-primary hover:underline"
+              >
+                Learn more
+              </Link>
+            </>
           }
         />
-        ) : null}
+      ) : null}
       </div>
-      <dl className="flex flex-wrap gap-x-8 gap-y-3 rounded-xl border bg-card px-4 py-3" aria-label="Budget summary">
-        {[{ label: "Partner quotation", value: partnerQuoteTotal }, { label: "Committed funding", value: committedTotal }, { label: "Funding gap", value: Math.max(0, partnerQuoteTotal - committedTotal) }].map(item => <div key={item.label}><dt className="text-xs text-muted-foreground">{item.label}</dt><dd className="text-base font-semibold tabular-nums">{new Intl.NumberFormat(undefined, { style: "currency", currency: settings.currency }).format(item.value)}</dd></div>)}
-      </dl>
+      {fundingOverview ? <ProjectFundingOverview funding={fundingOverview} slug={slug} view="summary" title="Funding summary" id="budget-funding" quotation={{ totalCents: Math.round(partnerQuoteTotal * 100), currency: settings.currency }} /> : <dl className="flex flex-wrap gap-x-8 gap-y-3 rounded-xl border bg-card px-4 py-3" aria-label="Budget summary">
+        {[{ label: presentation?.mode === "itemized" && presentation.printOptions.length ? "Partner quotation from" : "Partner quotation", value: partnerQuoteTotal }, { label: "Committed funding", value: committedTotal }, { label: "Funding gap", value: Math.max(0, partnerQuoteTotal - committedTotal) }].map(item => <div key={item.label}><dt className="text-xs text-muted-foreground">{item.label}</dt><dd className="text-base font-semibold tabular-nums">{new Intl.NumberFormat(undefined, { style: "currency", currency: settings.currency }).format(item.value)}</dd></div>)}
+      </dl>}
       <BudgetAttentionSummary summary={displayedAttentionSummary} />
       <BudgetTabs sections={budgetSections}>
 
@@ -511,7 +611,8 @@ export default async function ProjectBudgetPage({
         title="Quotation"
         description="Quotation assumptions, line items, funding, and editable totals."
       >
-        {canEdit && !scoped && !allHistory && project.kind !== "podcast" ? <PrintEstimateSection projectId={project.id} userId={session.user.id} /> : null}
+        {/* An empty budget shows guided setup first; the printer estimate follows it. */}
+        {printEstimate && !budgetIsEmpty ? printEstimate : null}
         <BudgetManager
           projectId={project.id}
           slug={slug}
@@ -528,10 +629,12 @@ export default async function ProjectBudgetPage({
           totalReceived={totalReceived}
           totalAvailable={totalAvailable}
           aggregateReadOnly={allHistory}
+          printCandidates={printCandidates}
           presentation={
             presentation
               ? {
                   mode: presentation.mode,
+                  printOptions: presentation.printOptions,
                   deductionBps: presentation.deductionBps,
                   publicDescription: presentation.publicDescription,
                   perCopyQuantity: presentation.perCopyQuantity,
@@ -582,7 +685,7 @@ export default async function ProjectBudgetPage({
             isAutoQuantity: i.isAutoQuantity,
           }))}
           receivedContributions={receivedContributions}
-          scheduledFunding={scheduledFunding}
+          scheduledFunding={promisedFunding}
           acceptedPrintQuote={
             acceptedPrintQuote && acceptedPrintQuoteTotal
               ? {
@@ -597,6 +700,7 @@ export default async function ProjectBudgetPage({
               : null
           }
         />
+        {printEstimate && budgetIsEmpty ? printEstimate : null}
       </BudgetSection>
 
       {!allHistory ? (
@@ -648,14 +752,109 @@ export default async function ProjectBudgetPage({
               approvalState?.synchronizedAfterChange ?? false
             }
           />
+
+        </BudgetSection>
+      ) : null}
+
+      {canEdit ? <BudgetSection id="partner-proposals" title="Partners & proposals" description="One project budget. A separate quotation and proposal for each partner. Record each partner’s answer here.">
+        {!scoped ? <FundingPartnerNotice projectId={project.id} partner={fundingPartnerSummary} purpose="proposals" /> : null}
+        <FundingPathPanel
+          projectSlug={slug}
+          todayIso={agendaToday(new Date(), workspaceSettings.timezone)}
+          canEdit={canEdit}
+          proposals={fundingProposals}
+          payments={fundingPathInput.payments}
+          receipts={receipts.map((receipt) => ({
+            id: receipt.id,
+            proposalId: receipt.proposalId,
+            amount: receipt.amount,
+            currency: receipt.currency,
+            source: receipt.source,
+            receivedDate: receipt.receivedDate,
+            onExpectedPayment: paymentReceiptIds.has(receipt.id),
+          }))}
+        />
+        <PartnerQuotationsPanel
+          projectId={project.id}
+          projectSlug={slug}
+          printRunId={selectedRunId ?? null}
+          quotations={partnerQuotations}
+          items={items}
+          currency={settings.currency}
+          sourceFingerprint={budgetApprovalFingerprint(settings, items, presentation)}
+          partners={partnerOptions}
+          printOptions={
+            presentation?.mode === "itemized" ? (presentation.printOptions ?? []) : []
+          }
+          approvalContext={{
+            currentUserId: session.user.id,
+            eligibleApprovers,
+            todayIso,
+            defaultDueDate: defaultApprovalDue.toISOString().slice(0, 10),
+          }}
+          approvalStates={Object.fromEntries(
+            partnerApprovalStates.map(({ id, state }) => [
+              id,
+              {
+                ...state,
+                active: state.active
+                  ? {
+                      ...state.active,
+                      approvedAt: state.active.approvedAt?.toISOString() ?? null,
+                      supersededAt: state.active.supersededAt?.toISOString() ?? null,
+                      createdAt: state.active.createdAt.toISOString(),
+                      assignments: state.active.assignments.map((a) => ({
+                        ...a,
+                        decidedAt: a.decidedAt?.toISOString() ?? null,
+                      })),
+                    }
+                  : null,
+                history: state.history.map((round) => ({
+                  ...round,
+                  approvedAt: round.approvedAt?.toISOString() ?? null,
+                  supersededAt: round.supersededAt?.toISOString() ?? null,
+                  createdAt: round.createdAt.toISOString(),
+                  assignments: round.assignments.map((a) => ({
+                    ...a,
+                    decidedAt: a.decidedAt?.toISOString() ?? null,
+                  })),
+                })),
+              },
+            ]),
+          )}
+          proposals={proposals.map((p) => ({ ...p, sentAt: p.sentAt.toISOString() }))}
+          emailDrafts={emailDrafts}
+          approvalRequired={approvalState?.approvalRequired ?? false}
+          approvalCanSend={approvalState?.canSend ?? false}
+          approvalGateReason={approvalState?.gateReason ?? null}
+          proposedCompletionDate={royalty?.proposedCompletionDate ?? null}
+          realCompletionDeadline={rightsCompletion?.completeByDate ?? null}
+          defaultPartner={
+            budgetSettings.partnerName
+              ? {
+                  partnerId: budgetSettings.partnerId ?? null,
+                  partnerName: budgetSettings.partnerName,
+                  contactName: [
+                    budgetSettings.partnerContactFirstName,
+                    budgetSettings.partnerContactLastName,
+                  ]
+                    .filter(Boolean)
+                    .join(" "),
+                  contactEmail: budgetSettings.partnerContactEmail ?? "",
+                }
+              : null
+          }
+        />
+        {partnerQuotations.length === 0 || proposals.some(p => !p.partnerQuotationId) ? <details className="rounded-xl border p-4"><summary className="cursor-pointer text-sm font-medium">Original full-project proposal and history</summary><p className="my-3 text-sm text-muted-foreground">Uses the default partner in Quotation settings and the full project quotation.</p>
           <ProposalPanel
             projectId={project.id}
             projectSlug={slug}
             printRunId={selectedRunId ?? null}
             partnerQuoteMode={presentation?.mode ?? null}
             partnerQuoteTotal={partnerQuoteTotal}
+            hasPrintOptions={presentation?.mode === "itemized" && Boolean(presentation.printOptions.length)}
             currency={settings.currency}
-            canEdit={canEdit}
+            canEdit={canEdit && partnerQuotations.length === 0}
             fundingEmail={budgetSettings.partnerContactEmail}
             approvalRequired={approvalState?.approvalRequired ?? false}
             approvalCanSend={approvalState?.canSend ?? false}
@@ -663,7 +862,7 @@ export default async function ProjectBudgetPage({
             proposedCompletionDate={royalty?.proposedCompletionDate ?? null}
             realCompletionDeadline={rightsCompletion?.completeByDate ?? null}
             initialEmailDraft={proposalEmailDraft}
-            proposals={proposals.map((p) => ({
+            proposals={proposals.filter(p => !p.partnerQuotationId).map((p) => ({
               id: p.id,
               recipientName: p.recipientName,
               recipientEmail: p.recipientEmail,
@@ -673,12 +872,14 @@ export default async function ProjectBudgetPage({
               budgetApprovalRequestId: p.budgetApprovalRequestId,
               fileId: p.fileId,
               status: p.status,
+              fundingPath: p.fundingPath,
               sentAt: p.sentAt.toISOString(),
               sentByName: p.sentByName,
             }))}
           />
-        </BudgetSection>
-      ) : null}
+        </details> : null}
+        {proposals.some(p => !p.partnerQuotationId) && partnerQuotations.length > 0 ? <p className="text-xs text-muted-foreground">Earlier proposals remain in the original proposal history, including deleted partner quotations.</p> : null}
+      </BudgetSection> : null}
 
       <BudgetSection
         id="cash-reconciliation"
@@ -721,19 +922,21 @@ export default async function ProjectBudgetPage({
             lockLabel: donationLinkedReceiptIds.has(r.id)
               ? ("Donation" as const)
               : mouLinkedReceiptIds.has(r.id)
-                ? ("MoU" as const)
+                ? ("Expected payment" as const)
                 : undefined,
+            proposalId: r.proposalId,
             mouLink: donationMouLinksByReceipt.get(r.id),
             mouPaymentLabel: payments.find((payment) => payment.receiptId === r.id)?.notes ||
-              (mouLinkedReceiptIds.has(r.id) ? "Scheduled payment" : undefined),
+              (mouLinkedReceiptIds.has(r.id) ? "Expected payment" : undefined),
           }))}
+          proposals={canEdit ? proposalOptions : []}
         />
       </BudgetSection>
 
       <BudgetSection
         id="agreements-fees"
         title="Payments"
-        description="Scheduled funding, royalties, license fees, and shared agreement allocations."
+        description="Expected payments from partners, royalties, license fees, and shared agreement allocations."
       >
         {sharedMouGroups.map((group) => (
           <Link
@@ -759,6 +962,9 @@ export default async function ProjectBudgetPage({
             </span>
           </Link>
         ))}
+        {canEdit && !scoped && (payments.some((payment) => !payment.sharedMouGroupId) || fundingPartnerSummary.source !== "none") ? (
+          <FundingPartnerNotice projectId={project.id} partner={fundingPartnerSummary} purpose="invoices" />
+        ) : null}
         {canEdit ? (
           <BudgetLineInvoice
             projectId={project.id}
@@ -791,14 +997,28 @@ export default async function ProjectBudgetPage({
           episodeMilestone={episodeMilestone}
           deductionBps={presentation?.deductionBps ?? 0}
           fundingTarget={partnerQuoteTotal}
+          rightsHref={`/projects/${slug}/rights`}
+          unlinkedReceivedAmount={receipts
+            .filter((receipt) => receipt.currency === settings.currency && !payments.some((payment) => payment.receiptId === receipt.id))
+            .reduce((sum, receipt) => sum + Number(receipt.amount), 0)}
           defaultCcEmails={workspaceSettings.defaultCcEmails}
           initialEmailDrafts={invoiceEmailDrafts}
+          proposals={proposalOptions}
+          fundingPartner={{ name: fundingPartnerSummary.name, email: fundingPartnerSummary.email }}
+          defaultBasis={
+            !rightsCompletion || rightsCompletion.mouStatus === "not_needed"
+              ? "no_mou"
+              : "mou"
+          }
           payments={payments.map((p) => ({
             id: p.id,
             printRunId: p.printRunId,
             amount: p.amount,
             currency: p.currency,
             trigger: p.trigger,
+            fundingBasis: p.fundingBasis,
+            partnerName: p.partnerName,
+            proposalId: p.proposalId,
             dueDate: p.dueDate,
             notes: p.notes,
             publicDescription: p.publicDescription,

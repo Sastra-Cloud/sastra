@@ -2,9 +2,9 @@
 title: "Projects & stages"
 category: "Work"
 roles: [member, manager, admin]
-keywords: [book details, English pages, English page count, source page count, book size, trim size, language expansion factor, proposal budget, estimated budget, proposed book, project funding, available funds, promised funding, grant funding, donations received, net funding, copy project, duplicate project, new volume, project manager, assigned projects, project management access, delegate projects, sponsorship funds, funds used, available sponsorship funds, publishing, current work, project details, stages and team, create project, shared draft, Lectio, Sastra only, Sastra and Lectio, guided setup, project actions, project, project name, rename project, edit project name, phase, proposal stage, proposed project, project status, planning, active, on hold, book, ebook, ebook only, ebook for now, print, print plan, book format, format plan not set, article, podcast, video series, videos, create project, new project, guided setup, guided project, step by step, one page form, overview, portfolio, filter, sort, print funding, print covered, print funding not assigned, funding assigned, no funding, seeking funding, partially funded, funded, no printing planned yet, due date, start date, schedule, estimated duration, planned finish, timeline, gantt, drive, file note, attachment note, delete project, completed project, project archive, archived project, reprint, status update, recent correspondence, project email, linked email, AI recommendation, daily review, mention, note, shared mou, shared agreement, project type, change project type, set project type, work path, wrong path]
+keywords: [project people, default project team, default people, add people, chat access, optional work roles, book details, English pages, English page count, source page count, book size, trim size, language expansion factor, proposal budget, estimated budget, proposed book, project funding, available funds, promised funding, grant funding, donations received, net funding, copy project, duplicate project, new volume, project manager, assigned projects, project management access, delegate projects, sponsorship funds, funds used, available sponsorship funds, publishing, current work, project details, stages and team, create project, shared draft, Lectio, Sastra only, Sastra and Lectio, guided setup, project actions, project, project name, rename project, edit project name, phase, proposal stage, proposed project, project status, planning, active, on hold, book, ebook, ebook only, ebook for now, print, print plan, book format, format plan not set, article, podcast, video series, videos, create project, new project, guided setup, guided project, step by step, one page form, overview, portfolio, filter, sort, print funding, print covered, print funding not assigned, funding assigned, no funding, seeking funding, partially funded, funded, no printing planned yet, due date, start date, schedule, estimated duration, planned finish, timeline, gantt, drive, file note, attachment note, delete project, completed project, project archive, archived project, reprint, status update, recent correspondence, project email, linked email, AI recommendation, daily review, mention, note, shared mou, shared agreement, project type, change project type, set project type, work path, wrong path]
 order: 20
-summary: "Manage projects, edit book pages and size on Overview, assign project managers, and find project settings."
+summary: "Manage project people and optional work roles, save a default project team, assign project managers, and edit project details."
 ---
 
 A **project** is one publishing initiative — a book, a collection of articles,
@@ -23,16 +23,50 @@ portfolio, but they do not count toward active delivery capacity, schedule
 roadmaps, overdue-project totals, or missing-deadline warnings. Move a proposal
 to **Planning** or **Active** in **Project settings** when the work is approved.
 
+## People and project chat access
+
+Open **Project → People**, or select **People** in the project chat header.
+Project managers and workspace managers/admins can choose a teammate and select
+**Add to project**. Review the chat-history access and confirm. The person can
+use all of that project's chat channels and shared chat files immediately after
+saving. Refresh an already-open chat to update its mention picker.
+
+Each person appears once. They can join for discussion without a work role.
+Use **Assign a work role** to add jobs such as translator or editor. A work role
+does not grant management authority. Removing a work role keeps the person in
+the project and its chats.
+
+**Remove** ends project chat and chat-file access and removes the person's work
+roles. Existing assigned tasks stay assigned. Remove a project-manager grant
+before removing that person. Workspace admins retain access to every project
+chat for oversight. Other teammates, including workspace managers, need project
+membership or a project-manager grant to open its chats. Project details and the
+People list remain visible to teammates outside the project.
+
+## Default project team
+
+Workspace admins can choose a saved team under **Settings → Team → Default
+project team**. Select people and choose **Save default team**. Every new project
+copies these people into its People list, without assigning work roles or
+management authority. New-project setup shows the saved team before creation.
+New workspace teammates are not selected automatically.
+
+To update existing projects, choose **Preview adding to existing projects**.
+Review the people and project count, then choose **Confirm adding people**.
+This includes completed projects, skips duplicates, and keeps other people, work roles, and management grants. It does not remove people excluded from the default team; use that
+project's **People** tab to remove them. Changing the saved default team alone
+never changes existing projects.
+
 ## Project managers
 
 A member can manage selected projects without becoming a workspace manager.
-Open a project's **Members** tab. Under **Project managers**, select a member and
+Open a project's **People** tab. Under **Project managers**, select a member and
 choose **Assign project manager**. Confirm the permission change. Repeat this on
 each project they should manage. Only workspace managers, admins, and super admins
 can grant or remove this access.
 
 Assigned project managers appear in the project chat’s **@mention** picker, even
-without a separate project role. They can add/remove project-role members and
+without a separate work role. They can add/remove project people, assign optional work roles, and
 create or assign tasks in that project. They can change its name, details, schedule,
 stages, tasks, status updates, and project members.
 They can assign tasks and choose **Next up** for tasks in those projects. They
@@ -74,17 +108,34 @@ and estimate inputs stay attached. Add a task plan when the work is ready to sta
 ## Project funding at a glance
 
 Workspace managers and admins see **Project funding** near the top of a project's
-overview, including closed projects. It shows the main project's estimated costs,
-gross money received, amounts still promised, and **Available now**.
-Available now is net received funding after deductions minus recorded budget spend.
-A promise is not available cash. Negative balances remain visible.
+overview, including closed projects. **Agreement funding** in Rights & MOUs and
+**Funding summary** in the main Budget use the same figures:
 
-**Where funding is promised** lists scheduled partner payments and the project's
-allocation from each linked shared MoU or grant, with promised, received, and
-remaining amounts. Open an agreement or scheduled payment from its link. Agreements needing review
-and payments marked received without a matching receipt show a warning.
-**Recent money received** identifies payments and donation-linked receipts.
-**Open funding details** opens Budget's main-project cash and receipt section.
+- **Promised funding** is the total partner commitments. Calculated percentage
+  amounts are marked as needing review until saved.
+- **Received** counts each recorded receipt once, before deductions.
+- **Still to come** shows the unpaid commitment after amounts and receipt links
+  are confirmed. It says **Needs review** when missing amounts or unlinked
+  receipts prevent a reliable balance.
+- **Available now** is net received funding after deductions minus recorded
+  budget spend. A promise is not available cash. Negative balances remain visible.
+
+**Funding commitments** lists individual payments and shared agreement allocations.
+Percentage payments include the source terms and calculation. The **Linked
+receipts** column only counts receipts matched to that commitment. Unlinked
+received money remains in Received and Available now; it is not silently assigned
+to an installment.
+
+Use **Review payments** or **Review payment amounts** to open Budget's Payments
+tab. Use **Review received funding** to open Cash flow and review receipt links.
+An admin can link an existing donation to an expected payment after confirming
+its amount. This reuses the receipt instead of recording the money again.
+**Recent money received** shows the latest payments and donations.
+
+A legacy payment described as payable to the licensor is flagged for fee-direction
+review and excluded from promised income in these summaries. Review it as an
+outgoing cost under Rights & MOUs; the saved ledger record is not changed by
+viewing the summary.
 
 Currencies have separate balances. Reprint budgets and sponsorship funds remain
 separate. Funding assigned on budget lines without a linked source is called out;
@@ -245,14 +296,14 @@ another project, agreement, quote, or payment.
 
 On current projects, managers additionally see a compact **Project health**
 summary (funding, rights, delivery, workload, impediments, and forecast). Funding
-and Rights link directly to their review tabs. Its budget summary separates the
+and Rights & MOUs link directly to their review tabs. Its budget summary separates the
 percentage promised from the percentage actually received, alongside recorded
 spending; delivery avoids showing an empty chart until there is enough history.
 Managers also see a status-update composer for posting progress.
 Archived projects keep the update history without showing stale health warnings
 or accepting a new status update. Anyone
 can **reply** to a status update, and you can **@mention** a teammate in an update
-or reply — as well as in **Budget notes** and **Rights notes** — to notify them.
+or reply — as well as in **Budget notes** and **Rights & MOUs notes** — to notify them.
 See **@mentions**.
 
 Managers also see **External follow-up** when linked correspondence is waiting
@@ -286,8 +337,8 @@ so the next daily review uses the corrected text.
 
 ## Project tabs
 
-Across the top: **Overview**, **Tasks**, **Chat**, **Rights**, **Budget**,
-**Print**, and **Members**. Each section opens directly, without a Publishing
+Across the top: **Overview**, **Tasks**, **Chat**, **Rights & MOUs**, **Budget**,
+**Print**, and **People**. Each section opens directly, without a Publishing
 submenu. Podcasts show **Episodes** instead of Print; video series show
 **Videos**. **Translation** also appears when the Lectio module is enabled.
 On small screens, scroll the tab row sideways to reach every section.
@@ -333,7 +384,7 @@ chat, and activity.
 
 Managers and administrators use **Create project** on Projects. The creation page offers guided setup and a single-page form. Switching between these keeps all entered details. **Import from document** and **Plan with AI** are secondary methods on this page. Leaving an edited form for another method asks you to confirm.
 
-Members can read projects and their team lists. Ask a manager to create projects or change project membership.
+Members can read projects and their People lists. Ask a project manager or workspace admin to add you to a project before using its chats.
 
 Project headers keep status and deadline visible. On small screens, open **Project details** for secondary information. **Project settings** stays explicit; **Project actions** contains completion and document updates.
 

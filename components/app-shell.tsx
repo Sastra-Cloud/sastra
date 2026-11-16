@@ -10,7 +10,8 @@ import { SourceLink } from "@/components/source-link";
 import { Button } from "@/components/ui/button";
 import { Topbar } from "@/components/topbar";
 import { FloatingAssistant } from "@/components/assistant/floating-assistant";
-import { GuidanceProvider } from "@/components/guidance/guidance-provider";
+import { GuidanceProvider, type GuidanceSnapshot } from "@/components/guidance/guidance-provider";
+import { PerformanceReporter } from "@/components/observability/performance-reporter";
 import { PresenceProvider } from "@/components/presence/presence-provider";
 import { PullToRefresh } from "@/components/pwa/pull-to-refresh";
 import { RouteScrollManager } from "@/components/route-scroll-manager";
@@ -22,6 +23,9 @@ import { isAdminRole } from "@/lib/auth/policy";
 import { WorkspaceModulesProvider } from "@/components/settings/workspace-modules-provider";
 import { NavigationBadgesProvider } from "@/components/navigation-badges-provider";
 import type { NavigationBadgeCounts } from "@/lib/navigation/badges";
+import { FrequentReactionsProvider } from "@/components/chat/frequent-reactions-provider";
+import { VoicePlaybackProvider } from "@/components/chat/voice-playback-provider";
+import { PinnedTasksCanvas, PinnedTasksProvider, PinnedTasksWorkspace } from "@/components/tasks/pinned-tasks-provider";
 
 const SIDEBAR_COOKIE = "sastra-sidebar-collapsed";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
@@ -42,12 +46,12 @@ export function AppShell({
   initialSidebarCollapsed,
   initialActiveTimer,
   guidanceEnabled,
-  initialGuidanceDismissals,
-  assistantIntroduced = false,
+  guidanceSnapshot,
   sourceUrl,
   versionLabel,
   enabledModules = [],
-  initialNavigationBadges,
+  navigationBadgesSnapshot,
+  performanceMonitoring = false,
 }: {
   children: React.ReactNode;
   userId: string;
@@ -58,14 +62,16 @@ export function AppShell({
   initialSidebarCollapsed: boolean;
   initialActiveTimer: ActiveTimer | null;
   guidanceEnabled: boolean;
-  initialGuidanceDismissals: string[];
-  /** The person has asked the assistant something before; skip its intro. */
-  assistantIntroduced?: boolean;
+  /** Streams in after first paint; null when it could not be loaded. */
+  guidanceSnapshot: Promise<GuidanceSnapshot | null>;
   /** AGPL source link for the running build. */
   sourceUrl: string;
   versionLabel: string | null;
   enabledModules?: string[];
-  initialNavigationBadges: NavigationBadgeCounts;
+  /** Streams in after first paint; null when it could not be loaded. */
+  navigationBadgesSnapshot: Promise<NavigationBadgeCounts | null>;
+  /** Operator opt-in (SASTRA_PERFORMANCE_MONITORING) for anonymous performance reports. */
+  performanceMonitoring?: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(initialSidebarCollapsed);
 
@@ -78,11 +84,14 @@ export function AppShell({
   }
 
   return (
+    <PinnedTasksProvider key={userId} userId={userId}>
+    <FrequentReactionsProvider key={userId} userId={userId}>
+    <VoicePlaybackProvider key={userId}>
     <WorkspaceModulesProvider enabledModules={enabledModules}>
-    <NavigationBadgesProvider initialCounts={initialNavigationBadges}>
+    <NavigationBadgesProvider snapshot={navigationBadgesSnapshot}>
     <GuidanceProvider
       enabled={guidanceEnabled}
-      initialDismissedKeys={initialGuidanceDismissals}
+      snapshot={guidanceSnapshot}
     >
     <ActiveTimerProvider initialActiveTimer={initialActiveTimer}>
     <PresenceProvider userId={userId}>
@@ -147,7 +156,7 @@ export function AppShell({
         </div>
       </aside>
 
-      <div className="flex min-h-0 min-w-0 flex-col">
+      <PinnedTasksWorkspace>
         <Topbar
           userId={userId}
           userName={userName}
@@ -155,16 +164,22 @@ export function AppShell({
           role={role}
           canManage={canManage}
         />
+        <PinnedTasksCanvas>
         <main data-app-main className="min-w-0 flex-1 overflow-x-clip px-4 py-5 md:px-8 md:py-7">
           <AppCanvas>{children}</AppCanvas>
         </main>
-      </div>
+        </PinnedTasksCanvas>
+      </PinnedTasksWorkspace>
     </div>
-    <FloatingAssistant userName={userName} introduced={assistantIntroduced} />
+    <FloatingAssistant userName={userName} />
+    {performanceMonitoring ? <PerformanceReporter /> : null}
     </PresenceProvider>
     </ActiveTimerProvider>
     </GuidanceProvider>
     </NavigationBadgesProvider>
     </WorkspaceModulesProvider>
+    </VoicePlaybackProvider>
+    </FrequentReactionsProvider>
+    </PinnedTasksProvider>
   );
 }

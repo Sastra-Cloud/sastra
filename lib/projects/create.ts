@@ -1,4 +1,5 @@
 import "server-only";
+import { addDefaultProjectPeople } from "./people";
 import { z } from "zod";
 import type { Db } from "@/lib/db";
 import { projects, projectBudgetSettings, budgetScopePresentations, projectPrintSettings, units, chatChannels } from "@/lib/db/schema";
@@ -123,6 +124,8 @@ export async function createProjectInTransaction(tx: Parameters<Parameters<Db["t
         }))
       );
     }
+
+    await addDefaultProjectPeople(tx, project.id, actorId);
 
     // Every project gets subject channels so decisions do not get lost.
     await tx.insert(chatChannels).values(defaultProjectChannelRows(project.id));

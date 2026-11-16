@@ -35,7 +35,7 @@ const dismissItem = (state: ReviewState, input: Dismissal): ReviewState => input
 
 const DESTINATIONS: Record<string, { href: string; instruction: string; action: string }> = {
   "Project updates": { href: "#review-project-updates", instruction: "Post the suggested update or dismiss it.", action: "Review updates" },
-  "Rights documents": { href: "#review-rights-documents", instruction: "Approve the document or dismiss the suggestion.", action: "Review rights" },
+  "Rights documents": { href: "#review-rights-documents", instruction: "Approve the document or dismiss the suggestion.", action: "Review Rights & MOUs" },
   "Unassigned follow-up": { href: "#review-follow-up", instruction: "Choose an owner below, snooze the follow-up, or resolve it.", action: "Review follow-up" },
 };
 

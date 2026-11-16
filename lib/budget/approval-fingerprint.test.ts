@@ -4,7 +4,7 @@ import {
   budgetApprovalFingerprint,
   budgetApprovalTotal,
 } from "@/lib/budget/approval-fingerprint";
-import type { BudgetLine, BudgetSettings } from "@/lib/budget/queries";
+import type { BudgetLine, BudgetSettings, BudgetPresentation } from "@/lib/budget/queries";
 
 const settings = {
   wordCount: 1000,
@@ -52,6 +52,24 @@ const item = {
 } as BudgetLine;
 
 describe("budget approval fingerprint", () => {
+  it("resets approval when a partner share or recipient changes, without invalidating legacy fingerprints", () => {
+    const quote = { id: "quote", title: "Translation share", partnerId: null, partnerName: "Partner B", contactName: "Reviewer", contactEmail: "b@example.com", description: "Translation", currency: "USD", sourceFingerprint: "source", lines: [{ budgetItemId: item.id, label: "Translation", amountCents: 1000 }] };
+    const before = budgetApprovalFingerprint(settings, [item], null, [quote]);
+    expect(budgetApprovalFingerprint(settings, [item], null, [{ ...quote, contactEmail: "other@example.com" }])).not.toBe(before);
+    expect(budgetApprovalFingerprint(settings, [item], null, [{ ...quote, lines: [{ ...quote.lines[0], amountCents: 1500 }] }])).not.toBe(before);
+    expect(budgetApprovalFingerprint(settings, [item], null, [])).toBe(budgetApprovalFingerprint(settings, [item], null));
+  });
+  it("invalidates approval when a quantity option changes and records a minimum rather than a sum", () => {
+    const presentation = { mode: "itemized", printOptions: [
+      { sourceQuoteId: "quote", quantity: 1000, printingCostCents: 156000, partnerAmountCents: 180000, label: "Printing", currency: "USD" },
+      { sourceQuoteId: "quote-2", quantity: 3000, printingCostCents: 267000, partnerAmountCents: 310000, label: "Printing", currency: "USD" },
+    ] } as BudgetPresentation;
+    const publicItem = { ...item, partnerVisible: true };
+    const fingerprint = budgetApprovalFingerprint(settings, [publicItem], presentation);
+    const changed = { ...presentation, printOptions: presentation.printOptions.map((option) => ({ ...option, quantity: option.quantity + 1 })) };
+    expect(budgetApprovalFingerprint(settings, [publicItem], changed)).not.toBe(fingerprint);
+    expect(budgetApprovalTotal([publicItem], presentation)).toBe("1830.00");
+  });
   it("changes for partner-facing quotation edits", () => {
     const before = budgetApprovalFingerprint(settings, [item]);
     const after = budgetApprovalFingerprint(

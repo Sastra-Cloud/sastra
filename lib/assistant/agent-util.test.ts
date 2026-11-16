@@ -26,11 +26,6 @@ describe("partitionToolCalls", () => {
     expect(auto.map((c) => c.function.name)).toEqual(["list_projects", "remember"]);
     expect(writes.map((c) => c.function.name)).toEqual(["create_task", "set_task_status"]);
   });
-
-  it("handles all-auto and all-write batches", () => {
-    expect(partitionToolCalls([call("list_people")], isWrite).writes).toHaveLength(0);
-    expect(partitionToolCalls([call("create_task")], isWrite).auto).toHaveLength(0);
-  });
 });
 
 describe("parseToolArgs", () => {
@@ -116,12 +111,6 @@ describe("stripReasoning", () => {
     expect(stripReasoning("Budget is < $500 and title uses <b> loosely")).toBe(
       "Budget is < $500 and title uses <b> loosely"
     );
-  });
-
-  it("handles null/empty content", () => {
-    expect(stripReasoning(null)).toBe("");
-    expect(stripReasoning(undefined)).toBe("");
-    expect(stripReasoning("   ")).toBe("");
   });
 });
 

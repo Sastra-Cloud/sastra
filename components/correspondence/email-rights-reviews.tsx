@@ -303,8 +303,8 @@ function EmailRightsReviewCard({
                       formatVideo: formats.video,
                     }, learnFromReview),
                   selectedProjectIds.size === 1
-                    ? "Rights updated and the agreement attached."
-                    : `Rights updated on ${selectedProjectIds.size} projects and the agreement attached to each.`
+                    ? "Rights & MOUs updated and the agreement attached."
+                    : `Rights & MOUs updated on ${selectedProjectIds.size} projects and the agreement attached to each.`
                 )
               }
             >

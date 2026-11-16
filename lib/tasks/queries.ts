@@ -156,6 +156,8 @@ export type TaskRow = {
     | "superseded"
     | null;
   approvalProjectSlug: string | null;
+  approvalQuotationId?: string | null;
+  approvalPrintRunId?: string | null;
   sourceEmailSuggestionId: string | null;
   sourceEmailThreadId: string | null;
   sourceEmailUrl: string | null;
@@ -250,6 +252,8 @@ const baseSelect = {
     where ${budgetApprovalAssignments.taskId} = ${tasks.id}
     limit 1
   )`,
+  approvalQuotationId: sql<string | null>`(select ${budgetApprovalRequests.partnerQuotationId} from ${budgetApprovalAssignments} inner join ${budgetApprovalRequests} on ${budgetApprovalRequests.id} = ${budgetApprovalAssignments.requestId} where ${budgetApprovalAssignments.taskId} = ${tasks.id} limit 1)`,
+  approvalPrintRunId: sql<string | null>`(select ${budgetApprovalRequests.printRunId} from ${budgetApprovalAssignments} inner join ${budgetApprovalRequests} on ${budgetApprovalRequests.id} = ${budgetApprovalAssignments.requestId} where ${budgetApprovalAssignments.taskId} = ${tasks.id} limit 1)`,
   approvalProjectSlug: sql<string | null>`(
     select ${projects.slug}
     from ${budgetApprovalAssignments}
@@ -502,6 +506,7 @@ export async function searchTasksOutsideMyWork({
       )
     )
     .orderBy(
+      // Own tasks first: splitOtherTaskResults relies on this for "Assigned to me".
       sql`case when ${tasks.assignedTo} = ${userId} then 0 else 1 end`,
       sql`case when ${tasks.status} <> 'done' then 0 else 1 end`,
       sql`case when ${titleMatch} then 0 else 1 end`,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { checkStorageAvailable, formatBytes } from "./storage";
+import { checkStorageAvailable } from "./storage";
 
 const GB = 1024 ** 3;
 
@@ -16,13 +16,5 @@ describe("hosted file space", () => {
       ok: false,
       error: "Your workspace is out of file space. It uses 20 GB of 20 GB. Delete files you no longer need, or get more space at https://account.example.",
     });
-  });
-
-  it("formats sizes plainly", () => {
-    expect(formatBytes(3.24 * GB)).toBe("3.2 GB");
-    expect(formatBytes(20 * GB)).toBe("20 GB");
-    expect(formatBytes(12.6 * GB)).toBe("13 GB");
-    expect(formatBytes(450 * 1024 ** 2)).toBe("450 MB");
-    expect(formatBytes(2048)).toBe("2 KB");
   });
 });

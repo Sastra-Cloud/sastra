@@ -507,8 +507,8 @@ export function ConversationLoadingSkeleton({
         fillAvailable
           ? "h-full min-h-0 flex-1"
           : variant === "project"
-          ? "h-[calc(100vh-26rem)] min-h-[20rem] max-h-[34rem]"
-          : "h-[calc(100vh-14rem)] min-h-[32rem]"
+          ? "h-[calc(100dvh-26rem)] min-h-[20rem] max-h-[34rem]"
+          : "h-[calc(100dvh-14rem)] min-h-[32rem]"
       )}
     >
       <div className="relative flex flex-1 items-center justify-center">
@@ -532,24 +532,23 @@ export function ConversationLoadingSkeleton({
 export function ProjectMembersSkeleton() {
   return (
     <LoadingFrame>
-      <div className="@container/members min-w-0">
-      <div className="grid w-full min-w-0 gap-5 @[52rem]/members:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)] @[52rem]/members:items-start">
+      <div className="space-y-4">
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-4 w-full max-w-lg" />
         <CardSkeleton className="space-y-3">
           <Skeleton className="h-4 w-28" />
-          <Skeleton className="h-10 w-full rounded-lg" />
-          <Skeleton className="h-10 w-full rounded-lg" />
-          <Skeleton className="h-10 w-full rounded-lg" />
+          <Skeleton className="h-11 w-full rounded-lg" />
+          <Skeleton className="h-4 w-full max-w-lg" />
         </CardSkeleton>
-        <div className="grid min-w-0 grid-cols-[repeat(auto-fill,minmax(min(100%,22rem),1fr))] gap-2">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <CardSkeleton key={index} className="flex h-14 items-center gap-3 p-3">
+        <Skeleton className="h-11 w-full rounded-lg" />
+        <div className="divide-y rounded-xl border">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="flex min-h-28 items-start gap-3 p-4">
               <Skeleton className="size-8 shrink-0 rounded-full" />
-              <Skeleton className="h-4 flex-1" />
-              <Skeleton className="h-6 w-20 rounded-full" />
-            </CardSkeleton>
+              <div className="flex-1 space-y-3"><Skeleton className="h-4 w-40" /><Skeleton className="h-5 w-24" /><Skeleton className="h-4 w-32" /></div>
+            </div>
           ))}
         </div>
-      </div>
       </div>
     </LoadingFrame>
   );

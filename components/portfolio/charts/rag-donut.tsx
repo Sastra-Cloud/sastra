@@ -1,6 +1,13 @@
 "use client";
 
-import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
+import dynamic from "next/dynamic";
+
+// The charting library is large. The total renders at once; the ring loads on
+// demand so the page is usable before the chart code arrives.
+const RagDonutChart = dynamic(
+  () => import("./rag-donut-chart").then((module) => module.RagDonutChart),
+  { ssr: false }
+);
 
 const COLORS: Record<string, string> = {
   green: "var(--success)",
@@ -25,7 +32,9 @@ export function RagDonut({
     { key: "green", label: "On track", value: green },
     { key: "amber", label: "Needs attention", value: amber },
     { key: "red", label: "At risk", value: red },
-  ].filter((d) => d.value > 0);
+  ]
+    .filter((d) => d.value > 0)
+    .map((d) => ({ ...d, fill: COLORS[d.key] }));
 
   if (total === 0) {
     return (
@@ -40,26 +49,7 @@ export function RagDonut({
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie
-            data={data}
-            dataKey="value"
-            nameKey="label"
-            innerRadius="66%"
-            outerRadius="100%"
-            startAngle={90}
-            endAngle={-270}
-            stroke="var(--background)"
-            strokeWidth={2}
-            isAnimationActive={false}
-          >
-            {data.map((d) => (
-              <Cell key={d.key} fill={COLORS[d.key]} />
-            ))}
-          </Pie>
-        </PieChart>
-      </ResponsiveContainer>
+      <RagDonutChart data={data} />
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-2xl font-semibold tabular-nums">{total}</span>
         <span className="text-xs text-muted-foreground">projects</span>

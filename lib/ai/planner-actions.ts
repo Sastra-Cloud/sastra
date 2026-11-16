@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 
+import { addDefaultProjectPeople } from "@/lib/projects/people";
 import { requireRole } from "@/lib/auth/guards";
 import { defaultProjectChannelRows } from "@/lib/chat/project-channels";
 import { db } from "@/lib/db";
@@ -169,6 +170,8 @@ export async function commitPlan(
         createdBy: user.id,
       })
       .returning({ id: projects.id });
+
+    await addDefaultProjectPeople(tx, project.id, user.id);
 
     await Promise.all([
       tx.insert(projectBudgetSettings).values({

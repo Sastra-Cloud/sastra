@@ -74,7 +74,7 @@ function blockerDestination(
   kind: string | null
 ) {
   if (blocker.type === "rights") {
-    return { href: `/projects/${slug}/rights`, label: "Review rights" };
+    return { href: `/projects/${slug}/rights`, label: "Review Rights & MOUs" };
   }
   if (blocker.type === "budget") {
     return { href: `/projects/${slug}/budget`, label: "Review budget" };
@@ -405,7 +405,7 @@ export default async function ProjectOverviewPage({
         />
       </div>
 
-      {created === "1" && isManager ? <div className="rounded-xl border border-success/30 bg-success/5 px-4 py-3 text-sm" role="status"><p className="font-medium">Project created</p><p className="mt-1 text-muted-foreground">{tasks.length ? `${tasks.length} tasks saved. Assign owners so work can start.` : "Add the first task or set up a task plan."}</p><Link href={`/projects/${project.slug}/${tasks.length ? "members" : "tasks"}`} className="inline-flex min-h-11 items-center gap-1 font-medium text-primary">{tasks.length ? "Assign project roles" : "Set up tasks"}<ArrowRight className="size-4" /></Link></div> : null}
+      {created === "1" && isManager ? <div className="rounded-xl border border-success/30 bg-success/5 px-4 py-3 text-sm" role="status"><p className="font-medium">Project created</p><p className="mt-1 text-muted-foreground">{tasks.length ? `${tasks.length} tasks saved. Assign owners so work can start.` : "Add the first task or set up a task plan."}</p><Link href={`/projects/${project.slug}/${tasks.length ? "members" : "tasks"}`} className="inline-flex min-h-11 items-center gap-1 font-medium text-primary">{tasks.length ? "Review people and work roles" : "Set up tasks"}<ArrowRight className="size-4" /></Link></div> : null}
 
       <ProjectSponsorshipFunds funds={sponsorshipFunds} />
 
@@ -580,7 +580,7 @@ export default async function ProjectOverviewPage({
                   </span>
                 ) : null}
                 <span className="ml-auto text-xs text-muted-foreground">
-                  View on Rights →
+                  View on Rights &amp; MOUs →
                 </span>
               </Link>
             ) : null}
@@ -618,7 +618,7 @@ export default async function ProjectOverviewPage({
                 </SectionDisclosure>
               ) : null}
 
-            {band ? <SectionDisclosure id="manager-analytics" title="Project analytics" description="Rights, forecast, and team capacity">{band}</SectionDisclosure> : null}
+            {band ? <SectionDisclosure id="manager-analytics" title="Project analytics" description="Rights & MOUs, forecast, and team capacity">{band}</SectionDisclosure> : null}
 
             {project.description ? (
               <section
@@ -819,7 +819,7 @@ export default async function ProjectOverviewPage({
 
               <div className="border-t pt-4">
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <h3 className="text-sm font-medium">Members</h3>
+                  <h3 className="text-sm font-medium">Work roles</h3>
                   <Link
                     href={`/projects/${project.slug}/members`}
                     className="text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
@@ -829,7 +829,7 @@ export default async function ProjectOverviewPage({
                 </div>
                 {members.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    No members assigned.
+                    No work roles assigned. People can still join project chats.
                   </p>
                 ) : (
                   <div className="space-y-2">

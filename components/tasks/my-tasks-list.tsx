@@ -1,11 +1,13 @@
 "use client";
 
+import { elementTiming, useUsefulWork } from "@/components/observability/use-useful-work";
 import { confirmDialog } from "@/lib/dialog-requests";
 
 import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
+import { MotionProvider } from "@/components/motion/motion-provider";
 import { ArrowRight, CircleDollarSign, Flag, Repeat2, ShieldCheck, Trash2 } from "lucide-react";
 
 import type { MyTaskRow } from "@/lib/tasks/queries";
@@ -24,6 +26,7 @@ import { TaskDetailDialog } from "@/components/tasks/task-detail-dialog";
 import { TaskAttachmentShortcut } from "@/components/tasks/task-attachment-shortcut";
 import { printPaymentFollowUp, selectPersonalWork } from "@/lib/tasks/attention";
 import { isSourceControlledTask, taskSourceLink } from "@/lib/tasks/task-source";
+import { TaskPinButton } from "./pinned-tasks-provider";
 
 type Option = { id: string; name: string };
 type TaskEditorOptions = {
@@ -60,6 +63,11 @@ export function MyTasksList({
   emptyDescription?: string;
 }) {
   const router = useRouter();
+  useUsefulWork({
+    active: homePreview,
+    ready: "dashboard-tasks-ready",
+    visible: { name: "dashboard-tasks-visible", element: "dashboard-tasks" },
+  });
   const [pending, start] = useTransition();
   const [visibleTasks, setVisibleTasks] = usePropState(tasks);
   const inFlight = useRef(new Set<string>());
@@ -187,7 +195,7 @@ export function MyTasksList({
   return (
     <>
       {homePreview ? (
-        <p className="text-xs text-muted-foreground">
+        <p {...elementTiming("dashboard-tasks")} className="text-xs text-muted-foreground">
           {openTasks.length} open · {dueToday.length} due today · {overdueCount} overdue · {" "}
           <Link href="/tasks?view=agenda" className="underline underline-offset-4">
             {dueThisWeek} due in the next 7 days
@@ -228,6 +236,7 @@ export function MyTasksList({
           ) : null}
           {group.rows.length > 0 ? (
             <ul className="divide-y rounded-lg border bg-card" aria-busy={pending}>
+              <MotionProvider>
               <AnimatePresence initial={false}>
                 {group.rows.map((t) => {
                   const followUp = printPaymentFollowUp(t, todayIso, timeZone);
@@ -333,6 +342,7 @@ export function MyTasksList({
                         {sourceLink ? <Link href={sourceLink.href} className="mt-1 block text-xs text-primary hover:underline">{sourceLink.label}</Link> : null}
                       </div>
                       <div className="col-start-2 flex min-w-0 flex-wrap items-center gap-2 sm:ml-auto sm:shrink-0 sm:flex-nowrap">
+                        <TaskPinButton task={t} />
                         <span
                           className={cn(
                             "text-xs",
@@ -364,6 +374,7 @@ export function MyTasksList({
                   );
                 })}
               </AnimatePresence>
+              </MotionProvider>
             </ul>
           ) : (
             <p className="rounded-lg border bg-card px-4 py-3 text-sm text-muted-foreground">

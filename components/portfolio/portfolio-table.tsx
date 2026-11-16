@@ -336,7 +336,7 @@ export function PortfolioTable({ rows }: { rows: PortfolioRow[] }) {
               <SortHeader label="Blockers" sortKey="blockers" align="right" sort={sort} onToggle={toggle} />
               <SortHeader label="Due" sortKey="due" align="right" sort={sort} onToggle={toggle} />
               <SortHeader label="Forecast" sortKey="forecast" align="right" sort={sort} onToggle={toggle} />
-              <SortHeader label="Rights" sort={sort} onToggle={toggle} />
+              <SortHeader label="Rights & MOUs" sort={sort} onToggle={toggle} />
             </tr>
           </thead>
           <tbody className="divide-y">

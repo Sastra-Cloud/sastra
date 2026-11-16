@@ -4,6 +4,9 @@
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
+/* Devices with little memory or few cores (lib/ui/device-tier.ts). Use it to
+   swap an expensive effect, such as a backdrop blur, for a plain one. */
+@custom-variant low-power (&:is([data-low-power] *));
 
 @theme inline {
   --color-background: var(--background);
@@ -56,12 +59,14 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --ease-settle: var(--motion-ease);
 }
 
 :root {
   --motion-press: 130ms;
   --motion-state: 190ms;
   --motion-layout: 280ms;
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --brand-orange: oklch(0.61 0.17 40);
   --brand-coral: oklch(0.69 0.14 35);
   --brand-violet: oklch(0.36 0.09 292);
@@ -160,14 +165,31 @@
     @apply bg-background text-foreground;
   }
   html {
-    @apply font-sans;
+    /* The fallback keeps text sans-serif if the font variables ever fail to
+       resolve; without it the browser drops to its default serif. Preflight
+       already clears the tap highlight. */
+    font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
   }
   h1, h2, h3, h4 {
     @apply text-balance;
   }
-  /* Reserve inactive budget panels in the shared grid. Keep this in base so
-     it overrides Preflight's important hidden rule within the same layer.
-     Base UI keeps inactive panels inert; data-hidden also hides them visually. */
+  /* Controls never need double-tap zoom, so taps fire without the browser
+     waiting for a second one. In the base layer so `touch-none` drag handles
+     and other touch utilities still win. Pinch zoom is unaffected. */
+  a,
+  button,
+  summary,
+  label,
+  input,
+  select,
+  textarea,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+  /* Keep inactive budget panels in the shared grid so their unsaved fields
+     and invalid-field reveal survive. Keep this in base so it overrides
+     Preflight's important hidden rule within the same layer. Base UI keeps
+     inactive panels inert; data-hidden hides them and removes their height. */
   [data-budget-section][hidden] {
     display: block !important;
   }
@@ -211,6 +233,29 @@
   ::view-transition-old(root),
   ::view-transition-new(root) {
     animation: none;
+  }
+
+  /* The one opt-in: `settle()` in lib/ui/settle.ts closes a tall surface and
+     moves to the result in a single step, so the two states crossfade rather
+     than jump. Opacity only, inside the state budget. */
+  html[data-settle-transition]::view-transition-old(root) {
+    animation: settle-fade-out var(--motion-state) cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  html[data-settle-transition]::view-transition-new(root) {
+    animation: settle-fade-in var(--motion-layout) cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes settle-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes settle-fade-in {
+    from {
+      opacity: 0;
+    }
   }
 
   ::view-transition-group(.project-mark-morph),
@@ -265,32 +310,6 @@
     }
   }
 
-  @keyframes chat-project-channel-panel-out {
-    from {
-      grid-template-rows: 1fr;
-      max-height: 18rem;
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-    to {
-      grid-template-rows: 0fr;
-      max-height: 0;
-      opacity: 0;
-      transform: translateY(-4px) scale(0.985);
-    }
-  }
-
-  @keyframes chat-project-channel-item-out {
-    from {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    to {
-      opacity: 0;
-      transform: translateY(-3px);
-    }
-  }
-
   @keyframes optimistic-item-in {
     from {
       opacity: 0;
@@ -304,6 +323,60 @@
 
   .optimistic-item-in {
     animation: optimistic-item-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* The result of a finished action, tinted for a moment so the eye finds it
+     (set by lib/ui/settle.ts). The tint is an overlay that only changes
+     opacity; `:where` keeps `relative` from overriding a positioned target. */
+  :where([data-settled]) {
+    position: relative;
+  }
+
+  [data-settled]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: color-mix(in oklch, var(--success), transparent 86%);
+    box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--success), transparent 50%);
+    animation: settle-flash 1400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes settle-flash {
+    0% {
+      opacity: 0;
+    }
+    12%,
+    55% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  /* A check that draws once when an action is confirmed. */
+  .done-check {
+    animation: done-check-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .done-check path {
+    stroke-dasharray: 1;
+    animation: done-check-draw 260ms cubic-bezier(0.22, 1, 0.36, 1) 60ms both;
+  }
+
+  @keyframes done-check-in {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+  }
+
+  @keyframes done-check-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
   }
 
   .chat-project-channel-panel {
@@ -322,17 +395,6 @@
       animation: chat-project-channel-item-in 220ms
         cubic-bezier(0.22, 1, 0.36, 1) both;
     }
-
-    .chat-project-channel-panel[data-state="closing"] {
-      pointer-events: none;
-      animation: chat-project-channel-panel-out 220ms
-        cubic-bezier(0.55, 0, 0.2, 1) both;
-    }
-
-    .chat-project-channel-panel[data-state="closing"] .chat-project-channel-item {
-      animation: chat-project-channel-item-out 210ms
-        cubic-bezier(0.55, 0, 0.2, 1) both;
-    }
   }
 }
 
@@ -343,6 +405,21 @@
   [data-slot="select-item"] {
     min-block-size: 2.75rem;
   }
+
+  /* iOS zooms the page when a field under 16px takes focus and does not zoom
+     back. Unlayered on purpose so it also covers native fields that set a
+     smaller text utility. */
+  input,
+  textarea,
+  select {
+    font-size: 1rem;
+  }
+
+  /* The browser tap highlight is off, so tappable elements without their own
+     pressed style still acknowledge the touch. Buttons scale instead. */
+  :where(a[href], button, summary, [role="button"]):not([data-slot="button"]):not(:disabled):active {
+    opacity: 0.72;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -351,8 +428,11 @@
   ::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+    /* Transitions keep their timing but lose movement and resizing: position
+       and size changes apply at once, while opacity and color still fade. */
+    transition-property: opacity, color, background-color, border-color,
+      text-decoration-color, fill, stroke, box-shadow !important;
   }
 
   ::view-transition-old(*),
@@ -360,6 +440,11 @@
   ::view-transition-group(*) {
     animation-duration: 0s !important;
     animation-delay: 0s !important;
+  }
+
+  /* Keep the confirmation without the fade: a still tint until it is removed. */
+  [data-settled]::after {
+    animation: none;
   }
 }
 

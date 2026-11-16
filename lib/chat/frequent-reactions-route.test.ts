@@ -17,7 +17,7 @@ describe("personal reaction history", () => {
     vi.mocked(getFrequentReactions).mockResolvedValue(["🙏🏽", "🔥"]);
     const response = await GET();
     expect(getFrequentReactions).toHaveBeenCalledExactlyOnceWith("signed-in-user");
-    expect(await response.json()).toEqual({ emojis: ["🙏🏽", "🔥"] });
+    expect(await response.json()).toEqual({ userId: "signed-in-user", emojis: ["🙏🏽", "🔥"] });
     expect(response.headers.get("cache-control")).toBe("private, no-store");
   });
 });

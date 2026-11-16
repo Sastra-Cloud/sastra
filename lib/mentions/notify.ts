@@ -1,7 +1,7 @@
 import "server-only";
 
 import { notifyMany } from "@/lib/notifications";
-import { findMentionedIds, type MentionUser } from "./parse";
+import { findMentionedIds, hasChannelMention, type MentionUser } from "./parse";
 
 export type NotifyMentionsInput = {
   /** The text the author just wrote (comment, message, update, reply). */
@@ -20,6 +20,8 @@ export type NotifyMentionsInput = {
   type?: string;
   /** Extra payload merged into the notification's `data`. */
   data?: Record<string, unknown>;
+  /** Only chat channels opt in; the server supplies the authorized roster. */
+  channelMentions?: boolean;
 };
 
 /**
@@ -33,12 +35,17 @@ export async function notifyMentions(
 ): Promise<string[]> {
   const { content } = input;
   if (!content) return [];
-  const ids = findMentionedIds(content, input.members).filter(
+  const channelMention = input.channelMentions === true && hasChannelMention(content, input.members);
+  const ids = [...new Set(channelMention
+    ? input.members.map((member) => member.id)
+    : findMentionedIds(content, input.members))].filter(
     (id) => id !== input.actorId
   );
   if (ids.length === 0) return [];
 
-  const title = input.context
+  const title = channelMention
+    ? `${input.actorName} notified everyone${input.context ? ` in ${input.context}` : " in the channel"}`
+    : input.context
     ? `${input.actorName} mentioned you in ${input.context}`
     : `${input.actorName} mentioned you`;
 
@@ -51,7 +58,7 @@ export async function notifyMentions(
       body: content.trim().slice(0, 160),
       project: input.project,
       link: input.link,
-      data: { ...(input.data ?? {}), mentionedBy: input.actorId },
+      data: { ...(input.data ?? {}), mentionedBy: input.actorId, ...(channelMention ? { channelMention: true } : {}) },
     });
   } catch (err) {
     console.error("notifyMentions failed:", err);

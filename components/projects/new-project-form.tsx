@@ -170,7 +170,7 @@ export function NewProjectForm({
           </select>
           <p className="text-xs text-muted-foreground">
             Say whether printing is part of the current plan. This can change
-            later without changing the formats covered by Rights.
+            later without changing the formats covered on Rights &amp; MOUs.
           </p>
         </div>
       ) : null}

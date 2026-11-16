@@ -3,6 +3,11 @@
 import { FileLink } from "@/components/files/file-link";
 
 import { SectionDisclosure } from "@/components/section-disclosure";
+import { StepList } from "@/components/guidance/step-list";
+import { WalkMeThrough } from "@/components/guidance/walk-me-through";
+import { PrintRunGuide } from "@/components/print/print-run-guide";
+import { buildPrintSteps } from "@/lib/print/steps";
+import type { PrintSpecPreset } from "@/lib/print/spec-presets";
 
 import { confirmDialog } from "@/lib/dialog-requests";
 
@@ -59,6 +64,8 @@ import {
 import { uploadFile } from "@/lib/files/upload-client";
 import { useOptimisticAction } from "@/hooks/use-optimistic-action";
 import { usePropState } from "@/hooks/use-prop-state";
+import { useSettle, useSuccessBeat } from "@/hooks/use-settle";
+import { DoneCheck } from "@/components/ui/done-check";
 import type { Attachment } from "@/lib/files/queries";
 import { flagLabel, type PrintReviewFlag } from "@/lib/print/review-flags";
 import {
@@ -102,6 +109,7 @@ import {
 import {
   quoteHasProductionSpecs,
   quoteRunSpecPatch,
+  runQuotedTextPages,
 } from "@/lib/print/quote-run-specs";
 import { cn } from "@/lib/utils";
 import { committedFundingTotal } from "@/lib/budget/compute";
@@ -395,7 +403,13 @@ export function PrintManager({
   quoteAttachments,
   paymentAttachments,
   initialEmailDrafts,
+  specPresets = [],
+  estimateSection = null,
 }: {
+  /** Earlier books' print specs, offered when setting up a print run. */
+  specPresets?: PrintSpecPreset[];
+  /** The early printer estimate card, shown under the printing steps. */
+  estimateSection?: React.ReactNode;
   projectId: string;
   projectSlug: string;
   projectTitle: string;
@@ -458,6 +472,8 @@ export function PrintManager({
     email: "",
     domain: "",
   });
+  // New print runs start with guided setup; the short form stays one click away.
+  const [runGuide, setRunGuide] = useState(true);
   const [runDraft, setRunDraft] = useState({
     title: projectTitle,
     contactId: settings.defaultContactId ?? "",
@@ -496,6 +512,8 @@ export function PrintManager({
   } | null>(null);
   const [emailConfirmed, setEmailConfirmed] = useState(false);
   const [emailDraftPending, startEmailDraftMutation] = useTransition();
+  const { settle, flash } = useSettle();
+  const sentBeat = useSuccessBeat();
   const [discardingEmailDraft, setDiscardingEmailDraft] = useState(false);
   const [emailDrafts, setEmailDrafts] = usePropState(initialEmailDrafts);
   const [emailDelivery, setEmailDelivery] =
@@ -604,18 +622,9 @@ export function PrintManager({
   const acceptedRunQuote = activeRunQuotes.find(
     (quote) => quote.reviewStatus === "accepted",
   );
-  const quotedTextPages =
-    acceptedRunQuote?.textPages ??
-    latestRun?.quotedTextPages ??
-    activeRunQuotes.find(
-      (quote) => quote.reviewStatus !== "rejected" && quote.textPages != null,
-    )?.textPages ??
-    null;
-  const showQuotedPages = quotedTextPages != null && quotedTextPages > 0;
-  const estimatePages =
-    quotedTextPages != null && quotedTextPages > 0
-      ? quotedTextPages
-      : draftEstimate || 0;
+  const quotedTextPages = runQuotedTextPages(latestRun, activeRunQuotes);
+  const showQuotedPages = quotedTextPages != null;
+  const estimatePages = quotedTextPages ?? (draftEstimate || 0);
   const paymentsByRun = useMemo(() => {
     const map = new Map<string, Payment[]>();
     for (const payment of payments) {
@@ -757,6 +766,7 @@ export function PrintManager({
       if (!res?.error && res?.id) {
         setQuoteRunId(res.id);
         toast.success("Print run created");
+        flash(`[data-print-run="${res.id}"]`);
       }
       return res;
     });
@@ -1083,22 +1093,27 @@ export function PrintManager({
           }).catch(() => {});
         }
         toast.success("Email sent");
-        setEmailDrafts((current) =>
-          current.filter(
-            (draft) =>
-              !(
-                draft.kind === composeDraftKind &&
-                draft.contextId === outgoing.id
-              )
-          )
-        );
-        setCompose(null);
-        setEmailDelivery({
-          status: "sent",
-          label,
-          recipient,
-          sentAt: new Date().toISOString(),
-        });
+        // Confirm on the button, then close the email and leave the person
+        // looking at the sent confirmation.
+        await sentBeat.play();
+        settle(() => {
+          setEmailDrafts((current) =>
+            current.filter(
+              (draft) =>
+                !(
+                  draft.kind === composeDraftKind &&
+                  draft.contextId === outgoing.id
+                )
+            )
+          );
+          setCompose(null);
+          setEmailDelivery({
+            status: "sent",
+            label,
+            recipient,
+            sentAt: new Date().toISOString(),
+          });
+        }, '[data-email-status="sent"]');
         router.refresh();
       } catch (error) {
         setEmailDelivery(null);
@@ -1109,8 +1124,145 @@ export function PrintManager({
     });
   }
 
+  // Printing steps follow the current print run (budget estimates are separate).
+  const stepRun =
+    latestRun && latestRun.kind !== "budget_estimate" ? latestRun : null;
+  const stepQuotes = stepRun ? quotesByRun.get(stepRun.id) ?? [] : [];
+  const stepPayments = stepRun
+    ? payments.filter((payment) => payment.runId === stepRun.id)
+    : [];
+  const printSteps = buildPrintSteps({
+    run: stepRun
+      ? {
+          id: stepRun.id,
+          hasPrinter: Boolean(stepRun.contactId),
+          quantityCount: stepRun.requestedQuantities?.length ?? 0,
+        }
+      : null,
+    requestSent: Boolean(stepRun) && stepRun?.status !== "planning",
+    hasRequestDraft: Boolean(
+      stepRun &&
+        emailDrafts.some(
+          (draft) => draft.kind === "print_rfq" && draft.contextId === stepRun.id
+        )
+    ),
+    quoteCount: stepQuotes.length,
+    waitingQuoteIds: stepQuotes
+      .filter((quote) => quote.reviewStatus === "suggested")
+      .map((quote) => quote.id),
+    hasAcceptedQuote: stepQuotes.some(
+      (quote) => quote.reviewStatus === "accepted"
+    ),
+    paymentCount: stepPayments.length,
+    unpaidPaymentIds: stepPayments
+      .filter((payment) => !payment.paidAt)
+      .map((payment) => payment.id),
+  });
+  function openRunSetup() {
+    setRunGuide(true);
+    const target = document.getElementById("print-setup");
+    if (target instanceof HTMLDetailsElement) target.open = true;
+    requestAnimationFrame(() =>
+      target?.scrollIntoView({ block: "start", behavior: "instant" })
+    );
+  }
+  const runSetup = runGuide ? (
+    <PrintRunGuide
+      projectId={projectId}
+      projectTitle={projectTitle}
+      contacts={contacts}
+      defaultContactId={settings.defaultContactId}
+      trimWidthIn={settings.trimWidthIn}
+      trimHeightIn={settings.trimHeightIn}
+      unit={preferredMeasurementUnit}
+      estimatedPages={draftEstimate}
+      lastRun={stepRun}
+      specPresets={specPresets}
+      onSkip={() => setRunGuide(false)}
+      onCreated={(runId, writeRequest) => {
+        setQuoteRunId(runId);
+        // The guide is replaced by the new run: open its email, or show it.
+        if (writeRequest) draftRfq(runId);
+        else flash(`[data-print-run="${runId}"]`);
+      }}
+    />
+  ) : (
+    <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-[1fr_12rem_1fr_auto]">
+        <Field label="Run title">
+          <Input
+            value={runDraft.title}
+            onChange={(e) => setRunDraft({ ...runDraft, title: e.target.value })}
+          />
+        </Field>
+        <Field label="Printer">
+          <select
+            className={selectClass}
+            value={runDraft.contactId}
+            onChange={(e) => setRunDraft({ ...runDraft, contactId: e.target.value })}
+          >
+            <option value="">No printer</option>
+            {contacts.map((contact) => (
+              <option key={contact.id} value={contact.id}>
+                {contact.company || contact.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field
+          label="Quote request quantities"
+          hint="Copy counts to ask the printer to price when you draft the printer quote request."
+        >
+          <Input
+            value={runDraft.quantities}
+            placeholder="1000, 2000, 3000"
+            onChange={(e) =>
+              setRunDraft({ ...runDraft, quantities: e.target.value })
+            }
+          />
+        </Field>
+        <div className="flex items-end">
+          <Button onClick={addRun} disabled={pending || !runDraft.title.trim()}>
+            <Plus className="size-4" />
+            Create run
+          </Button>
+        </div>
+      </div>
+      <Button variant="link" className="min-h-11 px-0" onClick={() => setRunGuide(true)}>
+        Use guided setup
+      </Button>
+    </div>
+  );
+
   return (
     <div className="min-w-0 space-y-5">
+      {canEdit ? (
+        <StepList
+          guidanceKey="print-whats-next"
+          title="Printing steps"
+          doneMessage="All printing steps are done."
+          guide={printSteps}
+          onAction={(actionId) => {
+            if (actionId === "setup") openRunSetup();
+            if (actionId === "request" && stepRun) draftRfq(stepRun.id);
+          }}
+          footer={
+            <>
+              <WalkMeThrough
+                variant="ghost"
+                prompt="Please walk me through printing this book, step by step. Explain in simple words what I should do next."
+              />
+              <Link
+                href="/help/print"
+                className="inline-flex min-h-11 items-center font-medium text-primary hover:underline"
+              >
+                Learn more
+              </Link>
+            </>
+          }
+        />
+      ) : null}
+      {estimateSection}
       <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <SummaryTile
           icon={<BookCopy className="size-4" />}
@@ -1223,6 +1375,11 @@ export function PrintManager({
             ) : null}
           </CardContent>
         </Card>
+      ) : null}
+
+      {/* The confirmation takes the email's place, where the person was working. */}
+      {emailDelivery ? (
+        <OutgoingEmailStatus delivery={emailDelivery} />
       ) : null}
 
       {compose ? (
@@ -1348,8 +1505,12 @@ export function PrintManager({
                   (compose.type === "wire" && compose.attachments.length === 0)
                 }
               >
-                <Send className="size-4" />
-                {compose.type === "rfq" ? "Send printer quote request" : "Send wire request"}
+                {sentBeat.done ? <DoneCheck /> : <Send className="size-4" />}
+                {sentBeat.done
+                  ? "Sent"
+                  : compose.type === "rfq"
+                    ? "Send printer quote request"
+                    : "Send wire request"}
               </Button>
             </div>
           </CardContent>
@@ -1419,18 +1580,28 @@ export function PrintManager({
               </Card>
             ) : null}
             {runs.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-                  <div className="max-w-xl space-y-1.5">
-                    <h3 className="font-medium">No print run yet</h3>
-                    <p className="text-pretty text-sm text-muted-foreground">
-                      {canEdit
-                        ? "A print run is one order to print copies of this book. Use “Set up print run” below — give it a title, choose the printer, and list the copy amounts you want prices for. Saving it does not email anyone."
-                        : "A manager hasn’t set up a print run for this book yet."}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              canEdit ? (
+                <Card id="print-setup" className="scroll-mt-24">
+                  <CardHeader>
+                    <CardTitle>Set up a print run</CardTitle>
+                    <CardDescription>
+                      No print run yet. Saving one does not email the printer.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>{runSetup}</CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+                    <div className="max-w-xl space-y-1.5">
+                      <h3 className="font-medium">No print run yet</h3>
+                      <p className="text-pretty text-sm text-muted-foreground">
+                        A manager hasn’t set up a print run for this book yet.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
             ) : (
               displayRuns.map((run) => (
                 <RunPanel
@@ -1799,54 +1970,9 @@ export function PrintManager({
           </aside>
         </div>
       </div>
-      {canEdit ? (
-        <SectionDisclosure id="print-setup" title="Set up print run" description="Save a run before requesting a quote" defaultOpen={runs.length === 0}>
-          <CardHeader>
-            <CardTitle>Set up print run</CardTitle>
-            <CardDescription>
-              Save the internal run first. This does not email the printer.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-[1fr_12rem_1fr_auto]">
-            <Field label="Run title">
-              <Input
-                value={runDraft.title}
-                onChange={(e) => setRunDraft({ ...runDraft, title: e.target.value })}
-              />
-            </Field>
-            <Field label="Printer">
-              <select
-                className={selectClass}
-                value={runDraft.contactId}
-                onChange={(e) => setRunDraft({ ...runDraft, contactId: e.target.value })}
-              >
-                <option value="">No printer</option>
-                {contacts.map((contact) => (
-                  <option key={contact.id} value={contact.id}>
-                    {contact.company || contact.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field
-              label="Quote request quantities"
-              hint="Copy counts to ask the printer to price when you draft the printer quote request."
-            >
-              <Input
-                value={runDraft.quantities}
-                placeholder="1000, 2000, 3000"
-                onChange={(e) =>
-                  setRunDraft({ ...runDraft, quantities: e.target.value })
-                }
-              />
-            </Field>
-            <div className="flex items-end">
-              <Button onClick={addRun} disabled={pending || !runDraft.title.trim()}>
-                <Plus className="size-4" />
-                Create run
-              </Button>
-            </div>
-          </CardContent>
+      {canEdit && runs.length > 0 ? (
+        <SectionDisclosure id="print-setup" title="Set up another print run" description="For a new first print. Use Reprints to print a book again.">
+          {runSetup}
         </SectionDisclosure>
       ) : null}
 
@@ -1990,10 +2116,6 @@ export function PrintManager({
             </CardContent>
           ) : null}
         </Card>
-      ) : null}
-
-      {emailDelivery ? (
-        <OutgoingEmailStatus delivery={emailDelivery} />
       ) : null}
 
       {canEdit ? (
@@ -2437,6 +2559,7 @@ function RunPanel({
   );
   const allPaymentsPaid =
     payments.length > 0 && paidPayments.length === payments.length;
+  const quotedPages = runQuotedTextPages(run, quotes);
   const historicalState = allPaymentsPaid
     ? "Printer paid"
     : run.status === "completed"
@@ -2446,7 +2569,7 @@ function RunPanel({
     run.quantityTarget
       ? `${run.quantityTarget.toLocaleString()} copies`
       : null,
-    run.quotedTextPages ? `${run.quotedTextPages} pages` : null,
+    quotedPages ? `${quotedPages} pages` : null,
     paidTotal > 0
       ? `${money(paidTotal, payments[0]?.currency || financeCurrency)} paid to printer`
       : null,
@@ -2471,7 +2594,11 @@ function RunPanel({
       : [...acceptedQuotes, ...pendingQuoteReviews];
 
   return (
-    <Card size={collapsed ? "sm" : "default"}>
+    <Card
+      size={collapsed ? "sm" : "default"}
+      data-print-run={run.id}
+      className="scroll-mt-24"
+    >
       <CardHeader className="min-w-0 has-data-[slot=card-action]:grid-cols-1 sm:has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto]">
         <CardTitle className="flex min-w-0 items-center gap-2">
           <BookCopy className="size-4 shrink-0" />
@@ -2493,8 +2620,11 @@ function RunPanel({
                 run.trimHeightIn,
                 measurementUnit
               )}{" "}
-              · estimate{" "}
-              {run.estimatedTextPages} pages
+              {quotedPages
+                ? ` · ${quotedPages} quoted pages`
+                : run.estimatedTextPages
+                  ? ` · estimate ${run.estimatedTextPages} pages`
+                  : ""}
               {run.quantityTarget
                 ? ` · ${run.quantityTarget.toLocaleString()} copies confirmed`
                 : ""}
@@ -2623,7 +2753,7 @@ function RunPanel({
           {run.kind === "reprint" && shortfall > 0 ? (
             <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-warning-text">
               Reprint shortfall: {money(shortfall, financeCurrency)} still needs
-              sponsor commitment, MoU receivable, or donation.
+              partner promise, expected payment, or donation.
             </div>
           ) : null}
           <SectionDisclosure id={`print-run-${run.id}-specs`} title="Run specifications and quantity" summary={run.quantityTarget ? `${run.quantityTarget.toLocaleString()} copies` : "Quantity not confirmed"}>
@@ -2644,7 +2774,7 @@ function RunPanel({
             />
             <Spec
               label="Quoted pages"
-              value={run.quotedTextPages ?? "Not quoted"}
+              value={quotedPages ?? "Not quoted"}
             />
             <Spec label="Cover pages" value={run.coverPages} />
             <Spec label="Delivery" value={run.deliveryLocation} />
@@ -2958,7 +3088,7 @@ function RunPanel({
 
 
 
-        <section className="space-y-2">
+        <section id={`print-run-${run.id}-quotes`} className="scroll-mt-24 space-y-2">
           <h3 className="text-sm font-semibold">Quotes and invoices</h3>
           {!hasAccepted || showOtherQuotes ? (
             <QuoteComparison quotes={quotes} />
@@ -3010,7 +3140,9 @@ function RunPanel({
                           <Badge variant={statusVariant(quote.reviewStatus)}>
                             {isFinalPaymentReview
                               ? "review needed"
-                              : quote.reviewStatus}
+                              : quote.reviewStatus === "estimated"
+                                ? "budget estimate"
+                                : quote.reviewStatus}
                           </Badge>
                           <Badge variant="outline">
                             {quote.kind.replaceAll("_", " ")}

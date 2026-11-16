@@ -4,6 +4,19 @@ import { isUndatedTeammateRequest, type TaskAssignmentContext } from "./assignme
 
 export const TASK_ATTENTION_WINDOW_DAYS = 30;
 
+/** Keep today's direct assignments discoverable beyond the compact queue preview. */
+export function previewAttentionTasks<T extends TaskAssignmentContext>(
+  tasks: T[],
+  todayIso: string,
+  timeZone: string,
+  limit = 5,
+): T[] {
+  return tasks.filter((task, index) => index < limit || (
+    task.assignmentSource === "direct" && task.assignedAt &&
+    formatInTimeZone(new Date(task.assignedAt), timeZone, "yyyy-MM-dd") === todayIso
+  ));
+}
+
 type PaymentTaskTiming = {
   printPaymentStatus?: string | null;
   printWireRequestedAt?: Date | string | null;

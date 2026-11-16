@@ -67,6 +67,10 @@ export default function ChatImageViewer({
         "aria-labelledby": titleId,
         "aria-describedby": hintId,
         onKeyDownCapture: containTabFocus,
+        // Portal events still bubble to the message's React ancestors. Keep
+        // native image menus and viewer gestures out of its action handlers.
+        onContextMenu: (event) => event.stopPropagation(),
+        onPointerDown: (event) => event.stopPropagation(),
       } }}
       carousel={{ finite: true, preload: 1, padding: 8, spacing: 24, imageFit: "contain" }}
       controller={{ closeOnBackdropClick: true, closeOnPullDown: true }}

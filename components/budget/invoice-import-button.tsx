@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FileUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { uploadFile } from "@/lib/files/upload-client";
 import { createImportForPaymentInvoice } from "@/lib/imports/actions";
@@ -17,9 +18,11 @@ const ACCEPT =
 export function InvoiceImportButton({
   paymentId,
   disabled = false,
+  asMenuItem = false,
 }: {
   paymentId: string;
   disabled?: boolean;
+  asMenuItem?: boolean;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -27,22 +30,27 @@ export function InvoiceImportButton({
 
   async function onFile(file: File | undefined) {
     if (!file) return;
-    setStage("uploading");
-    const fileId = await uploadFile(file);
-    if (inputRef.current) inputRef.current.value = "";
-    if (!fileId) {
-      setStage(null);
-      return;
-    }
+    try {
+      setStage("uploading");
+      const fileId = await uploadFile(file);
+      if (inputRef.current) inputRef.current.value = "";
+      if (!fileId) {
+        setStage(null);
+        return;
+      }
 
-    setStage("starting");
-    const result = await createImportForPaymentInvoice(fileId, paymentId);
-    if (result.error || !result.importId) {
-      toast.error(result.error ?? "Could not read the invoice.");
+      setStage("starting");
+      const result = await createImportForPaymentInvoice(fileId, paymentId);
+      if (result.error || !result.importId) {
+        toast.error(result.error ?? "Could not read the invoice.");
+        setStage(null);
+        return;
+      }
+      router.push(`/projects/import/${result.importId}`);
+    } catch {
       setStage(null);
-      return;
+      toast.error("Could not read the invoice. Try uploading it again.");
     }
-    router.push(`/projects/import/${result.importId}`);
   }
 
   return (
@@ -54,24 +62,36 @@ export function InvoiceImportButton({
         accept={ACCEPT}
         onChange={(event) => void onFile(event.target.files?.[0])}
       />
-      <Button
-        variant="outline"
-        size="xs"
-        disabled={disabled || stage !== null}
-        onClick={() => inputRef.current?.click()}
-      >
-        {stage ? (
-          <>
-            <Loader2 className="size-3.5 animate-spin" />
-            {stage === "uploading" ? "Uploading…" : "Starting AI…"}
-          </>
-        ) : (
-          <>
-            <FileUp className="size-3.5" />
-            Upload paid invoice
-          </>
-        )}
-      </Button>
+      {asMenuItem ? (
+        <DropdownMenuItem
+          className="min-h-11"
+          closeOnClick={false}
+          disabled={disabled || stage !== null}
+          onClick={() => inputRef.current?.click()}
+        >
+          {stage ? <Loader2 className="size-4 animate-spin" /> : <FileUp className="size-4" />}
+          {stage === "uploading" ? "Uploading…" : stage === "starting" ? "Starting AI…" : "Upload paid invoice"}
+        </DropdownMenuItem>
+      ) : (
+        <Button
+          variant="outline"
+          size="xs"
+          disabled={disabled || stage !== null}
+          onClick={() => inputRef.current?.click()}
+        >
+          {stage ? (
+            <>
+              <Loader2 className="size-3.5 animate-spin" />
+              {stage === "uploading" ? "Uploading…" : "Starting AI…"}
+            </>
+          ) : (
+            <>
+              <FileUp className="size-3.5" />
+              Upload paid invoice
+            </>
+          )}
+        </Button>
+      )}
     </>
   );
 }

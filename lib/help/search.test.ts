@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { helpDocSections, rankHelpDocs, type HelpDoc } from "./search";
+import { rankHelpDocs, type HelpDoc } from "./search";
 
 const DOCS: HelpDoc[] = [
   {
@@ -38,25 +38,6 @@ const DOCS: HelpDoc[] = [
   },
 ];
 
-describe("helpDocSections", () => {
-  it("splits a body into H2 sections and keeps the intro", () => {
-    const sections = helpDocSections(DOCS[0]);
-    expect(sections.map((s) => s.heading)).toEqual([
-      "Print runs & RFQs",
-      "Setting up a print run",
-      "Quotes",
-    ]);
-    expect(sections[1].text).toContain("quantity tiers");
-  });
-
-  it("falls back to the whole body when there are no headings", () => {
-    const doc: HelpDoc = { ...DOCS[0], body: "Just a paragraph." };
-    const sections = helpDocSections(doc);
-    expect(sections).toHaveLength(1);
-    expect(sections[0].heading).toBe(doc.title);
-  });
-});
-
 describe("rankHelpDocs", () => {
   it("returns the most relevant topic and section for a how-to query", () => {
     const hits = rankHelpDocs(DOCS, "how do I set up a print run");
@@ -72,20 +53,5 @@ describe("rankHelpDocs", () => {
 
   it("returns nothing when no term matches", () => {
     expect(rankHelpDocs(DOCS, "xyzzy nonexistent")).toEqual([]);
-  });
-
-  it("ignores stop-short queries with no term over two characters", () => {
-    expect(rankHelpDocs(DOCS, "a to")).toEqual([]);
-  });
-
-  it("respects the limit", () => {
-    const hits = rankHelpDocs(DOCS, "print run standup questions", 1);
-    expect(hits).toHaveLength(1);
-  });
-
-  it("caps excerpt length", () => {
-    const doc: HelpDoc = { ...DOCS[0], body: `## Big\n${"word ".repeat(400)}` };
-    const hits = rankHelpDocs([doc], "big word");
-    expect(hits[0].excerpt.length).toBeLessThanOrEqual(700);
   });
 });

@@ -147,16 +147,41 @@ function joinSpecs(...values: Array<string | null | undefined>): string | null {
   return specs.length ? specs.join("; ") : null;
 }
 
+const NON_TITLE_LINE =
+  /^(?:(?:from|to|cc|date|subject|size|trim|color|paper|finish|binding|deliver|delivery|payment|invoice|issued|spec)\s*:|\d+\s*(?:pp|pages?)\b)/i;
+const SPEC_LINE =
+  /^(?:(?:size|trim|color|paper|finish|binding|text|cover|spec)\s*:|deliver(?:y)?\s+to\b|\d[\d,]*\s*(?:cps?|copies)\b)/i;
+
+/** Greetings and sign-offs from an email body are never a book title. */
+export function cleanQuoteTitle(title: string | null): string | null {
+  const trimmed = title?.trim();
+  if (!trimmed) return null;
+  if (
+    trimmed.endsWith(",") ||
+    /^(?:hi|hello|hey|dear|greetings|good\s+(?:morning|afternoon|evening|day))(?:\s+\S+){0,2}[.!:]?$/i.test(
+      trimmed
+    ) ||
+    /^(?:(?:kind|best|warm|many)\s+)?(?:regards|thanks|thank\s+you|sincerely|cheers)[.!]?$/i.test(
+      trimmed
+    )
+  ) {
+    return null;
+  }
+  return trimmed;
+}
+
+/**
+ * Printers put the book title directly above its specifications. Anywhere else
+ * is usually email prose, and no title is safer: callers fall back to the
+ * project title or a generic label.
+ */
 function inferQuoteTitle(lines: string[]): string | null {
-  const candidate = lines.find(
-    (line) =>
-      !/^(?:from|to|cc|date|subject|size|trim|color|paper|finish|binding|deliver|delivery|payment|invoice|issued|spec)\s*:/i.test(
-        line
-      ) &&
-      !/^\d[\d,]*\s*(?:cps?|copies)\b/i.test(line) &&
-      !/^[-–—\s]+$/.test(line)
-  );
-  return candidate?.trim() || null;
+  const firstSpec = lines.findIndex((line) => SPEC_LINE.test(line));
+  const candidate = firstSpec > 0 ? lines[firstSpec - 1] : null;
+  if (!candidate || NON_TITLE_LINE.test(candidate) || /[:.!]$/.test(candidate)) {
+    return null;
+  }
+  return cleanQuoteTitle(candidate);
 }
 
 export function extractLatestProofUrl(text: string): string | null {
@@ -236,6 +261,7 @@ export function parsePrinterQuoteText(text: string): ParsedPrinterQuote {
   }
 
   const textPages =
+    normalized.match(/(?:Estimated\s+target[- ]language\s+pages|(?:Text|Interior)\s+pages):\s*(\d+)/i)?.[1] ??
     normalized.match(/(\d+)\s*PP\s*text/i)?.[1] ??
     normalized.match(/(\d+)\s+pages/i)?.[1] ??
     normalized.match(/(\d+)\s*PP\s*\+\s*\d+\s*pp\s*Cover/i)?.[1] ??
@@ -244,6 +270,7 @@ export function parsePrinterQuoteText(text: string): ParsedPrinterQuote {
     )?.[1];
   parsed.textPages = textPages ? Number(textPages) : null;
   const coverPages =
+    normalized.match(/Cover\s+pages:\s*(\d+)/i)?.[1] ??
     normalized.match(/(\d+)\s*pp\s*Cover/i)?.[1] ??
     normalized.match(/\+\s*(\d+)\s*Cover/i)?.[1];
   parsed.coverPages = coverPages ? Number(coverPages) : null;
@@ -262,19 +289,19 @@ export function parsePrinterQuoteText(text: string): ParsedPrinterQuote {
   const insideColor = colorLine?.match(/\bInside:\s*(.*)$/i)?.[1];
 
   parsed.textSpec = joinSpecs(
-    firstLineValue(lines, /^Text:\s*/i),
+    firstLineValue(lines, /^Text(?:\s+paper)?:\s*/i),
     insideColor,
     paperInside
   );
   parsed.coverSpec = joinSpecs(
-    firstLineValue(lines, /^Cover:\s*/i),
+    firstLineValue(lines, /^Cover(?:\s+paper)?:\s*/i),
     coverColor,
     paperCover
   );
   parsed.binding =
     firstLineValue(lines, /^Binding\s*:?\s*/i) ??
     firstLineValue(lines, /^Finish\s*:?\s*/i);
-  parsed.deliveryLocation = firstLineValue(lines, /^Deliver(?:y)?\s+to\s*/i);
+  parsed.deliveryLocation = firstLineValue(lines, /^Delivery:\s*(?:Delivery\s+to\s+)?/i) ?? firstLineValue(lines, /^Deliver(?:y)?\s+to\s*/i);
   parsed.paymentTerms = firstLineValue(lines, /^Payment\s+term:\s*/i);
 
   const depositTerm = parsed.paymentTerms?.match(/deposit\s*\(USD\s*([0-9,.]+)/i);

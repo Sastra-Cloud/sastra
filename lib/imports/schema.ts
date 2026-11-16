@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { lineAmountCents } from "@/lib/budget/compute";
+import { suggestPercentagePayments } from "@/lib/budget/payment-percentage";
 import type {
   ExtractedBudgetLine,
   ExtractedInvoice,
@@ -775,19 +776,33 @@ export function gateExtractionFormats(ex: ImportExtraction): ImportExtraction {
 }
 
 /**
- * When a document states a TOTAL to be paid in N installments but doesn't state
- * each installment's amount, split the total evenly across the tranches (last
- * tranche absorbs any rounding remainder). Runs once at extraction time — NOT in
+ * Resolve explicit percentage terms first, keeping fixed fees separate. Without
+ * percentages or stated installment amounts, split a known total evenly (the
+ * last installment absorbs rounding). Runs once at extraction time — NOT in
  * `normalizeExtraction` (which also runs on manual edits, where a reviewer who
- * clears an amount must win). Skips a project whose tranches already have amounts.
+ * clears an amount must win). Existing positive amounts always win.
  */
 export function fillMouPaymentAmounts(ex: ImportExtraction): ImportExtraction {
   const sched = ex.mouPaymentSchedule;
+  const currencies = [...new Set(ex.projects.map((project) => project.currency))];
+  if (currencies.length === 1 && currencies[0]) {
+    const currency = currencies[0];
+    const percentages = suggestPercentagePayments(sched.map((payment, index) => ({
+      ...payment, id: String(index), currency,
+    })), { total: ex.agreementTotalAmount ?? 0, currency });
+    if (percentages.size > 0) return {
+      ...ex,
+      mouPaymentSchedule: sched.map((payment, index) => {
+        const calculation = percentages.get(String(index));
+        return calculation ? { ...payment, amount: calculation.amountCents / 100 } : payment;
+      }),
+    };
+  }
   if (
     sched.length === 0 ||
     ex.agreementTotalAmount == null ||
     ex.agreementTotalAmount <= 0 ||
-    sched.some((s) => s.amount != null)
+    sched.some((s) => s.amount != null || /\d\s*%/.test(s.notes ?? ""))
   ) {
     return ex;
   }
@@ -841,6 +856,6 @@ Return JSON matching the schema. Rules:
 - Even when formats are false (rights not yet secured), STILL capture the agreed print run in "maxCopies" (e.g. "1,000 copies") and any fees in "budgetLines" (e.g. an advance royalty/license fee) — those are recorded regardless of whether rights are granted.
 - "budgetLines": if the document contains an itemized budget/quotation table or lists separate costs/fees (e.g. translation cost AND a separate license/royalty fee), copy EACH as its own line — do not merge them. Map each to the closest "category": translation, proofreading, editing, cover_design, typesetting, project_management, print_ship, audiobook, video_series — use "custom" when none fits (e.g. a royalty or license fee). Choose "unit" from words/pages/cover/project/flat. Put the row's stated total in "amount". Include quantity and unitPrice only when the same row explicitly prices the work that way and verify quantity × unitPrice equals amount. If the row states only a total, use unit "flat" and leave quantity and unitPrice empty; never reuse a manuscript page count, word count, or print-run count as the quantity for a flat total. Preserve the document's numbers exactly. List each distinct cost ONCE — do not add a second line for the same cost because the document mentions it again in another place.
 - For each installment extract deliveryRequirements as separate required deliverables (including stated formats such as DOCX translations, MP3 audio, MP4 videos), and sourceClause with the source wording. Do not infer delivery conditions from file formats merely licensed. Empty deliveryRequirements means none stated.
-- Root "mouPaymentSchedule": extract payments the partner owes the workspace organization under the MoU/grant, separate from project budgets. Use trigger "on_signing" for signing/execution; "on_completion" for completion of all covered work; "on_52_episodes" for an episode milestone; otherwise "custom". Put the stated amount in "amount". If the agreement states a total paid in N equal installments without a per-installment figure, set agreementTotalAmount and split it evenly. Use dueDate only for an explicit calendar/no-earlier-than date. Preserve terms like "payment 1 of 2", "initial", and "final" in notes. Each real payment obligation appears ONCE: if the agreement restates the same payment in more than one clause (e.g. a "total payment upon signing" in clause 5.1 that another clause calls the "advance paid outright"), extract a single row for it — do NOT create a second row for the same money and trigger.
+- Root "mouPaymentSchedule": extract payments the partner owes the workspace organization under the MoU/grant, separate from project budgets. Use trigger "on_signing" for signing/execution; "on_completion" for completion of all covered work; "on_52_episodes" for an episode milestone; otherwise "custom". Put the stated amount in "amount". For percentage installments (for example 50% on signing and 50% on completion), calculate each amount from the stated Total Payment to Licensee, set agreementTotalAmount to that total, and preserve the percentage and source total in notes. Keep separately stated fees out of that percentage base. Payments owed TO the licensor, such as an administration or license fee, are outgoing budget costs, not incoming mouPaymentSchedule rows. If the agreement states a total paid in N equal installments without a per-installment figure, set agreementTotalAmount and split it evenly. Use dueDate only for an explicit calendar/no-earlier-than date. Preserve terms like "payment 1 of 2", "initial", and "final" in notes. Each real payment obligation appears ONCE: if the agreement restates the same payment in more than one clause (e.g. a "total payment upon signing" in clause 5.1 that another clause calls the "advance paid outright"), extract a single row for it — do NOT create a second row for the same money and trigger.
 - "wordCount": the manuscript word count if stated. "maxCopies": print run / copy cap if stated. "currency" is the document's actual ISO currency code (e.g. "GBP" for £, "USD" for $). Never relabel a foreign-currency amount as USD; the app performs a reviewed daily-rate conversion after extraction.
 - Return EVERY numeric value as a JSON string without currency symbols or grouping commas (for example, "20702", "10351", "0.03"). For a numeric field not stated in the document, use "". Use empty arrays for missing lists and "" for missing text/date fields. NEVER invent numbers, dates, names, or amounts.`;

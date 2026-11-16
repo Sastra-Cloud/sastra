@@ -31,6 +31,8 @@ export function GuidedSteps({
   current: controlledCurrent,
   onCurrentChange,
   keepMounted = false,
+  scrollOnChange = false,
+  footerClassName,
   className,
 }: {
   steps: GuidedStep[];
@@ -45,6 +47,13 @@ export function GuidedSteps({
    * inputs stay mounted. Required when the steps are fields of one real form.
    */
   keepMounted?: boolean;
+  /**
+   * Bring the top of the steps back into view when the step changes. Use it
+   * for long inline steps, where the buttons sit far below the progress bar.
+   */
+  scrollOnChange?: boolean;
+  /** Extra classes for the Back / Continue row, for example to pin it in a dialog. */
+  footerClassName?: string;
   className?: string;
 }) {
   const [internal, setInternal] = React.useState(0);
@@ -66,6 +75,18 @@ export function GuidedSteps({
     }
   }, [steps.length]);
 
+  const rootRef = React.useRef<HTMLDivElement>(null);
+  const shownStep = React.useRef(current);
+  React.useEffect(() => {
+    if (shownStep.current === current) return;
+    shownStep.current = current;
+    const node = rootRef.current;
+    if (!scrollOnChange || !node) return;
+    if (node.getBoundingClientRect().top < 0) {
+      node.scrollIntoView({ block: "start", behavior: "instant" });
+    }
+  }, [current, scrollOnChange]);
+
   const step = steps[current];
   const isLast = current === steps.length - 1;
   const canContinue = step?.canContinue !== false && !finishing;
@@ -77,7 +98,7 @@ export function GuidedSteps({
   };
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div ref={rootRef} className={cn("scroll-mt-32 space-y-6", className)}>
       <Stepper steps={steps} current={current} onStepClick={setCurrent} />
 
       {keepMounted ? (
@@ -90,7 +111,7 @@ export function GuidedSteps({
         <div className="min-w-0">{step?.content}</div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+      <div className={cn("flex flex-wrap items-center justify-between gap-3 border-t pt-4", footerClassName)}>
         <div className="flex items-center gap-2">
           {current > 0 ? (
             <Button

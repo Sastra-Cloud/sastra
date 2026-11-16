@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
@@ -21,11 +22,11 @@ import { isAdminAssured } from "./assurance";
 
 export type { TeamRole };
 
-/** Resolve an active application session (or null). The single source of identity. */
-export async function getSession() {
+/** One active-session lookup per server render; API/action requests still read fresh. */
+export const getSession = cache(async () => {
   const session = await auth.api.getSession({ headers: await headers() });
   return session?.user.isActive ? session : null;
-}
+});
 
 /** Require a logged-in, active user; redirect to /login otherwise. */
 export async function requireUser() {
@@ -57,10 +58,14 @@ export async function requireCapability(capability: Capability) {
  * Require the admin finance capability and a browser renewed by email code or
  * passkey within the last 60 days.
  */
-export async function requireDonationAdmin() {
+export async function requireDonationAdmin(returnTo?: string) {
   const session = await requireCapability("donations.manage");
   if (!(await isAdminAssured(session.user.id))) {
-    redirect("/security-check?next=%2Fdonations");
+    // Only the Budget receipt-review route can override the normal destination.
+    // Reject external URLs, escaped separators, and arbitrary query parameters.
+    const next = returnTo && /^\/projects\/[a-z0-9][a-z0-9-]*\/budget(?:\?run=(?:main|[a-f0-9-]+))?(?:#[a-z0-9-]+)?$/.test(returnTo)
+      ? returnTo : "/donations";
+    redirect(`/security-check?next=${encodeURIComponent(next)}`);
   }
   return session;
 }

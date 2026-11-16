@@ -67,12 +67,15 @@ export function WorkspaceSetupForm({
           <Label htmlFor="orgName">Organization name</Label>
           <Input
             id="orgName"
+            aria-invalid={!!fieldErrors.orgName}
+            aria-describedby={fieldErrors.orgName ? "orgName-error" : undefined}
             value={orgName}
             onChange={(event) => setOrgName(event.target.value)}
             placeholder="Your publishing team"
             required
             autoFocus
           />
+          <FieldError name="orgName" />
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="sourceLanguage">Primary source language</Label>

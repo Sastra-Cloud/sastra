@@ -183,7 +183,7 @@ For each document you choose what to apply:
 
 When the document is an outgoing invoice, the review switches to invoice fields
 instead of agreement rights and budget controls. Confirm that your organization
-issued it, match it to one of the project's scheduled MoU payments, and enter
+issued it, match it to one of the project's expected payments, and enter
 the date payment was actually received. The final confirmation stores the
 original invoice and records the funding receipt together; AI extraction alone
 never marks an invoice paid.

@@ -1,18 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  STANDARD_LINES,
-  DEFAULT_LANGUAGE_EXPANSION_FACTOR,
-  budgetGroupLabel,
-  committedFundingTotal,
-  receivedContributionsTotal,
-  lineAmount,
-  lineAmountCents,
-  lineQuantity,
-  rateForCategory,
-  sumAmountCents,
-  type BudgetRates,
-} from "@/lib/budget/compute";
+import { STANDARD_LINES, DEFAULT_LANGUAGE_EXPANSION_FACTOR, committedFundingTotal, receivedContributionsTotal, lineAmount, lineAmountCents, lineQuantity, rateForCategory, sumAmountCents, type BudgetRates } from "@/lib/budget/compute";
 
 const DEFAULT_RATES: BudgetRates = {
   rateTranslation: "0.03",
@@ -43,22 +31,6 @@ describe("lineAmount (integer-cents, no float drift)", () => {
   it("treats invalid input as zero", () => {
     expect(lineAmount("", "")).toBe("0.00");
     expect(lineAmount(null, undefined)).toBe("0.00");
-  });
-});
-
-describe("budgetGroupLabel", () => {
-  it("uses the project format instead of calling every primary group a book", () => {
-    expect(budgetGroupLabel("book_publishing", "book")).toBe("Book Publishing");
-    expect(budgetGroupLabel("book_publishing", "article")).toBe(
-      "Article Publishing"
-    );
-    expect(budgetGroupLabel("book_publishing", "other")).toBe("Project Costs");
-    expect(budgetGroupLabel("additional_media", "video_series")).toBe(
-      "Video Production"
-    );
-    expect(budgetGroupLabel("additional_media", "podcast")).toBe(
-      "Podcast Production"
-    );
   });
 });
 

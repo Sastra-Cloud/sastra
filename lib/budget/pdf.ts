@@ -1,6 +1,7 @@
 import "server-only";
 
 import PDFDocument from "pdfkit";
+import { documentColors, type DocumentColors } from "@/lib/workspace/document-colors";
 
 import type { InvoiceIssuerSnapshot } from "@/lib/workspace/queries";
 
@@ -54,13 +55,14 @@ function addDocumentHeader(
   doc
     .moveTo(PAGE_MARGIN, 118)
     .lineTo(doc.page.width - PAGE_MARGIN, 118)
-    .strokeColor("#D9D1C5")
+    .strokeColor(accentColor)
     .stroke();
 }
 
 export async function buildPerCopyQuotationPdf(input: {
   issuerName: string | null;
   accentColor?: string | null;
+  colors?: DocumentColors;
   projectTitle: string;
   partnerName: string | null;
   contactName: string | null;
@@ -75,7 +77,7 @@ export async function buildPerCopyQuotationPdf(input: {
     doc,
     input.issuerName,
     "Project quotation",
-    input.accentColor ?? undefined
+    input.colors?.accentColor ?? input.accentColor ?? undefined
   );
 
   let y = 145;
@@ -103,16 +105,17 @@ export async function buildPerCopyQuotationPdf(input: {
     });
   y = doc.y + 30;
 
-  doc.roundedRect(PAGE_MARGIN, y, doc.page.width - PAGE_MARGIN * 2, 94, 8).fill("#F7F4EF");
+  const colors = input.colors ? documentColors(input.accentColor || "#B65C3A", input.colors) : null;
+  doc.roundedRect(PAGE_MARGIN, y, doc.page.width - PAGE_MARGIN * 2, 94, 8).fill(colors?.tableHeaderColor ?? "#F7F4EF");
   doc
-    .fillColor("#6B6678")
+    .fillColor(colors?.tableHeaderTextColor ?? "#6B6678")
     .font("Helvetica")
     .fontSize(9)
     .text("QUANTITY", PAGE_MARGIN + 18, y + 18)
     .text("PRICE PER COPY", 235, y + 18)
     .text("TOTAL", 408, y + 18);
   doc
-    .fillColor("#211F2D")
+    .fillColor(colors?.tableHeaderTextColor ?? "#211F2D")
     .font("Helvetica-Bold")
     .fontSize(16)
     .text(input.quantity.toLocaleString("en-US"), PAGE_MARGIN + 18, y + 43)
@@ -156,7 +159,8 @@ export async function buildInvoicePdf(input: {
   const result = collect(doc);
   const width = doc.page.width - PAGE_MARGIN * 2;
   const right = doc.page.width - PAGE_MARGIN;
-  const accent = input.issuer.accentColor || "#56748A";
+  const colors = documentColors(input.issuer.accentColor || "#56748A", input.issuer.invoicePaymentDetails?.colors);
+  const accent = colors.accentColor;
   const ink = "#292929";
   const issuerName = input.issuer.legalName || input.issuer.orgName || "";
   doc.font("Helvetica-Bold").fontSize(11).fillColor(ink).text(issuerName, PAGE_MARGIN, 48, { width: 320 });
@@ -168,8 +172,8 @@ export async function buildInvoicePdf(input: {
   const headerBottom = doc.y;
   if (input.logo) doc.image(input.logo, right - 130, 48, { fit: [130, 65], align: "right" });
   const barY = Math.max(138, headerBottom + 20);
-  doc.rect(PAGE_MARGIN, barY, width, 29).fill(accent);
-  doc.font("Helvetica").fontSize(13).fillColor("white")
+  doc.rect(PAGE_MARGIN, barY, width, 29).fill(colors.tableHeaderColor);
+  doc.font("Helvetica").fontSize(13).fillColor(colors.tableHeaderTextColor)
     .text(`INVOICE NO. ${input.invoiceNumber}`, PAGE_MARGIN + 8, barY + 8, { width: width - 125 })
     .text(formatInvoiceDate(input.issueDate), right - 115, barY + 8, { width: 107, align: "right" });
   let y = barY + 49;
@@ -182,8 +186,8 @@ export async function buildInvoicePdf(input: {
   y = Math.max(billBottom, doc.y) + 22;
   if (input.lineItems?.length) {
     const tableHeader = () => {
-      doc.rect(PAGE_MARGIN, y, width, 24).fill(accent);
-      doc.fillColor("white").font("Helvetica").fontSize(9)
+      doc.rect(PAGE_MARGIN, y, width, 24).fill(colors.tableHeaderColor);
+      doc.fillColor(colors.tableHeaderTextColor).font("Helvetica").fontSize(9)
         .text("DESCRIPTION", PAGE_MARGIN + 5, y + 8, { width: 222 })
         .text("COPIES", PAGE_MARGIN + 232, y + 8, { width: 44, align: "right" })
         .text("PRICE / COPY", PAGE_MARGIN + 286, y + 8, { width: 93, align: "right" })
@@ -207,8 +211,8 @@ export async function buildInvoicePdf(input: {
     doc.font("Helvetica-Bold").fontSize(12).fillColor(ink).text(`Total: ${formatMoney(input.amount, input.currency)}`, PAGE_MARGIN, y + 8, { width, align: "right" });
     if (input.notes) doc.font("Helvetica").fontSize(10).text(input.notes, PAGE_MARGIN, doc.y + 22, { width, lineGap: 3 });
   } else {
-    doc.rect(PAGE_MARGIN, y, width, 24).fill(accent);
-    doc.fillColor("white").fontSize(9).text("DESCRIPTION", PAGE_MARGIN + 5, y + 8, { width: 300 })
+    doc.rect(PAGE_MARGIN, y, width, 24).fill(colors.tableHeaderColor);
+    doc.fillColor(colors.tableHeaderTextColor).fontSize(9).text("DESCRIPTION", PAGE_MARGIN + 5, y + 8, { width: 300 })
       .text("UNIT PRICE", right - 166, y + 8, { width: 76, align: "right" })
       .text("TOTAL", right - 80, y + 8, { width: 75, align: "right" });
     y += 33;
@@ -231,9 +235,9 @@ export async function buildInvoicePdf(input: {
       const rowHeight = Math.max(doc.font("Helvetica-Bold").heightOfString(field.label, { width: 155 }), doc.font("Helvetica").heightOfString(field.value, { width: width - 193 })) + 18;
       if (y + rowHeight > doc.page.height - PAGE_MARGIN) { doc.addPage(); y = PAGE_MARGIN; }
       doc.rect(PAGE_MARGIN, y, width, rowHeight).strokeColor("#D7D7D7").stroke();
-      doc.rect(PAGE_MARGIN, y, 175, rowHeight).fill("#F2F4F5");
-      doc.fillColor(ink).font("Helvetica-Bold").text(field.label, PAGE_MARGIN + 8, y + 8, { width: 155 });
-      doc.font("Helvetica").text(field.value, PAGE_MARGIN + 183, y + 8, { width: width - 193 });
+      doc.rect(PAGE_MARGIN, y, 175, rowHeight).fill(colors.tableHeaderColor);
+      doc.fillColor(colors.tableHeaderTextColor).font("Helvetica-Bold").text(field.label, PAGE_MARGIN + 8, y + 8, { width: 155 });
+      doc.fillColor(ink).font("Helvetica").text(field.value, PAGE_MARGIN + 183, y + 8, { width: width - 193 });
       y += rowHeight;
     }
     if (input.issuer.paymentInstructions) {

@@ -65,7 +65,7 @@ async function finish(groupId: string, actorId: string) {
   await reevaluateSharedMouPayments({ groupId, actorId });
   revalidatePath(`/agreements/${groupId}`);
   revalidatePath("/agreements");
-  revalidatePath("/projects");
+  revalidatePath("/projects"); revalidatePath("/projects/[slug]", "layout");
 }
 
 export async function addSharedMouMember(input: {

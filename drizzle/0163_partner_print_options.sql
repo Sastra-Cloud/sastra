@@ -1,0 +1,1 @@
+ALTER TABLE "budget_scope_presentations" ADD COLUMN "print_options" jsonb DEFAULT '[]'::jsonb NOT NULL;

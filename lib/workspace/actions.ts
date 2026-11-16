@@ -1,5 +1,7 @@
 "use server";
 
+import { documentColorsSchema } from "./document-colors";
+
 import { revalidatePath } from "next/cache";
 import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -46,7 +48,7 @@ const workspaceSchema = z.object({
     .trim()
     .regex(/^#[0-9a-fA-F]{6}$/, "Use a hex color like #B65C3A")
     .optional(),
-  orgName: z.string().max(200).optional(),
+  orgName: z.string().trim().min(1, "Enter the organization name.").max(200).optional(),
   legalName: nullableText(200),
   orgAliases: z.array(z.string().trim().min(1).max(200)).max(30).optional(),
   internalEmailDomains: z
@@ -55,8 +57,8 @@ const workspaceSchema = z.object({
     .optional(),
   preparedByNote: z.string().max(300).optional(),
   timezone: z.string().trim().refine(isValidTimeZone, "Choose a valid timezone.").optional(),
-  sourceLanguage: nullableText(100),
-  targetLanguage: nullableText(100),
+  sourceLanguage: z.string().trim().min(1, "Enter the primary source language.").max(100).optional(),
+  targetLanguage: z.string().trim().min(1, "Enter the primary target language.").max(100).optional(),
   defaultTerritory: nullableText(120),
   defaultCurrency: z.string().trim().min(3).max(8).optional(),
   missionContext: nullableText(2000),
@@ -72,11 +74,18 @@ const workspaceSchema = z.object({
   taxId: nullableText(120),
   paymentInstructions: nullableText(2000),
   invoicePaymentDetails: z.object({
+    colors: documentColorsSchema.optional(),
     issuerName: z.string().trim().max(200).optional(),
     logoFileId: z.string().uuid().nullable().optional(),
     title: z.string().trim().max(100),
     fields: z.array(z.object({ label: z.string().trim().min(1).max(100), value: z.string().trim().max(500) })).max(20),
   }).nullable().optional(),
+  invoiceSequence: z.object({
+    prefix: z.string().max(30),
+    nextNumber: z.number().int().min(1),
+    padding: z.number().int().min(1).max(20),
+    previousNextNumber: z.number().int().min(1).optional(),
+  }).optional(),
   workDays: z.array(z.number().int().min(0).max(6)).min(1).max(7).optional(),
   workHoursStart: z.number().int().min(0).max(1439).optional(),
   workHoursEnd: z.number().int().min(1).max(1440).optional(),
@@ -142,11 +151,14 @@ export async function updateWorkspaceSettings(
     const [logo] = await db.select({ status: files.status, mimeType: files.mimeType }).from(files).where(eq(files.id, f.invoicePaymentDetails.logoFileId)).limit(1);
     if (!logo || logo.status !== "ready" || !["image/png", "image/jpeg"].includes(logo.mimeType)) return { error: "Choose an uploaded PNG or JPEG invoice logo." };
   }
-  if (
-    options.completeSetup &&
-    (!f.orgName?.trim() || !f.sourceLanguage?.trim() || !f.targetLanguage?.trim())
-  ) {
-    return { error: "Organization name and source/target languages are required." };
+  if (options.completeSetup) {
+    const fieldErrors: Record<string, string> = {};
+    if (!f.orgName) fieldErrors.orgName = "Enter the organization name.";
+    if (!f.sourceLanguage) fieldErrors.sourceLanguage = "Enter the primary source language.";
+    if (!f.targetLanguage) fieldErrors.targetLanguage = "Enter the primary target language.";
+    if (Object.keys(fieldErrors).length) {
+      return { error: "Check the highlighted settings.", fieldErrors };
+    }
   }
   await getWorkspaceSettings();
   const textFields = [
@@ -229,10 +241,36 @@ export async function updateWorkspaceSettings(
     );
   }
   if (options.completeSetup) set.setupCompletedAt = new Date();
-  await db
-    .update(workspaceSettings)
-    .set(set)
-    .where(eq(workspaceSettings.id, "workspace"));
+  const result: { error?: string; fieldErrors?: Record<string, string> } = await db.transaction(async (tx) => {
+    let numbering: { prefix: string; nextNumber: number; padding: number } | undefined;
+    if (f.invoiceSequence) {
+      const input = f.invoiceSequence;
+      const [current] = await tx.select().from(invoiceSequences)
+        .where(eq(invoiceSequences.id, "default")).for("update");
+      const numberingError = (message: string) => ({ error: message, fieldErrors: { invoiceSequence: message } });
+      if (!current) return numberingError("Reload the page to load invoice numbering, then try again.");
+      // Prefix/format edits must not rewind numbers issued since the page opened.
+      const nextNumber = input.nextNumber === input.previousNextNumber ? current.nextNumber : input.nextNumber;
+      const existing = await tx.select({ invoiceNumber: invoices.invoiceNumber }).from(invoices);
+      const escapedPrefix = input.prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const pattern = new RegExp(`^${escapedPrefix}(\\d+)$`);
+      let highest = 0;
+      for (const row of existing) {
+        const match = pattern.exec(row.invoiceNumber);
+        if (match) highest = Math.max(highest, Number(match[1]));
+      }
+      const minimum = input.prefix === current.prefix ? Math.max(current.nextNumber, highest + 1) : highest + 1;
+      if (nextNumber < minimum) return numberingError(`Next number must be at least ${minimum} for this prefix.`);
+      numbering = { prefix: input.prefix, nextNumber, padding: input.padding };
+    }
+    await tx.update(workspaceSettings).set(set).where(eq(workspaceSettings.id, "workspace"));
+    if (numbering) {
+      await tx.update(invoiceSequences).set({ ...numbering, updatedAt: new Date() })
+        .where(eq(invoiceSequences.id, "default"));
+    }
+    return {};
+  });
+  if (result.error) return result;
   await logActivity({
     actorId: actor.id,
     entityType: "workspace_settings",
@@ -265,38 +303,7 @@ export async function updateInvoiceSequence(input: {
   nextNumber: number;
   padding: number;
 }): Promise<{ error?: string; fieldErrors?: Record<string, string> }> {
-  const { user } = await requireRole("admin");
-  const parsed = z.object({
-    prefix: z.string().max(30),
-    nextNumber: z.number().int().min(1),
-    padding: z.number().int().min(1).max(20),
-  }).safeParse(input);
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check invoice numbering." };
-  const existing = await db.select({ invoiceNumber: invoices.invoiceNumber }).from(invoices);
-  const escapedPrefix = parsed.data.prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const pattern = new RegExp(`^${escapedPrefix}(\\d+)$`);
-  let highest = 0;
-  for (const row of existing) {
-    const match = pattern.exec(row.invoiceNumber);
-    if (match) highest = Math.max(highest, Number(match[1]));
-  }
-  if (parsed.data.nextNumber <= highest) {
-    return { error: `Next number must be at least ${highest + 1} for this prefix.` };
-  }
-  await db.insert(invoiceSequences).values({ id: "default", ...parsed.data }).onConflictDoUpdate({
-    target: invoiceSequences.id,
-    set: { ...parsed.data, updatedAt: new Date() },
-  });
-  await logActivity({
-    actorId: user.id,
-    entityType: "invoice_sequence",
-    entityId: "default",
-    action: "update",
-    summary: "Updated invoice numbering",
-    data: { prefix: parsed.data.prefix, nextNumber: parsed.data.nextNumber, padding: parsed.data.padding },
-  });
-  revalidatePath("/settings/workspace");
-  return {};
+  return updateWorkspaceSettings({ invoiceSequence: input });
 }
 
 /** Best-effort removal of a prior logo's file row + R2 object. */

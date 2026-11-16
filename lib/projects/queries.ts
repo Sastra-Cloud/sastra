@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { and, asc, desc, eq, inArray, isNull, max, ne, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
@@ -11,6 +12,8 @@ import {
   phases,
   printRuns,
   projectMembers,
+  projectPeople,
+  projectManagers,
   projectRoles,
   projectUpdates,
   projects,
@@ -84,14 +87,16 @@ export async function listProjects(
     .where(inArray(tasks.projectId, ids))
     .groupBy(tasks.projectId);
 
+  const projectRoster = db.select({ projectId: projectPeople.projectId, userId: projectPeople.userId }).from(projectPeople)
+    .union(db.select({ projectId: projectMembers.projectId, userId: projectMembers.userId }).from(projectMembers))
+    .union(db.select({ projectId: projectManagers.projectId, userId: projectManagers.userId }).from(projectManagers))
+    .as("project_roster");
   const memberCounts = await db
-    .select({
-      projectId: projectMembers.projectId,
-      members: sql<number>`count(distinct ${projectMembers.userId})::int`,
-    })
-    .from(projectMembers)
-    .where(inArray(projectMembers.projectId, ids))
-    .groupBy(projectMembers.projectId);
+    .select({ projectId: projectRoster.projectId, members: sql<number>`count(distinct ${projectRoster.userId})::int` })
+    .from(projectRoster)
+    .innerJoin(user, eq(user.id, projectRoster.userId))
+    .where(and(inArray(projectRoster.projectId, ids), eq(user.isActive, true), eq(user.isBot, false)))
+    .groupBy(projectRoster.projectId);
 
   const [
     blockerCounts,
@@ -324,7 +329,7 @@ export async function listProjects(
 }
 
 /** Lightweight project header (for the workspace layout — no heavy joins). */
-export async function getProjectHeader(slug: string) {
+export const getProjectHeader = cache(async (slug: string) => {
   const [project] = await db
     .select({
       id: projects.id,
@@ -362,7 +367,7 @@ export async function getProjectHeader(slug: string) {
       hasPrintWorkflow,
     } satisfies BookFormatEvidence,
   };
-}
+});
 
 export async function getProjectBySlug(slug: string) {
   const [project] = await db
@@ -430,13 +435,13 @@ export async function listProjectRoles() {
 }
 
 /** Lightweight user directory (non-bot, active) for assignment dropdowns. */
-export async function listAssignableUsers() {
+export const listAssignableUsers = cache(async () => {
   return db
     .select({ id: user.id, name: user.name, email: user.email })
     .from(user)
     .where(and(eq(user.isBot, false), eq(user.isActive, true)))
     .orderBy(asc(user.name));
-}
+});
 
 // ── Cross-project rollups (single grouped pass each — for the Portfolio dashboard) ──
 

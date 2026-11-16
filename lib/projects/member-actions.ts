@@ -6,7 +6,7 @@ import { and, eq } from "drizzle-orm";
 import { requireUser } from "@/lib/auth/guards";
 import { requireProjectCapability } from "@/lib/auth/project-access";
 import { db } from "@/lib/db";
-import { projectMembers, projects } from "@/lib/db/schema";
+import { projectMembers, projectPeople, projects } from "@/lib/db/schema";
 
 async function revalidateProject(projectId: string) {
   const [p] = await db
@@ -51,10 +51,12 @@ export async function addProjectMember(
 
 export async function removeProjectMember(memberId: string) {
   await requireUser();
-  const [member] = await db.select({ projectId: projectMembers.projectId }).from(projectMembers)
+  const [member] = await db.select({ projectId: projectMembers.projectId, userId: projectMembers.userId }).from(projectMembers)
     .where(eq(projectMembers.id, memberId)).limit(1);
   if (!member) return;
-  await requireProjectCapability(member.projectId);
+  const { user: actor } = await requireProjectCapability(member.projectId);
+  // Removing a work role does not remove the person's project/chat membership.
+  await db.insert(projectPeople).values({ projectId: member.projectId, userId: member.userId, addedBy: actor.id }).onConflictDoNothing();
   const [row] = await db
     .delete(projectMembers)
     .where(eq(projectMembers.id, memberId))

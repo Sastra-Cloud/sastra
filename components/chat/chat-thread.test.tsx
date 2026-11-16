@@ -4,22 +4,30 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { deleteMessage, markChannelRead, postMessage, setMessageStatus, toggleReaction } from "@/lib/chat/actions";
 import type { ChatMessageView } from "@/lib/chat/queries";
 import { replyPreview } from "@/lib/chat/replies";
+import { syncChannelRead } from "@/lib/chat/read-client";
 import { confirmDialog } from "@/lib/dialog-requests";
 import { toast } from "sonner";
 import { ChatThread } from "./chat-thread";
 import { editMessage } from "@/lib/chat/edit-actions";
 import type { MessageEditDraft } from "@/lib/chat/edit-state";
 import { prepareChatVideo } from "@/lib/chat/video-client";
+import { prepareVoiceMessage } from "@/lib/chat/voice-client";
 import { uploadFileBytes } from "@/lib/files/upload-progress";
-import type { VoiceDraft } from "@/components/chat/voice-recorder";
+import { VoiceDraftPreview, type VoiceDraft } from "@/components/chat/voice-recorder";
+import { MessageScrollerButton, MessageScrollerContent, MessageScrollerViewport } from "@/components/ui/message-scroller";
 
 // Exercise the thread's event handlers in the repository's Node test environment.
 // Retain hook state across explicit renders without mounting browser-only children.
 const hooks = vi.hoisted(() => ({ values: [] as unknown[], cursor: 0 }));
+const refreshFrequentReactions = vi.hoisted(() => vi.fn());
+vi.mock("./use-frequent-reactions", () => ({
+  useFrequentReactions: () => ({ emojis: ["👍"], refresh: refreshFrequentReactions }),
+}));
 vi.mock("react", async (original) => ({
   ...await original<typeof import("react")>(),
   useEffect: vi.fn(),
   useCallback: (callback: unknown) => callback,
+  useMemo: (calculate: () => unknown) => calculate(),
   useState(initial: unknown) {
     const index = hooks.cursor++;
     if (!(index in hooks.values)) hooks.values[index] = initial;
@@ -43,6 +51,7 @@ vi.mock("@/components/chat/message-pins", () => ({
 vi.mock("@/lib/dialog-requests", () => ({ confirmDialog: vi.fn() }));
 vi.mock("@/lib/chat/edit-actions", () => ({ editMessage: vi.fn() }));
 vi.mock("@/lib/chat/video-client", () => ({ prepareChatVideo: vi.fn() }));
+vi.mock("@/lib/chat/voice-client", () => ({ prepareVoiceMessage: vi.fn(async (file: File, durationMs: number) => ({ file, metadata: { durationMs } })) }));
 vi.mock("@/lib/files/upload-progress", () => ({ uploadFileBytes: vi.fn() }));
 vi.mock("@/lib/chat/actions", () => ({
   postMessage: vi.fn(), setMessageStatus: vi.fn(), markChannelRead: vi.fn(),
@@ -55,14 +64,17 @@ function elements(node: ReactNode): Array<React.ReactElement<Record<string, unkn
   return [node, ...Children.toArray(node.props.children as ReactNode).flatMap(elements)];
 }
 
-function render(loading = false, initialMessages: ChatMessageView[] = []) {
+function render(loading = false, initialMessages: ChatMessageView[] = [], direct = false) {
   hooks.cursor = 0;
   const tree = ChatThread({
     channelId: "channel", currentUserId: "me", currentUserName: "Teammate",
-    currentUserImage: null, initialMessages, loading, timeZone: "UTC",
+    currentUserImage: null, initialMessages, loading, timeZone: "UTC", direct,
   });
   const all = elements(tree);
   return {
+    viewport: all.find(element => element.type === MessageScrollerViewport)!.props as React.ComponentProps<typeof MessageScrollerViewport>,
+    content: all.find(element => element.type === MessageScrollerContent)!.props as React.ComponentProps<typeof MessageScrollerContent>,
+    jumpToLatest: all.find(element => element.type === MessageScrollerButton)?.props as React.ComponentProps<typeof MessageScrollerButton> | undefined,
     thread: all.find((element) => "data-chat-thread" in element.props)!.props as React.ComponentProps<"section">,
     files: all.filter((element) => element.props.file instanceof File),
     dropHint: all.some((element) => element.props.children === "Drop files to attach"),
@@ -104,27 +116,200 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
-it("records a visit when a cached conversation reopens with already read messages", () => {
+describe("channel alert confirmation", () => {
+  it("does not send twice while confirming, and cancellation preserves the draft and files", async () => {
+    let resolveConfirmation!: (value: boolean) => void;
+    vi.mocked(confirmDialog).mockImplementation(() => new Promise(resolve => { resolveConfirmation = resolve; }));
+    (render().composer.onChange as (text: string) => void)("@channel Review today");
+    const file = powerpoint();
+    render().thread.onDrop!(drag([file]));
+    (render().send.onClick as () => void)();
+    (render().send.onClick as () => void)();
+    expect(confirmDialog).toHaveBeenCalledOnce();
+    expect(postMessage).not.toHaveBeenCalled();
+    expect(render().rows).toEqual([]);
+    resolveConfirmation(false);
+    await vi.waitFor(() => expect(render().send.disabled).toBe(false));
+    expect(render().composer.value).toBe("@channel Review today");
+    expect(render().files[0].props.file).toBe(file);
+    expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])("shows a confirmed send immediately and settles or restores it (failure: %s)", async fail => {
+    let finish!: (value: { id: string }) => void;
+    let reject!: (error: Error) => void;
+    vi.mocked(postMessage).mockImplementation(() => new Promise((resolve, failure) => { finish = resolve; reject = failure; }));
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Offline")));
+    (render().composer.onChange as (text: string) => void)("@channel Review today");
+    (render().send.onClick as () => void)();
+    await vi.waitFor(() => expect(postMessage).toHaveBeenCalledOnce());
+    expect(confirmDialog).toHaveBeenCalledWith(expect.any(String), { title: "Notify everyone?", confirmLabel: "Send and notify" });
+    expect(render().rows[0].m).toMatchObject({ status: "uploading", content: "@channel Review today" });
+    expect(render().composer.value).toBe("");
+    if (fail) reject(new TypeError("Offline"));
+    else finish({ id: "saved" });
+    await vi.waitFor(() => expect(render().rows.some(row => row.m.id.startsWith("pending-"))).toBe(false));
+    if (fail) {
+      expect(render().composer.value).toBe("@channel Review today");
+      expect(render().rows).toEqual([]);
+      expect(toast.error).toHaveBeenCalledWith("Could not send. Check your connection and try again.");
+    } else expect(render().rows[0].m).toMatchObject({ id: "saved", status: "sent" });
+  });
+
+  it("keeps direct conversations on their existing send path", () => {
+    (render(false, [], true).composer.onChange as (text: string) => void)("@channel Hello");
+    (render(false, [], true).send.onClick as () => void)();
+    expect(confirmDialog).not.toHaveBeenCalled();
+    expect(render(false, [], true).composer.channelMentions).toBe(false);
+  });
+});
+
+it("records visible visits but never acknowledges a hidden chat or unread history", async () => {
+  const page = { hidden: true, addEventListener: vi.fn(), removeEventListener: vi.fn() };
+  vi.stubGlobal("document", page);
   vi.stubGlobal("window", {
     requestAnimationFrame: (callback: FrameRequestCallback) => { callback(0); return 1; },
     cancelAnimationFrame: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
   });
   const message: ChatMessageView = {
     id: "last-message", userId: "me", authorName: "Teammate", authorImage: null,
     content: "Hello", status: "sent", createdAt: "2026-10-20T09:00:00.000Z",
     isMine: true, reactions: [], attachments: [], replyTo: null, editedAt: null,
   };
-  render(false, [message]);
+  const view = render(false, [message]);
+  const viewport = { clientHeight: 600, scrollHeight: 1800, scrollTop: 0 };
+  (view.viewport.ref as React.RefObject<unknown>).current = viewport;
   const enterConversation = vi.mocked(useEffect).mock.calls.find(
     ([, dependencies]) => dependencies?.[0] === "channel" && dependencies?.[1] === message.id
   )![0];
 
   enterConversation();
+  expect(markChannelRead).not.toHaveBeenCalled();
+  page.hidden = false;
+  view.viewport.onScroll!({} as React.UIEvent<HTMLDivElement>);
+  expect(markChannelRead).toHaveBeenCalledWith("channel", message.id);
+  await syncChannelRead("channel", message.id, "me");
   vi.mocked(markChannelRead).mockClear();
   // React reconnects effects when a cached route becomes visible again.
   enterConversation();
 
   expect(markChannelRead).toHaveBeenCalledWith("channel", message.id);
+  await syncChannelRead("channel", message.id, "me");
+  vi.mocked(markChannelRead).mockClear();
+  // A newer message can arrive while the teammate is reading older messages.
+  // Polling replaces the server message state in the same mounted thread.
+  const state = hooks.values.findIndex(value => Array.isArray(value) && value[0] === message);
+  hooks.values[state] = [message, { ...message, id: "new-message" }];
+  const historyView = render(false, [message]);
+  viewport.scrollTop = 1160; // Near the bottom, but the newest reply is not fully visible.
+  historyView.viewport.onScroll!({} as React.UIEvent<HTMLDivElement>);
+  expect(markChannelRead).not.toHaveBeenCalled();
+  viewport.scrollTop = 1200;
+  historyView.viewport.onScroll!({} as React.UIEvent<HTMLDivElement>);
+  expect(markChannelRead).toHaveBeenCalledWith("channel", "new-message");
+  await syncChannelRead("channel", "new-message", "me");
+});
+
+// A resized viewport or late image must not strand a reopened chat above its
+// newest reply, but the same resize must preserve deliberate history reading.
+it("follows layout changes until the reader scrolls up, and resumes on reopening", () => {
+  vi.stubGlobal("document", { hidden: false, addEventListener: vi.fn(), removeEventListener: vi.fn() });
+  const frames: FrameRequestCallback[] = [];
+  const listeners = new Map<string, (event: PageTransitionEvent) => void>();
+  vi.stubGlobal("window", {
+    requestAnimationFrame: (callback: FrameRequestCallback) => frames.push(callback),
+    cancelAnimationFrame: vi.fn(),
+    addEventListener: (name: string, listener: (event: PageTransitionEvent) => void) => listeners.set(name, listener),
+    removeEventListener: (name: string) => listeners.delete(name),
+  });
+  let resize!: () => void;
+  const observe = vi.fn();
+  const disconnect = vi.fn();
+  vi.stubGlobal("ResizeObserver", class {
+    constructor(callback: () => void) { resize = callback; }
+    observe = observe;
+    disconnect = disconnect;
+  });
+  const view = render(false, [{
+    id: "newest", userId: "me", authorName: "Teammate", authorImage: null,
+    content: "Latest reply", status: "sent", createdAt: "2026-10-20T09:00:00.000Z",
+    isMine: true, reactions: [], attachments: [], replyTo: null, editedAt: null,
+  }]);
+  const viewport = { clientHeight: 600, scrollHeight: 1800, scrollTop: 0 };
+  const content = {};
+  (view.viewport.ref as React.RefObject<unknown>).current = viewport;
+  (view.content.ref as React.RefObject<unknown>).current = content;
+  const cleanups = vi.mocked(useEffect).mock.calls.map(([effect]) => effect());
+  const flushFrames = () => { frames.splice(0).forEach(callback => callback(0)); };
+  const scroll = () => view.viewport.onScroll!({} as React.UIEvent<HTMLDivElement>);
+  flushFrames();
+  expect(viewport.scrollTop).toBe(1200);
+  expect(observe.mock.calls.map(([target]) => target)).toEqual([content, viewport]);
+
+  // Model the passive scroll event arriving before a viewport/media resize.
+  viewport.clientHeight = 350;
+  viewport.scrollHeight = 2200;
+  scroll();
+  resize();
+  expect(viewport.scrollTop).toBe(1850);
+
+  view.viewport.onWheel!({ deltaY: -300 } as React.WheelEvent<HTMLDivElement>);
+  viewport.scrollTop = 900;
+  scroll();
+  viewport.scrollHeight = 2600;
+  resize();
+  expect(viewport.scrollTop).toBe(900);
+
+  // The return-to-latest control opts back in to following subsequent resizes.
+  view.jumpToLatest!.onClick!({} as React.MouseEvent<HTMLButtonElement>);
+  resize();
+  expect(viewport.scrollTop).toBe(2250);
+  view.viewport.onTouchStart!({ touches: [{ clientY: 100 }] } as unknown as React.TouchEvent<HTMLDivElement>);
+  view.viewport.onTouchMove!({ touches: [{ clientY: 200 }] } as unknown as React.TouchEvent<HTMLDivElement>);
+  viewport.scrollTop = 900;
+  scroll();
+  viewport.clientHeight = 500;
+  resize();
+  expect(viewport.scrollTop).toBe(900);
+
+  listeners.get("pageshow")!({ persisted: true } as PageTransitionEvent);
+  flushFrames();
+  expect(viewport.scrollTop).toBe(2100);
+  for (const cleanup of cleanups) if (typeof cleanup === "function") cleanup();
+  expect(disconnect).toHaveBeenCalledOnce();
+  expect(listeners.size).toBe(0);
+});
+
+// Leaving a conversation must release the audio URL; cached drafts must play
+// again when React reconnects the preview's effects.
+it("releases and recreates the recorded preview URL across navigation", () => {
+  const create = vi.spyOn(URL, "createObjectURL").mockReturnValueOnce("blob:first").mockReturnValueOnce("blob:resumed");
+  const revoke = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+  const draft: VoiceDraft = {
+    file: new File(["recording"], "voice.webm", { type: "audio/webm" }), durationMs: 1000,
+  };
+  hooks.cursor = 0;
+  const preview = VoiceDraftPreview({ draft, onDiscard: vi.fn() });
+  const audio = { src: "", removeAttribute: vi.fn(), load: vi.fn() };
+  const audioRef = elements(preview).find(element => element.type === "audio")!.props.ref as { current: unknown };
+  audioRef.current = audio;
+  const ownPreview = vi.mocked(useEffect).mock.calls.find(([, dependencies]) => dependencies?.[0] === draft.file)![0];
+  const cleanup = ownPreview();
+  expect(create).toHaveBeenCalledWith(draft.file);
+  expect(audio.src).toBe("blob:first");
+  if (typeof cleanup !== "function") throw new Error("Preview cleanup was not registered");
+  cleanup();
+  expect(revoke).toHaveBeenCalledWith("blob:first");
+  const resumedCleanup = ownPreview();
+  expect(create).toHaveBeenCalledTimes(2);
+  expect(audio.src).toBe("blob:resumed");
+  if (typeof resumedCleanup !== "function") throw new Error("Resumed cleanup was not registered");
+  resumedCleanup();
+  expect(revoke).toHaveBeenLastCalledWith("blob:resumed");
+  create.mockRestore();
+  revoke.mockRestore();
 });
 
 describe("chat file drops", () => {
@@ -218,15 +403,18 @@ describe("chat file drops", () => {
 describe("video attachment delivery", () => {
   it("keeps WebM voice messages on the existing audio upload path", async () => {
     const file = new File(["voice recording"], "voice.webm", { type: "audio/webm;codecs=opus" });
+    const finalized = new File(["finalized audio"], "ready.webm", { type: "audio/webm;codecs=opus" });
+    vi.mocked(prepareVoiceMessage).mockResolvedValueOnce({ file: finalized, metadata: { durationMs: 1000 } });
     const fetchMock = vi.fn(async (url: string) => url.endsWith("/recent") ? Response.json({ messages: [], pins: [] })
       : url.endsWith("/presign") ? Response.json({ fileId: "voice", uploadUrl: "https://uploads.test/voice" }) : Response.json({}));
     vi.stubGlobal("fetch", fetchMock);
-    render().voiceRecorder!.onRecorded({ file, url: "blob:voice", durationMs: 1000 });
+    render().voiceRecorder!.onRecorded({ file, durationMs: 1000 });
     (render().send.onClick as () => void)();
     await vi.waitFor(() => expect(setMessageStatus).toHaveBeenCalledWith("message", "sent"));
     expect(prepareChatVideo).not.toHaveBeenCalled();
     const complete = (fetchMock.mock.calls as unknown as [string, RequestInit][]).find(([url]) => url.endsWith("/complete"))!;
-    expect(JSON.parse(complete[1].body as string)).toMatchObject({ fileId: "voice", label: "voice" });
+    expect(JSON.parse(complete[1].body as string)).toMatchObject({ fileId: "voice", label: "voice", audioMetadata: { durationMs: 1000 } });
+    expect(uploadFileBytes).toHaveBeenCalledWith("https://uploads.test/voice", finalized, expect.any(Function));
   });
   it.each([false, true])("prepares before posting, uploads the smaller file, and preserves failed originals (failure: %s)", async fail => {
     const original = new File(["original video bytes"], "phone.mov", { type: "video/quicktime" });
@@ -409,10 +597,12 @@ describe('conversation action feedback', () => {
     render(false, [savedMessage()]).rows[0].onReact('👍');
     expect(render().rows[0].m.reactions).toEqual([{ emoji: '👍', count: 2, mine: true }]);
     expect(render().rows[0].reactionPending).toBe(true);
+    expect(refreshFrequentReactions).not.toHaveBeenCalled();
     if (fail) reject(new Error('Offline'));
     else finish();
     await vi.waitFor(() => expect(render().rows[0].reactionPending).toBe(false));
     expect(render().rows[0].m.reactions).toEqual([{ emoji: '👍', count: fail ? 1 : 2, mine: !fail }]);
+    expect(refreshFrequentReactions).toHaveBeenCalledTimes(fail ? 0 : 1);
     if (fail) expect(toast.error).toHaveBeenCalledWith('Could not update the reaction.');
   });
 

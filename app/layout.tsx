@@ -3,7 +3,6 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { MotionProvider } from "@/components/motion/motion-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { PwaProvider } from "@/components/pwa/pwa-provider";
@@ -76,12 +75,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <MotionProvider>
-            <PwaProvider>{children}</PwaProvider>
-            <AppDialogs />
-            <Toaster richColors position="top-right" />
-            <ServiceWorkerRegister />
-          </MotionProvider>
+          <PwaProvider>{children}</PwaProvider>
+          <AppDialogs />
+          <Toaster richColors position="top-right" />
+          <ServiceWorkerRegister />
         </ThemeProvider>
       </body>
     </html>

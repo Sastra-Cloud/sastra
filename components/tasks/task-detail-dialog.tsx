@@ -6,7 +6,7 @@ import { showTaskCompleted } from "@/lib/tasks/completion-feedback";
 import { SectionDisclosure } from "@/components/section-disclosure";
 import { confirmDialog } from "@/lib/dialog-requests";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -366,7 +366,7 @@ function TaskDetailDialogContent({
     });
   }
 
-  async function removeComment(id: string) {
+  const removeComment = useCallback(async (id: string) => {
     if (!(await confirmDialog("Delete this comment? This cannot be undone."))) return;
     const previous = comments;
     setComments((current) => current?.filter((comment) => comment.id !== id) ?? current);
@@ -379,7 +379,51 @@ function TaskDetailDialogContent({
         toast.error("Couldn't delete comment");
       }
     });
-  }
+  }, [comments, startComment, router]);
+
+  // Editing a task or drafting a comment should not re-render stored comments.
+  const commentRows = useMemo(() => (
+    comments?.map((c) => (
+      <li
+        key={c.id}
+        className={cn(
+          "rounded-lg border bg-background/70 px-3 py-2 text-sm",
+          c.id.startsWith("pending-") && "optimistic-item-in"
+        )}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-medium">
+            {c.authorName ?? "Someone"}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">
+              {formatDistanceToNow(new Date(c.createdAt), {
+                addSuffix: true,
+              })}
+            </span>
+            {c.userId === currentUserId || canManage ? (
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                aria-label="Delete comment"
+                disabled={commentBusy}
+                onClick={() => removeComment(c.id)}
+              >
+                <Trash2 className="size-3.5" />
+              </Button>
+            ) : null}
+          </div>
+        </div>
+        <p className="mt-1 whitespace-pre-wrap text-pretty">
+          <MentionText
+            text={c.content}
+            members={assignees}
+            currentUserId={currentUserId}
+          />
+        </p>
+      </li>
+    ))
+  ), [comments, currentUserId, canManage, commentBusy, removeComment, assignees]);
 
   async function refetchAttachments() {
     setAttachmentError(false);
@@ -469,7 +513,7 @@ function TaskDetailDialogContent({
     >
       <DialogContent className="grid min-w-0 max-h-[calc(100dvh-2rem)] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-0 sm:max-w-[min(56rem,calc(100vw-3rem))] xl:max-w-[60rem]">
         <DialogHeader className="border-b bg-muted/30 px-5 py-4 sm:px-6">
-          <DialogTitle>Task details</DialogTitle>
+          <DialogTitle>{isApprovalTask ? t.approvalQuotationId ? "Review proposal" : "Review budget" : "Task details"}</DialogTitle>
           {t.sourceRecurringTaskId ? (
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Repeat2 className="size-3.5 text-info" />
@@ -495,31 +539,33 @@ function TaskDetailDialogContent({
                       <ShieldCheck className="size-4" />
                     </span>
                     <div className="min-w-0">
-                      <h3 className="text-sm font-semibold">Budget approval decision</h3>
+                      <h3 className="break-words text-sm font-semibold">{t.title}</h3>
                       <p className="text-xs text-muted-foreground">
-                        Review the quotation before responding. Ordinary task controls
-                        cannot record an approval decision.
+                        Check the quotation’s partner, costs, and currency before deciding.
+                        Approving does not send the email.
                       </p>
                     </div>
                   </div>
                   {t.approvalProjectSlug ? (
                     <a
-                      href={`/projects/${t.approvalProjectSlug}/budget#budget-approval`}
+                      href={`/projects/${t.approvalProjectSlug}/budget${t.approvalPrintRunId ? `?run=${t.approvalPrintRunId}` : ""}#${t.approvalQuotationId ? `proposal-${t.approvalQuotationId}` : "budget-approval"}`}
                       className="mb-3 inline-flex text-sm font-medium text-primary hover:underline"
                     >
-                      Open current budget quotation
+                      {t.approvalQuotationId ? "Review proposal and attachment" : "Review budget quotation"}
                     </a>
                   ) : null}
                   <ApprovalDecisionControls
+                    key={t.approvalAssignmentId}
                     assignmentId={t.approvalAssignmentId}
                     decision={t.approvalDecision ?? "pending"}
                     requestStatus={t.approvalRequestStatus}
                     canRespond={t.assignedTo === currentUserId}
+                    approvalKind={t.approvalQuotationId ? "proposal" : "budget"}
                     onComplete={onClose}
                   />
                 </section>
               ) : null}
-              <section className={panelClass}>
+              {!isApprovalTask ? <section className={panelClass}>
                 <div className="grid gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="d-title">Title</Label>
@@ -542,15 +588,17 @@ function TaskDetailDialogContent({
                     />
                   </div>
                 </div>
-              </section>
+              </section> : null}
 
               <section className={panelClass} aria-labelledby="task-attachments-heading">
                 <div className="mb-3 flex items-center gap-2">
                   <Paperclip className="size-4 text-muted-foreground" />
-                  <h3 id="task-attachments-heading" className="text-sm font-semibold">Attachments</h3>
+                  <h3 id="task-attachments-heading" className="text-sm font-semibold">{isApprovalTask ? "Supporting files" : "Attachments"}</h3>
                 </div>
                 <p className="mb-3 text-sm text-muted-foreground">
-                  {canEditTask
+                  {isApprovalTask
+                    ? "Use the review link above for the quotation and its attachment. Supporting files for this review appear here."
+                    : canEditTask
                     ? "Upload documents, spreadsheets, or images. Up to 50 MB per file."
                     : "Download task files or open linked documents in Google Drive."}
                 </p>
@@ -572,7 +620,7 @@ function TaskDetailDialogContent({
                     targetId={t.id}
                     attachments={attachments}
                     canEdit={canEditTask}
-                    emptyText={canEditTask ? "No uploaded files yet. Add the files needed for this task." : "No uploaded files yet."}
+                    emptyText={isApprovalTask ? "No supporting files added." : canEditTask ? "No uploaded files yet. Add the files needed for this task." : "No uploaded files yet."}
                     actionsPosition="top"
                     onUploadComplete={refetchAttachments}
                     additionalActions={<DriveAttachButton taskId={t.id} onChange={refetchDrive} />}
@@ -638,46 +686,7 @@ function TaskDetailDialogContent({
                     </p>
                   ) : comments && comments.length > 0 ? (
                     <ul className="max-h-64 space-y-2 overflow-y-auto pr-1">
-                      {comments.map((c) => (
-                        <li
-                          key={c.id}
-                          className={cn(
-                            "rounded-lg border bg-background/70 px-3 py-2 text-sm",
-                            c.id.startsWith("pending-") && "optimistic-item-in"
-                          )}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="font-medium">
-                              {c.authorName ?? "Someone"}
-                            </span>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-muted-foreground">
-                                {formatDistanceToNow(new Date(c.createdAt), {
-                                  addSuffix: true,
-                                })}
-                              </span>
-                              {c.userId === currentUserId || canManage ? (
-                                <Button
-                                  variant="ghost"
-                                  size="icon-xs"
-                                  aria-label="Delete comment"
-                                  disabled={commentBusy}
-                                  onClick={() => removeComment(c.id)}
-                                >
-                                  <Trash2 className="size-3.5" />
-                                </Button>
-                              ) : null}
-                            </div>
-                          </div>
-                          <p className="mt-1 whitespace-pre-wrap text-pretty">
-                            <MentionText
-                              text={c.content}
-                              members={assignees}
-                              currentUserId={currentUserId}
-                            />
-                          </p>
-                        </li>
-                      ))}
+                      {commentRows}
                     </ul>
                   ) : (
                     <p className="text-sm text-muted-foreground">
@@ -1042,7 +1051,7 @@ function TaskDetailDialogContent({
                 </Button>
               ) : null}
             </>
-          ) : canManage ? (
+          ) : canManage && dueDate !== (t.dueDate ?? "") ? (
             <>
               <Button variant="outline" onClick={onClose} disabled={saving}>
                 Cancel
@@ -1052,7 +1061,7 @@ function TaskDetailDialogContent({
               </Button>
             </>
           ) : (
-            <Button onClick={onClose}>Close</Button>
+            <Button variant="outline" onClick={onClose}>Close</Button>
           )}
         </DialogFooter>
       </DialogContent>

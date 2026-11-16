@@ -170,6 +170,23 @@ Subject: Re: Re: Fundamentals of the Faith
     expect(parsed[0].deliveryLocation).toBe("Foshan");
   });
 
+  it("does not take a greeting, sign-off, or email sentence as the book title", () => {
+    const tiers = "Size: 148 mm x 210mm\n2000 cps @ USD 0.72 per cpy.";
+    for (const opening of [
+      "Hi Bora,",
+      "Regards,",
+      "Hi Bora,\nPlease find our price below:",
+    ]) {
+      const [parsed] = parsePrinterQuoteTextVariants(`${opening}\n${tiers}`);
+      expect(parsed.title).toBeNull();
+      expect(parsed.quantityCps).toBe(2000);
+    }
+    const [titled] = parsePrinterQuoteTextVariants(
+      `Hi Bora,\nHere is our quote.\nThanks Be to God\n${tiers}`
+    );
+    expect(titled.title).toBe("Thanks Be to God");
+  });
+
   it("extracts legacy quote specs with units on both trim dimensions", () => {
     const [parsed] = parsePrinterQuoteTextVariants(`
 Hope Out Loud

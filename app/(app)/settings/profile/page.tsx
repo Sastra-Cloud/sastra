@@ -15,13 +15,15 @@ import { ProfileForm } from "@/components/settings/profile-form";
 import { AvatarUploader } from "@/components/settings/avatar-uploader";
 import { AutoTimerToggle } from "@/components/settings/auto-timer-toggle";
 import { GuidanceToggle } from "@/components/settings/guidance-toggle";
+import { GoogleDriveConnectButton } from "@/components/auth/google-drive-connect-button";
+import { getDriveAttachContext } from "@/lib/tasks/drive-actions";
 
 export const metadata = { title: "Profile settings" };
 export const dynamic = "force-dynamic";
 
-export default async function ProfileSettingsPage() {
+export default async function ProfileSettingsPage({ searchParams }: { searchParams: Promise<{ drive?: string }> }) {
   const { user } = await requireUser();
-  const [autoStartTimer, prefs, rules] = await Promise.all([isAutoStartEnabled(user.id), getEmailPreferences(user.id), listEmailTaskRulesForUser(user.id)]);
+  const [autoStartTimer, prefs, rules, drive, params] = await Promise.all([isAutoStartEnabled(user.id), getEmailPreferences(user.id), listEmailTaskRulesForUser(user.id), getDriveAttachContext(), searchParams]);
   const choices = await ssoChoices();
   // Account owners can remove an existing binding even while its connection is disabled.
   const identities = await db.select({ id: lectioSsoIdentities.id }).from(lectioSsoIdentities).where(eq(lectioSsoIdentities.userId, user.id));
@@ -38,6 +40,17 @@ export default async function ProfileSettingsPage() {
         defaultName={user.name}
         defaultTimezone={user.timezone ?? "UTC"}
       />
+      {drive.configured ? (
+        <section id="google-drive" aria-labelledby="google-drive-title" className="scroll-mt-24 space-y-3 border-t pt-6">
+          <h2 id="google-drive-title" className="text-sm font-medium">Google Drive</h2>
+          <p className="text-sm text-muted-foreground">
+            {drive.connected ? "Drive permission granted. Reconnect if Drive does not open." : "Connect your Google account to attach and upload Drive files."}
+          </p>
+          <p className="text-sm text-muted-foreground">Choose the Google account that has access to your team's files. Approve Drive access when Google asks.</p>
+          {params.drive === "error" ? <p role="alert" className="text-sm text-destructive">Google Drive was not connected. Try again and approve Drive access.</p> : null}
+          <GoogleDriveConnectButton connected={drive.connected} />
+        </section>
+      ) : null}
       <div className="space-y-3 border-t pt-6">
         <p className="text-sm font-medium">Guidance</p>
         <GuidanceToggle defaultEnabled={guidanceEnabled} />

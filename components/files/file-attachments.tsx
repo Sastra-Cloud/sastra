@@ -24,6 +24,7 @@ import {
 } from "@/lib/files/actions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { uploadContentType } from "@/lib/files/upload-rules";
 import { formatBytes } from "@/lib/format";
 import { useOptimisticAction } from "@/hooks/use-optimistic-action";
 import { usePropState } from "@/hooks/use-prop-state";
@@ -127,7 +128,7 @@ export function FileAttachments({
   }
 
   async function uploadOne(file: File) {
-    const contentType = file.type || "application/octet-stream";
+    const contentType = uploadContentType(file);
     const presign = await fetch("/api/files/presign", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

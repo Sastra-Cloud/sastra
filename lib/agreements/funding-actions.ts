@@ -67,7 +67,7 @@ export async function approveFundingReview(input: FundingReviewInput): Promise<{
         projectId: row.projectId, allocationAmount: row.amount.toFixed(2), addedBy: user.id,
         addedReason: "Approved email funding review." })));
       await tx.insert(mouPayments).values(data.installments.map((row) => ({
-        projectId: data.allocations[0].projectId, sharedMouGroupId: group.id, amount: row.amount.toFixed(2),
+        projectId: data.allocations[0].projectId, sharedMouGroupId: group.id, fundingBasis: "mou" as const, amount: row.amount.toFixed(2),
         currency: data.currency, trigger: row.trigger, dueDate: row.earliestDate ?? (row.trigger === "on_signing" ? data.signedDate : null),
         paymentDueDate: row.paymentDueDate, publicDescription: row.description,
         notes: row.description, deliveryRequirements: row.requirements,
@@ -82,7 +82,7 @@ export async function approveFundingReview(input: FundingReviewInput): Promise<{
       return group.id;
     });
     await reevaluateSharedMouPayments({ groupId, actorId: user.id });
-    revalidatePath("/agreements"); revalidatePath("/correspondence"); revalidatePath("/projects");
+    revalidatePath("/agreements"); revalidatePath("/correspondence"); revalidatePath("/projects"); revalidatePath("/projects/[slug]", "layout");
     return { groupId };
   } catch (error) { return { error: error instanceof Error ? error.message : "Funding approval failed." }; }
 }

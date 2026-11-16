@@ -1,5 +1,6 @@
 export type PartnerQuoteLine = {
   id: string;
+  category?: string;
   label: string;
   partnerLabel: string | null;
   partnerUnitPrice: string | null;

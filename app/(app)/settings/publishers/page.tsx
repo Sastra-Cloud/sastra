@@ -22,7 +22,7 @@ export default async function PublishersSettingsPage() {
           className="inline-flex items-center gap-1.5 rounded-lg border bg-card px-3 py-1.5 text-sm transition-colors hover:bg-muted/40"
           download
         >
-          Export rights report (.xlsx)
+          Export Rights &amp; MOUs report (.xlsx)
         </a>
       </div>
       <PublishersManager

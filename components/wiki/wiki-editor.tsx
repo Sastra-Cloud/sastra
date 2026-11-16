@@ -628,7 +628,7 @@ export function WikiEditor({
           />
         </div>
 
-        <div data-wiki-toolbar className="sticky top-0 z-20 flex flex-wrap items-center gap-1 border-b bg-card/95 p-2 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+        <div data-wiki-toolbar className="sticky top-0 z-20 flex flex-wrap items-center gap-1 border-b bg-card/95 p-2 backdrop-blur supports-[backdrop-filter]:bg-card/80 low-power:bg-card low-power:backdrop-filter-none">
           <ToolbarButton label="Undo" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}><Undo2 /></ToolbarButton>
           <ToolbarButton label="Redo" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()}><Redo2 /></ToolbarButton>
           <span className="mx-1 h-6 w-px bg-border" />

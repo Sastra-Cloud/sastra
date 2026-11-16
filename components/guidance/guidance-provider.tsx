@@ -2,6 +2,7 @@
 
 import { toast } from "sonner";
 import * as React from "react";
+import { Suspense, use } from "react";
 
 import { useOptimisticAction } from "@/hooks/use-optimistic-action";
 import {
@@ -15,11 +16,23 @@ import {
   type GuidanceMutation,
 } from "@/lib/guidance/state";
 
+/** What the server knows about this person's coaching state. */
+export type GuidanceSnapshot = {
+  dismissedKeys: string[];
+  /** The person has asked the assistant something before; skip its intro. */
+  assistantIntroduced: boolean;
+};
+
 type GuidanceContextValue = {
   /** Global switch from the user's profile preference. */
   enabled: boolean;
-  /** Always true; account dismissals arrive with the server-rendered layout. */
+  /**
+   * True once the account's dismissals are known. Until then no coaching is
+   * shown, so a tip the person already hid can never flash on screen.
+   */
   hydrated: boolean;
+  /** Treated as true until the snapshot arrives, so the intro never flashes. */
+  assistantIntroduced: boolean;
   /** Has the user dismissed this specific coaching element before? */
   isDismissed: (key: string) => boolean;
   /** Permanently dismiss one coaching element for this user. */
@@ -32,18 +45,44 @@ type GuidanceContextValue = {
 
 const GuidanceContext = React.createContext<GuidanceContextValue | null>(null);
 
+/**
+ * Applies a streamed server value once it arrives. It suspends only itself, so
+ * the page behind the provider never waits for the value.
+ */
+function SnapshotReceiver<T>({
+  promise,
+  onSettled,
+}: {
+  promise: Promise<T>;
+  onSettled: (value: T) => void;
+}) {
+  const value = use(promise);
+  React.useEffect(() => {
+    onSettled(value);
+  }, [value, onSettled]);
+  return null;
+}
+
+/**
+ * `snapshot` is streamed after the first paint and resolves to `null` when the
+ * server could not load it. Then coaching simply stays hidden.
+ */
 export function GuidanceProvider({
   enabled,
-  initialDismissedKeys,
+  snapshot,
   children,
 }: {
   enabled: boolean;
-  initialDismissedKeys: string[];
+  snapshot: Promise<GuidanceSnapshot | null>;
   children: React.ReactNode;
 }) {
+  const [loaded, setLoaded] = React.useState<GuidanceSnapshot | null>(null);
+  const receive = React.useCallback((next: GuidanceSnapshot | null) => {
+    if (next) setLoaded(next);
+  }, []);
   const initialDismissals = React.useMemo(
-    () => new Set(initialDismissedKeys),
-    [initialDismissedKeys]
+    () => new Set(loaded?.dismissedKeys ?? []),
+    [loaded]
   );
   const { state: dismissedKeys, run, pending } = useOptimisticAction<
     ReadonlySet<string>,
@@ -86,17 +125,23 @@ export function GuidanceProvider({
   const value = React.useMemo<GuidanceContextValue>(
     () => ({
       enabled,
-      hydrated: true,
+      hydrated: loaded !== null,
+      assistantIntroduced: loaded?.assistantIntroduced ?? true,
       isDismissed: (guidanceKey) => dismissedKeys.has(guidanceKey),
       dismiss,
       restore,
       reset,
       pending,
     }),
-    [dismiss, dismissedKeys, enabled, restore, reset, pending]
+    [dismiss, dismissedKeys, enabled, loaded, restore, reset, pending]
   );
   return (
-    <GuidanceContext.Provider value={value}>{children}</GuidanceContext.Provider>
+    <GuidanceContext.Provider value={value}>
+      <Suspense fallback={null}>
+        <SnapshotReceiver promise={snapshot} onSettled={receive} />
+      </Suspense>
+      {children}
+    </GuidanceContext.Provider>
   );
 }
 
@@ -109,6 +154,7 @@ export function useGuidance(): GuidanceContextValue {
   return ctx ?? {
     enabled: false,
     hydrated: true,
+    assistantIntroduced: true,
     isDismissed: () => false,
     dismiss: () => undefined,
     restore: () => undefined,

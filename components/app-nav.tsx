@@ -1,9 +1,8 @@
 "use client";
 
 import type * as React from "react";
-import Link from "next/link";
+import { NavigationLink } from "@/components/navigation-link";
 import { usePathname } from "next/navigation";
-import { motion } from "motion/react";
 import {
   Tooltip,
   TooltipContent,
@@ -28,11 +27,7 @@ export function AppNav({
   canManage?: boolean;
   isAdmin?: boolean;
   collapsed?: boolean;
-  /**
-   * Distinguishes nav instances that are mounted at the same time (the desktop
-   * rail vs. the mobile sheet) so their sliding indicators never share a
-   * `layoutId` and fight over position.
-   */
+  /** `"mobile"` renders the full-width rows used inside the mobile sheet. */
   layoutScope?: string;
 }) {
   const mobile = layoutScope === "mobile";
@@ -46,7 +41,7 @@ export function AppNav({
             <NavLabel collapsed={collapsed} mobile={mobile}>{group.label}</NavLabel>
             {group.items.map(item => (
               <NavItem key={item.href} item={item} onNavigate={onNavigate}
-                collapsed={collapsed} mobile={mobile} layoutId={`nav-${layoutScope}-${group.label}`} />
+                collapsed={collapsed} mobile={mobile} />
             ))}
           </div>
         ))}
@@ -90,13 +85,11 @@ function NavItem({
   onNavigate,
   collapsed,
   mobile,
-  layoutId,
 }: {
   item: NavigationItem;
   onNavigate?: () => void;
   collapsed?: boolean;
   mobile?: boolean;
-  layoutId: string;
 }) {
   const pathname = usePathname();
   const active = navigationItemActive(pathname, item);
@@ -106,9 +99,10 @@ function NavItem({
   const accessibleLabel = badge ? `${item.label}: ${badge.description}` : item.label;
 
   const navLink = (
-    <Link
+    <NavigationLink
       href={badge?.href ?? item.href}
-      onClick={onNavigate}
+      eager={["/dashboard", "/tasks", "/projects", "/chat", "/standups"].includes(item.href)}
+      onNavigate={onNavigate}
       aria-current={active ? "page" : undefined}
       title={accessibleLabel}
       aria-label={accessibleLabel}
@@ -125,16 +119,17 @@ function NavItem({
       )}
     >
       {active ? (
-        <motion.span
+        // Static on purpose: this is the app's most repeated action, and a
+        // sliding indicator would animate on the main thread while the next
+        // route renders.
+        <span
           aria-hidden
-          layoutId={layoutId}
           className={cn(
             "absolute inset-0 bg-sidebar-primary",
             collapsed
               ? "rounded-2xl shadow-md ring-1 ring-sidebar-primary/20"
               : "rounded-lg shadow-sm"
           )}
-          transition={{ type: "spring", stiffness: 380, damping: 32 }}
         />
       ) : null}
       <span
@@ -184,7 +179,7 @@ function NavItem({
           </span>
         </span>
       ) : null}
-    </Link>
+    </NavigationLink>
   );
 
   if (mobile) return navLink;

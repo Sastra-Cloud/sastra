@@ -2,7 +2,7 @@
 
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
-import { and, desc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { requireRole } from "@/lib/auth/guards";
@@ -25,8 +25,10 @@ import {
   mouPayments,
   printQuotes,
   projectBudgetSettings,
+  projectPartnerQuotations,
   projectPrintSettings,
   projects,
+  proposalSubmissions,
   royaltyPayments,
   sharedMouGroups,
   sharedMouMemberships,
@@ -53,7 +55,9 @@ import {
   getBudgetPresentation,
   getOrCreateBudgetSettings,
   getProjectBudget,
+  getPartnerPrintCandidates,
 } from "@/lib/budget/queries";
+import { reviewPartnerPrintOptions } from "@/lib/budget/print-options";
 import {
   PAYMENT_EPISODE_MILESTONE,
   publishedEpisodeCount,
@@ -82,6 +86,7 @@ import { buildKey, putObject } from "@/lib/r2";
 import { getObjectBuffer } from "@/lib/r2";
 import { sendEmail } from "@/lib/gmail";
 import { removeEmailDraftForUser } from "@/lib/email/draft-store";
+import { findOrCreatePartnerContact } from "@/lib/partners/find-or-create";
 
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -127,20 +132,29 @@ type MouInvoiceTaskSource = {
   dueDate: string | null;
   notes: string | null;
   projectTitle: string;
+  /** "no_mou" drops MoU wording; anything else keeps the original copy. */
+  fundingBasis?: string | null;
+  partnerName?: string | null;
 };
 
 function mouInvoiceTaskCopy(
   pay: MouInvoiceTaskSource,
   settings: { partnerName: string | null; partnerContact: string | null }
 ) {
-  const triggerLabel = MOU_TRIGGER_LABELS[pay.trigger] ?? MOU_TRIGGER_LABELS.custom;
+  const noMou = pay.fundingBasis === "no_mou";
+  const triggerLabel =
+    noMou && pay.trigger === "on_signing"
+      ? "on partner agreement"
+      : MOU_TRIGGER_LABELS[pay.trigger] ?? MOU_TRIGGER_LABELS.custom;
+  const invoice = noMou ? "funding invoice" : "MoU invoice";
   const title =
     pay.trigger === "on_completion"
-      ? `Submit final MoU invoice for ${pay.projectTitle}`
-      : `Submit MoU invoice for ${pay.projectTitle}`;
+      ? `Submit final ${invoice} for ${pay.projectTitle}`
+      : `Submit ${invoice} for ${pay.projectTitle}`;
+  const partnerName = pay.partnerName?.trim() || settings.partnerName;
   const description = [
     `${moneyLabel(pay.amount, pay.currency)} ${triggerLabel}.`,
-    settings.partnerName ? `Partner: ${settings.partnerName}.` : null,
+    partnerName ? `Partner: ${partnerName}.` : null,
     settings.partnerContact ? `Send invoice to: ${settings.partnerContact}.` : null,
     pay.dueDate ? `Scheduled date: ${pay.dueDate}.` : null,
     pay.notes ? `Notes: ${pay.notes}` : null,
@@ -254,6 +268,13 @@ const settingsSchema = z.object({
   partnerContact: z.string().max(200).optional(),
   partnerId: z.string().max(64).nullable().optional(),
   partnerContactId: z.string().max(64).nullable().optional(),
+  partnerDetails: z.object({
+    website: z.string().trim().max(300),
+    billingAddress: z.string().trim().max(1000),
+    notes: z.string().trim().max(2000),
+    phone: z.string().trim().max(60),
+    role: z.string().trim().max(120),
+  }).optional(),
   workDescription: z.string().max(2000).optional(),
   royaltyRecipientEmail: z.string().max(320).nullable().optional(),
   royaltyDueMonth: z.coerce.number().int().min(1).max(12).nullable().optional(),
@@ -289,7 +310,7 @@ export async function updateBudgetSettings(
   for (const k of RATE_KEYS) {
     if (f[k] !== undefined) set[k] = String(f[k]);
   }
-  if (f.partnerName !== undefined) set.partnerName = f.partnerName || null;
+  if (f.partnerName !== undefined) set.partnerName = f.partnerName.trim() || null;
   if (f.partnerContactFirstName !== undefined)
     set.partnerContactFirstName = f.partnerContactFirstName.trim() || null;
   if (f.partnerContactLastName !== undefined)
@@ -308,10 +329,41 @@ export async function updateBudgetSettings(
   if (f.royaltyTaskAssigneeId !== undefined)
     set.royaltyTaskAssigneeId = f.royaltyTaskAssigneeId || null;
 
-  await db
-    .update(projectBudgetSettings)
-    .set(set)
-    .where(eq(projectBudgetSettings.projectId, projectId));
+  await db.transaction(async (tx) => {
+    const partnerEdited = [f.partnerName, f.partnerContactFirstName, f.partnerContactLastName, f.partnerContactEmail, f.partnerDetails]
+      .some((value) => value !== undefined);
+    if (partnerEdited) {
+      const [current] = await tx.select().from(projectBudgetSettings)
+        .where(eq(projectBudgetSettings.projectId, projectId)).for("update");
+      if (!current) throw new Error("Budget not found. Refresh and try again.");
+      const name = (f.partnerName ?? current.partnerName)?.trim();
+      if (name) {
+        const samePartner = name.toLowerCase() === current.partnerName?.trim().toLowerCase();
+        if (!samePartner) {
+          for (const key of ["partnerContactFirstName", "partnerContactLastName", "partnerContactEmail", "partnerContact"] as const) {
+            if (f[key] === undefined) set[key] = null;
+          }
+        }
+        const link = await findOrCreatePartnerContact(tx, {
+          org: name,
+          partnerId: f.partnerId ?? (samePartner ? current.partnerId : null),
+          partnerContactId: f.partnerContactId !== undefined ? f.partnerContactId : samePartner ? current.partnerContactId : null,
+          firstName: f.partnerContactFirstName ?? (samePartner ? current.partnerContactFirstName : null),
+          lastName: f.partnerContactLastName ?? (samePartner ? current.partnerContactLastName : null),
+          email: f.partnerContactEmail ?? (samePartner ? current.partnerContactEmail : null),
+          ...f.partnerDetails,
+          createdBy: user.id,
+        });
+        set.partnerId = link.partnerId;
+        set.partnerContactId = link.partnerContactId;
+      } else {
+        set.partnerId = null;
+        set.partnerContactId = null;
+      }
+    }
+    await tx.update(projectBudgetSettings).set(set)
+      .where(eq(projectBudgetSettings.projectId, projectId));
+  });
 
   await recomputeProjectLines(projectId);
   await logActivity({
@@ -322,6 +374,12 @@ export async function updateBudgetSettings(
     summary: "Updated budget settings",
   });
   await revalidate(projectId);
+  revalidatePath("/settings/partners");
+  if ([f.partnerName, f.partnerContactFirstName, f.partnerContactLastName, f.partnerContactEmail, f.partnerDetails].some((value) => value !== undefined)) {
+    const invoiceRefreshError = await refreshFundingPartnerInvoices(projectId);
+    if (invoiceRefreshError) return { invoiceRefreshError };
+  }
+  return {};
 }
 
 const lineSchema = z.object({
@@ -438,10 +496,17 @@ export async function saveBudgetPresentation(
     parsed.deductionPercent ??
       Number(workspace?.defaultFundingDeductionBps ?? 0) / 100
   );
+  let printOptions = existing?.printOptions ?? [];
+  if (parsed.printOptions !== undefined) {
+    const settings = await getOrCreateBudgetSettings(projectId);
+    const candidates = await getPartnerPrintCandidates(projectId, printRunId ?? undefined);
+    printOptions = reviewPartnerPrintOptions(parsed.printOptions, printOptions, candidates, settings.currency);
+  }
   const values = {
     projectId,
     printRunId,
     mode: parsed.mode,
+    printOptions,
     deductionBps,
     publicDescription: parsed.publicDescription?.trim() || null,
     perCopyQuantity: parsed.perCopyQuantity ?? null,
@@ -467,6 +532,7 @@ export async function saveBudgetPresentation(
     ok: true as const,
     presentation: {
       mode: values.mode,
+      printOptions: values.printOptions,
       deductionBps: values.deductionBps,
       publicDescription: values.publicDescription,
       perCopyQuantity: values.perCopyQuantity,
@@ -752,7 +818,7 @@ export async function updateReceipt(
   if (await receiptIsLinkedToMouPayment(id)) {
     return {
       error:
-        "This receipt came from a scheduled MoU payment. Edit the scheduled payment instead.",
+        "This money came from an expected payment. Edit the expected payment instead.",
     };
   }
   if (await receiptIsLinkedToImportedDonation(id)) {
@@ -815,7 +881,7 @@ export async function deleteReceipt(id: string): Promise<{ error?: string }> {
   if (await receiptIsLinkedToMouPayment(id)) {
     return {
       error:
-        "This receipt came from a scheduled MoU payment. Mark that payment unpaid instead.",
+        "This money came from an expected payment. Undo the received payment instead.",
     };
   }
   if (await receiptIsLinkedToImportedDonation(id)) {
@@ -1057,7 +1123,7 @@ export async function markRoyaltyUnpaid(id: string): Promise<{ error?: string }>
   return {};
 }
 
-// ── Scheduled MoU receivables ────────────────────────────────────────────────
+// ── Expected payments (promised money, with or without an MoU) ───────────────
 
 const mouTriggerSchema = z.enum([
   "on_signing",
@@ -1074,9 +1140,54 @@ const paymentSchema = z.object({
   publicDescription: z.string().max(500).optional(),
   trigger: mouTriggerSchema.default("custom"),
   invoiceAssigneeId: z.string().nullable().optional(),
+  fundingBasis: z.enum(["mou", "no_mou"]).nullable().optional(),
+  proposalId: z.string().uuid().nullable().optional(),
 });
 
+/** A linked proposal must belong to the same project and budget scope. */
+async function paymentProposalLink(
+  projectId: string,
+  printRunId: string | null,
+  proposalId: string | null | undefined
+): Promise<{ error: string } | { proposalId: string | null; partnerName: string | null }> {
+  if (!proposalId) return { proposalId: null, partnerName: null };
+  const [proposal] = await db
+    .select({
+      projectId: proposalSubmissions.projectId,
+      printRunId: proposalSubmissions.printRunId,
+      partnerName: proposalSubmissions.partnerName,
+      quotationPartnerName: projectPartnerQuotations.partnerName,
+      recipientName: proposalSubmissions.recipientName,
+    })
+    .from(proposalSubmissions)
+    .leftJoin(
+      projectPartnerQuotations,
+      eq(projectPartnerQuotations.id, proposalSubmissions.partnerQuotationId)
+    )
+    .where(eq(proposalSubmissions.id, proposalId))
+    .limit(1);
+  if (
+    !proposal ||
+    proposal.projectId !== projectId ||
+    proposal.printRunId !== printRunId
+  ) {
+    return { error: "Choose a proposal from this budget." };
+  }
+  return {
+    proposalId,
+    partnerName:
+      proposal.partnerName?.trim() ||
+      proposal.quotationPartnerName?.trim() ||
+      proposal.recipientName?.trim() ||
+      null,
+  };
+}
+
 const paymentEditSchema = paymentSchema.omit({ printRunId: true }).extend({
+  publicDescription: z.string().trim().max(2000).optional(),
+  invoiceVersion: z.object({ invoiceId: z.uuid(), fileId: z.uuid() }).optional(),
+  invoiceIssueDate: z.iso.date().optional(),
+  invoiceDueDate: z.union([z.literal(""), z.iso.date()]).optional(),
   dueDate: z
     .union([z.literal(""), z.string().regex(/^\d{4}-\d{2}-\d{2}$/)])
     .optional(),
@@ -1089,6 +1200,8 @@ export async function addPayment(
   const { user } = await requireRole("manager");
   const d = paymentSchema.parse(input);
   const settings = await getOrCreateBudgetSettings(projectId);
+  const link = await paymentProposalLink(projectId, d.printRunId || null, d.proposalId);
+  if ("error" in link) return { error: link.error };
   const [created] = await db
     .insert(mouPayments)
     .values({
@@ -1097,6 +1210,9 @@ export async function addPayment(
       amount: d.amount.toFixed(2),
       currency: settings.currency,
       trigger: d.trigger,
+      fundingBasis: d.fundingBasis ?? null,
+      proposalId: link.proposalId,
+      partnerName: link.partnerName,
       dueDate: d.dueDate || null,
       notes: d.notes?.trim() || null,
       publicDescription: d.publicDescription?.trim() || null,
@@ -1111,13 +1227,18 @@ export async function addPayment(
 /** Create two installments; any odd cent is assigned to the final payment. */
 export async function splitFundingIntoTwoPayments(
   projectId: string,
-  input: { printRunId?: string | null; total: number }
+  input: {
+    printRunId?: string | null;
+    total: number;
+    fundingBasis?: "mou" | "no_mou" | null;
+  }
 ): Promise<{ error?: string; ids?: string[] }> {
   const { user } = await requireRole("manager");
   const parsed = z
     .object({
       printRunId: z.string().uuid().nullable().optional(),
       total: z.coerce.number().min(0.02).finite(),
+      fundingBasis: z.enum(["mou", "no_mou"]).nullable().optional(),
     })
     .safeParse(input);
   if (!parsed.success) return { error: "Enter a total of at least 0.02." };
@@ -1134,6 +1255,7 @@ export async function splitFundingIntoTwoPayments(
         amount: (amountCents / 100).toFixed(2),
         currency: settings.currency,
         trigger: index === 0 ? ("on_signing" as const) : ("on_completion" as const),
+        fundingBasis: parsed.data.fundingBasis ?? null,
         notes:
           index === 0
             ? "First of two funding installments"
@@ -1154,7 +1276,7 @@ export async function splitFundingIntoTwoPayments(
 export async function updatePayment(
   id: string,
   input: z.input<typeof paymentEditSchema>
-): Promise<{ error?: string }> {
+): Promise<{ error?: string; invoice?: Awaited<ReturnType<typeof generateMouInvoice>> }> {
   const { user } = await requireRole("manager");
   const parsed = paymentEditSchema.safeParse(input);
   if (!parsed.success) return { error: "Review the payment schedule fields." };
@@ -1171,6 +1293,10 @@ export async function updatePayment(
       publicDescription: mouPayments.publicDescription,
       paidAt: mouPayments.paidAt,
       sharedMouGroupId: mouPayments.sharedMouGroupId,
+      printRunId: mouPayments.printRunId,
+      fundingBasis: mouPayments.fundingBasis,
+      proposalId: mouPayments.proposalId,
+      partnerName: mouPayments.partnerName,
       invoiceAssigneeId: mouPayments.invoiceAssigneeId,
       invoiceTaskId: mouPayments.invoiceTaskId,
       invoiceId: invoices.id,
@@ -1188,20 +1314,23 @@ export async function updatePayment(
     )
     .where(eq(mouPayments.id, id))
     .limit(1);
-  if (!payment) return { error: "Scheduled MoU payment not found." };
+  if (!payment) return { error: "Expected payment not found. Refresh the page and try again." };
   if (payment.paidAt) {
     return { error: "Undo the received payment before editing its schedule." };
   }
   if (payment.sharedMouGroupId) {
     return { error: "Edit shared payment schedules from the agreement." };
   }
-  if (payment.invoiceId) {
-    return {
-      error:
-        "This payment has an issued invoice. Void it before changing the schedule.",
-    };
+  if (payment.invoiceId && (!value.invoiceVersion || value.invoiceVersion.invoiceId !== payment.invoiceId)) {
+    return { error: "Refresh the page and review the current invoice before editing this payment." };
   }
 
+  // Omitted fields keep their saved value, so older callers change nothing.
+  const link =
+    value.proposalId === undefined || value.proposalId === payment.proposalId
+      ? { proposalId: payment.proposalId, partnerName: payment.partnerName }
+      : await paymentProposalLink(payment.projectId, payment.printRunId, value.proposalId);
+  if ("error" in link) return { error: link.error };
   const next = {
     amount: value.amount.toFixed(2),
     currency: payment.currency,
@@ -1211,11 +1340,15 @@ export async function updatePayment(
     publicDescription: value.publicDescription?.trim() || null,
     invoiceAssigneeId: value.invoiceAssigneeId || null,
     projectTitle: payment.projectTitle,
+    fundingBasis:
+      value.fundingBasis === undefined ? payment.fundingBasis : value.fundingBasis,
+    proposalId: link.proposalId,
+    partnerName: link.partnerName,
   };
   const settings = await getOrCreateBudgetSettings(payment.projectId);
   const taskCopy = mouInvoiceTaskCopy(next, settings);
 
-  await db.transaction(async (tx) => {
+  const savePayment = async (tx: Parameters<Parameters<typeof db.transaction>[0]>[0]) => {
     const [updated] = await tx
       .update(mouPayments)
       .set({
@@ -1225,6 +1358,9 @@ export async function updatePayment(
         notes: next.notes,
         publicDescription: next.publicDescription,
         invoiceAssigneeId: next.invoiceAssigneeId,
+        fundingBasis: next.fundingBasis,
+        proposalId: next.proposalId,
+        partnerName: next.partnerName,
       })
       .where(and(eq(mouPayments.id, id), isNull(mouPayments.paidAt)))
       .returning({ id: mouPayments.id });
@@ -1244,7 +1380,21 @@ export async function updatePayment(
         })
         .where(eq(tasks.id, payment.invoiceTaskId));
     }
-  });
+  };
+
+  let invoice: Awaited<ReturnType<typeof generateMouInvoice>> | undefined;
+  if (payment.invoiceId) {
+    if (!next.publicDescription) return { error: "Enter an invoice description." };
+    if (value.amount <= 0) return { error: "Enter an amount greater than zero for this invoice." };
+    invoice = await saveMouInvoice(id, {
+      regenerate: true, description: next.publicDescription, editDescription: value.invoiceVersion,
+    }, { amount: next.amount, issueDate: value.invoiceIssueDate,
+      dueDate: value.invoiceDueDate === undefined ? undefined : value.invoiceDueDate || null,
+      expectedDate: next.dueDate, currency: next.currency, commit: savePayment });
+    if (invoice.error) return { error: invoice.error };
+  } else {
+    await db.transaction(savePayment);
+  }
 
   if (
     payment.invoiceTaskId &&
@@ -1271,10 +1421,10 @@ export async function updatePayment(
     entityType: "budget",
     entityId: payment.id,
     action: "payment_schedule",
-    summary: "Updated MoU payment schedule",
+    summary: "Updated expected payment",
   });
   await revalidate(payment.projectId);
-  return {};
+  return { ...(invoice ? { invoice } : {}) };
 }
 
 /** Void an issued invoice while retaining its immutable PDF and history. */
@@ -1334,7 +1484,7 @@ export async function sendInvoiceEmail(
     return { error: "Invoice PDF not found." };
   }
   if (invoice.sponsorshipId) await requireWorkspaceModule("sponsorships");
-  if ((invoice.groupId || invoice.sponsorshipId) && data.reviewedFileId !== attachmentFileId) return { error: "The invoice PDF changed. Refresh and review it before sending." };
+  if (data.reviewedFileId !== attachmentFileId) return { error: "The invoice PDF changed. Refresh and review it before sending." };
   if (invoice.status === "void") return { error: "A void invoice cannot be sent." };
   if (invoice.status !== "issued") return { error: "This invoice was already sent or delivery is unresolved. Check correspondence before sending again." };
   if (invoice.groupId && invoice.paymentId) {
@@ -1494,6 +1644,8 @@ async function createMouInvoiceTask(
       trigger: mouPayments.trigger,
       dueDate: mouPayments.dueDate,
       notes: mouPayments.notes,
+      fundingBasis: mouPayments.fundingBasis,
+      partnerName: mouPayments.partnerName,
       paidAt: mouPayments.paidAt,
       invoiceAssigneeId: mouPayments.invoiceAssigneeId,
       invoiceTaskId: mouPayments.invoiceTaskId,
@@ -1504,7 +1656,7 @@ async function createMouInvoiceTask(
     .innerJoin(projects, eq(projects.id, mouPayments.projectId))
     .where(eq(mouPayments.id, paymentId))
     .limit(1);
-  if (!pay) return { error: "Scheduled MoU payment not found." };
+  if (!pay) return { error: "Expected payment not found. Refresh the page and try again." };
   if (pay.paidAt) return { projectId: pay.projectId };
   if (pay.invoiceTaskId) return { projectId: pay.projectId };
   if (!pay.invoiceAssigneeId) {
@@ -1673,15 +1825,60 @@ export async function requestEpisodeMilestoneMouInvoices(
   return created;
 }
 
+/** Refresh only unshared, unsent invoices that use the project's default partner. */
+async function refreshFundingPartnerInvoices(projectId: string): Promise<string | null> {
+  try {
+    const rows = await db.select({ paymentId: invoices.mouPaymentId }).from(invoices)
+      .innerJoin(mouPayments, eq(mouPayments.id, invoices.mouPaymentId))
+      .where(and(eq(invoices.projectId, projectId), eq(invoices.status, "issued"),
+        isNull(invoices.sourceFileId), isNotNull(invoices.renderedFileId),
+        isNull(invoices.sharedMouGroupId), isNull(mouPayments.sharedMouGroupId),
+        isNull(mouPayments.paidAt), isNull(mouPayments.budgetInvoice)));
+    for (const row of rows) {
+      if (!row.paymentId) continue;
+      const result = await generateMouInvoice(row.paymentId, { regenerate: true });
+      if (result.error) throw new Error(result.error);
+    }
+    return null;
+  } catch {
+    return "Partner saved. An invoice could not be refreshed. Use Refresh invoice and review its PDF before sending.";
+  }
+}
+
 export async function generateMouInvoice(
   paymentId: string,
-  options?: { billingAddress?: string; description?: string; regenerate?: boolean }
-): Promise<{ error?: string; invoiceId?: string; invoiceNumber?: string }> {
+  options?: {
+    billingAddress?: string; description?: string; regenerate?: boolean;
+    editDescription?: { invoiceId: string; fileId: string };
+  }
+): Promise<{ error?: string; invoiceId?: string; invoiceNumber?: string; description?: string;
+  file?: { id: string; originalName: string; mimeType: string; sizeBytes: number } }> {
+  return saveMouInvoice(paymentId, options);
+}
+
+async function saveMouInvoice(
+  paymentId: string,
+  options?: {
+    billingAddress?: string; description?: string; regenerate?: boolean;
+    editDescription?: { invoiceId: string; fileId: string };
+  },
+  paymentEdit?: {
+    amount: string; currency: string; expectedDate: string | null;
+    issueDate?: string; dueDate?: string | null;
+    commit: (tx: Parameters<Parameters<typeof db.transaction>[0]>[0]) => Promise<void>;
+  }
+): Promise<{ error?: string; invoiceId?: string; invoiceNumber?: string; description?: string;
+  file?: { id: string; originalName: string; mimeType: string; sizeBytes: number } }> {
   const { user } = await requireRole("manager");
   const parsedAddress = z.string().trim().max(1000).optional().safeParse(options?.billingAddress);
   if (!parsedAddress.success) return { error: "Keep the billing address under 1,000 characters." };
   const parsedDescription = z.string().trim().min(1).max(2000).optional().safeParse(options?.description);
   if (!parsedDescription.success) return { error: "Enter an invoice description under 2,000 characters." };
+  const editDescription = options?.editDescription;
+  if (editDescription && (!options.regenerate || !parsedDescription.data ||
+    !z.object({ invoiceId: z.uuid(), fileId: z.uuid() }).safeParse(editDescription).success)) {
+    return { error: "Refresh the page and review the invoice before editing its description." };
+  }
   const [pay] = await db
     .select({
       id: mouPayments.id,
@@ -1710,8 +1907,8 @@ export async function generateMouInvoice(
     )
     .where(eq(mouPayments.id, paymentId))
     .limit(1);
-  if (!pay) return { error: "Scheduled MoU payment not found." };
-  if (Number(pay.amount) <= 0) {
+  if (!pay) return { error: "Expected payment not found. Refresh the page and try again." };
+  if (Number(paymentEdit?.amount ?? pay.amount) <= 0) {
     return { error: "Enter a payment amount before generating an invoice." };
   }
   if (pay.sharedMouGroupId) {
@@ -1738,8 +1935,11 @@ export async function generateMouInvoice(
   if (existing && !options?.regenerate) {
     return { invoiceId: existing.id, invoiceNumber: existing.invoiceNumber };
   }
-  if (options?.regenerate && (!pay.sharedMouGroupId || !existing || existing.status !== "issued" || existing.sourceFileId || !existing.renderedFileId)) {
+  if (options?.regenerate && (!existing || existing.status !== "issued" || existing.sourceFileId || !existing.renderedFileId)) {
     return { error: "Only an unsent, generated invoice can be regenerated. Sent, imported, or unresolved invoices keep their original PDF." };
+  }
+  if (editDescription && (existing?.id !== editDescription.invoiceId || existing.renderedFileId !== editDescription.fileId)) {
+    return { error: "The invoice changed. Refresh the page and review it before saving your description." };
   }
   const refreshing = options?.regenerate ? existing : undefined;
   const [voidedInvoice] = await db
@@ -1756,7 +1956,8 @@ export async function generateMouInvoice(
 
   const settings = await getOrCreateBudgetSettings(pay.projectId);
   const workspace = await getWorkspaceSettings();
-  const issuerSnapshot = getInvoiceIssuerSnapshot(workspace);
+  const issuerSnapshot = editDescription && refreshing?.issuerSnapshot
+    ? refreshing.issuerSnapshot : getInvoiceIssuerSnapshot(workspace);
   const missingIssuerFields = [
     !(issuerSnapshot.legalName?.trim() || issuerSnapshot.orgName?.trim()) && "organization name",
     !issuerSnapshot.contactEmail?.trim() && "public contact email",
@@ -1765,21 +1966,38 @@ export async function generateMouInvoice(
   if (missingIssuerFields.length) {
     return { error: `Complete your organization's ${missingIssuerFields.join(", ")} in Settings → Workspace before issuing an invoice.` };
   }
-  const issueDate = refreshing?.issueDate ?? todayIso();
-  const recipientEmail = pay.budgetInvoice
+  const issueDate = paymentEdit?.issueDate ?? refreshing?.issueDate ?? todayIso();
+  const invoiceDetails: Awaited<ReturnType<typeof getMouInvoiceDetails>> = editDescription && refreshing
+    ? { recipientName: refreshing.recipientName, billingAddress: refreshing.recipientAddress ?? "", description: refreshing.description }
+    : await getMouInvoiceDetails(pay);
+  const recipientEmail = editDescription && refreshing ? refreshing.recipientEmail : pay.budgetInvoice
     ? pay.budgetInvoice.recipientEmail
-    : pay.groupContactEmail?.trim() || settings.partnerContactEmail?.trim() || null;
-  const invoiceDetails = await getMouInvoiceDetails(pay);
+    : pay.groupContactEmail?.trim() || settings.partnerContactEmail?.trim() || invoiceDetails.contactEmail?.trim() || null;
   const recipientName = invoiceDetails.recipientName;
-  const recipientAddress = parsedAddress.data === undefined ? invoiceDetails.billingAddress || null : parsedAddress.data || null;
-  const description = parsedDescription.data ?? invoiceDetails.description;
+  // An invoice number is used once. Do not spend one on an invoice that cannot
+  // say who it bills.
+  if (!recipientName?.trim()) {
+    return {
+      error: pay.sharedMouGroupId
+        ? "Add the partner’s name to the agreement before you create this invoice."
+        : "Add the funding partner first, so the invoice shows who it is for. Open Budget → Quotation → Default funding partner.",
+    };
+  }
+  const recipientAddress = editDescription && refreshing ? refreshing.recipientAddress
+    : parsedAddress.data === undefined ? invoiceDetails.billingAddress || null : parsedAddress.data || null;
+  const description = parsedDescription.data ?? refreshing?.description ?? invoiceDetails.description;
   const coveredWorks = pay.sharedMouGroupId ? await db.select({ title: projects.title }).from(sharedMouMemberships)
     .innerJoin(projects, eq(projects.id, sharedMouMemberships.projectId))
     .where(and(eq(sharedMouMemberships.groupId, pay.sharedMouGroupId), eq(sharedMouMemberships.active, true))) : [];
   const invoiceNumber = refreshing?.invoiceNumber ?? await db.transaction((tx) => nextInvoiceNumber(tx));
-  const invoiceAmount = refreshing?.amount ?? pay.amount;
+  const invoiceAmount = paymentEdit?.amount ?? refreshing?.amount ?? pay.amount;
   const invoiceCurrency = refreshing?.currency ?? pay.currency;
-  const invoiceDueDate = refreshing ? refreshing.dueDate : pay.sharedMouGroupId ? pay.paymentDueDate : pay.dueDate ?? issueDate;
+  const invoiceDueDate = paymentEdit
+    ? paymentEdit.dueDate !== undefined ? paymentEdit.dueDate : paymentEdit.expectedDate
+    : refreshing ? refreshing.dueDate : pay.sharedMouGroupId ? pay.paymentDueDate : pay.dueDate ?? issueDate;
+  if (paymentEdit && refreshing?.currency !== paymentEdit.currency) {
+    return { error: "The payment and invoice currencies differ. Review them before saving." };
+  }
   let invoiceLogo: Buffer | null = null;
   if (issuerSnapshot.logoFileId) {
     const [logo] = await db.select({ r2Key: files.r2Key, mimeType: files.mimeType }).from(files).where(eq(files.id, issuerSnapshot.logoFileId)).limit(1);
@@ -1804,6 +2022,8 @@ export async function generateMouInvoice(
   const key = buildKey(fileId, filename);
   await putObject(key, pdf, "application/pdf");
   const invoice = await db.transaction(async (tx) => {
+    // Take the payment lock first, matching payment receipt workflows.
+    if (paymentEdit) await tx.select({ id: mouPayments.id }).from(mouPayments).where(eq(mouPayments.id, paymentId)).for("update");
     if (refreshing) {
       // Serialize against send claims and other regenerations. Keep the previous
       // file intact unless this exact unsent version is still current.
@@ -1812,6 +2032,10 @@ export async function generateMouInvoice(
         return null;
       }
     }
+    if (paymentEdit) await paymentEdit.commit(tx);
+    if (!editDescription) await findOrCreatePartnerContact(tx, {
+      org: recipientName, email: recipientEmail, billingAddress: recipientAddress, createdBy: user.id,
+    });
     await tx.insert(files).values({
       id: fileId,
       r2Key: key,
@@ -1822,11 +2046,12 @@ export async function generateMouInvoice(
       uploadedBy: user.id,
     });
     if (refreshing) {
-      await tx.update(invoices).set({ renderedFileId: fileId, recipientName, recipientAddress, description, issuerSnapshot })
+      await tx.update(invoices).set({ renderedFileId: fileId, recipientName, recipientEmail, recipientAddress, description, issuerSnapshot,
+        ...(paymentEdit ? { amount: invoiceAmount, issueDate, dueDate: invoiceDueDate } : {}) })
         .where(eq(invoices.id, refreshing.id));
       await tx.insert(activityLog).values({ actorId: user.id, projectId: pay.projectId,
         entityType: "budget", entityId: refreshing.id, action: "invoice",
-        summary: `Regenerated invoice ${invoiceNumber}`,
+        summary: paymentEdit ? `Updated payment and invoice ${invoiceNumber}` : editDescription ? `Updated description on invoice ${invoiceNumber}` : `Regenerated invoice ${invoiceNumber}`,
         data: { previousFileId: refreshing.renderedFileId, renderedFileId: fileId },
       });
       return { id: refreshing.id, invoiceNumber };
@@ -1874,6 +2099,8 @@ export async function generateMouInvoice(
     revalidatePath(`/agreements/${pay.sharedMouGroupId}`);
   }
   await revalidate(pay.projectId);
+  if (editDescription) return { invoiceId: invoice.id, invoiceNumber: invoice.invoiceNumber, description,
+    file: { id: fileId, originalName: filename, mimeType: "application/pdf", sizeBytes: pdf.length } };
   return { invoiceId: invoice.id, invoiceNumber: invoice.invoiceNumber };
 }
 
@@ -2062,7 +2289,7 @@ export async function markPaymentPaid(
       ...net,
       currency: settings.currency,
       receivedDate: received.receivedDate || todayIso(),
-      source: settings.partnerName || "MoU receivable",
+      source: pay.partnerName?.trim() || settings.partnerName || "Expected payment",
       note: pay.notes,
       recordedBy: user.id,
     })

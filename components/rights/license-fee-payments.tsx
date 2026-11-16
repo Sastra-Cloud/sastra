@@ -198,7 +198,7 @@ export function LicenseFeePayments({
               href={sourceHref}
               className="text-xs text-muted-foreground hover:text-foreground hover:underline"
             >
-              Set up in Rights
+              Set up in Rights &amp; MOUs
             </Link>
           ) : null}
         </div>

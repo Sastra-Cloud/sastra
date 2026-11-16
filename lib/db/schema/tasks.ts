@@ -98,6 +98,14 @@ export const taskQueues = pgTable("task_queues", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+/** Personal references; independent of assignment, status, and the shared queue. */
+export const taskPins = pgTable("task_pins", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  taskId: uuid("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => [uniqueIndex("task_pins_user_task_unique").on(t.userId, t.taskId)]);
+
 export const taskDependencies = pgTable(
   "task_dependencies",
   {

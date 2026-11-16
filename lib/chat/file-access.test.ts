@@ -15,11 +15,12 @@ function givenFile(
   attachments: Array<[string, string | null, string | null, ...(string | null)[]]>,
   role = "member",
   active = true,
-  purpose = "workspace_attachment"
+  purpose = "workspace_attachment",
+  projectAllowed = false
 ) {
   mocks.execute
     .mockResolvedValueOnce({ rows: [[purpose, "viewer", role, active]] })
-    .mockResolvedValueOnce({ rows: attachments.map((row) => [...row, ...Array(7 - row.length).fill(null)]) });
+    .mockResolvedValueOnce({ rows: attachments.map((row) => [row[0], row[1], projectAllowed, ...row.slice(2), ...Array(7 - row.length).fill(null)]) });
 }
 
 describe("file attachment authorization", () => {
@@ -46,7 +47,6 @@ describe("file attachment authorization", () => {
 
   it.each([
     ["project", null, null],
-    ["message", "project", null],
     ["message", "direct", "viewer"],
   ] as Array<[string, string | null, string | null]>)(
     "allows a separate authorized %s attachment to share the same file",
@@ -55,6 +55,13 @@ describe("file attachment authorization", () => {
       expect(await canAccessFile("shared-file", "viewer")).toBe(true);
     }
   );
+
+  it("requires current project membership for chat files even with another shared attachment", async () => {
+    givenFile([["message", "project", null], ["project", null, null]]);
+    expect(await canAccessFile("project-chat-file", "viewer")).toBe(false);
+    givenFile([["message", "project", null]], "member", true, "workspace_attachment", true);
+    expect(await canAccessFile("project-chat-file", "viewer")).toBe(true);
+  });
 
   it("preserves private-chat restrictions even when the file also has a shared attachment", async () => {
     givenFile([["message", "custom", null], ["project", null, null]], "manager");

@@ -54,7 +54,7 @@ export function ProjectCard({ p }: { p: ProjectListItem }) {
               </span>
             </ViewTransition>
             <div className="min-w-0 flex-1">
-              <h3 className="font-heading text-lg leading-tight font-semibold text-pretty group-hover:text-primary">
+              <h3 className="font-heading text-lg leading-tight font-semibold text-pretty wrap-anywhere group-hover:text-primary">
                 <ViewTransition
                   name={`project-title-${p.slug}`}
                   share={{

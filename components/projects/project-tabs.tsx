@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { TabScroller } from "@/components/cockpit";
-import { MotionTabLink } from "@/components/motion/tab-link";
+import { TabLink } from "@/components/tab-link";
 import { navigationIcons } from "@/components/navigation-icons";
 import { projectNavigation, navigationItemActive, type NavigationItem } from "@/lib/navigation";
 
@@ -18,9 +18,8 @@ export function ProjectTabs({ slug, kind, lectioEnabled = false }: { slug: strin
   }, [pathname]);
   const tab = (item: NavigationItem) => {
     const Icon = navigationIcons[item.icon];
-    return <MotionTabLink key={item.href} href={item.href}
-      active={item.href === `/projects/${slug}` ? pathname === item.href : navigationItemActive(pathname, item)}
-      layoutId="project-tab-active"><Icon className="size-4 shrink-0" />{item.label}</MotionTabLink>;
+    return <TabLink key={item.href} href={item.href}
+      active={item.href === `/projects/${slug}` ? pathname === item.href : navigationItemActive(pathname, item)}><Icon className="size-4 shrink-0" />{item.label}</TabLink>;
   };
   return (
     <div ref={rootRef} className="space-y-2">

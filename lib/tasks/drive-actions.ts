@@ -1,7 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { requireUser } from "@/lib/auth/guards";
@@ -14,7 +14,7 @@ import { revalidateForTask } from "./create";
 export type DriveAttachContext = {
   /** Picker API key + shared drive id are configured on the server. */
   configured: boolean;
-  /** The current user has linked a Google account. */
+  /** The current user's latest Google link includes Drive permission. */
   connected: boolean;
   apiKey: string | null;
   appId: string | null;
@@ -27,21 +27,30 @@ function projectNumberFromClientId(): string | null {
   return /^\d+$/.test(num) ? num : null;
 }
 
+function hasDrivePermission(scope: string | null | undefined): boolean {
+  // Better Auth stores comma-separated scopes; OAuth responses use spaces.
+  return (scope ?? "").split(/[\s,]+/).some((value) =>
+    value === "https://www.googleapis.com/auth/drive.file" ||
+    value === "https://www.googleapis.com/auth/drive"
+  );
+}
+
 export async function getDriveAttachContext(): Promise<DriveAttachContext> {
   const { user } = await requireUser();
   const apiKey = process.env.GOOGLE_PICKER_API_KEY || null;
   const sharedDriveId = process.env.GOOGLE_SHARED_DRIVE_ID || null;
-  const configured = !!(apiKey && sharedDriveId && process.env.GOOGLE_CLIENT_ID);
+  const configured = !!(apiKey && sharedDriveId && process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 
   const [acct] = await db
-    .select({ id: account.id })
+    .select({ scope: account.scope })
     .from(account)
     .where(and(eq(account.userId, user.id), eq(account.providerId, "google")))
+    .orderBy(desc(account.updatedAt))
     .limit(1);
 
   return {
     configured,
-    connected: !!acct,
+    connected: hasDrivePermission(acct?.scope),
     apiKey,
     appId: projectNumberFromClientId(),
     sharedDriveId,
@@ -50,12 +59,25 @@ export async function getDriveAttachContext(): Promise<DriveAttachContext> {
 
 /** Fresh Google access token for the Picker (refreshed server-side if expired). */
 export async function getDriveOAuthToken(): Promise<string | null> {
-  await requireUser();
+  const { user } = await requireUser();
   try {
+    // Better Auth selects by the local account row. A teammate can relink Google,
+    // so use the newest link, which holds the Drive scope they last granted.
+    const [google] = await db
+      .select({ id: account.id, scope: account.scope })
+      .from(account)
+      .where(and(eq(account.userId, user.id), eq(account.providerId, "google")))
+      .orderBy(desc(account.updatedAt))
+      .limit(1);
+    // A valid sign-in token can still lack Drive consent. Return the existing
+    // reconnect signal instead of opening Google's picker with that token.
+    if (!google || !hasDrivePermission(google.scope)) return null;
     const res = await auth.api.getAccessToken({
-      body: { providerId: "google" },
+      body: { accountId: google.id },
       headers: await headers(),
     });
+    // Better Auth can return an expired token when no refresh token is stored.
+    if (res?.accessTokenExpiresAt && new Date(res.accessTokenExpiresAt).getTime() <= Date.now()) return null;
     return res?.accessToken ?? null;
   } catch {
     return null;

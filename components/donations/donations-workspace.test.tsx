@@ -130,7 +130,7 @@ describe("saved donation allocations", () => {
       "Recomputed evidence",
       "Confirm allocation",
       "Reason for change",
-      "Exact MoU payment match",
+      "Exact expected payment match",
     ])
       expect(html).not.toContain(text);
   });

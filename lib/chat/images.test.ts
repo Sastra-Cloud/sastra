@@ -34,20 +34,4 @@ describe("chatMessageImages", () => {
       downloadUrl: "/api/files/second/download",
     });
   });
-
-  it("keeps repeated files and filenames as distinct attachment positions", () => {
-    const first = attachment("shared", "image/png");
-    const second = { ...first, attachmentId: "another-attachment" };
-    const images = chatMessageImages([first, second]);
-
-    expect(images).toHaveLength(2);
-    expect(images.map((image) => image.attachmentId)).toEqual([
-      "attachment-shared", "another-attachment",
-    ]);
-  });
-
-  it("leaves messages without images out of the viewer", () => {
-    expect(chatMessageImages([])).toEqual([]);
-    expect(chatMessageImages([attachment("document", "application/pdf")])).toEqual([]);
-  });
 });

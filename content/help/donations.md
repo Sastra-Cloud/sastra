@@ -2,7 +2,7 @@
 title: "Donation imports & project funding"
 category: "Publishing"
 roles: [admin]
-keywords: [donations, bulk review, confirm duplicates, mark duplicates, mark all as duplicates, undo duplicate, select donations, keep many unallocated, donation csv, import donations, monthly donations, csv format, new csv format, set up csv format, csv columns, column mapping, saved csv formats, forget format, fund manager export, donation detail, suggest with ai, donor, received funding, project funding, unallocated donation, full amount, use remaining, split donation, multiple projects, duplicate donation, import history, donation match, mou payment, apply donation to mou, link payment, amount difference, overpayment, different amount, reconcile donation, invoice match, budget match, security check, passkey, email code, retention, sensitive columns, source purge, sent invoice, sponsorship invoice, posted, saved project links, edit allocations]
+keywords: [donations, proposal match, promised donation, partner answer, link to proposal, expected payment, bulk review, confirm duplicates, mark duplicates, mark all as duplicates, undo duplicate, select donations, keep many unallocated, donation csv, import donations, monthly donations, csv format, new csv format, set up csv format, csv columns, column mapping, saved csv formats, forget format, fund manager export, donation detail, suggest with ai, donor, received funding, project funding, unallocated donation, full amount, use remaining, split donation, multiple projects, duplicate donation, import history, donation match, mou payment, apply donation to mou, link payment, amount difference, overpayment, different amount, reconcile donation, invoice match, budget match, security check, passkey, email code, retention, sensitive columns, source purge, sent invoice, sponsorship invoice, posted, saved project links, edit allocations]
 order: 62
 summary: "Admins import donation CSV files from any giving platform, save new CSV formats, match donations to sent invoices, sponsorships, and project payments, then review saved funding links."
 ---
@@ -123,9 +123,24 @@ projects using:
 2. sponsorship invoice lines, including invoices covering several books;
 3. an existing Shared MoU and its reviewed project allocation;
 4. several unpaid invoices or project payments that add up to the donation;
-5. the donor's saved funding-partner name;
-6. project titles found in the donation note; and
-7. earlier allocations confirmed for the same donor.
+5. a proposal sent to the donor, when the partner answered that they will give
+   a donation or the proposal is still waiting for an answer;
+6. the donor's saved funding-partner name;
+7. project titles found in the donation note; and
+8. earlier allocations confirmed for the same donor.
+
+An exact unpaid expected payment can suggest the project even when no funding
+partner name is saved. Sastra fills in the project, amount, and payment link
+when only one payment matches the amount and currency. This comes before weaker
+suggestions from earlier donations or unanswered proposals. A matching donor
+name or project title in the note provides stronger evidence. A project named
+in the note takes priority over an unrelated amount-only match.
+
+When several expected payments match, Sastra uses the donor name and project
+titles in the note to narrow the choices. If they remain tied, review the
+project links and enter the amounts. Sastra does not choose the first payment.
+Shared MoU matches keep their reviewed project split. A payment's own saved
+partner name takes priority over the project's default funding partner.
 
 Suggestions are evidence, not approval. Sastra never posts a donation to a
 project without an admin selecting **Confirm allocation**.
@@ -163,10 +178,28 @@ until those uses are reversed or enough replacement funding remains.
 ## Link a scheduled payment
 
 When an allocation has the same project, amount, and currency as exactly one
-unpaid project MoU payment, Sastra shows that exact match in the review row.
-Confirming the allocation marks the MoU payment received. Choose **Keep as
-donation only** first when the gift belongs to the project but does not settle
-that MoU payment.
+unpaid expected payment for the project, Sastra shows that exact match in the
+review row. Confirming the allocation marks the expected payment received.
+Choose **Keep as donation only** first when the gift belongs to the project but
+does not settle that expected payment.
+
+## Donations that answer a proposal
+
+Some partners reply to a proposal by giving through the giving platform, with
+no MoU and no invoice. A manager records this on the project as **They will
+give a donation** (see **Budget & quotation → Record the partner’s answer**).
+
+When the donor name matches the partner on a proposal, Sastra suggests that
+project. The match is **Strong** when the partner promised a donation and the
+amount is the same. It is **Possible** when the amount differs or the proposal
+is still waiting for an answer. When one gift covers several books and the
+promised donations add up to the gift, Sastra suggests the split. Otherwise it
+lists the projects and you enter each amount.
+
+After you select **Confirm allocation**, the project’s Budget shows the money
+on that proposal’s row under **Received**. Sastra links the money only when
+exactly one proposal on the project matches the donor. A manager can change or
+remove the link under **Budget → Cash flow**. The link changes no amounts.
 
 ## Split one donation across projects
 
@@ -213,11 +246,11 @@ project's Budget page. They are locked there so a manager cannot accidentally
 change the import record. Admins correct imported allocations from the
 **Donations** page, where Sastra keeps the reason and allocation history.
 
-A linked MoU payment is also marked received. Matched invoices are marked
+A linked expected payment is also marked received. Matched invoices are marked
 received when their full balance is paid.
 
 For a posted allocation linked only to the project, an admin can choose
-**Link to MoU payment** beneath its receipt in **Budget → Cash flow**.
+**Link to expected payment** beneath its receipt in **Budget → Cash flow**.
 Choose the unpaid scheduled payment and check the expected amount, received
 amount, and difference. Payments must use the same project, print run, and
 currency. Shared MoUs and existing invoice matches stay in **Donations** for review.
@@ -225,6 +258,9 @@ currency. Shared MoUs and existing invoice matches stay in **Donations** for rev
 If the amounts differ, add a reason explaining why this completes the payment.
 Then choose **Confirm as received**. Leave a part payment open until it is complete.
 Sastra saves your reason and the difference in donation history.
+
+The expected payment does not need an invoice. If it has **no amount yet**,
+linking saves the amount received as its amount. Donation history records this.
 
 The existing receipt, available net amount, and original expected payment stay
 unchanged. No second receipt is created. The payment schedule shows the actual

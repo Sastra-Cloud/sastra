@@ -46,24 +46,22 @@ export async function getMyOpenStandup(userId: string) {
 
 export async function getStandupView(now = new Date()): Promise<StandupViewItem[]> {
   const all = await db.select().from(standups).orderBy(standups.name);
-  const out: StandupViewItem[] = [];
-
-  for (const s of all) {
+  return Promise.all(all.map(async (s) => {
     const localDate = formatInTimeZone(now, s.timezone, "yyyy-MM-dd");
-    const runs = await db
+    const [runs, [report]] = await Promise.all([db
       .select({ userName: user.name, status: standupRuns.status })
       .from(standupRuns)
       .innerJoin(user, eq(user.id, standupRuns.userId))
-      .where(and(eq(standupRuns.standupId, s.id), eq(standupRuns.runDate, localDate)));
-
-    const [report] = await db
+      .where(and(eq(standupRuns.standupId, s.id), eq(standupRuns.runDate, localDate))),
+      db
       .select({ runDate: standupReports.runDate, summary: standupReports.summary })
       .from(standupReports)
       .where(eq(standupReports.standupId, s.id))
       .orderBy(desc(standupReports.runDate))
-      .limit(1);
+      .limit(1),
+    ]);
 
-    out.push({
+    return {
       id: s.id,
       name: s.name,
       timezone: s.timezone,
@@ -76,7 +74,6 @@ export async function getStandupView(now = new Date()): Promise<StandupViewItem[
               (report.summary as { people?: ReportPerson[] })?.people ?? [],
           }
         : null,
-    });
-  }
-  return out;
+    };
+  }));
 }

@@ -117,7 +117,9 @@ export async function createRunFromTextQuote(input: {
     .values({
       projectId: input.projectId,
       contactId: input.contactId ?? settings.defaultContactId,
-      title: trimSpec(parsed.title) ?? project.title,
+      // Email text is not a reliable source for the name of the run. This title
+      // also appears in print payment and wire request wording.
+      title: project.title,
       status: "quote_received",
       requestedQuantities: quantities.length
         ? quantities

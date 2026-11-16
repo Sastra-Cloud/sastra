@@ -43,6 +43,7 @@ import { REVIEW_SLA_DAYS, TASK_WIP_LIMITS, reviewAgeDays } from "@/lib/flow";
 import { dueLabel } from "@/lib/format";
 import { formatDuration } from "@/lib/time";
 import { cn } from "@/lib/utils";
+import { TaskPinButton } from "./pinned-tasks-provider";
 
 type Status = (typeof TASK_STATUS_ORDER)[number];
 
@@ -320,6 +321,7 @@ function BoardTask({
         <div className="min-w-0 flex-1">
           <TaskCardContent task={task} blockedBy={blockedBy} onOpen={onOpen} />
           <div className="mt-3 flex items-center justify-between gap-2 border-t pt-2">
+            <TaskPinButton task={task} />
             <Select
               value={task.status}
               disabled={protectedTask}

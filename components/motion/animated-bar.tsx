@@ -1,14 +1,10 @@
-"use client";
-
-import { motion, useReducedMotion } from "motion/react";
-
 import { cn } from "@/lib/utils";
-
-const EASE = [0.22, 1, 0.36, 1] as const;
 
 /**
  * A progress bar that renders its initial value immediately and animates later
- * value changes. Reduced-motion users get an instant update.
+ * value changes. The fill is full width and slides with `transform`, so a
+ * change never triggers layout and the transition runs off the main thread.
+ * The global reduced-motion rule makes the update instant.
  */
 export function AnimatedBar({
   value,
@@ -22,9 +18,9 @@ export function AnimatedBar({
   className?: string;
   /** Classes for the track element. */
   trackClassName?: string;
+  /** Seconds to wait before a value change animates. */
   delay?: number;
 }) {
-  const reduce = useReducedMotion();
   const pct = Math.max(0, Math.min(100, value));
 
   return (
@@ -34,11 +30,15 @@ export function AnimatedBar({
         trackClassName,
       )}
     >
-      <motion.div
-        className={cn("h-full rounded-full bg-success", className)}
-        initial={false}
-        animate={{ width: `${pct}%` }}
-        transition={{ duration: reduce ? 0 : 0.22, ease: EASE, delay: reduce ? 0 : delay }}
+      <div
+        className={cn(
+          "h-full w-full rounded-full bg-success transition-transform duration-[220ms] ease-settle",
+          className,
+        )}
+        style={{
+          transform: `translateX(${pct - 100}%)`,
+          transitionDelay: delay ? `${delay}s` : undefined,
+        }}
       />
     </div>
   );

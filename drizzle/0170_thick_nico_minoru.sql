@@ -1,0 +1,1 @@
+ALTER TABLE "files" ADD COLUMN "audio_metadata" jsonb;

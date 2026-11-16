@@ -94,6 +94,20 @@ export const projectManagers = pgTable(
   (t) => [uniqueIndex("project_managers_project_user_unique").on(t.projectId, t.userId)]
 );
 
+/** Project access is independent of production jobs (project_members). */
+export const projectPeople = pgTable("project_people", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  addedBy: text("added_by").references(() => user.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => [uniqueIndex("project_people_project_user_unique").on(t.projectId, t.userId)]);
+
+/** Saved roster copied into new projects; never a live access grant. */
+export const defaultProjectPeople = pgTable("default_project_people", {
+  userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
+});
+
 /** Who is on a project and in which role(s). A person may hold several roles. */
 export const projectMembers = pgTable(
   "project_members",

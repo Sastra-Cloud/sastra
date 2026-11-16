@@ -2,7 +2,7 @@
 
 import { FileLink } from "@/components/files/file-link";
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowRight, Check, Download, Eye, EyeOff, Sparkles, Undo2 } from "lucide-react";
 import { toast } from "sonner";
@@ -19,7 +19,7 @@ import {
 } from "@/lib/budget/actions";
 import { applySuggestedPartnerRates, undoSuggestedPartnerRates } from "@/lib/budget/partner-rate-actions";
 import { savePartnerQuote } from "@/lib/budget/partner-quote-save";
-import type { PartnerQuotePresentation as Presentation } from "@/lib/budget/presentation-input";
+import type { BudgetPresentationInput, PartnerQuotePresentation as Presentation } from "@/lib/budget/presentation-input";
 import {
   expectedNetCents,
   grossTargetCents,
@@ -33,8 +33,15 @@ import { HelpTip } from "@/components/ui/help-tip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { fundPartnerPrintOptionsForRates, partnerBaseItems, partnerQuotePrices, type PartnerPrintCandidate, type PartnerPrintOption } from "@/lib/budget/print-options";
+import { PartnerPrintOptions } from "./partner-print-options";
 
 type LineDraft = Partial<Pick<PartnerLine, "partnerLabel" | "partnerUnitPrice">>;
+
+/** What the last "Apply fee coverage" changed, so it can be put back. */
+type CoverageUndo = { rates: PartnerRateChange[]; printOptions: PartnerPrintOption[] };
+
+const sameValue = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
 
 function money(cents: number, currency: string) {
@@ -58,6 +65,7 @@ export function PartnerQuotePanel({
   onUpdateRates,
   isLinePending,
   linesPending,
+  printCandidates = [],
 }: {
   projectId: string;
   slug: string;
@@ -74,6 +82,7 @@ export function PartnerQuotePanel({
   ) => void;
   isLinePending: (id: string) => boolean;
   linesPending: boolean;
+  printCandidates?: PartnerPrintCandidate[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -81,15 +90,17 @@ export function PartnerQuotePanel({
   const [previousPresentationVersion, setPreviousPresentationVersion] = useState(presentationVersion);
   const [presentation, setPresentation] = useState(initialPresentation);
   const [savedPresentation, setSavedPresentation] = useState(initialPresentation);
+  // Fee coverage saves in steps; a refresh between them must not show old prices.
+  const [applyingCoverage, setApplyingCoverage] = useState(false);
   // A line save refreshes props too. Equal settings must not erase another draft.
   if (presentationVersion !== previousPresentationVersion) {
     setPreviousPresentationVersion(presentationVersion);
-    setPresentation(initialPresentation);
+    if (!applyingCoverage) setPresentation(initialPresentation);
     setSavedPresentation(initialPresentation);
   }
   const [lineDrafts, setLineDrafts] = useState<Record<string, LineDraft>>({});
-  const [undoRates, setUndoRates] = useState<PartnerRateChange[] | null>(null);
-  const saving = pending || linesPending;
+  const [coverageUndo, setCoverageUndo] = useState<CoverageUndo | null>(null);
+  const saving = pending || linesPending || applyingCoverage;
   const hasLineDrafts = items.some((item) => {
     if (!item.partnerVisible) return false;
     const draft = lineDrafts[item.id];
@@ -102,18 +113,24 @@ export function PartnerQuotePanel({
     () => new Set(items.filter((item) => item.partnerVisible).map((item) => item.id))
   );
 
-  const internalCents = useMemo(
-    () => items.reduce((sum, item) => sum + Math.round(Number(item.amount) * 100), 0),
-    [items]
-  );
-  const itemizedCents = partnerQuoteTotalCents(items);
+  const printOptions = presentation?.mode === "itemized" ? presentation.printOptions ?? [] : [];
+  const baseItems = partnerBaseItems(items, printOptions);
+  const printingBaseItems = items.filter((item) => item.category !== "print_ship");
+  // Lines whose public rate "Apply fee coverage" may change.
+  const adjustIds = baseItems
+    .filter((item) => item.partnerVisible && selected.has(item.id) && Number(item.amount) > 0)
+    .map((item) => item.id);
+  const printingBaseCents = partnerQuoteTotalCents(printingBaseItems);
+  const internalPrintingBaseCents = printingBaseItems.reduce((sum, item) => sum + Math.round(Number(item.amount) * 100), 0);
+  const internalCents = baseItems.reduce((sum, item) => sum + Math.round(Number(item.amount) * 100), 0);
+  const { baseCents: itemizedCents, minimumCents, maximumCents } = partnerQuotePrices(items, printOptions);
   const perCopyCents =
     Math.max(0, presentation?.perCopyQuantity ?? 0) *
     Math.round(Number(presentation?.perCopyUnitPrice ?? 0) * 100);
   const quoteCents =
-    presentation?.mode === "per_copy" ? perCopyCents : itemizedCents;
+    presentation?.mode === "per_copy" ? perCopyCents : minimumCents;
   const expectedCents = expectedNetCents(
-    quoteCents,
+    printOptions.length ? itemizedCents : quoteCents,
     presentation?.deductionBps ?? 0
   );
   const targetCents = grossTargetCents(
@@ -121,11 +138,17 @@ export function PartnerQuotePanel({
     presentation?.deductionBps ?? 0
   );
   const reserveCents = targetCents - internalCents;
-  const coverageCents = expectedCents - internalCents;
-  const presentationDirty =
-    JSON.stringify(presentation) !== JSON.stringify(savedPresentation);
+  const coverageCents = printOptions.length
+    ? Math.min(...printOptions.map((option) => expectedNetCents(itemizedCents + option.partnerAmountCents, presentation?.deductionBps ?? 0) - internalCents - option.printingCostCents))
+    : expectedCents - internalCents;
+  const presentationDirty = !sameValue(presentation, savedPresentation);
+  const feePercent = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format((presentation?.deductionBps ?? 0) / 100);
   const quoteNotSaved = presentationDirty || saving || hasLineDrafts;
-  const fundingTargetDirty = presentation?.deductionBps !== savedPresentation?.deductionBps;
+  const coverageBlocked = hasLineDrafts
+    ? "Finish the line you are editing first."
+    : adjustIds.length === 0 && printOptions.length === 0
+      ? "Mark at least one visible line “adjust” first."
+      : null;
 
   function run<Result>(
     action: () => Promise<Result>,
@@ -157,21 +180,23 @@ export function PartnerQuotePanel({
     setPresentation({ ...presentation, ...patch });
   }
 
+  function quoteInput(value: Presentation): BudgetPresentationInput {
+    return {
+      printRunId,
+      mode: value.mode,
+      deductionPercent: value.deductionBps / 100,
+      publicDescription: value.publicDescription,
+      perCopyQuantity: value.perCopyQuantity,
+      printOptions: value.printOptions ?? [],
+      perCopyUnitPrice:
+        value.perCopyUnitPrice == null ? null : Number(value.perCopyUnitPrice),
+    };
+  }
+
   function persistPresentation() {
     if (!presentation) return;
     run(
-      () =>
-        savePartnerQuote(slug, {
-          printRunId,
-          mode: presentation.mode,
-          deductionPercent: presentation.deductionBps / 100,
-          publicDescription: presentation.publicDescription,
-          perCopyQuantity: presentation.perCopyQuantity,
-          perCopyUnitPrice:
-            presentation.perCopyUnitPrice == null
-              ? null
-              : Number(presentation.perCopyUnitPrice),
-        }),
+      () => savePartnerQuote(slug, quoteInput(presentation)),
       "Partner quote saved",
       (saved) => { setPresentation(saved); setSavedPresentation(saved); }
     );
@@ -194,39 +219,138 @@ export function PartnerQuotePanel({
     });
   }
 
-  function changeFundingRates(undo: boolean) {
-    if (!presentation || saving || hasLineDrafts || (undo ? !undoRates : fundingTargetDirty)) return;
+  /**
+   * One action for the whole quote: set the rates of the lines marked "adjust",
+   * price every print quantity against those rates, and save. Line rates are
+   * calculated on the server from the saved fee, so unsaved quote settings are
+   * saved first. Each saved step leaves a quote that still covers its costs.
+   */
+  function changeFeeCoverage(undoing: boolean) {
+    if (!presentation || saving || hasLineDrafts) return;
+    if (undoing ? !coverageUndo || presentationDirty : coverageBlocked) return;
+    const draft = presentation;
+    const draftOptions = printOptions;
+    const settingsUnsaved = presentationDirty;
+    let rates: Record<string, string | null> = {};
     try {
-      const rates = undo
-        ? Object.fromEntries(undoRates!.map((change) => [change.id, change.previousPartnerUnitPrice]))
-        : suggestPartnerRates(items, selected, presentation.deductionBps);
-      // These drafts equal saved values (dirty drafts block the action). Let the
-      // new rates render immediately instead of keeping equal old input values.
-      setLineDrafts((current) => Object.fromEntries(Object.entries(current).map(([id, draft]) => {
-        if (!Object.hasOwn(rates, id)) return [id, draft];
-        const remaining = { ...draft };
-        delete remaining.partnerUnitPrice;
-        return [id, remaining];
-      })));
-      onUpdateRates(
-        rates,
-        () => undo
-          ? undoSuggestedPartnerRates(projectId, printRunId, undoRates!)
-          : applySuggestedPartnerRates(projectId, printRunId, [...selected]),
-        (result) => {
-          if (undo) setUndoRates(null);
-          else if (result.changes.length) setUndoRates(result.changes);
-          toast.success(undo ? "Previous partner rates restored" : result.changes.length ? "Funding target applied" : "Partner rates already match the funding target");
-        }
-      );
+      if (undoing) rates = Object.fromEntries(coverageUndo!.rates.map((change) => [change.id, change.previousPartnerUnitPrice]));
+      else if (adjustIds.length) rates = suggestPartnerRates(baseItems, new Set(adjustIds), draft.deductionBps);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not calculate partner rates.");
+      return;
     }
+    const withOptions = (base: Presentation, applied: Record<string, string | null>): Presentation => {
+      if (!draftOptions.length) return base;
+      const previous = new Map(coverageUndo?.printOptions.map((option) => [option.sourceQuoteId, option.partnerAmountCents]));
+      return {
+        ...base,
+        printOptions: undoing
+          ? draftOptions.map((option) => ({ ...option, partnerAmountCents: previous.get(option.sourceQuoteId) ?? option.partnerAmountCents }))
+          : fundPartnerPrintOptionsForRates(items, draftOptions, applied, draft.deductionBps),
+      };
+    };
+    const settle = (changes: PartnerRateChange[], final: Presentation) => {
+      if (undoing) {
+        setCoverageUndo(null);
+        toast.success("Previous rates and printing prices restored");
+        return;
+      }
+      const changed = changes.length > 0 || !sameValue(final.printOptions ?? [], draftOptions);
+      if (changed) setCoverageUndo({ rates: changes, printOptions: draftOptions });
+      toast.success(changed ? "Fee coverage applied and saved" : settingsUnsaved ? "Partner quote saved. It already covers the fee." : "The quote already covers the fee");
+    };
+
+    const optimistic = withOptions(draft, rates);
+    if (Object.keys(rates).length === 0) {
+      // Only print quantities (or quote settings) change: one save.
+      if (sameValue(optimistic, savedPresentation)) {
+        settle([], optimistic);
+        return;
+      }
+      setPresentation(optimistic);
+      setApplyingCoverage(true);
+      startTransition(async () => {
+        try {
+          const saved = await savePartnerQuote(slug, quoteInput(optimistic));
+          setPresentation(saved);
+          setSavedPresentation(saved);
+          settle([], saved);
+          router.refresh();
+        } catch (error) {
+          setPresentation(draft);
+          toast.error(error instanceof Error ? error.message : "Could not save.");
+        } finally {
+          setApplyingCoverage(false);
+        }
+      });
+      return;
+    }
+
+    setPresentation(optimistic);
+    setApplyingCoverage(true);
+    // These drafts equal saved values (dirty drafts block the action). Let the
+    // new rates render immediately instead of keeping equal old input values.
+    setLineDrafts((current) => Object.fromEntries(Object.entries(current).map(([id, lineDraft]) => {
+      if (!Object.hasOwn(rates, id)) return [id, lineDraft];
+      const remaining = { ...lineDraft };
+      delete remaining.partnerUnitPrice;
+      return [id, remaining];
+    })));
+    let final = optimistic;
+    let pricesSaved = true;
+    onUpdateRates(
+      rates,
+      async () => {
+        let base = draft;
+        try {
+          if (settingsUnsaved) {
+            base = await savePartnerQuote(slug, quoteInput(draft));
+            setSavedPresentation(base);
+          }
+          const result = undoing
+            ? await undoSuggestedPartnerRates(projectId, printRunId, coverageUndo!.rates)
+            : await applySuggestedPartnerRates(projectId, printRunId, adjustIds);
+          if ("error" in result) {
+            setPresentation(base);
+            return result;
+          }
+          // Price quantities from the rates the server saved, not the estimate.
+          final = withOptions(base, result.rates);
+          if (!sameValue(final, base)) {
+            try {
+              final = await savePartnerQuote(slug, quoteInput(final));
+            } catch {
+              pricesSaved = false;
+              final = base;
+            }
+          }
+          setPresentation(final);
+          setSavedPresentation(final);
+          return result;
+        } catch (error) {
+          setPresentation(base);
+          throw error;
+        } finally {
+          setApplyingCoverage(false);
+        }
+      },
+      (result) => {
+        if (pricesSaved) {
+          settle(result.changes, final);
+          return;
+        }
+        if (undoing) setCoverageUndo(null);
+        else if (result.changes.length) setCoverageUndo({ rates: result.changes, printOptions: draftOptions });
+        toast.error(undoing
+          ? "The line rates were restored, but the printing prices were not saved. Check the printing prices."
+          : "The line rates were saved, but the printing prices were not. Apply fee coverage again.");
+      }
+    );
   }
 
   if (!presentation) {
     return (
-      <Card className="border-dashed">
+      <Card id="partner-quote" className="scroll-mt-32 border-dashed">
         <CardContent className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="max-w-2xl">
             <h3 className="font-semibold">Set up the partner quote</h3>
@@ -255,10 +379,10 @@ export function PartnerQuotePanel({
   }
 
   return (
-    <Card>
-      <CardContent className="space-y-5 py-5">
+    <Card id="partner-quote" className="scroll-mt-32">
+      <CardContent className="@container/print-options space-y-5 py-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
+          <div className="min-w-0 max-w-3xl">
             <h3 className="flex items-center gap-1.5 font-semibold">
               Partner quote
               <HelpTip label="About the partner quote">
@@ -268,20 +392,22 @@ export function PartnerQuotePanel({
               </HelpTip>
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Project costs are {money(internalCents, currency)}. The{" "}
+              {printOptions.length ? "Shared project costs before printing are" : "Project costs are"} {money(internalCents, currency)}. The{" "}
               {(presentation.deductionBps / 100)
                 .toFixed(2)
                 .replace(/\.?0+$/, "")}
               % organization donation fee adds internal coverage of{" "}
-              {money(reserveCents, currency)}, making the minimum funding target{" "}
+              {money(reserveCents, currency)}, making the {printOptions.length ? "shared-cost funding target" : "minimum funding target"}{" "}
               {money(targetCents, currency)}.
             </p>
           </div>
-          <div className="rounded-lg border bg-muted/30 px-3 py-2 text-right">
-            <p className="text-xs text-muted-foreground">Partner total</p>
+          <div className="shrink-0 rounded-lg border bg-muted/30 px-3 py-2 text-right">
+            <p className="text-xs text-muted-foreground">{printOptions.length ? "Project price by print quantity" : "Partner total"}</p>
             <p className="text-lg font-semibold tabular-nums">
               {money(quoteCents, currency)}
+              {printOptions.length > 1 && maximumCents !== minimumCents ? <>–{money(maximumCents, currency)}</> : null}
             </p>
+            {printOptions.length ? <p className="text-xs text-muted-foreground">All {printOptions.length} quantity {printOptions.length === 1 ? "option is" : "options are"} included</p> : null}
           </div>
         </div>
 
@@ -402,38 +528,13 @@ export function PartnerQuotePanel({
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm text-muted-foreground">
-                Choose visible lines and edit the partner-safe wording and rates.
-              </p>
-              {canEdit ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  {undoRates ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={saving || hasLineDrafts}
-                      onClick={() => changeFundingRates(true)}
-                      title="Restore partner rates from before the last funding target application"
-                    >
-                      <Undo2 className="size-4" />
-                      Undo funding target
-                    </Button>
-                  ) : null}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={saving || selected.size === 0 || hasLineDrafts || fundingTargetDirty}
-                    onClick={() => changeFundingRates(false)}
-                  >
-                    <Sparkles className="size-4" />
-                    Apply funding target to selected lines
-                  </Button>
-                </div>
-              ) : null}
-            </div>
+            {printOptions.length ? <div><h4 className="font-semibold">Shared project costs</h4><p className="mt-1 text-sm text-muted-foreground">These lines apply to every print quantity. Printing is priced separately below.</p></div> : null}
+            <p className="text-sm text-muted-foreground">
+              Choose visible lines and edit the partner-safe wording and rates.
+              {canEdit ? " Fee coverage changes the rate of each line marked “adjust”." : null}
+            </p>
             <div className="divide-y overflow-hidden rounded-lg border">
-              {items.map((item) => {
+              {baseItems.map((item) => {
                 const publicRate = item.partnerUnitPrice ?? item.unitPrice;
                 const draft = lineDrafts[item.id];
                 const linePending = isLinePending(item.id);
@@ -523,34 +624,82 @@ export function PartnerQuotePanel({
                         {money(amount, currency)}
                       </span>
                     </div>
+                    {item.category === "print_ship" && printCandidates.length > 1 && !printOptions.length ? <p className="text-xs text-muted-foreground md:col-span-4">This is the working budget estimate. <a href="#partner-print-options" className="font-medium underline underline-offset-4">Add all printer quantities as separate partner options below.</a></p> : null}
                   </div>
                 );
               })}
             </div>
+            {printOptions.length ? <div className="flex items-center justify-between gap-3 px-3 text-sm"><span className="font-medium">Shared costs subtotal</span><span className="font-semibold tabular-nums">{money(itemizedCents, currency)}</span></div> : null}
           </div>
         )}
 
+        {presentation.mode === "itemized" && (canEdit || printOptions.length > 0) ? <PartnerPrintOptions
+          options={printOptions} candidates={printCandidates} currency={currency}
+          baseCents={printingBaseCents} internalBaseCents={internalPrintingBaseCents} deductionBps={presentation.deductionBps}
+          disabled={saving} canEdit={canEdit} onChange={(options) => patchPresentation({ printOptions: options })}
+        /> : null}
+
         <div
+          id="partner-fee-coverage"
           className={cn(
-            "rounded-lg border px-3 py-2 text-sm",
+            "flex scroll-mt-32 flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-lg border px-3 py-2 text-sm",
             coverageCents < 0
               ? "border-amber-400/70 bg-amber-50 text-amber-950 dark:bg-amber-950/20 dark:text-amber-100"
               : "border-emerald-300 bg-emerald-50 text-emerald-950 dark:bg-emerald-950/20 dark:text-emerald-100"
           )}
         >
-          <span className="flex items-start gap-2">
-            {coverageCents < 0 ? (
-              <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-            ) : (
-              <Check className="mt-0.5 size-4 shrink-0" />
-            )}
-            Partner quote {money(quoteCents, currency)} → expected available{" "}
-            {money(expectedCents, currency)} → internal costs{" "}
-            {money(internalCents, currency)}.
-            {coverageCents < 0
-              ? ` Short by ${money(Math.abs(coverageCents), currency)}.`
-              : ` Covers costs by ${money(coverageCents, currency)}.`}
-          </span>
+          <div className="min-w-0 flex-1 basis-80 space-y-1">
+            <p className="flex items-start gap-2">
+              {coverageCents < 0 ? (
+                <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+              ) : (
+                <Check className="mt-0.5 size-4 shrink-0" />
+              )}
+              <span>
+                {printOptions.length ? coverageCents < 0
+                  ? `At least one quantity is short after the ${feePercent}% organization donation fee.`
+                  : `Every included quantity covers its printing and shared project costs after the ${feePercent}% organization donation fee.`
+                  : <>Partner quote {money(quoteCents, currency)} → expected available {money(expectedCents, currency)} → internal costs {money(internalCents, currency)}.
+                    {coverageCents < 0 ? ` Short by ${money(Math.abs(coverageCents), currency)}.` : ` Covers costs by ${money(coverageCents, currency)}.`}</>}
+              </span>
+            </p>
+            {canEdit && presentation.mode === "itemized" ? (
+              <p className="pl-6 text-xs opacity-80">
+                {coverageBlocked ?? (
+                  printOptions.length
+                    ? adjustIds.length
+                      ? "Apply fee coverage sets the rates of lines marked “adjust” and every printing price, then saves the quote."
+                      : "Apply fee coverage sets every printing price, then saves the quote. Mark lines “adjust” to change their rates too."
+                    : "Apply fee coverage sets the rates of lines marked “adjust”, then saves the quote."
+                )}
+              </p>
+            ) : null}
+          </div>
+          {canEdit && presentation.mode === "itemized" ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {coverageUndo ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={saving || hasLineDrafts || presentationDirty}
+                  onClick={() => changeFeeCoverage(true)}
+                  title={presentationDirty ? "Save the partner quote first" : "Restore the rates and printing prices from before fee coverage was applied"}
+                >
+                  <Undo2 className="size-4" />
+                  Undo fee coverage
+                </Button>
+              ) : null}
+              <Button
+                variant={coverageCents < 0 ? "default" : "outline"}
+                size="sm"
+                disabled={saving || Boolean(coverageBlocked)}
+                onClick={() => changeFeeCoverage(false)}
+              >
+                <Sparkles className="size-4" />
+                Apply {feePercent}% fee coverage
+              </Button>
+            </div>
+          ) : null}
         </div>
         {canEdit ? (
           <div className="flex flex-col gap-3 border-t pt-4 xl:flex-row xl:items-center xl:justify-between">
@@ -612,12 +761,12 @@ export function PartnerQuotePanel({
               )}
               {quoteNotSaved || quoteCents <= 0 ? (
                 <Button size="sm" disabled>
-                  Continue to partner email
+                  Continue to partner proposals
                   <ArrowRight className="size-4" />
                 </Button>
               ) : (
-                <a href="#partner-email" className={buttonVariants({ size: "sm" })}>
-                  Continue to partner email
+                <a href="#partner-proposals" className={buttonVariants({ size: "sm" })}>
+                  Continue to partner proposals
                   <ArrowRight className="size-4" />
                 </a>
               )}

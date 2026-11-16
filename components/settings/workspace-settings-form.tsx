@@ -2,7 +2,7 @@
 
 import { uploadFile } from "@/lib/files/upload-client";
 import { FieldError, FieldErrorsContext } from "./field-errors";
-import { useContext, useState, useTransition } from "react";
+import { useContext, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bot,
@@ -18,12 +18,15 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { DocumentColorsFields } from "./document-colors-fields";
 import { TimezoneControl } from "./timezone-control";
 import { Label } from "@/components/ui/label";
 import { updateWorkspaceSettings } from "@/lib/workspace/actions";
 import type { WorkspaceSettings } from "@/lib/workspace/queries";
 import { CapacityGroupsEditor } from "@/components/settings/capacity-groups-editor";
 import { DEFAULT_CAPACITY_GROUPS, normalizeGroups, type CapacityGroup } from "@/lib/planning/groups";
+import { WorkspaceBrandingCard } from "./workspace-branding-card";
+import { InvoiceSequenceCard } from "./invoice-sequence-card";
 
 const selectClass = "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50";
 const textareaClass = "min-h-24 rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50";
@@ -49,12 +52,17 @@ function Field({ label, name, defaultValue, placeholder, type = "text" }: { labe
   );
 }
 
-export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSettings }) {
+export function WorkspaceSettingsForm({ settings, sequence }: { settings: WorkspaceSettings; sequence: { prefix: string; nextNumber: number; padding: number } }) {
   const router = useRouter();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [invoiceLogo, setInvoiceLogo] = useState(settings.invoicePaymentDetails?.logoFileId ?? null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [documentColors, setDocumentColors] = useState(settings.invoicePaymentDetails?.colors ?? {
+    accentColor: settings.accentColor, tableHeaderColor: settings.accentColor,
+  });
   const [pending, startTransition] = useTransition();
+  const [brandingBusy, setBrandingBusy] = useState(false);
+  const submitting = useRef(false);
 
   return (
     <FieldErrorsContext.Provider value={fieldErrors}>
@@ -62,8 +70,15 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
       className="grid min-w-0 items-start gap-5 @[80rem]/settings:grid-cols-2"
       onSubmit={(event) => {
         event.preventDefault();
+        if (submitting.current || uploadingLogo || brandingBusy) return;
         const form = new FormData(event.currentTarget);
+        const formElement = event.currentTarget;
         const number = (name: string) => Number(form.get(name));
+        const invoiceSequence = {
+          prefix: String(form.get("invoicePrefix") ?? ""),
+          nextNumber: number("invoiceNextNumber"),
+          padding: number("invoicePadding"),
+        };
         let capacityGroups: CapacityGroup[] | undefined;
         try {
           const raw = form.get("capacityGroups");
@@ -71,9 +86,17 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
         } catch {
           capacityGroups = undefined;
         }
+        submitting.current = true;
         startTransition(async () => {
           try {
           const res = await updateWorkspaceSettings({
+            orgName: String(form.get("orgName") ?? ""),
+            accentColor: String(form.get("accentColor") ?? ""),
+            orgAliases: String(form.get("orgAliases") ?? "").split(",").map(value => value.trim()).filter(Boolean),
+            internalEmailDomains: String(form.get("internalEmailDomains") ?? "").split(",").map(value => value.trim()).filter(Boolean),
+            preparedByNote: String(form.get("preparedByNote") ?? ""),
+            invoiceSequence: invoiceSequence.prefix !== sequence.prefix || invoiceSequence.nextNumber !== sequence.nextNumber || invoiceSequence.padding !== sequence.padding
+              ? { ...invoiceSequence, previousNextNumber: sequence.nextNumber } : undefined,
             legalName: String(form.get("legalName") ?? ""),
             timezone: String(form.get("timezone") ?? "UTC"),
             sourceLanguage: String(form.get("sourceLanguage") ?? ""),
@@ -93,6 +116,7 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
             taxId: String(form.get("taxId") ?? ""),
             paymentInstructions: String(form.get("paymentInstructions") ?? ""),
             invoicePaymentDetails: {
+              colors: documentColors,
               issuerName: String(form.get("invoiceIssuerName") ?? ""),
               logoFileId: invoiceLogo,
               title: String(form.get("invoicePaymentTitle") ?? ""),
@@ -134,18 +158,27 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
             durationMonthsPodcast: number("durationMonthsPodcast"),
             durationMonthsVideoSeries: number("durationMonthsVideoSeries"),
             durationMonthsOther: number("durationMonthsOther"),
-          }, { completeSetup: true });
+          });
           setFieldErrors(res.fieldErrors ?? {});
           if (res.error) {
             toast.error(res.error);
+            const firstError = Object.keys(res.fieldErrors ?? {})[0];
+            const fieldName = firstError === "invoiceSequence" ? "invoiceNextNumber" : firstError;
+            if (fieldName) {
+              const field = formElement.querySelector<HTMLElement>(`[name="${fieldName}"]`);
+              field?.focus();
+              field?.scrollIntoView({ block: "center", behavior: "instant" });
+            }
             return;
           }
-          toast.success("Workspace defaults saved");
+          toast.success("Workspace settings saved");
           router.refresh();
           } catch { toast.error("Could not save workspace settings. Your changes are still here; try again."); }
+          finally { submitting.current = false; }
         });
       }}
     >
+      <WorkspaceBrandingCard settings={settings} saving={pending} onBusyChange={setBrandingBusy} />
       <Card className="@container/ws-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Languages className="size-4" />Language, locale, and schedule</CardTitle>
@@ -304,7 +337,7 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
           <div className="grid gap-1.5 sm:col-span-2">
             <Label htmlFor="invoiceLogo">Invoice logo (optional)</Label>
             {invoiceLogo && <a className="text-sm text-primary underline" href={`/api/files/${invoiceLogo}/download?inline=1`} target="_blank" rel="noreferrer">Preview invoice logo</a>}
-            <Input id="invoiceLogo" type="file" accept="image/png,image/jpeg" disabled={uploadingLogo} onChange={async (event) => {
+            <Input id="invoiceLogo" type="file" accept="image/png,image/jpeg" disabled={pending || uploadingLogo} onChange={async (event) => {
               const file = event.target.files?.[0];
               if (!file) return;
               setUploadingLogo(true);
@@ -312,14 +345,19 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
               finally { setUploadingLogo(false); }
             }} />
             <p className="text-xs text-muted-foreground">{uploadingLogo ? "Uploading invoice logo…" : "Save workspace settings to apply this logo to new invoices. Workspace branding is unchanged."}</p>
+          </div>
+          <div className="grid gap-1.5 sm:col-span-2">
             <Label htmlFor="invoicePaymentTitle">Payment request heading</Label>
             <Input aria-describedby="invoicePaymentTitle-error" id="invoicePaymentTitle" name="invoicePaymentTitle" defaultValue={settings.invoicePaymentDetails?.title ?? ""} placeholder="For example, ACH Payment Request" /><FieldError name="invoicePaymentTitle" />
+          </div>
+          <div className="grid gap-1.5 sm:col-span-2">
             <Label htmlFor="invoicePaymentFields">Payee and bank details</Label>
             <textarea id="invoicePaymentFields" name="invoicePaymentFields" rows={10} className={textareaClass}
               defaultValue={settings.invoicePaymentDetails?.fields.map((field) => `${field.label}: ${field.value}`).join("\n") ?? ""}
               placeholder={"Payable to: \nPayee address: \nBank name: \nBank address: \nRouting number: \nAccount number: \nAccount type: \nFor further credit to: "} />
             <p className="text-xs text-muted-foreground">One label: value per line. These details appear in a payment table on new invoice PDFs. Leave unused rows out. Account numbers are stored as text, preserving leading zeros.</p>
           </div>
+          <DocumentColorsFields value={documentColors} onChange={setDocumentColors} />
           <div className="grid gap-1.5 sm:col-span-2">
             <Label htmlFor="paymentInstructions">Payment instructions</Label>
             <textarea id="paymentInstructions" name="paymentInstructions" className={textareaClass} defaultValue={settings.paymentInstructions ?? ""} placeholder="Payment currency, transfer instructions, advice email, and required fund designation" />
@@ -340,10 +378,11 @@ export function WorkspaceSettingsForm({ settings }: { settings: WorkspaceSetting
         </CardContent>
       </Card>
 
+      <InvoiceSequenceCard sequence={sequence} />
       <div className="sticky bottom-4 flex justify-end pr-14 @[80rem]/settings:col-span-2">
-        <Button type="submit" size="lg" disabled={pending || uploadingLogo} className="shadow-lg">
+        <Button type="submit" size="lg" disabled={pending || uploadingLogo || brandingBusy} className="shadow-lg">
           {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-          {pending ? "Saving defaults…" : "Save workspace defaults"}
+          {pending ? "Saving settings…" : "Save workspace settings"}
         </Button>
       </div>
     </form>

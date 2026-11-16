@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -17,6 +17,7 @@ import {
   invoices,
   mouPayments,
   projects,
+  proposalSubmissions,
   sharedMouGroups,
   sharedMouMemberships,
   sharedMouReceiptAllocations,
@@ -36,6 +37,7 @@ import {
   recordDonationImport,
 } from "./import-ledger";
 import { prepareDonationInvoicePosting, restoreDonationInvoiceStatus } from "./invoice-posting";
+import { proposalForDonation } from "./proposal-match";
 import type { DonationImportResult } from "./types";
 
 const allocationInput = z.object({
@@ -91,11 +93,14 @@ const DEFAULT_DUPLICATE_REASON =
   "Same donor, amount, and date as a donation already in Sastra.";
 
 const donationMouMatchInput = z.object({
+  returnTo: z.string().max(500).optional(),
   allocationId: z.string().uuid(),
   paymentId: z.string().uuid(),
-  expectedPaymentAmount: z.coerce.number().finite().positive().optional(),
+  expectedPaymentAmount: z.coerce.number().finite().nonnegative().optional(),
   expectedReceiptAmount: z.coerce.number().finite().positive().optional(),
   differenceReason: z.string().trim().max(500).optional(),
+  /** Reviewed choice: the expected payment has no amount yet, so save the amount received. */
+  setPaymentAmountFromReceipt: z.boolean().optional(),
 });
 
 function money(value: number): string {
@@ -118,6 +123,7 @@ async function revalidateDonationData(
       .where(inArray(projects.id, [...new Set(projectIds)]));
     for (const row of rows) {
       revalidatePath(`/projects/${row.slug}/budget`);
+      revalidatePath(`/projects/${row.slug}/rights`);
       revalidatePath(`/projects/${row.slug}`);
     }
   }
@@ -262,7 +268,7 @@ async function replaceDonationAllocations(input: {
             .from(mouPayments)
             .where(inArray(mouPayments.id, nextPaymentIds)).orderBy(asc(mouPayments.id)).for("update");
     if (payments.length !== nextPaymentIds.length) {
-      return { error: "One of the matched MoU payments no longer exists." };
+      return { error: "One of the matched expected payments no longer exists." };
     }
     const paymentById = new Map(payments.map((payment) => [payment.id, payment]));
     for (const payment of payments.filter((row) => !row.sharedMouGroupId)) {
@@ -271,17 +277,17 @@ async function replaceDonationAllocations(input: {
           (allocation) => allocation.mouPaymentId === payment.id
         ).length !== 1
       ) {
-        return { error: "Each project MoU payment can settle only one allocation." };
+        return { error: "Each expected payment can settle only one allocation." };
       }
     }
     for (const allocation of input.allocations) {
       if (!allocation.mouPaymentId) continue;
       const payment = paymentById.get(allocation.mouPaymentId)!;
       if (payment.paidAt && !oldPaymentIds.has(payment.id)) {
-        return { error: "One of the matched MoU payments is already received." };
+        return { error: "One of the matched expected payments is already received." };
       }
       if (payment.currency !== donation.currency) {
-        return { error: "The donation and matched MoU payment use different currencies." };
+        return { error: "The donation and matched expected payment use different currencies." };
       }
       if (payment.sharedMouGroupId) {
         if (allocation.sharedMouGroupId !== payment.sharedMouGroupId) {
@@ -485,6 +491,35 @@ async function replaceDonationAllocations(input: {
       sharedReceiptByPayment.set(payment.id, receipt.id);
     }
 
+    // Money for a project with an open proposal to this donor answers that
+    // proposal. Scheduled payments and invoices keep their own links.
+    const proposalCandidates =
+      projectIds.length === 0
+        ? []
+        : (
+            await tx
+              .select({
+                proposalId: proposalSubmissions.id,
+                projectId: proposalSubmissions.projectId,
+                partner: sql<string | null>`coalesce(nullif(${proposalSubmissions.partnerName}, ''), ${proposalSubmissions.recipientName})`,
+                status: proposalSubmissions.status,
+              })
+              .from(proposalSubmissions)
+              .where(
+                and(
+                  inArray(proposalSubmissions.projectId, projectIds),
+                  isNull(proposalSubmissions.printRunId),
+                  or(
+                    eq(proposalSubmissions.status, "sent"),
+                    and(
+                      eq(proposalSubmissions.status, "accepted"),
+                      eq(proposalSubmissions.fundingPath, "donation")
+                    )
+                  )
+                )
+              )
+          ).map((row) => ({ ...row, answered: row.status === "accepted" }));
+
     for (const allocation of input.allocations) {
       const sponsorReceiptId = allocation.invoiceId ? sponsorReceiptByInvoice.get(allocation.invoiceId) : null;
       if (sponsorReceiptId) {
@@ -506,6 +541,10 @@ async function replaceDonationAllocations(input: {
           note:
             donation.notes ??
             `Allocated from donation imported in row ${donation.sourceRowNumber}.`,
+          proposalId:
+            allocation.mouPaymentId || allocation.invoiceId || allocation.sharedMouGroupId
+              ? null
+              : proposalForDonation(donation.donor, allocation.projectId, proposalCandidates),
           recordedBy: input.actorId,
         })
         .returning({ id: fundingReceipts.id });
@@ -621,9 +660,9 @@ export async function confirmDonationAllocations(
 export async function confirmDonationMouPaymentMatch(
   input: z.input<typeof donationMouMatchInput>
 ): Promise<{ error?: string }> {
-  const { user } = await requireDonationAdmin();
+  const { user } = await requireDonationAdmin(typeof input?.returnTo === "string" ? input.returnTo : undefined);
   const parsed = donationMouMatchInput.safeParse(input);
-  if (!parsed.success) return { error: "This MoU match is no longer valid." };
+  if (!parsed.success) return { error: "This match is no longer valid. Refresh the page and try again." };
 
   try {
     const projectId = await db.transaction(async (tx) => {
@@ -672,10 +711,10 @@ export async function confirmDonationMouPaymentMatch(
         return match.allocationProjectId;
       }
       if (match.currentPaymentId) {
-        throw new Error("This donation is already linked to an MoU payment.");
+        throw new Error("This donation is already linked to an expected payment.");
       }
       if (match.paymentPaidAt || match.paymentReceiptId) {
-        throw new Error("This MoU payment is already marked received.");
+        throw new Error("This expected payment is already marked received.");
       }
       if (match.sharedMouGroupId || match.allocationSharedGroupId) {
         throw new Error("Shared MoU payments must be reviewed from Donations.");
@@ -683,13 +722,19 @@ export async function confirmDonationMouPaymentMatch(
       if (match.allocationInvoiceId) {
         throw new Error("This donation already has an invoice match. Review it from Donations.");
       }
+      // An expected payment with no amount yet takes the amount received, but
+      // only when the reviewer saw that it was empty and chose this.
+      const amountUnset = cents(match.paymentAmount) === 0;
+      if (amountUnset && !(parsed.data.setPaymentAmountFromReceipt && parsed.data.expectedPaymentAmount === 0)) {
+        throw new Error("This expected payment has no amount yet. Refresh the page and review the link again.");
+      }
       if (
         match.allocationProjectId !== match.paymentProjectId ||
         match.receiptProjectId !== match.paymentProjectId ||
         match.receiptPrintRunId !== match.paymentPrintRunId ||
         cents(match.allocationAmount) !== cents(match.receiptAmount) ||
         cents(match.receiptAmount) <= 0 ||
-        cents(match.paymentAmount) <= 0 ||
+        cents(match.paymentAmount) < 0 ||
         match.donationCurrency !== match.paymentCurrency ||
         match.receiptCurrency !== match.paymentCurrency
       ) {
@@ -705,7 +750,7 @@ export async function confirmDonationMouPaymentMatch(
       ) {
         throw new Error("An amount changed. Refresh the page and review the link again.");
       }
-      const differenceCents = cents(match.receiptAmount) - cents(match.paymentAmount);
+      const differenceCents = amountUnset ? 0 : cents(match.receiptAmount) - cents(match.paymentAmount);
       if (differenceCents !== 0 && (
         parsed.data.expectedPaymentAmount === undefined ||
         parsed.data.expectedReceiptAmount === undefined ||
@@ -731,6 +776,7 @@ export async function confirmDonationMouPaymentMatch(
       const [updatedPayment] = await tx
         .update(mouPayments)
         .set({
+          ...(amountUnset ? { amount: match.receiptAmount } : {}),
           paidAt: new Date(`${match.donationDate}T12:00:00.000Z`),
           receiptId: match.receiptId,
           readinessStatus: "received",
@@ -746,7 +792,7 @@ export async function confirmDonationMouPaymentMatch(
         )
         .returning({ id: mouPayments.id });
       if (!updatedPayment) {
-        throw new Error("This MoU payment was received by another update.");
+        throw new Error("This expected payment was received by another update.");
       }
 
       const [updatedAllocation] = await tx
@@ -779,7 +825,9 @@ export async function confirmDonationMouPaymentMatch(
               ? { ...allocation, mouPaymentId: parsed.data.paymentId }
               : allocation
         ),
-        reason: differenceCents === 0
+        reason: amountUnset
+          ? `Expected payment had no amount. Set to the received ${match.receiptCurrency} ${match.receiptAmount} and confirmed from Budget.`
+          : differenceCents === 0
           ? "Exact project, amount, and currency match confirmed from Budget."
           : `Different amount confirmed from Budget. Scheduled ${match.paymentCurrency} ${match.paymentAmount}; received ${match.receiptCurrency} ${match.receiptAmount}; difference ${money(differenceCents / 100)}. ${parsed.data.differenceReason}`,
         actorId: user.id,
@@ -794,7 +842,7 @@ export async function confirmDonationMouPaymentMatch(
       error:
         error instanceof Error
           ? error.message
-          : "Sastra could not apply this MoU match.",
+          : "Sastra could not apply this match. Try again.",
     };
   }
 }

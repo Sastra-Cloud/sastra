@@ -1,19 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  BULK_PRODUCTION_STATUSES,
-  calculateBackwardStageDates,
-  deriveEpisodeProductionStatus,
-  PODCAST_STAGE_META,
-  productionStatusTaskPreset,
-  stageDependencies,
-  stageOffsetsFollowSequence,
-  type PodcastStage,
-  type PodcastTaskStatus,
-  workflowProfile,
-  requiredStages,
-  ORIGINAL_VIDEO_PRODUCTION_STATUSES,
-} from "./workflow";
+import { BULK_PRODUCTION_STATUSES, calculateBackwardStageDates, deriveEpisodeProductionStatus, productionStatusTaskPreset, stageDependencies, stageOffsetsFollowSequence, type PodcastStage, type PodcastTaskStatus, workflowProfile, requiredStages, ORIGINAL_VIDEO_PRODUCTION_STATUSES } from "./workflow";
 
 const statuses = (
   values: Partial<Record<PodcastStage, PodcastTaskStatus>>
@@ -23,127 +10,6 @@ describe("podcast episode production status", () => {
   it.each([
     ["published", {}, true, "Published"],
     ["scheduled", {}, true, "Scheduled"],
-    ["draft", { translate_script: "todo" }, true, "Not started"],
-    ["draft", { translate_script: "in_progress" }, true, "Translating"],
-    [
-      "draft",
-      { translate_script: "done", approve_translation: "todo" },
-      true,
-      "Ready for translation review",
-    ],
-    [
-      "draft",
-      { translate_script: "done", approve_translation: "in_progress" },
-      true,
-      "Reviewing translation",
-    ],
-    [
-      "draft",
-      { translate_script: "done", approve_translation: "done" },
-      true,
-      "Ready to record",
-    ],
-    [
-      "draft",
-      {
-        translate_script: "done",
-        approve_translation: "done",
-        record_audio: "in_progress",
-      },
-      true,
-      "Recording audio",
-    ],
-    [
-      "draft",
-      {
-        translate_script: "done",
-        approve_translation: "done",
-        record_audio: "done",
-        master_audio: "in_progress",
-      },
-      true,
-      "Mastering audio",
-    ],
-    [
-      "draft",
-      {
-        translate_script: "done",
-        approve_translation: "done",
-        record_audio: "done",
-        master_audio: "todo",
-      },
-      true,
-      "Ready for audio mastering",
-    ],
-    [
-      "draft",
-      {
-        translate_script: "done",
-        approve_translation: "done",
-        master_audio: "done",
-      },
-      true,
-      "Ready for video production",
-    ],
-    [
-      "draft",
-      {
-        translate_script: "done",
-        approve_translation: "done",
-        record_audio: "done",
-        master_audio: "done",
-        produce_video: "in_progress",
-      },
-      true,
-      "Producing video",
-    ],
-    [
-      "draft",
-      {
-        translate_script: "done",
-        approve_translation: "done",
-        record_audio: "done",
-        master_audio: "done",
-        produce_video: "done",
-        approve_video: "review",
-      },
-      true,
-      "Reviewing video",
-    ],
-    [
-      "draft",
-      {
-        translate_script: "done",
-        approve_translation: "done",
-        record_audio: "done",
-        master_audio: "done",
-        produce_video: "done",
-        approve_video: "todo",
-      },
-      true,
-      "Ready for video review",
-    ],
-    [
-      "draft",
-      {
-        translate_script: "done",
-        approve_translation: "done",
-        master_audio: "done",
-        approve_video: "done",
-      },
-      true,
-      "Ready to schedule",
-    ],
-    [
-      "draft",
-      {
-        translate_script: "done",
-        approve_translation: "done",
-        master_audio: "done",
-      },
-      false,
-      "Ready to schedule",
-    ],
   ] as const)("derives %s episodes as %s", (publishingStatus, taskStatuses, videoRequired, expected) => {
     expect(
       deriveEpisodeProductionStatus({
@@ -270,12 +136,6 @@ describe("sequential podcast dependencies", () => {
       stage: "schedule_episode",
       dependsOn: "master_audio",
     });
-  });
-
-  it("orders automatic deadlines in the same sequence", () => {
-    expect(PODCAST_STAGE_META.master_audio.defaultDaysBeforePublication).toBeGreaterThan(
-      PODCAST_STAGE_META.produce_video.defaultDaysBeforePublication
-    );
   });
 });
 

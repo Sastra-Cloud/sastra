@@ -24,7 +24,7 @@ export default async function InvitePage({
   const invite = await getInvitationByToken(token);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4">
+    <div className="flex min-h-svh flex-col items-center justify-center px-4">
       <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>

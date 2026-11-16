@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq, isNull, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, ne, or, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {
@@ -13,7 +13,9 @@ import {
   invoices,
   mouPayments,
   projectBudgetSettings,
+  projectPartnerQuotations,
   projects,
+  proposalSubmissions,
   sharedMouGroups,
   sharedMouMemberships,
   sponsorships,
@@ -73,6 +75,7 @@ export async function getDonationWorkspace(): Promise<DonationWorkspaceDTO> {
     invoiceRows,
     sponsorshipReceivedRows,
     formatRows,
+    proposalRows,
   ] = await Promise.all([
     db
       .select({
@@ -176,7 +179,7 @@ export async function getDonationWorkspace(): Promise<DonationWorkspaceDTO> {
         trigger: mouPayments.trigger,
         dueDate: mouPayments.dueDate,
         notes: mouPayments.notes,
-        counterparty: projectBudgetSettings.partnerName,
+        counterparty: sql<string | null>`coalesce(nullif(trim(${mouPayments.partnerName}), ''), ${projectBudgetSettings.partnerName})`,
         invoiceNumber: invoices.invoiceNumber,
       })
       .from(mouPayments)
@@ -251,7 +254,50 @@ export async function getDonationWorkspace(): Promise<DonationWorkspaceDTO> {
       .from(donationCsvFormats)
       .leftJoin(user, eq(user.id, donationCsvFormats.createdBy))
       .orderBy(asc(donationCsvFormats.name)),
+    // Proposals a donation may answer: still waiting, or answered "donation".
+    db
+      .select({
+        proposalId: proposalSubmissions.id,
+        projectId: proposalSubmissions.projectId,
+        projectTitle: projects.title,
+        partner: sql<string | null>`coalesce(nullif(${proposalSubmissions.partnerName}, ''), nullif(${projectPartnerQuotations.partnerName}, ''), ${proposalSubmissions.recipientName})`,
+        status: proposalSubmissions.status,
+        currency: proposalSubmissions.currency,
+        agreedAmount: proposalSubmissions.agreedAmount,
+        received: sql<string>`coalesce((select sum(${fundingReceipts.amount}) from ${fundingReceipts} where ${fundingReceipts.proposalId} = ${proposalSubmissions.id}), 0)`,
+      })
+      .from(proposalSubmissions)
+      .innerJoin(projects, eq(projects.id, proposalSubmissions.projectId))
+      .leftJoin(
+        projectPartnerQuotations,
+        eq(projectPartnerQuotations.id, proposalSubmissions.partnerQuotationId)
+      )
+      .where(
+        and(
+          isNull(proposalSubmissions.printRunId),
+          ne(projects.status, "cancelled"),
+          or(
+            eq(proposalSubmissions.status, "sent"),
+            and(
+              eq(proposalSubmissions.status, "accepted"),
+              eq(proposalSubmissions.fundingPath, "donation")
+            )
+          )
+        )
+      ),
   ]);
+  const promises = proposalRows.map((row) => ({
+    proposalId: row.proposalId,
+    projectId: row.projectId,
+    projectTitle: row.projectTitle,
+    partner: row.partner,
+    currency: row.currency,
+    answered: row.status === "accepted",
+    outstandingCents:
+      row.status === "accepted" && row.agreedAmount != null
+        ? Math.max(0, cents(row.agreedAmount) - cents(row.received))
+        : null,
+  }));
 
   const allocationsByDonation = new Map<string, DonationAllocationDraft[]>();
   for (const row of allocationRows) {
@@ -388,6 +434,7 @@ export async function getDonationWorkspace(): Promise<DonationWorkspaceDTO> {
       receivables: receivables.filter(payment => payment.currency === row.currency),
       sharedReceivables: sharedReceivables.filter(payment => payment.currency === row.currency),
       invoices: invoiceCandidates,
+      promises: promises.filter((promise) => promise.currency === row.currency),
     });
     return {
       id: row.id,

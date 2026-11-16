@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { chooseBudgetPrintQuote } from "./estimate-policy";
+import {
+  canUseAsBudgetEstimate,
+  chooseBudgetPrintQuote,
+} from "./estimate-policy";
 
 const estimate = {
   id: "early",
@@ -45,6 +48,22 @@ describe("budget print cost precedence", () => {
     ).toEqual(quote);
   });
 
+  it("uses a selected print-run quote as the estimate until a price on that run is reviewed", () => {
+    const selected = {
+      ...quote,
+      id: "forwarded",
+      runId: production.id,
+    };
+    const other = { ...selected, id: "other", reviewStatus: "suggested" };
+    expect(chooseBudgetPrintQuote([production], [other, selected])).toEqual(
+      selected,
+    );
+    const accepted = { ...other, reviewStatus: "accepted" };
+    expect(chooseBudgetPrintQuote([production], [selected, accepted])).toEqual(
+      accepted,
+    );
+  });
+
   it("does not use unreviewed, superseded, cancelled, or reprint estimates as the main budget", () => {
     const reprint = { ...production, id: "reprint", kind: "reprint" };
     expect(
@@ -81,5 +100,29 @@ describe("budget print cost precedence", () => {
     expect(
       chooseBudgetPrintQuote([estimate, production], [quote, balance, order]),
     ).toEqual(order);
+  });
+});
+
+describe("which quotes can become the budget estimate", () => {
+  const run = { kind: "first_print", status: "quote_received" };
+  const suggested = { kind: "quote", reviewStatus: "suggested" };
+
+  it("allows a suggested printer quote on the first print run", () => {
+    expect(canUseAsBudgetEstimate(run, suggested)).toBe(true);
+  });
+
+  it("refuses accepted orders, invoices, reprints, and cancelled runs", () => {
+    expect(
+      canUseAsBudgetEstimate(run, { ...suggested, reviewStatus: "accepted" }),
+    ).toBe(false);
+    expect(canUseAsBudgetEstimate(run, { ...suggested, kind: "invoice" })).toBe(
+      false,
+    );
+    expect(
+      canUseAsBudgetEstimate({ ...run, kind: "reprint" }, suggested),
+    ).toBe(false);
+    expect(
+      canUseAsBudgetEstimate({ ...run, status: "cancelled" }, suggested),
+    ).toBe(false);
   });
 });

@@ -3,6 +3,7 @@ import { ChevronLeft } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/guards";
 import { listPlanTemplates } from "@/lib/projects/queries";
+import { listDefaultProjectPeople } from "@/lib/projects/people";
 import { NewProjectEntry } from "@/components/projects/new-project-entry";
 import { getWorkspaceSettings } from "@/lib/workspace/queries";
 import { ContentColumn, PageShell } from "@/components/cockpit";
@@ -18,9 +19,10 @@ export const dynamic = "force-dynamic";
 
 export default async function NewProjectPage() {
   const { user } = await requireRole("manager");
-  const [templates, workspace] = await Promise.all([
+  const [templates, workspace, defaultPeople] = await Promise.all([
     listPlanTemplates(),
     getWorkspaceSettings(),
+    listDefaultProjectPeople(),
   ]);
   const lectioEnabled = moduleEnabled(workspace.enabledModules, "lectio");
   const lectioEligible = lectioEnabled && await assertLectioCloudEligibility().then(() => true, () => false);
@@ -46,6 +48,11 @@ export default async function NewProjectPage() {
       </div>
       <ContentColumn width="compact">
         {lectioEnabled && !lectioEligible ? <p className="text-sm text-muted-foreground">{LECTIO_CLOUD_REQUIREMENT}</p> : null}
+        <div className="mb-5 space-y-1 rounded-xl border bg-card p-4">
+          <h2 className="text-sm font-medium">Project team</h2>
+          <p className="text-sm text-muted-foreground">{defaultPeople.length ? `These people will be added automatically: ${defaultPeople.map(person => person.name).join(", ")}.` : "No default project team is set. Add people from the project’s People tab after creating it."}</p>
+          <p className="text-xs text-muted-foreground">Work roles are optional. Admins can change the default team in <Link href="/settings/team#default-project-team" className="text-primary underline underline-offset-4">Team settings</Link>.</p>
+        </div>
         <NewProjectEntry
           templates={templates}
           defaultSourceLanguage={workspace.sourceLanguage}

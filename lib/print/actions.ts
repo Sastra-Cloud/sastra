@@ -470,7 +470,7 @@ const REPRINT_TASKS = [
     title: "Secure sponsor, MoU, or donation for reprint",
     priority: "high",
     description:
-      "Record scheduled MoU payments or donations against this reprint run so the budget view shows only reprint funding.",
+      "Record expected payments or donations against this reprint run so the budget view shows only reprint funding.",
   },
   {
     title: "Approve reprint proof",
@@ -903,7 +903,9 @@ export async function updatePrintQuote(
     .where(eq(printQuotes.id, quoteId))
     .limit(1);
   if (!quote) return { error: "Quote not found." };
-  if (["accepted", "estimated"].includes(quote.reviewStatus))
+  if (quote.reviewStatus === "estimated")
+    return { error: "This quote is the budget estimate. Remove the selected estimate before you edit it." };
+  if (quote.reviewStatus === "accepted")
     return { error: "Select a different quote before editing this reviewed quote." };
 
   const patch: Partial<typeof printQuotes.$inferInsert> = { updatedAt: new Date() };

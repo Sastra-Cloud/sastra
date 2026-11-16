@@ -25,7 +25,7 @@ export default async function UnsubscribePage({
   const done = sp.done === "1";
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4">
+    <div className="flex min-h-svh flex-col items-center justify-center px-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>

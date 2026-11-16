@@ -19,7 +19,7 @@ it("keeps promises out of available cash, counts linked donations once, and uses
   };
   const result = buildProjectFundingOverview(input);
   expect(result.balances).toEqual([{ currency: "USD", neededCents: 100000, spentCents: 10000, receivedCents: 30000,
-    netReceivedCents: 26000, availableCents: 16000, outstandingCents: 45000, unlinkedAssignedCents: 0 }]);
+    netReceivedCents: 26000, availableCents: 16000, outstandingCents: 45000, unlinkedAssignedCents: 0, promisedCents: 70000, amountPendingCount: 0, unlinkedReceivedCents: 5000, excludedPaymentCount: 0, needsReview: true }]);
   expect(result.sources.map(source => source.outstandingCents)).toEqual([15000, 0, 30000]);
   expect(result.receipts.filter(receipt => receipt.donation).map(receipt => receipt.id)).toEqual(["paid", "gift"]);
 });
@@ -30,7 +30,41 @@ it("shows received funds without a quotation, separates currencies, and does not
     costs: [{ amount: "100", amountSecured: "80", amountSpent: "10", currency: "GBP" }],
   });
   expect(result.balances).toEqual([
-    { currency: "GBP", neededCents: 10000, spentCents: 1000, receivedCents: 0, netReceivedCents: 0, availableCents: -1000, outstandingCents: 0, unlinkedAssignedCents: 8000 },
-    { currency: "EUR", neededCents: 0, spentCents: 0, receivedCents: 5000, netReceivedCents: 0, availableCents: 0, outstandingCents: 0, unlinkedAssignedCents: 0 },
+    { currency: "GBP", neededCents: 10000, spentCents: 1000, receivedCents: 0, netReceivedCents: 0, availableCents: -1000, outstandingCents: 0, unlinkedAssignedCents: 8000, promisedCents: 0, amountPendingCount: 0, unlinkedReceivedCents: 0, excludedPaymentCount: 0, needsReview: false },
+    { currency: "EUR", neededCents: 0, spentCents: 0, receivedCents: 5000, netReceivedCents: 0, availableCents: 0, outstandingCents: 0, unlinkedAssignedCents: 0, promisedCents: 0, amountPendingCount: 0, unlinkedReceivedCents: 0, excludedPaymentCount: 0, needsReview: false },
   ]);
+});
+
+it("keeps a promised donation outstanding only until its linked money arrives", () => {
+  const result = buildProjectFundingOverview({ currency: "USD", costs: [], agreements: [], allocations: [], donationReceiptIds: ["gift"],
+    payments: [],
+    receipts: [{ id: "gift", amount: "400", currency: "USD", expectedNetAmount: null, actualNetAmount: null, source: "Partner", receivedDate: null, proposalId: "proposal" }],
+    donationPromises: [{ id: "proposal", partnerName: "Partner", agreedAmount: "1000", currency: "USD" }],
+  });
+  expect(result.sources).toMatchObject([{ type: "donation", promisedCents: 100000, receivedCents: 40000, outstandingCents: 60000 }]);
+  expect(result.balances[0]).toMatchObject({ receivedCents: 40000, outstandingCents: 60000 });
+});
+
+it("shows percentage commitments as unconfirmed, excludes an outgoing fee, and reconciles a received donation only after linking", () => {
+  const base = {
+    currency: "USD", agreements: [], allocations: [], donationReceiptIds: ["receipt"],
+    costs: [{ amount: "21670.56", amountSecured: "0", amountSpent: "0", currency: "USD" }],
+    receipts: [{ id: "receipt", amount: "10835.28", currency: "USD", actualNetAmount: null, expectedNetAmount: null, source: "Funding partner", receivedDate: "2025-07-11" }],
+  };
+  const payment = { currency: "USD", receiptId: null, paidAt: null, dueDate: null, publicDescription: null, trigger: "on_signing" };
+  const payments = [
+    { ...payment, id: "initial", amount: "0", notes: "50% of the Total Payment to Licensee (US$21,670.56) due on contract signature" },
+    { ...payment, id: "fee", amount: "675", notes: "Administration Fee to the Licensor (Example Rights Holder), US$675.00" },
+    { ...payment, id: "final", amount: "0", trigger: "on_completion", notes: "Remaining 50% of the Total Payment to Licensee" },
+  ];
+  const before = buildProjectFundingOverview({ ...base, payments });
+  expect(before.sources.map(source => source.id)).toEqual(["initial", "final"]);
+  expect(before.excludedPayments.map(source => source.id)).toEqual(["fee"]);
+  expect(before.sources.every(source => source.reviewRequired && source.calculation?.amountCents === 1083528)).toBe(true);
+  expect(before.balances[0]).toMatchObject({ promisedCents: 2167056, receivedCents: 1083528, availableCents: 1083528, unlinkedReceivedCents: 1083528, amountPendingCount: 2, needsReview: true });
+  const reviewed = buildProjectFundingOverview({ ...base, payments: [
+    { ...payments[0], amount: "10835.28", receiptId: "receipt", paidAt: new Date() },
+    { ...payments[2], amount: "10835.28" },
+  ] });
+  expect(reviewed.balances[0]).toMatchObject({ promisedCents: 2167056, receivedCents: 1083528, availableCents: 1083528, outstandingCents: 1083528, unlinkedReceivedCents: 0, amountPendingCount: 0, needsReview: false });
 });

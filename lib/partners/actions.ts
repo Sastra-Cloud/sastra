@@ -7,6 +7,7 @@ import { z } from "zod";
 import { requireRole } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { partnerContacts, partners } from "@/lib/db/schema";
+import { findOrCreatePartnerContact } from "./find-or-create";
 
 const orgSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -15,21 +16,29 @@ const orgSchema = z.object({
   notes: z.string().trim().max(2000).optional(),
 });
 
-export async function createPartner(input: z.input<typeof orgSchema>) {
+const contactSchema = z.object({
+  firstName: z.string().trim().max(120).optional(),
+  lastName: z.string().trim().max(120).optional(),
+  email: z.string().trim().max(320).optional(),
+  phone: z.string().trim().max(60).optional(),
+  role: z.string().trim().max(120).optional(),
+  isPrimary: z.boolean().optional(),
+});
+const createSchema = orgSchema.extend({ contact: contactSchema.optional() });
+
+export async function createPartner(input: z.input<typeof createSchema>) {
   const { user } = await requireRole("manager");
-  const data = orgSchema.parse(input);
-  const [row] = await db
-    .insert(partners)
-    .values({
-      name: data.name,
-      website: data.website || null,
-      billingAddress: data.billingAddress || null,
-      notes: data.notes || null,
-      createdBy: user.id,
-    })
-    .returning({ id: partners.id });
+  const data = createSchema.parse(input);
+  const link = await db.transaction((tx) => findOrCreatePartnerContact(tx, {
+    org: data.name,
+    website: data.website,
+    billingAddress: data.billingAddress,
+    notes: data.notes,
+    createdBy: user.id,
+    ...data.contact,
+  }));
   revalidatePath("/settings/partners");
-  return { id: row.id };
+  return { id: link.partnerId, contactId: link.partnerContactId };
 }
 
 const orgUpdateSchema = orgSchema.partial();
@@ -56,15 +65,6 @@ export async function deletePartner(id: string) {
   revalidatePath("/settings/partners");
   return {};
 }
-
-const contactSchema = z.object({
-  firstName: z.string().trim().max(120).optional(),
-  lastName: z.string().trim().max(120).optional(),
-  email: z.string().trim().max(320).optional(),
-  phone: z.string().trim().max(60).optional(),
-  role: z.string().trim().max(120).optional(),
-  isPrimary: z.boolean().optional(),
-});
 
 export async function addPartnerContact(
   partnerId: string,

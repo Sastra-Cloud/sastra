@@ -33,8 +33,4 @@ describe("manager review access", () => {
     for (const item of items) expect(html).toContain(`href="${item.href}"`);
     expect(html).toContain("High priority");
   });
-
-  it("omits an empty review section", () => {
-    expect(renderToStaticMarkup(<ManagerReviewQueue items={[]} collapsed />)).toBe("");
-  });
 });

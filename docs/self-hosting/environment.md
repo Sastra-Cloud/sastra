@@ -35,6 +35,7 @@ repository root carries the same list with comments.
 | `SASTRA_VERSION` / `SASTRA_REVISION` | ➖ | set by the release image build; reported by `/api/version` and `/api/ready` |
 | `SECURITY_STATUS_URL` | ➖ | where the daily published dependency-audit results are read from; defaults to the public repository's feed, forks set their own, `off` disables |
 | `SENTRY_DSN` | ➖ | optional — server error monitoring; unset = no-op |
+| `SASTRA_PERFORMANCE_MONITORING` | ➖ | `true` turns on anonymous browser performance reports (see [Performance monitoring](#optional-performance-monitoring)); unset or `false` = nothing is collected or sent. Read at runtime, so a restart is enough |
 | `VAPID_PUBLIC_KEY` | ➖ | Web Push public key (`npx web-push generate-vapid-keys`); unset = push off. Read at runtime, so the published image needs no rebuild. The older name `NEXT_PUBLIC_VAPID_PUBLIC_KEY` also works |
 | `VAPID_PRIVATE_KEY` | ➖ | Web Push private key (server secret); pair of the public key above |
 | `VAPID_SUBJECT` | ➖ | `mailto:` or `https:` contact URL required by push services |
@@ -67,3 +68,24 @@ Sastra operator. Other self-hosted installations explain this restriction in
 Settings; copying hosted environment values cannot grant access. Lectio verifies
 the instance against the private Cloud registry and, for Cloud subscriptions, current
 production billing. Operator-managed approval is private, explicit, and revocable.
+
+## Optional performance monitoring
+
+Off by default. Set `SASTRA_PERFORMANCE_MONITORING=true` and restart to let signed-in browsers send a few anonymous numbers to `POST /api/observability/performance`. The server writes them to its structured log as `performance.report` lines. No analytics service, schema change, or third-party script is involved.
+
+What is collected, and nothing else:
+
+- Web Vitals: `TTFB`, `FCP`, `LCP`, `INP`, `CLS`.
+- Useful-work markers: `dashboard-tasks-visible`, `dashboard-tasks-ready`, `chat-messages-visible`, `chat-composer-ready`.
+- For each: a fixed route category (`dashboard`, `projects`, `project`, `chat`, `other`), whether it was a document load (`hard`) or an in-app route change (`client`), and one number. Times are in milliseconds from the start of that navigation; `CLS` has no unit.
+- The server adds its own deployment id. Browsers never send URLs, project or channel ids, names, text, user ids, or browser entry objects.
+
+Meaning of the markers:
+
+- `*-visible` is when the browser first painted the content, measured with the browser's Element Timing. Chromium reports it; Safari and Firefox do not, so those browsers send no `*-visible` value instead of a guess.
+- `*-ready` is when React finished hydrating that part of the page, so buttons and inputs work. It can come after `*-visible`.
+- A route change resets measurement. Work finishing after you have moved on is discarded.
+
+Limits: reports are validated against a fixed list, capped at 2 KB and 12 numbers, rate limited per person, rejected from other origins, and never logged when rejected. A page sends at most six reports. Reporting never delays or blocks anything the person is doing. Treat the numbers as a sample from real devices, not a benchmark. Sentry or any other monitor is not required.
+
+Even when the setting is off, the browser records the four markers as local `sastra:*` User Timing measures. They never leave the page and let `docs/browser-verification.md` scenarios read them.

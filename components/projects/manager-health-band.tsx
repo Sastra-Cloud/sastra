@@ -53,7 +53,7 @@ export function ManagerHealthBand({
           <div>
             <h2 className="text-sm font-semibold">Project health</h2>
             <p className="text-xs text-muted-foreground">
-              Rights, delivery, and workload for managers.
+              Rights &amp; MOUs, delivery, and workload for managers.
             </p>
           </div>
         </div>
@@ -65,7 +65,7 @@ export function ManagerHealthBand({
               href={`/projects/${projectSlug}/rights`}
               className="group inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
             >
-              Rights
+              Rights &amp; MOUs
               <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <span

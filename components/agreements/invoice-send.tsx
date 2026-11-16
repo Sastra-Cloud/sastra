@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { invoiceEmailFallback, type DraftIdentity } from "@/lib/email/operational-drafts";
+import { useSuccessBeat } from "@/hooks/use-settle";
+import { DoneCheck } from "@/components/ui/done-check";
 
 export function AgreementInvoiceSend({ invoiceId, invoiceFileId, invoiceNumber, recipient, projectId, defaultCc, draft, evidence, enabled, projectTitles, agreementName, amountLabel, paymentTrigger, emailIdentity }: {
   invoiceId: string; invoiceFileId: string | null; invoiceNumber: string; recipient: string; projectId: string; defaultCc: string[];
@@ -17,6 +19,7 @@ export function AgreementInvoiceSend({ invoiceId, invoiceFileId, invoiceNumber, 
   projectTitles: string[]; agreementName: string; amountLabel: string; paymentTrigger: string; emailIdentity: DraftIdentity;
 }) {
   const router = useRouter(); const [pending, start] = useTransition();
+  const sentBeat = useSuccessBeat();
   const [to, setTo] = useState(draft?.toAddresses.join(", ") ?? recipient);
   const [cc, setCc] = useState((draft?.ccAddresses ?? defaultCc).join(", "));
   const [subject, setSubject] = useState(() => draft?.subject ?? invoiceEmailFallback({ ...emailIdentity, invoiceNumber, projectTitles, agreementName, amountLabel, paymentTrigger, evidence }).subject);
@@ -44,10 +47,11 @@ export function AgreementInvoiceSend({ invoiceId, invoiceFileId, invoiceNumber, 
       <Button size="sm" disabled={pending || !reviewed || !enabled} onClick={() => start(async () => {
         try { const saved = await save(); if (saved.error) { toast.error(saved.error); return; }
           const result = await sendInvoiceEmail(invoiceId, { confirmed: true, reviewedFileId: invoiceFileId ?? undefined, evidence, recipientEmail: to.trim(), ccEmails: addresses(cc), subject, body });
-          if (result.error) toast.error(result.error); else toast.success("Invoice sent.");
+          if (result.error) toast.error(result.error);
+          else { toast.success("Invoice sent."); await sentBeat.play(); }
           router.refresh();
         } catch { toast.error("Delivery could not be confirmed. Your draft is saved. Check correspondence before retrying."); router.refresh(); }
-      })}>{pending ? "Processing…" : "Confirm and send invoice"}</Button>
+      })}>{sentBeat.done ? <><DoneCheck />Sent</> : pending ? "Processing…" : "Confirm and send invoice"}</Button>
     </div>
   </details>;
 }

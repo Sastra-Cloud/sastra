@@ -2,7 +2,7 @@
 title: "Getting started & roles"
 category: "Getting started"
 roles: [member, manager, admin]
-keywords: [scrolling, sidebar, short window, daily work, ask the assistant, assistant tip, team planning, publishing, home, your next tasks, onboarding outcomes, next step, hidden tips, invite, invitation, seven days, sign in, login, magic link, 5 minutes, one-time link, password, password reset, one hour, roles, member, manager, admin, super admin, timezone, profile, account, save, saving, sync, retry, page error, page not found, spinner, mobile menu, navigation, today, work, management, workspace, pull to refresh, refresh, guidance, guided setup, tips, dismiss tip, coaching, checklist, across browsers, show helpful guidance, learn the app, passkey, fingerprint, two factor, security code]
+keywords: [scrolling, sidebar, short window, daily work, ask the assistant, assistant tip, team planning, publishing, home, your next tasks, onboarding outcomes, next step, hidden tips, invite, invitation, seven days, sign in, login, magic link, 5 minutes, one-time link, password, password reset, one hour, roles, member, manager, admin, super admin, timezone, profile, account, save, saving, sync, retry, page error, page not found, spinner, mobile menu, navigation, today, work, management, workspace, pull to refresh, refresh, loads slowly, appears later, couldn't load, try again, review list, guidance, guided setup, tips, dismiss tip, coaching, checklist, across browsers, show helpful guidance, learn the app, passkey, fingerprint, two factor, security code]
 order: 10
 summary: "Start with Home, complete role-appropriate setup, find assigned work, and restore your personal guidance."
 ---
@@ -55,6 +55,14 @@ Administrators confirm workspace defaults, create a project, invite a teammate,
 and assign work. Saving workspace defaults confirms that step; existing project
 overrides stay unchanged.
 
+Home opens in parts, so you can start work sooner. Your tasks appear first.
+Project updates come before manager reviews, and the setup checklist follows
+your work area. Reviews and setup steps can appear a moment later. Menu counts
+and tips also appear after the page opens, and a tip you hid never flashes back.
+If the setup checklist or review list cannot load, that section shows
+**Try again**, and your tasks stay ready to use. Unavailable menu counts and
+tips stay hidden; menu counts retry in the background.
+
 Members start with My Work and this guide. A task-completion step appears when
 work is assigned, and a check-in step appears when they belong to an active
 standup. Managers also get a direct link to an existing project's budget and
@@ -75,7 +83,7 @@ admin can do everything an admin can.
 - **Member** — work on your own tasks, chat, answer standups, upload files, and
   use the Assistant, Agenda, and Home.
 - **Manager** — everything a member can, plus **Team planning** and its **Workload**
-  pages, editing **Rights**, **Budget**, and **Print**, running the **AI
+  pages, editing **Rights & MOUs**, **Budget**, and **Print**, running the **AI
   planner** and **document import**, reading **Correspondence**, and configuring
   the team, roles, publishers, printers, email, and standups.
 - **Admin** — everything a manager can, plus monthly donation imports and
@@ -86,7 +94,7 @@ admin can do everything an admin can.
   Only a super admin can create or manage another super admin.
 
 If you try to do something your role doesn't allow, Sastra tells you and points
-you to ask a manager or admin. Many pages (like Rights and Budget) are visible to
+you to ask a manager or admin. Many pages (like Rights & MOUs and Budget) are visible to
 everyone but only editable by managers.
 
 ## How changes save
@@ -131,7 +139,10 @@ between guides without scrolling back to the top.
 
 While you are learning, Sastra shows extra help: short **tips** on a screen and
 **guided setup** steps that walk you through big tasks like starting a project,
-a budget, or a print run. Guided setup always has a **Skip** link, and every tip
+a budget, a proposal, or a print run. Guided setup fills in what Sastra already
+knows, such as the printer, the partner, and the book size. The Budget and Print
+tabs also show **steps**: a short list of what is done and what to do next, with
+one button for the next step. Guided setup always has a **Skip** link, and every tip
 has a close button, so they never get in your way. On your first visits, a tip
 above the round sparkle button in the bottom corner shows where to ask the
 assistant for help. When you know the app well,
@@ -147,9 +158,20 @@ content; using your browser's Back or Forward button returns you to your prior
 reading position. In-page links still move directly to the named section.
 
 When you are at the top of a page, pull downward and release after **Release to
-refresh** appears to reload the latest app and workspace data. Pull-to-refresh
-stays inactive inside dialogs, menus, forms, and the Assistant so it does not
-interrupt work in progress.
+refresh** appears to reload the latest app and workspace data. This works on
+ordinary mobile pages such as Home and Projects, including the installed app.
+In chat, pull down from the conversation title to refresh messages without
+losing your unsent draft. You can also start a new pull at the very top of the
+message list. Scrolling through history does not reload the page.
+The Assistant keeps its own controls.
+Dialogs, menus, forms, and other scrollable panels also keep their own scrolling.
+
+Quickly switching back to a recent screen reuses it for up to 30 seconds.
+Sastra also loads daily-use sections ahead of time when their navigation links
+are visible. Other section links start loading when you hover, focus, or touch
+them. These temporary copies stay in the open app's memory. You still need an
+internet connection; private pages are not saved for offline use. Pull to refresh
+or reload the page when you need the latest changes from a teammate immediately.
 
 ## Where the code comes from
 

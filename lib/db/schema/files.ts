@@ -1,6 +1,7 @@
 import {
   bigint,
   index,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -9,6 +10,7 @@ import {
 
 import { user } from "./auth";
 import { attachTarget, filePurpose, fileStatus } from "./enums";
+import type { VoiceMetadata } from "@/lib/chat/voice-metadata";
 
 /** File metadata. The bytes live in R2; the DB only holds this record. */
 export const files = pgTable("files", {
@@ -17,6 +19,7 @@ export const files = pgTable("files", {
   originalName: text("original_name").notNull(),
   mimeType: text("mime_type").notNull(),
   sizeBytes: bigint("size_bytes", { mode: "number" }).notNull().default(0),
+  audioMetadata: jsonb("audio_metadata").$type<VoiceMetadata>(),
   status: fileStatus("status").notNull().default("pending"),
   purpose: filePurpose("purpose")
     .notNull()

@@ -7,6 +7,7 @@ import {
   myWorkTaskLocations,
   otherTaskReason,
   rankTaskSearchMatches,
+  splitOtherTaskResults,
   taskSearchTerms,
 } from "./search";
 
@@ -116,5 +117,25 @@ describe("otherTaskReason", () => {
     expect(
       otherTaskReason(task("c", { ...done, assignedTo: null }), "me", "2026-10-19", "UTC")
     ).toBe("Done Sep 3, 2026 · Not assigned");
+  });
+});
+
+describe("splitOtherTaskResults", () => {
+  const older = task("Old proof", { status: "done" });
+  const theirs = task("Their proof", { assignedTo: "sam" });
+  const open = task("Open proof", { assignedTo: null });
+
+  it("keeps only the person's tasks and counts the ones it hides", () => {
+    expect(splitOtherTaskResults([older, theirs, open], false, "me")).toEqual({
+      mine: [older],
+      notMineCount: 2,
+      mineHasMore: false,
+    });
+  });
+
+  it("warns about cut-off results only when the limit may hide the person's tasks", () => {
+    // Own tasks are listed first, so a teammate's row proves none were cut off.
+    expect(splitOtherTaskResults([older, theirs], true, "me").mineHasMore).toBe(false);
+    expect(splitOtherTaskResults([older], true, "me").mineHasMore).toBe(true);
   });
 });

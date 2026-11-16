@@ -3,11 +3,14 @@
 import { useId, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, ChevronsUpDown, Loader2, Mail, Plus, Send } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2, Mail, Plus, Send, Sparkles } from "lucide-react";
 import { Combobox } from "@base-ui/react/combobox";
 import { toast } from "sonner";
 import { draftPrintEstimate } from "@/lib/print/estimate-actions";
-import { selectPrintEstimateQuote } from "@/lib/print/estimate-review-actions";
+import {
+  stopUsingPrintEstimateQuote,
+  selectPrintEstimateQuote,
+} from "@/lib/print/estimate-review-actions";
 import {
   createQuoteFromFile,
   createQuoteFromText,
@@ -17,6 +20,8 @@ import {
 import { saveEmailDraft } from "@/lib/email/draft-actions";
 import type { EmailDraftDTO } from "@/lib/email/draft-types";
 import { useOptimisticAction } from "@/hooks/use-optimistic-action";
+import { useSettle, useSuccessBeat } from "@/hooks/use-settle";
+import { DoneCheck } from "@/components/ui/done-check";
 import { uploadFile } from "@/lib/files/upload-client";
 import { MAX_REFERENCE_PDF_BYTES } from "@/lib/print/estimate-policy";
 import { getPrintQuoteTotal } from "@/lib/print/quote-economics";
@@ -44,6 +49,7 @@ import {
   measurementUnit as parseMeasurementUnit, type MeasurementUnit,
 } from "@/lib/print/estimate";
 import { suggestedBookSpecs, type PrintSpecPreset } from "@/lib/print/spec-presets";
+import { PrintEstimateIntake } from "./print-estimate-intake";
 
 export type EstimateRequest = {
   id: string;
@@ -54,6 +60,9 @@ export type EstimateRequest = {
   referenceFileId: string | null;
   attachment: OutgoingEmailAttachment | null;
   draft: EmailDraftDTO | null;
+  /** A printer quote that reached the print run, not an estimate request. */
+  fromPrintRun: boolean;
+  sourceText?: string | null;
 };
 export type EstimateQuote = {
   id: string;
@@ -64,6 +73,10 @@ export type EstimateQuote = {
   totalAmount: string | null;
   currency: string;
   textPages: number | null;
+  coverPages?: number | null;
+  trimWidthMm?: string | null;
+  trimHeightMm?: string | null;
+  deliveryLocation?: string | null;
   textSpec: string | null;
   coverSpec: string | null;
   binding: string | null;
@@ -79,6 +92,7 @@ const ESTIMATE_REVIEW_HINTS: Record<PrintReviewFlag["kind"], string> = {
   currency_defaulted: "The quote did not state a currency. Confirm the currency with the printer.",
   ambiguous_date: "The quote date is ambiguous. Check the date and whether the price is still valid.",
   ai_failed: "Some quote details could not be verified. Check all quantities, prices, and specifications against the original.",
+  reused_quote: "This price was reused from another book. Check that the specifications still match before using it for planning.",
 };
 
 type Composer = {
@@ -97,6 +111,7 @@ export function PrintEstimatePanel({
   trimHeightIn,
   measurementUnit,
   specPresets,
+  reviewedPrintQuote,
   requests,
   quotes,
 }: {
@@ -108,6 +123,11 @@ export function PrintEstimatePanel({
   trimHeightIn: string;
   measurementUnit: MeasurementUnit;
   specPresets: PrintSpecPreset[];
+  reviewedPrintQuote: {
+    currency: string;
+    total: number;
+    quantityCps: number | null;
+  } | null;
   requests: EstimateRequest[];
   quotes: EstimateQuote[];
 }) {
@@ -120,8 +140,11 @@ export function PrintEstimatePanel({
   const visibleQuotes = rejected.state;
   const prefix = useId();
   const [pending, start] = useTransition();
+  const { settle } = useSettle();
+  const sentBeat = useSuccessBeat();
   const [operation, setOperation] = useState("");
   const [open, setOpen] = useState(false);
+  const [intakeOpen, setIntakeOpen] = useState(false);
   const [contactId, setContactId] = useState(
     defaultContactId ?? contacts.find((c) => c.email)?.id ?? "",
   );
@@ -253,24 +276,34 @@ export function PrintEstimatePanel({
           <div className="min-w-0 space-y-1">
             <CardTitle>Estimated printing cost</CardTitle>
             <CardDescription>
-              Ask a printer for a planning quote before the book is ready to
-              print. Available during proposals and active projects.
+              Request a planning quote, paste prices you already have, or reuse
+              a similar book's quote. Captured email quotes also appear here.
             </CardDescription>
           </div>
+          <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" disabled={pending || !!compose}
+            aria-expanded={intakeOpen} aria-controls={`${prefix}-intake`}
+            onClick={() => { setIntakeOpen(!intakeOpen); if (!intakeOpen) setOpen(false); }}>
+            <Sparkles className="size-4" /> {intakeOpen ? "Close quote intake" : "Add quote with AI"}
+          </Button>
           <Button
             variant="outline"
             size="sm"
             disabled={pending || !!compose}
-            onClick={() => setOpen((v) => !v)}
+            onClick={() => { setOpen((v) => !v); setIntakeOpen(false); }}
           >
             <Plus className="size-4" />
             {open ? "Close request form" : "Request estimate"}
           </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-5">
+        <PrintEstimateIntake id={`${prefix}-intake`} open={intakeOpen} projectId={projectId} contacts={contacts} onSaved={() => setIntakeOpen(false)} />
         <p className="text-sm text-muted-foreground">
-          {selected && selectedTotal
+          {reviewedPrintQuote
+            ? `The budget uses the reviewed print run quote: ${reviewedPrintQuote.currency} ${reviewedPrintQuote.total.toLocaleString(undefined, { minimumFractionDigits: 2 })} for ${reviewedPrintQuote.quantityCps?.toLocaleString() ?? "the quoted"} copies. `
+            : selected && selectedTotal
             ? `Selected estimate: ${selected.currency} ${selectedTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })} for ${selected.quantityCps?.toLocaleString() ?? "the quoted"} copies. `
             : "No printer estimate selected. "}
           A reviewed first-print quote takes precedence in the budget. Estimates
@@ -576,38 +609,59 @@ export function PrintEstimatePanel({
                     toast.error(result.error);
                     return;
                   }
-                  setCompose(null);
                   toast.success("Estimate request sent");
+                  // Confirm on the button, then close the email and show the
+                  // request it belongs to.
+                  const requestId = compose.runId;
+                  await sentBeat.play();
+                  settle(
+                    () => setCompose(null),
+                    `[data-estimate-request="${requestId}"]`,
+                  );
                   router.refresh();
                 })
               }
             >
-              {pending ? (
+              {sentBeat.done ? (
+                <DoneCheck />
+              ) : pending ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
                 <Send className="size-4" />
               )}
-              {pending ? operation : "Send estimate request"}
+              {sentBeat.done
+                ? "Sent"
+                : pending
+                  ? operation
+                  : "Send estimate request"}
             </Button>
           </section>
         ) : null}
         {requests.length ? (
           <div className="space-y-4">
             {requests.map((request) => (
-              <section key={request.id} className="space-y-3 border-t pt-4">
+              <section
+                key={request.id}
+                data-estimate-request={request.id}
+                className="scroll-mt-24 space-y-3 border-t pt-4"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <h3 className="text-sm font-semibold">
                       {request.contactName}
                     </h3>
                     <p className="text-xs text-muted-foreground">
-                      {request.pageCount} estimated pages ·{" "}
-                      {request.quantities.join(", ")} copies ·{" "}
-                      {request.status === "planning"
-                        ? "Draft"
-                        : request.status === "sending"
-                          ? "Sending"
-                          : "Requested"}
+                      {request.fromPrintRun
+                        ? `${request.quantities.map((q) => q.toLocaleString()).join(", ")} copies · From print run`
+                        : `${request.pageCount} estimated pages · ${request.quantities.join(", ")} copies · ${
+                            request.sourceText
+                              ? "Pasted estimate"
+                              : request.status === "planning"
+                              ? "Draft"
+                              : request.status === "sending"
+                                ? "Sending"
+                                : "Requested"
+                          }`}
                     </p>
                   </div>
                   {request.draft && request.status === "planning" ? (
@@ -630,16 +684,22 @@ export function PrintEstimatePanel({
                     </Button>
                   ) : null}
                 </div>
+                {request.sourceText ? <details className="text-sm">
+                  <summary className="min-h-10 cursor-pointer py-2 text-muted-foreground">View pasted source</summary>
+                  <p className="whitespace-pre-wrap break-words rounded-md bg-muted/30 p-3 text-xs [overflow-wrap:anywhere]">{request.sourceText}</p>
+                </details> : null}
                 {visibleQuotes
                   .filter(
                     (q) =>
                       q.runId === request.id && q.reviewStatus !== "rejected",
                   )
+                  .sort((a, b) => (a.quantityCps ?? Infinity) - (b.quantityCps ?? Infinity))
                   .map((q) => (
                     <EstimateQuoteReview
                       key={`${q.id}:${q.reviewStatus}:${q.totalAmount}`}
                       quote={q}
                       pending={pending || rejected.isPending(q.id)}
+                      fromPrintRun={request.fromPrintRun}
                       onUse={(values) =>
                         run("Updating budget estimate…", async () => {
                           const result = await selectPrintEstimateQuote(
@@ -656,6 +716,17 @@ export function PrintEstimatePanel({
                           router.refresh();
                         })
                       }
+                      onClear={() =>
+                        run("Updating budget estimate…", async () => {
+                          const result = await stopUsingPrintEstimateQuote(q.id);
+                          if (result.error) {
+                            toast.error(result.error);
+                            return;
+                          }
+                          toast.success("Budget estimate removed");
+                          router.refresh();
+                        })
+                      }
                       onReject={() =>
                         rejected.run(q.id, () => rejectPrintQuote(q.id), {
                           errorMessage:
@@ -665,25 +736,34 @@ export function PrintEstimatePanel({
                       }
                     />
                   ))}
-                {!visibleQuotes.some(
-                  (q) =>
-                    q.runId === request.id && q.reviewStatus !== "rejected",
-                ) ? (
+                {request.fromPrintRun ? (
                   <p className="text-sm text-muted-foreground">
-                    Replies captured in Correspondence will appear here as
-                    suggested quotes for review.
+                    Review or reject these printer quotes on the Print tab.
                   </p>
-                ) : null}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={pending}
-                  onClick={() =>
-                    setImportRun(importRun === request.id ? "" : request.id)
-                  }
-                >
-                  Add quote from text or PDF
-                </Button>
+                ) : (
+                  <>
+                    {!visibleQuotes.some(
+                      (q) =>
+                        q.runId === request.id &&
+                        q.reviewStatus !== "rejected",
+                    ) ? (
+                      <p className="text-sm text-muted-foreground">
+                        Replies captured in Correspondence will appear here as
+                        suggested quotes for review.
+                      </p>
+                    ) : null}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={pending}
+                      onClick={() =>
+                        setImportRun(importRun === request.id ? "" : request.id)
+                      }
+                    >
+                      Add quote from text or PDF
+                    </Button>
+                  </>
+                )}
                 {importRun === request.id ? (
                   <div className="space-y-3">
                     <Label htmlFor={`${prefix}-reply`}>Printer’s reply</Label>
@@ -764,16 +844,20 @@ export function PrintEstimatePanel({
 function EstimateQuoteReview({
   quote,
   pending,
+  fromPrintRun,
   onUse,
+  onClear,
   onReject,
 }: {
   quote: EstimateQuote;
   pending: boolean;
+  fromPrintRun: boolean;
   onUse: (values: {
     quantityCps: number;
     totalAmount: number;
     currency: string;
   }) => void;
+  onClear: () => void;
   onReject: () => void;
 }) {
   const id = useId();
@@ -799,22 +883,26 @@ function EstimateQuoteReview({
         <Badge variant="outline">
           {chosen ? "Selected budget estimate" : "Review estimate"}
         </Badge>
+        {quote.reviewFlags.some(flag => flag.kind === "reused_quote") ? <Badge variant="secondary">Reused quote</Badge> : null}
         {quote.sourceThreadId ? (
           <Link
             className="text-sm underline underline-offset-4"
             href={`/correspondence/${quote.sourceThreadId}`}
           >
-            View printer email
+            View source email
           </Link>
         ) : null}
       </div>
       <p className="text-xs text-muted-foreground">
         {[
-          quote.textPages ? `${quote.textPages} quoted pages` : null,
+          quote.trimWidthMm && quote.trimHeightMm ? `${quote.trimWidthMm} × ${quote.trimHeightMm} mm` : null,
+          quote.textPages ? `${quote.textPages} pages` : null,
+          quote.coverPages ? `${quote.coverPages} cover pages` : null,
           quote.textSpec,
           quote.coverSpec,
           quote.binding,
           quote.paymentTerms,
+          quote.deliveryLocation,
         ]
           .filter(Boolean)
           .join(" · ") ||
@@ -823,7 +911,7 @@ function EstimateQuoteReview({
       {quote.reviewFlags.length ? (
         <ul className="list-disc space-y-1 pl-4 text-xs text-muted-foreground">
           {quote.reviewFlags.map((flag, i) => (
-            <li key={i}>{ESTIMATE_REVIEW_HINTS[flag.kind]}</li>
+            <li key={i}>{flag.kind === "reused_quote" && flag.note ? flag.note : ESTIMATE_REVIEW_HINTS[flag.kind]}</li>
           ))}
         </ul>
       ) : null}
@@ -869,15 +957,17 @@ function EstimateQuoteReview({
         <Button size="sm" type="submit" disabled={pending || chosen}>
           Use for budget estimate
         </Button>
-        <Button
-          size="sm"
-          type="button"
-          variant="ghost"
-          disabled={pending}
-          onClick={onReject}
-        >
-          {chosen ? "Remove selected estimate" : "Reject"}
-        </Button>
+        {!fromPrintRun || chosen ? (
+          <Button
+            size="sm"
+            type="button"
+            variant="ghost"
+            disabled={pending}
+            onClick={fromPrintRun ? onClear : onReject}
+          >
+            {chosen ? "Remove selected estimate" : "Reject"}
+          </Button>
+        ) : null}
       </div>
     </form>
   );

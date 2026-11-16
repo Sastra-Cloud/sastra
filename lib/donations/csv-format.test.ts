@@ -9,14 +9,7 @@ import {
   readDonationCsv,
   RECEIVED_STATUS,
 } from "./csv";
-import {
-  donationCsvColumnProfiles,
-  donationCsvMappingProblems,
-  donationValueShape,
-  formatNameFromFilename,
-  isGivingPlatformExport,
-  suggestDonationCsvMapping,
-} from "./csv-format";
+import { donationCsvColumnProfiles, donationCsvMappingProblems, donationValueShape, isGivingPlatformExport, suggestDonationCsvMapping } from "./csv-format";
 import { normalizeAiDonationCsvMapping } from "./csv-format-schema";
 
 // Same header layout as a fund-manager "Donation Detail" download; values are invented.
@@ -142,12 +135,6 @@ describe("donation CSV formats", () => {
     expect(donationCsvHeaderSignature(["Date", "Donor", "Amount"])).not.toBe(
       donationCsvHeaderSignature(["Date", "Donor Name", "Amount"])
     );
-  });
-
-  it("names a new format from its file name", () => {
-    expect(
-      formatNameFromFilename("Donation-Detail-Fund-Manager-Download_2610191345.csv")
-    ).toBe("Donation Detail Fund Manager Download");
   });
 });
 

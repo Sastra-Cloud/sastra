@@ -1,4 +1,5 @@
 import "server-only";
+import { addDefaultProjectPeople } from "./people";
 
 import { revalidatePath } from "next/cache";
 import { and, eq, ilike, isNull, sql } from "drizzle-orm";
@@ -138,6 +139,8 @@ export async function createProjectFromBlueprint(
         createdBy: user.id,
       })
       .returning({ id: projects.id });
+
+    await addDefaultProjectPeople(tx, project.id, user.id);
 
     await Promise.all([
       tx.insert(projectBudgetSettings).values({

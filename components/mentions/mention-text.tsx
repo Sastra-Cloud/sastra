@@ -14,6 +14,7 @@ export function MentionText({
   currentUserId,
   tone = "default",
   className,
+  channelMentions = false,
 }: {
   text: string;
   members: MentionUser[];
@@ -21,19 +22,21 @@ export function MentionText({
   /** "onPrimary" for mentions sitting on a primary-colored surface (own chat bubble). */
   tone?: "default" | "onPrimary";
   className?: string;
+  channelMentions?: boolean;
 }) {
-  const segments = tokenizeMentions(text, members);
+  const segments = tokenizeMentions(text, members, channelMentions);
   return (
     <>
       {segments.map((segment, i) => {
         if (segment.type === "text") {
           return <Fragment key={i}>{segment.text}</Fragment>;
         }
-        const isSelf = !!currentUserId && segment.user.id === currentUserId;
+        const isSelf = !!currentUserId && (segment.type === "channel" || segment.user.id === currentUserId);
         return (
           <span
             key={i}
             data-mention-self={isSelf ? "" : undefined}
+            data-mention-channel={segment.type === "channel" ? "" : undefined}
             className={cn(
               "rounded px-1 font-medium",
               tone === "onPrimary"

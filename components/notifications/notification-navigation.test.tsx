@@ -22,7 +22,7 @@ for (const surface of ["bell", "list"]) {
     let fail!: (error: Error) => void;
     mocks.mark.mockReturnValue(new Promise((_, reject) => { fail = reject; }));
     const states = surface === "bell" ? [true, 1, [item]] : [[item]];
-    mocks.state.mockImplementation(() => [states.shift(), mocks.set]);
+    mocks.state.mockImplementation((initial: unknown) => [states.length ? states.shift() : typeof initial === "function" ? initial() : initial, mocks.set]);
     const tree = surface === "bell" ? NotificationBell() : NotificationsList({ initial: [item] });
     const pending = buttons(tree).at(-1)!.props.onClick();
     expect(mocks.push).toHaveBeenCalledWith(item.link);

@@ -18,7 +18,7 @@ export type EligibleBudgetApprover = {
 };
 
 export async function listEligibleBudgetApprovers(
-  excludeUserId?: string
+  excludeUserId?: string,
 ): Promise<EligibleBudgetApprover[]> {
   const rows = await db
     .select({ id: user.id, name: user.name, role: user.role })
@@ -28,8 +28,8 @@ export async function listEligibleBudgetApprovers(
         eq(user.isActive, true),
         eq(user.isBot, false),
         inArray(user.role, ["manager", "admin", "super_admin"]),
-        excludeUserId ? ne(user.id, excludeUserId) : undefined
-      )
+        excludeUserId ? ne(user.id, excludeUserId) : undefined,
+      ),
     )
     .orderBy(asc(user.name));
   return rows as EligibleBudgetApprover[];
@@ -65,7 +65,7 @@ const requester = alias(user, "budget_approval_requester");
 const approver = alias(user, "budget_approval_approver");
 
 async function hydrateRounds(
-  rows: Omit<BudgetApprovalRoundDTO, "assignments">[]
+  rows: Omit<BudgetApprovalRoundDTO, "assignments">[],
 ): Promise<BudgetApprovalRoundDTO[]> {
   if (rows.length === 0) return [];
   const assignments = await db
@@ -84,8 +84,8 @@ async function hydrateRounds(
     .where(
       inArray(
         budgetApprovalAssignments.requestId,
-        rows.map((row) => row.id)
-      )
+        rows.map((row) => row.id),
+      ),
     )
     .orderBy(asc(approver.name));
   const byRequest = new Map<string, BudgetApprovalAssignmentDTO[]>();
@@ -118,9 +118,14 @@ const roundSelect = {
 /** Read the synchronized active round and immutable superseded history. */
 export async function getBudgetApprovalState(
   projectId: string,
-  printRunId?: string | null
+  printRunId?: string | null,
+  quotationId?: string | null,
 ) {
-  const sync = await syncBudgetApprovalState(projectId, printRunId);
+  const sync = await syncBudgetApprovalState(
+    projectId,
+    printRunId,
+    quotationId,
+  );
   const scopeCondition = printRunId
     ? eq(budgetApprovalRequests.printRunId, printRunId)
     : isNull(budgetApprovalRequests.printRunId);
@@ -128,26 +133,38 @@ export async function getBudgetApprovalState(
     db
       .select(roundSelect)
       .from(budgetApprovalRequests)
-      .innerJoin(requester, eq(requester.id, budgetApprovalRequests.requesterId))
+      .innerJoin(
+        requester,
+        eq(requester.id, budgetApprovalRequests.requesterId),
+      )
       .where(
         and(
           eq(budgetApprovalRequests.projectId, projectId),
           scopeCondition,
-          ne(budgetApprovalRequests.status, "superseded")
-        )
+          quotationId
+            ? eq(budgetApprovalRequests.partnerQuotationId, quotationId)
+            : isNull(budgetApprovalRequests.partnerQuotationId),
+          ne(budgetApprovalRequests.status, "superseded"),
+        ),
       )
       .orderBy(desc(budgetApprovalRequests.createdAt))
       .limit(1),
     db
       .select(roundSelect)
       .from(budgetApprovalRequests)
-      .innerJoin(requester, eq(requester.id, budgetApprovalRequests.requesterId))
+      .innerJoin(
+        requester,
+        eq(requester.id, budgetApprovalRequests.requesterId),
+      )
       .where(
         and(
           eq(budgetApprovalRequests.projectId, projectId),
           scopeCondition,
-          eq(budgetApprovalRequests.status, "superseded")
-        )
+          quotationId
+            ? eq(budgetApprovalRequests.partnerQuotationId, quotationId)
+            : isNull(budgetApprovalRequests.partnerQuotationId),
+          eq(budgetApprovalRequests.status, "superseded"),
+        ),
       )
       .orderBy(desc(budgetApprovalRequests.createdAt)),
   ]);
@@ -166,7 +183,9 @@ export async function getBudgetApprovalState(
   const gateReason = canSend
     ? null
     : active?.status === "changes_requested"
-      ? "The budget needs revision and unanimous re-approval."
+      ? quotationId
+        ? "This proposal needs revision and unanimous re-approval."
+        : "The budget needs revision and unanimous re-approval."
       : active
         ? `Waiting for ${outstanding.join(", ") || "all assigned approvers"}.`
         : "Request and receive unanimous budget approval before sending.";

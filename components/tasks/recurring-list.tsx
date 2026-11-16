@@ -290,7 +290,7 @@ function RecurringTaskEditDialog({
             <p className="rounded-lg border border-info/30 bg-info/10 px-3 py-2 text-xs text-muted-foreground">
               This schedule comes from a license obligation. Correcting its
               title, requirement, cadence, first due date, or owner also updates
-              the obligation on the Rights tab.
+              the obligation on the Rights &amp; MOUs tab.
             </p>
           ) : null}
           <div className="grid gap-1.5">

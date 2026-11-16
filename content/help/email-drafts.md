@@ -52,8 +52,15 @@ sent record.
 
 Attachments are not frozen inside an email draft. Sastra rebuilds the
 attachment list from the current proposal, invoice, print payment, or project
-record whenever you review the composer. Always preview the listed attachment
-and complete the final review checkbox before sending.
+record whenever you review the composer. Always check the listed attachment
+and complete the final review checkbox before sending. Use **Preview** for a
+PDF or image. An Excel workbook cannot be previewed, so its row shows
+**Download**; open the saved file to check it.
+
+After a successful send, the send button shows **Sent** with a check for a
+moment. The email then closes, and the screen moves to the result (the new row
+in the history, or the "sent" confirmation) and tints it green briefly so you
+can find it. A failed send keeps the email open with your text.
 
 The Sastra Assistant uses its existing pending-action **Save** control for
 drafted emails. Those edits remain in the pending approval until you approve or

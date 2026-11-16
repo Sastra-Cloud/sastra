@@ -12,6 +12,7 @@ export type ChatAttachmentProgress = {
   fileName: string;
   progress: number | null;
   height?: number;
+  kind?: "voice";
 };
 
 export function ChatVideoQualityControl({ quality, disabled, onChange }: {
@@ -35,7 +36,7 @@ export function ChatVideoQualityControl({ quality, disabled, onChange }: {
 }
 
 export function ChatFileProgress({ value, onCancel }: { value: ChatAttachmentProgress; onCancel: () => void }) {
-  const label = value.phase === "preparing" ? "Preparing video" : value.phase === "uploading" ? "Uploading" : "Finishing upload";
+  const label = value.phase === "preparing" ? value.kind === "voice" ? "Preparing voice message" : "Preparing video" : value.phase === "uploading" ? "Uploading" : "Finishing upload";
   const percent = value.progress === null ? null : Math.floor(value.progress * 100);
   return <div className="space-y-1.5" data-chat-file-progress={value.phase}>
     <div className="flex min-w-0 items-center gap-2 text-xs">
@@ -65,9 +66,9 @@ export function ChatVideoPlayer({ fileId, name, sizeBytes }: { fileId: string; n
         onClick={() => { setAttempt(current => current + 1); setFailed(false); }}>Reload video</Button>
     </div> : (
       // User-uploaded videos may have no caption track; the message can provide a written description.
-      <video key={attempt} controls playsInline preload="metadata" aria-label={name}
+      <video key={attempt} controls playsInline preload="metadata" aria-label={name} width={384} height={216}
         src={`${url}?inline=1&attempt=${attempt}`} onError={() => setFailed(true)}
-        className="max-h-80 w-full bg-black object-contain" />
+        className="aspect-video h-auto max-h-80 w-full bg-black object-contain" />
     )}
     <figcaption className="flex min-w-0 items-center gap-2 px-3 py-1.5">
       <span className="min-w-0 flex-1">

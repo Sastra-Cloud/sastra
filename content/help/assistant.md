@@ -2,7 +2,7 @@
 title: "The Sastra Assistant"
 category: "AI & assistant"
 roles: [member, manager, admin]
-keywords: [scrolling, short window, copy project, duplicate project, new volume, assistant, ai, chat, ask, help, ask the assistant, first time, new user, introduction, launcher, sparkle button, assistant tip, hide tip, find the assistant, wiki, tutorial, knowledge, search, projects, current project, acting on project, move task, create project, project blueprint, units, project workflow, project budget, partner quote, completion date, schedule advice, portfolio capacity, portfolio, project status, deadlines, progress, team, health, blockers, rights, licenses, approve, pending action, draft email, default cc, cc recipients, email sign-off, reviewed email, external email, memory, learning, reflection, feedback, regression, eval, budget, voice, dictation, mobile, full screen, agreement chat, ask about agreements, mou, license, citations, source selection, indexing, what can you do, walk me through, guide me, step by step, help me do this, conversation details, keyboard, newline, voice preview, latest messages]
+keywords: [task refresh, new task missing, My Work update, scrolling, short window, copy project, duplicate project, new volume, assistant, ai, chat, ask, help, ask the assistant, first time, new user, introduction, launcher, sparkle button, assistant tip, hide tip, find the assistant, wiki, tutorial, knowledge, search, projects, current project, acting on project, move task, create project, project blueprint, units, project workflow, project budget, partner quote, completion date, schedule advice, portfolio capacity, portfolio, project status, deadlines, progress, team, health, blockers, rights, licenses, approve, pending action, draft email, default cc, cc recipients, email sign-off, reviewed email, external email, memory, learning, reflection, feedback, regression, eval, budget, voice, dictation, mobile, full screen, agreement chat, ask about agreements, mou, license, citations, source selection, indexing, what can you do, walk me through, guide me, step by step, help me do this, conversation details, keyboard, newline, voice preview, latest messages]
 order: 110
 summary: "Ask the in-app assistant to look things up, take actions, and answer how-to questions."
 ---
@@ -10,6 +10,8 @@ summary: "Ask the in-app assistant to look things up, take actions, and answer h
 The **Sastra Assistant** is an in-app helper you can chat with. Open it from the
 **Assistant** page or the floating launcher in the bottom corner of any page. It
 can look things up, take actions on your behalf, and explain how Sastra works.
+The floating panel loads when you open it. The first opening may briefly show
+**Loading assistant…**; later openings reuse the loaded panel.
 The floating Assistant opens full-screen on phones so the transcript, approvals,
 keyboard, and send controls have enough room. Use the back arrow to close it.
 Sent messages appear in the transcript immediately while the assistant works. If
@@ -58,6 +60,9 @@ back, use **Settings → Profile → Show hidden tips again**.
   an older project discussed in the same conversation. If a task was filed on
   the wrong project, ask the assistant to move that exact task; it preserves the
   task instead of recreating and deleting it.
+  After an action finishes, the page behind the assistant refreshes too. New
+  tasks assigned to you today stay visible in My Work’s compact queue; no manual
+  page reload is needed.
 - **Plan a realistic completion date** — on a project page, ask "when can we
   start this?" or "what completion date is realistic?". The assistant uses the
   same live work-path capacity, running-project finish dates, duration defaults,
@@ -149,12 +154,12 @@ captions. If it can't do something your role doesn't allow, it says so and
 suggests asking a manager.
 
 Project **Agreement Q&A** is intentionally separate from this Assistant. Open
-**Ask about agreements** from a project's Rights page to question selected MoU
+**Ask about agreements** from a project's Rights & MOUs page to question selected MoU
 and License attachments with clause-level citations. That conversation is
 private to you and the project, never enters this Assistant transcript, exposes
 no write tools, and does not save agreement text to memory or learning. Agreement
 questions use your assistant budget, while background document indexing uses the
-workspace AI budget. See **Rights & licensing** for source selection, indexing,
+workspace AI budget. See **Rights & MOUs** for source selection, indexing,
 retry, citation, and removed-source behavior.
 
 ## Memory, budget, and voice

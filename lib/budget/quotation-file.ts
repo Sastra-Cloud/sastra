@@ -1,6 +1,8 @@
 import "server-only";
 
 import { getBudgetData } from "@/lib/budget/queries";
+import { getPartnerQuotationContext } from "./partner-quotation-context";
+import { partnerBaseItems } from "./print-options";
 import {
   buildQuotationWorkbook,
   type QuotationBranding,
@@ -33,6 +35,7 @@ async function loadBranding(): Promise<QuotationBranding> {
   }
   return {
     accentColor: settings.accentColor,
+    colors: settings.invoicePaymentDetails?.colors,
     orgName: settings.orgName,
     preparedByNote: settings.preparedByNote,
     logo,
@@ -77,7 +80,10 @@ export async function buildPartnerQuotationBuffer(
   if (presentation.mode !== "itemized") {
     throw new Error("Per-copy partner quotes are exported as PDF.");
   }
-  const publicItems = items
+  if (presentation.printOptions?.some((option) => option.currency !== settings.currency)) {
+    throw new Error("Review the printing options in the current budget currency before exporting.");
+  }
+  const publicItems = partnerBaseItems(items, presentation.printOptions)
     .filter((item) => item.partnerVisible)
     .map((item) => {
       const unitPrice = item.partnerUnitPrice ?? item.unitPrice;
@@ -107,8 +113,17 @@ export async function buildPartnerQuotationBuffer(
     publicItems,
     projectTitle,
     branding,
-    projectKind
+    projectKind,
+    presentation.printOptions
   );
   const written = await wb.xlsx.writeBuffer();
   return Buffer.from(written as ArrayBuffer);
+}
+
+/** Export one partner's share only, using the same saved context as proposal sending. */
+export async function buildAllocatedQuotationBuffer(projectId: string, projectTitle: string, quotationId: string, runId?: string, projectKind?: string | null): Promise<Buffer> {
+  const { settings, items, printOptions } = await getPartnerQuotationContext(projectId, runId, quotationId);
+  const branding = await loadBranding();
+  const workbook = buildQuotationWorkbook(settings, items, projectTitle, branding, projectKind, printOptions);
+  return Buffer.from(await workbook.xlsx.writeBuffer() as ArrayBuffer);
 }

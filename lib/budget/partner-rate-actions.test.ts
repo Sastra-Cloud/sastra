@@ -2,11 +2,13 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { PgDialect } from "drizzle-orm/pg-core";
 import type { SQL } from "drizzle-orm";
 import type { PartnerQuoteLine } from "./partner-line-state";
+import type { PartnerPrintOption } from "./print-options";
 
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(), revalidate: vi.fn(), transactions: vi.fn(),
   rows: [] as Array<PartnerQuoteLine & { projectId: string; printRunId: string | null }>,
   writes: [] as string[],
+  printOptions: [] as PartnerPrintOption[],
 }));
 vi.mock("@/lib/auth/guards", () => ({ requireRole: mocks.auth }));
 vi.mock("./revalidate", () => ({ revalidateBudget: mocks.revalidate }));
@@ -20,7 +22,7 @@ vi.mock("@/lib/db", async () => {
         orderBy: () => query,
         for: async () => {
           const { params } = new PgDialect().sqlToQuery(condition);
-          return getTableName(table) === "budget_scope_presentations" ? [{ deductionBps: 1300 }] :
+          return getTableName(table) === "budget_scope_presentations" ? [{ deductionBps: 1300, mode: "itemized", printOptions: mocks.printOptions }] :
             structuredClone(mocks.rows.filter((row) => row.projectId === params[0] && row.printRunId === (params[1] ?? null)));
         },
       };
@@ -48,11 +50,24 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.auth.mockResolvedValue({ user: { id: "manager" } });
   mocks.writes = [];
+  mocks.printOptions = [];
   mocks.rows = [
     { id: audioId, projectId, printRunId: null, label: "Audiobook", partnerLabel: "Audio production", partnerVisible: true, partnerUnitPrice: null, unit: "words", quantity: "59000", unitPrice: "0.01", amount: "590" },
     { id: printId, projectId, printRunId: null, label: "Printing", partnerLabel: null, partnerVisible: true, partnerUnitPrice: "1500.0000", unit: "flat", quantity: "1", unitPrice: "2000", amount: "2000" },
     { id: otherId, projectId, printRunId: null, label: "Cover", partnerLabel: null, partnerVisible: true, partnerUnitPrice: "75.0000", unit: "flat", quantity: "1", unitPrice: "100", amount: "100" },
   ];
+});
+
+it("covers shared costs without adding the selected print estimate again when offering quantity alternatives", async () => {
+  mocks.rows[1].category = "print_ship";
+  mocks.printOptions = [{ sourceQuoteId: printId, quantity: 1000, printingCostCents: 156000, partnerAmountCents: 180000, label: "Printing", currency: "USD" }];
+  const result = await applySuggestedPartnerRates(projectId, null, [audioId, printId, otherId]);
+  expect(result).not.toHaveProperty("error");
+  expect(mocks.writes).not.toContain(printId);
+  expect(mocks.rows[1].partnerUnitPrice).toBe("1500.0000");
+  const sharedTotal = Number(mocks.rows[0].partnerUnitPrice) * 59000 + Number(mocks.rows[2].partnerUnitPrice);
+  expect(sharedTotal).toBeGreaterThanOrEqual(690 / 0.87);
+  expect(sharedTotal).toBeLessThan(800);
 });
 
 // These boundaries protect financial edits from unauthorized or stale undo requests.

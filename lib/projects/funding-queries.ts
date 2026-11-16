@@ -12,6 +12,7 @@ import {
   sharedMouMemberships,
   sharedMouReceiptAllocations,
 } from "@/lib/db/schema";
+import { openDonationPromisesByProject } from "@/lib/proposals/queries";
 import type { ProjectFundingSummary } from "./print-funding";
 
 export type ProjectFundingSummaryRow = ProjectFundingSummary & {
@@ -31,6 +32,7 @@ export async function listProjectFundingSummaries(
     sharedRows,
     linkedPaymentReceipts,
     linkedSharedReceipts,
+    donationPromises,
   ] = await Promise.all([
     db
       .select({
@@ -101,6 +103,7 @@ export async function listProjectFundingSummaries(
         )
       )
       .where(inArray(fundingReceipts.projectId, projectIds)),
+    openDonationPromisesByProject(projectIds),
   ]);
 
   const budgetMap = new Map(budgetRows.map((row) => [row.projectId, row]));
@@ -136,7 +139,9 @@ export async function listProjectFundingSummaries(
       needed: budget?.needed ?? 0,
       committed: committedFundingTotal(
         budget?.lineSecured ?? 0,
-        (payments?.scheduled ?? 0) + (shared?.committed ?? 0),
+        (payments?.scheduled ?? 0) +
+          (shared?.committed ?? 0) +
+          (donationPromises.get(projectId) ?? 0),
         receipts?.standaloneReceived ?? 0
       ),
       received: receipts?.received ?? 0,

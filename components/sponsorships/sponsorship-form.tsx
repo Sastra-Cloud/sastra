@@ -49,6 +49,7 @@ export function SponsorshipForm({ initial, options, pending, onSave, onCancel, l
               patch({ partnerId: partner?.id ?? null, ...(partner ? { recipientName: partner.name, recipientAddress: partner.billingAddress ?? "", recipientEmail: contact?.email ?? "" } : {}) });
             }}><option value="">Individual or other partner</option>{options.partners.map(partner => <option key={partner.id} value={partner.id}>{partner.name}</option>)}</select>
             <Link href="/settings/partners" className="text-xs text-primary underline underline-offset-4">Manage saved partners</Link>
+            <p className="text-xs text-muted-foreground">New billing partners and contact emails are saved to Partners with this sponsorship.</p>
           </div>
           <div className="grid gap-1.5"><Label htmlFor="sponsorship-name">Bill to name</Label><Input className="min-h-11" id="sponsorship-name" required maxLength={200} value={value.recipientName} onChange={event => patch({ recipientName: event.target.value })} placeholder="Person or organization" /></div>
           <div className="grid gap-1.5"><Label htmlFor="sponsorship-email">Contact email (optional)</Label><Input className="min-h-11" id="sponsorship-email" type="email" value={value.recipientEmail} onChange={event => patch({ recipientEmail: event.target.value })} /></div>

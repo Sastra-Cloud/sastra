@@ -69,7 +69,9 @@ describe("personal badge queries", () => {
     expect(chat.sql).toContain('"chat_messages"."deleted_at" is null');
     expect(chat.sql).toContain('"chat_messages"."user_id" is null or "chat_messages"."user_id" <>');
     expect(chat.sql).toContain('"chat_messages"."id" > coalesce("channel_reads"."last_read_message_id"');
-    expect(chat.params).toEqual(["me", "me", "me", "standup", "project", "completed", "cancelled", "general", "me"]);
+    expect(chat.sql).toContain('from "project_people"');
+    expect(chat.sql).toContain('"project_people"."project_id" = "chat_channels"."project_id"');
+    expect(chat.params).toEqual(expect.arrayContaining(["me", "standup", "project", "completed", "cancelled", "general"]));
   });
 
   it("counts only the viewer's open, active, answerable standups on the standup-local date", async () => {

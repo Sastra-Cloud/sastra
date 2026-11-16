@@ -22,13 +22,14 @@ beforeEach(() => {
   sql = new DatabaseSync(":memory:");
   sql.exec(`
     create table "user"(id text primary key,name text,email text,image text,role text,is_bot integer,is_active integer);
+    create table project_people(id text,project_id text,user_id text);
     create table project_members(id text,project_id text,user_id text,project_role_id text);
     create table project_managers(id text,project_id text,user_id text);
     create table projects(id text,slug text);
     insert into projects values ('assigned','assigned-project'),('other','other-project');
     insert into "user" values
       ('coordinator','Assigned Coordinator','coordinator@example.test',null,'member',0,1),
-      ('workspace-manager','Workspace Manager','manager@example.test',null,'manager',0,1),
+      ('workspace-manager','Workspace Manager','manager@example.test',null,'admin',0,1),
       ('other-coordinator','Other Coordinator','other@example.test',null,'member',0,1),
       ('inactive','Inactive Coordinator','inactive@example.test',null,'member',0,0),
       ('bot','Bot','bot@example.test',null,'member',1,1),

@@ -78,4 +78,36 @@ describe("buildBudgetAttentionSummary", () => {
 
     expect(summary.items.find((item) => item.id === "funding")).toBeUndefined();
   });
+
+  it("warns when a partner agreed without expected payments and notes waiting proposals quietly", () => {
+    const summary = buildBudgetAttentionSummary({
+      currency: "USD",
+      quotationTotalCents: 5_000,
+      committedFundingCents: 5_000,
+      approvalStatus: null,
+      pendingApprovalCount: 0,
+      overdueReceivableCount: 0,
+      overdueReceivableCents: 0,
+      reconciliationIssueCount: 0,
+      proposalsWaitingCount: 2,
+      oldestProposalWaitingDays: 9,
+      agreedWithoutPaymentsCount: 1,
+    });
+
+    expect(summary.items.map((item) => [item.id, item.severity])).toEqual([
+      ["expected-payments", "warning"],
+      ["proposal-answers", "info"],
+    ]);
+    expect(summary.nextAction?.href).toBe("#partner-proposals");
+  });
+});
+
+it("asks for funding review before claiming a funding gap or overdue balance from an incomplete schedule", () => {
+  const summary = buildBudgetAttentionSummary({
+    currency: "USD", quotationTotalCents: 2167056, committedFundingCents: 1083528,
+    approvalStatus: null, pendingApprovalCount: 0, overdueReceivableCount: 2,
+    overdueReceivableCents: 67500, reconciliationIssueCount: 0, fundingReviewCount: 1,
+  });
+  expect(summary.items.map(item => item.id)).toEqual(["funding-review"]);
+  expect(summary.nextAction?.href).toBe("#agreements-fees");
 });

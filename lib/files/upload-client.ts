@@ -2,13 +2,15 @@
 
 import { toast } from "sonner";
 
+import { uploadContentType } from "@/lib/files/upload-rules";
+
 /**
  * Upload a single file to R2 via the presign → PUT → complete flow and return
  * its file id (or null on failure, having shown a toast). The file is marked
  * `ready` but left unattached — callers decide what to do with the id.
  */
 export async function uploadFile(file: File): Promise<string | null> {
-  const contentType = file.type || "application/octet-stream";
+  const contentType = uploadContentType(file);
 
   const presign = await fetch("/api/files/presign", {
     method: "POST",

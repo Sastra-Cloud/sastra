@@ -56,6 +56,8 @@ the same package.
 - Branch from `main`. One change per pull request.
 - Run `pnpm typecheck`, `pnpm lint`, and `pnpm test` before opening the PR.
   `pnpm build` must also pass.
+- For changes to chat, scrolling, navigation, or other browser-dependent
+  behavior, also run `pnpm test:browser` (see `docs/browser-verification.md`).
 - Schema changes: edit `lib/db/schema/*.ts`, then run
   `pnpm db:generate --name <short_name>` and commit the generated migration,
   snapshot, and journal together. Never edit an applied migration.

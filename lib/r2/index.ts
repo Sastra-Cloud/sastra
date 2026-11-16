@@ -12,50 +12,10 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { recordR2Operation } from "@/lib/ai/usage";
 import { resolveStorageConfig, type StorageConfig } from "@/lib/r2/config";
 
-export const MAX_FILE_BYTES = 50 * 1024 * 1024; // 50 MB
+// Upload rules live in a browser-safe module so composers can check a file
+// when it is chosen; they are re-exported here for server callers.
+export { MAX_FILE_BYTES, isAllowedMime, validateUpload } from "@/lib/files/upload-rules";
 export const MAX_DONATION_CSV_BYTES = 5 * 1024 * 1024;
-
-// Allowlist of accepted MIME types (publishing docs, images, office, archives).
-const ALLOWED_MIME = new Set([
-  "image/png",
-  "image/jpeg",
-  "image/gif",
-  "image/webp",
-  "image/svg+xml",
-  "application/pdf",
-  "text/plain",
-  "text/csv",
-  "text/markdown",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.ms-excel",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "application/vnd.ms-powerpoint",
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-  "application/zip",
-  "application/vnd.oasis.opendocument.text",
-  "application/vnd.adobe.indesign-idml-package",
-  "application/epub+zip",
-  "audio/mpeg",
-  "audio/wav",
-  "audio/mp4",
-  "audio/webm",
-  "audio/ogg",
-  "video/mp4",
-  "video/quicktime",
-]);
-
-export function isAllowedMime(mime: string): boolean {
-  const normalized = mime.split(";", 1)[0]?.trim().toLowerCase() ?? "";
-  return ALLOWED_MIME.has(normalized);
-}
-
-export function validateUpload(mime: string, size: number): string | null {
-  if (!isAllowedMime(mime)) return "That file type isn't allowed.";
-  if (size <= 0) return "Empty file.";
-  if (size > MAX_FILE_BYTES) return "File exceeds the 50 MB limit.";
-  return null;
-}
 
 // Resolved lazily so importing this module never throws at build time; the
 // first storage call surfaces a StorageConfigError naming the missing variables.

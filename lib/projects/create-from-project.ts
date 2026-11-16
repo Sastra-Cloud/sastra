@@ -1,4 +1,5 @@
 import "server-only";
+import { addDefaultProjectPeople } from "./people";
 
 import { createHash, randomUUID } from "node:crypto";
 import { and, asc, eq, isNull, sql } from "drizzle-orm";
@@ -142,6 +143,7 @@ export async function createProjectFromExisting(raw: ProjectCopyInput, reviewedF
       projectId: id, stage: stage.stage, daysBeforePublication: stage.daysBeforePublication,
     })));
     if (rows.budget.length) await tx.insert(budgetItems).values(rows.budget);
+    await addDefaultProjectPeople(tx, id, user.id);
     await tx.insert(chatChannels).values(defaultProjectChannelRows(id));
     await tx.insert(activityLog).values({
       actorId: user.id, projectId: id, entityType: "project", entityId: id,

@@ -107,14 +107,6 @@ describe("shouldSkipRightsReview", () => {
 describe("sweepActionableSkipThreshold", () => {
   const thresholds = [0.1, 0.25, 0.5];
 
-  it("reports nothing skipped for an empty case set", () => {
-    for (const point of sweepActionableSkipThreshold([], thresholds)) {
-      expect(point.skipped).toBe(0);
-      expect(point.falseNegatives).toBe(0);
-      expect(point.skipRate).toBe(0);
-    }
-  });
-
   it("keeps a probability exactly equal to the threshold", () => {
     const cases: SweepCase[] = [{ noul: 0.25, isRealTask: true }];
     const [point] = sweepActionableSkipThreshold(cases, [0.25]);

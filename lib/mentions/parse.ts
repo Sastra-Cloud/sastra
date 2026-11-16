@@ -20,6 +20,7 @@ export type MentionUser = {
 
 export type MentionSegment =
   | { type: "text"; text: string }
+  | { type: "channel"; text: string }
   | { type: "mention"; text: string; user: MentionUser };
 
 // Characters that may border a mention. Anything else is treated as part of a
@@ -60,11 +61,20 @@ function buildCandidates(members: MentionUser[]): Candidate[] {
  */
 export function tokenizeMentions(
   text: string,
-  members: MentionUser[]
+  members: MentionUser[],
+  channelMentions = false
 ): MentionSegment[] {
   if (!text) return [];
+  if (!text.includes("@")) return [{ type: "text", text }];
   const candidates = buildCandidates(members);
-  if (candidates.length === 0) return [{ type: "text", text }];
+  if (candidates.length === 0 && !channelMentions) return [{ type: "text", text }];
+
+  // Examples in code and URLs must never turn into a channel-wide alert.
+  const literalRanges = channelMentions
+    ? [...text.matchAll(/(`+)[\s\S]*?(?:\1|$)|(?:https?:\/\/|www\.)\S+/gi)].map(
+        (match) => [match.index, match.index + match[0].length]
+      )
+    : [];
 
   const lower = text.toLowerCase();
   const segments: MentionSegment[] = [];
@@ -85,6 +95,18 @@ export function tokenizeMentions(
         (c) =>
           lower.startsWith(c.lower, start) && isBoundary(text[start + c.length])
       );
+      if (
+        channelMentions && lower.startsWith("channel", start) &&
+        (!matched || matched.length <= 7) &&
+        (i === 0 || /[\s([{]/.test(text[i - 1])) &&
+        isBoundary(text[start + 7]) &&
+        !literalRanges.some(([from, to]) => i >= from && i < to)
+      ) {
+        flush();
+        segments.push({ type: "channel", text: text.slice(i, start + 7) });
+        i = start + 7;
+        continue;
+      }
       if (matched) {
         flush();
         segments.push({
@@ -116,4 +138,9 @@ export function findMentionedIds(text: string, members: MentionUser[]): string[]
 /** Whether `text` mentions anyone in the roster. */
 export function hasMention(text: string, members: MentionUser[]): boolean {
   return findMentionedIds(text, members).length > 0;
+}
+
+/** Channel-wide mentions are opt-in for chat; other mention surfaces stay personal. */
+export function hasChannelMention(text: string, members: MentionUser[] = []): boolean {
+  return tokenizeMentions(text, members, true).some((segment) => segment.type === "channel");
 }

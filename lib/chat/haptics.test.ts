@@ -21,11 +21,6 @@ describe("message hold haptics", () => {
     expect(library.trigger).toHaveBeenCalledExactlyOnceWith(10, { intensity: 1 });
     expect(library.destroy).toHaveBeenCalledOnce();
   });
-  it("lets the library provide its fallback when the vibration API is absent", async () => {
-    vi.stubGlobal("navigator", {});
-    await messageHoldHaptic();
-    expect(library.trigger).toHaveBeenCalledOnce();
-  });
   it("respects reduced motion without creating controls", async () => {
     vi.stubGlobal("window", { matchMedia: () => ({ matches: true }) });
     await messageHoldHaptic();

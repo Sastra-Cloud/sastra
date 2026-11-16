@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, ne } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {
@@ -12,8 +12,36 @@ import {
   projectBudgetSettings,
   royaltyPayments,
   user,
+  printQuotes,
+  printRuns,
+  printContacts,
 } from "@/lib/db/schema";
 import { getWorkspaceSettings } from "@/lib/workspace/queries";
+import { getPrintQuoteTotal } from "@/lib/print/quote-economics";
+import type { PartnerPrintCandidate } from "./print-options";
+
+/** Manager-only callers; no correspondence or printer identity crosses the public export. */
+export async function getPartnerPrintCandidates(projectId: string, printRunId?: string): Promise<PartnerPrintCandidate[]> {
+  const rows = await db.select({ quote: printQuotes, printer: printContacts.company, name: printContacts.name })
+    .from(printQuotes)
+    .innerJoin(printRuns, eq(printRuns.id, printQuotes.runId))
+    .leftJoin(printContacts, eq(printContacts.id, printQuotes.contactId))
+    .where(and(
+      eq(printQuotes.projectId, projectId), eq(printRuns.projectId, projectId),
+      printRunId ? eq(printRuns.id, printRunId) : inArray(printRuns.kind, ["budget_estimate", "first_print"]),
+      ne(printRuns.status, "cancelled"), eq(printQuotes.kind, "quote"),
+      inArray(printQuotes.reviewStatus, ["suggested", "active", "accepted", "estimated"]),
+    )).orderBy(asc(printQuotes.quantityCps), desc(printQuotes.createdAt));
+  return rows.flatMap(({ quote, printer, name }) => {
+    const total = getPrintQuoteTotal(quote);
+    if (!total || !quote.quantityCps || quote.quantityCps <= 0) return [];
+    return [{ sourceQuoteId: quote.id, quantity: quote.quantityCps,
+      printingCostCents: Math.round(total.totalCost * 100), currency: quote.currency,
+      printer: printer || name || "Printer",
+      specifications: [quote.textPages ? `${quote.textPages} pages` : null, quote.textSpec, quote.coverSpec, quote.binding].filter(Boolean).join(" · "),
+      sourceThreadId: quote.sourceThreadId }];
+  });
+}
 
 export type RoyaltyPaymentRow = {
   id: string;
@@ -83,7 +111,7 @@ export async function listReceipts(
     .orderBy(desc(fundingReceipts.receivedDate), desc(fundingReceipts.createdAt));
 }
 
-/** Scheduled incoming MoU payments for a project, by expected date. */
+/** Expected payments a partner promised a project, by expected date. */
 export async function listPayments(
   projectId: string,
   printRunId?: string,

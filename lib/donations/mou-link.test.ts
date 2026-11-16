@@ -14,6 +14,11 @@ describe("manual donation payment choices", () => {
     expect(result.map((option) => option.paymentId)).toEqual(["first", "second"]);
     expect(result[0]).toMatchObject({ amount: "2530.00", currency: "USD", label: "First installment · due 2024-11-22" });
   });
+  it("offers an expected payment that has no amount yet, marked so the reviewer sees it", () => {
+    // Money can arrive before anyone enters the installment amount or makes an invoice.
+    const result = donationMouLinkOptions(receipt, [{ ...payment, id: "unset", amount: "0.00" }, payment]);
+    expect(result.map((option) => [option.paymentId, option.amountUnset ?? false])).toEqual([["unset", true], ["first", false]]);
+  });
   it("excludes another project, print scope, currency, shared payment, or already-linked payment", () => {
     expect(donationMouLinkOptions(receipt, [
       payment,
@@ -24,6 +29,7 @@ describe("manual donation payment choices", () => {
       { ...payment, id: "paid", paidAt: new Date() },
       { ...payment, id: "linked", receiptId: "receipt" },
       { ...payment, id: "refund", amount: "-2530.00" },
+      { ...payment, id: "outgoing", notes: "Administration Fee to the Licensor" },
     ]).map((option) => option.paymentId)).toEqual(["first"]);
   });
 });

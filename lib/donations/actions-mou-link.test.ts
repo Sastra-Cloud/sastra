@@ -8,6 +8,7 @@ vi.mock("@/lib/workspace/module-guard", () => ({ requireWorkspaceModule: vi.fn()
 vi.mock("@/lib/agreements/readiness-engine", () => ({ reevaluateSharedMouPayments: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { confirmDonationMouPaymentMatch } from "./actions";
+import { revalidatePath } from "next/cache";
 
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const input = { allocationId: id(1), paymentId: id(2), expectedPaymentAmount: 2530, expectedReceiptAmount: 2605.9, differenceReason: "The partner added to this installment." };
@@ -67,6 +68,9 @@ describe("linking an existing donation to a different scheduled amount", () => {
     const review = writes.find((row) => row.table === "donation_reviews")?.value;
     expect(review?.reason).toContain("Scheduled USD 2530.00; received USD 2605.90; difference 75.90");
     expect(review?.nextAllocations).toEqual([expect.objectContaining({ amount: "2605.90", mouPaymentId: input.paymentId })]);
+    expect(revalidatePath).toHaveBeenCalledWith("/projects/example/rights");
+    expect(revalidatePath).toHaveBeenCalledWith("/projects/example/budget");
+    expect(revalidatePath).toHaveBeenCalledWith("/projects/example");
   });
   it("requires a reason and the reviewed amounts for a difference", async () => {
     expect((await confirmDonationMouPaymentMatch({ allocationId: input.allocationId, paymentId: input.paymentId })).error).toContain("Review both amounts");
@@ -96,6 +100,22 @@ describe("linking an existing donation to a different scheduled amount", () => {
     match.paymentAmount = match.receiptAmount;
     expect(await confirmDonationMouPaymentMatch({ allocationId: input.allocationId, paymentId: input.paymentId })).toEqual({});
     expect(writes.find((row) => row.table === "donation_reviews")?.value.reason).toContain("Exact project");
+  });
+  it("saves the received amount on an expected payment that had none, when the reviewer chose that", async () => {
+    match = { ...match, paymentAmount: "0.00" };
+    expect(await confirmDonationMouPaymentMatch({ allocationId: input.allocationId, paymentId: input.paymentId, expectedPaymentAmount: 0, expectedReceiptAmount: 2605.9, setPaymentAmountFromReceipt: true })).toEqual({});
+    expect(writes.find((row) => row.table === "mou_payments")?.value).toMatchObject({ amount: "2605.90", receiptId: id(5), readinessStatus: "received" });
+    expect(writes.find((row) => row.table === "donation_reviews")?.value.reason).toContain("had no amount. Set to the received USD 2605.90");
+  });
+  it("never fills an empty expected payment without that reviewed choice", async () => {
+    match = { ...match, paymentAmount: "0.00" };
+    expect((await confirmDonationMouPaymentMatch({ allocationId: input.allocationId, paymentId: input.paymentId, expectedPaymentAmount: 0, expectedReceiptAmount: 2605.9 })).error).toContain("no amount yet");
+    expect(writes).toEqual([]);
+  });
+  it("does not guess when the reviewed amount has since been cleared", async () => {
+    match = { ...match, paymentAmount: "0.00" };
+    expect((await confirmDonationMouPaymentMatch({ ...input, setPaymentAmountFromReceipt: true })).error).toContain("no amount yet");
+    expect(writes).toEqual([]);
   });
   it("does not change funding when the payment was received during review", async () => {
     losePaymentRace = true;

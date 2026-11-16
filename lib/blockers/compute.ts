@@ -124,7 +124,7 @@ export function computeBlockers(args: {
       computed.push({
         type: "rights",
         severity: "critical",
-        title: `Rights overdue (due ${rights.completeByDate})`,
+        title: `Rights & MOUs overdue (due ${rights.completeByDate})`,
         sourceType: "rights_item",
         sourceId: rights.id,
       });
@@ -132,7 +132,7 @@ export function computeBlockers(args: {
       computed.push({
         type: "rights",
         severity: "warning",
-        title: "Rights in progress",
+        title: "Rights & MOUs in progress",
         sourceType: "rights_item",
         sourceId: rights.id,
       });

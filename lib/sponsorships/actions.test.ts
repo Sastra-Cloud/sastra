@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getTableName } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 
-const mocks = vi.hoisted(() => ({ auth: vi.fn(), module: vi.fn(), select: vi.fn(), insert: vi.fn(), update: vi.fn(), remove: vi.fn(), pdf: vi.fn(), put: vi.fn(), nextNumber: vi.fn(), revalidate: vi.fn() }));
+const mocks = vi.hoisted(() => ({ auth: vi.fn(), module: vi.fn(), select: vi.fn(), insert: vi.fn(), update: vi.fn(), remove: vi.fn(), pdf: vi.fn(), put: vi.fn(), nextNumber: vi.fn(), revalidate: vi.fn(), partner: vi.fn() }));
+vi.mock("@/lib/partners/find-or-create", () => ({ findOrCreatePartnerContact: mocks.partner }));
 vi.mock("@/lib/auth/guards", () => ({ requireRole: mocks.auth }));
 vi.mock("@/lib/workspace/module-guard", () => ({ requireWorkspaceModule: mocks.module }));
 vi.mock("@/lib/budget/invoice-number", () => ({ nextInvoiceNumber: mocks.nextNumber }));
@@ -38,6 +39,7 @@ function query(rows: unknown[]) {
 beforeEach(() => {
   vi.clearAllMocks(); selections = []; writes = [];
   mocks.auth.mockResolvedValue({ user: { id: "manager" } });
+  mocks.partner.mockResolvedValue({ partnerId: "saved-partner", partnerContactId: "saved-contact" });
   mocks.module.mockResolvedValue({ defaultFundingDeductionBps: 0, timezone: "UTC", orgName: "Workspace", legalName: "Workspace", contactEmail: "issuer@example.test", paymentInstructions: "Bank transfer" });
   mocks.select.mockImplementation(() => query(selections.shift() ?? []));
   mocks.insert.mockImplementation(table => ({ values: (value: Record<string, unknown>) => {
@@ -67,6 +69,8 @@ describe("sponsorship book validation", () => {
     expect(eligibility.sql).toBe('("projects"."id" in ($1) and ("projects"."kind" = $2 or "projects"."kind" is null))');
     expect(eligibility.params).toEqual([bookId, "book"]);
     expect(writes).toContainEqual({ table: "sponsorship_lines", value: [expect.objectContaining({ projectId: bookId })] });
+    expect(mocks.partner).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ org: "Partner", billingAddress: "", email: "", createdBy: "manager" }));
+    expect(writes).toContainEqual({ table: "sponsorships", value: expect.objectContaining({ partnerId: "saved-partner" }) });
     expect(mocks.revalidate).toHaveBeenCalledWith(`/sponsorships/${id}`);
   });
 

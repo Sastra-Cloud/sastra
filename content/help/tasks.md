@@ -2,14 +2,45 @@
 title: "Tasks & the board"
 category: "Work"
 roles: [member, manager, admin]
-keywords: [from teammates, teammate request, assigned by, move to later, bring back, task permissions, private task, project manager, assigned project management, confirm printer paid, confirm payment in my work, badge breakdown, actions for you, due tasks, search tasks, find task, missing task, lost task, old task, done task, reopen task, next up, shared queue, undated task, due today, today tasks, overdue tasks, your next tasks, suggestions to review, next task, handoff, more options, create task, laptop task form, task, kanban, board, column, to do, in progress, review, done, drag, move, assign, priority, due date, earliest due first, task order, reschedule, edit task, move task to project, milestone, recurring, recurring schedule, google drive, drive loading, cancel drive, small screen, task form scrolling, task attachment, attachments, upload files, spreadsheet, retry upload, download task file, R2, upload file, attach file, working folder, license obligation, printer payment, printing coordinator, proof review, approve proof, reply to printer, budget approval, approve, request changes, wip, time tracking, comment, mention, email task, forwarded email, meeting reminder, booking link, email assistant, task suggestion, learn from email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice, waiting for payment, follow up due, source linked task]
+keywords: [pinned tasks, pin task, unpin task, docked tasks, task side panel, keep tasks visible, proposal tasks, new task missing, recently assigned, assistant task refresh, from teammates, teammate request, assigned by, move to later, bring back, task permissions, private task, project manager, assigned project management, confirm printer paid, confirm payment in my work, badge breakdown, actions for you, due tasks, search tasks, find task, search my tasks, assigned to me filter, filter search results, missing task, lost task, old task, done task, reopen task, next up, shared queue, undated task, due today, today tasks, overdue tasks, your next tasks, suggestions to review, next task, handoff, more options, create task, laptop task form, task, kanban, board, column, to do, in progress, review, done, drag, move, assign, priority, due date, earliest due first, task order, reschedule, edit task, move task to project, milestone, recurring, recurring schedule, google drive, reconnect google drive, drive permission, drive loading, cancel drive, small screen, task form scrolling, task attachment, attachments, upload files, spreadsheet, retry upload, download task file, R2, upload file, attach file, working folder, license obligation, printer payment, printing coordinator, proof review, approve proof, reply to printer, budget approval, approve, request changes, wip, time tracking, comment, mention, email task, forwarded email, meeting reminder, booking link, email assistant, task suggestion, learn from email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice, waiting for payment, follow up due, source linked task]
 order: 30
-summary: "Upload task attachments or link Google Drive files. See undated teammate tasks and save requests for later. Understand task permissions, follow a shared Next up order without due dates, see real deadlines, search for any task, review email suggestions, confirm printer payments, and use Board and Agenda."
+summary: "Keep selected tasks visible beside your work on larger screens. Upload task attachments, link Google Drive files, or reconnect when Drive permission is missing. See undated teammate tasks and save requests for later. Understand task permissions, follow a shared Next up order without due dates, see real deadlines, search for any task, review email suggestions, confirm printer payments, and use Board and Agenda."
 ---
 
 Tasks are the unit of work. **My Work** brings your personal tasks and dated
 obligations together in three views: **Focus**, **Board**, and **Agenda**. Each
 project also keeps its own task board.
+
+## Pinned tasks beside your work
+
+On larger screens, **Pinned tasks** keeps selected tasks beside the page you are
+using. Open it with the panel button in the top bar. Choose **Add tasks**, then
+search your unfinished assigned tasks by title or project and select their pin
+button. You can also pin tasks from **Home** and **My Work** (Focus or Board).
+Pinning from a task row opens the panel.
+
+The panel shows each project's name and the full task title. This lets you keep
+proposal instructions visible while working on a budget or another project.
+Choose **Show instructions** beside a task for its description. Use the circle
+beside the book name to finish an ordinary task. Approval, payment, and translation tasks keep their
+linked workflow controls instead.
+
+**Unpin** removes only the reference from your panel. It does not delete, finish,
+reschedule, or change the task's **Next up** placement. You can undo an unpin.
+Pin and completion changes appear immediately; failed saves restore the earlier
+state. Finished tasks disappear from the panel. If a pinned task is reopened, it
+can appear again while it remains assigned to you.
+
+Your pinned selection is personal and saved to your account. It stays available
+as you move between pages and sign in on another device. The panel starts closed;
+its open or closed preference is remembered in this browser for your account.
+Closing it leaves the full page available and keeps unfinished form input.
+
+The panel is 336 pixels wide. It appears only when enough workspace remains
+beside the navigation, so smaller screens keep the usual **My Work** view. Your
+pins are retained when the window narrows. Collapsing the navigation may make
+room for the panel. Opening **Assistant** temporarily hides the task panel;
+closing Assistant restores it when space allows.
 
 ## My Work
 
@@ -31,13 +62,16 @@ project also keeps its own task board.
   the matching dated section. Completing it removes it from unfinished work.
   When a task changes assignee, its previous **Later** choice is cleared.
   **Working now** shows other started work. **Other assigned work** shows the next five
-  remaining tasks, with **Show all** for the full queue. **Waiting on
+  remaining tasks plus tasks directly assigned today, so new work is visible
+  without opening **Show all**. The queue keeps its existing order. Use
+  **Show all** for the full queue. **Waiting on
   confirmation**, **Later**, and **Completed today** are collapsed sections with
   counts. All started and review tasks remain visible. The summary reports open
   work, tasks due today, today's completions, and today's tracked time.
 - **Board** shows all tasks assigned to you as **To do**, **In progress**,
   **Review**, and recent **Done** columns. Drag cards or use their status menu;
-  filter by project or priority when the board is busy.
+  filter by project or priority when the board is busy. The board loads when you
+  first choose it; a loading indicator may appear briefly.
 - **Agenda** orders tasks and operational deadlines by date. Managers can filter
   the same view to tasks, project deadlines, rights, or finance obligations.
 
@@ -81,6 +115,12 @@ description. Results replace the current view until you clear the search, press
   marked done more than a week ago, tasks assigned to someone else, and tasks
   that are not assigned. Each result says why, for example **Done Sep 3, 2026**
   or **Assigned to a teammate**.
+
+Results start with **All tasks**. Choose **Assigned to me** above the results to
+hide tasks that belong to other people or have no assignee. Your tasks marked
+done more than a week ago then appear under **Done earlier**. If other tasks
+also match, a note under the results says how many, and **Show all tasks**
+brings them back. The choice stays until you leave My Work.
 
 Select a result to open its task details. If you can edit the task, you can
 reopen done work by changing its status. Managers can also assign it back to you.
@@ -222,7 +262,8 @@ The form scrolls when needed. Its title, close button, and **Create task** butto
 stay visible when you expand more fields. Saving errors appear beside the button.
 While Drive opens, an **Opening Google Drive…** message lets you cancel loading.
 If opening times out or Google reports an error, try **Add or upload files**
-again. Your task fields and selected files stay in the form.
+again. Your task fields and selected files stay in the form. If the problem
+continues, save your task before reconnecting Google Drive in **Settings → Profile**.
 After creation, open **Task details** to add more files. The **Attachments**
 section stays visible below the task description, even when it is empty.
 Tasks with Drive links show the first filename as a direct **Open in Drive**
@@ -242,6 +283,19 @@ Open the task and find **Attachments** below its description.
 - Open **Google Drive options** for the working folder, **Upload to Drive**, or
   removal of Drive links. Choose **Choose another folder** to upload to a different
   Drive destination.
+
+If your Google account is linked but Drive permission is missing, Sastra shows
+**Connect Google Drive** again. Choose it, select the Google account that has
+access to your team's files, and approve the requested Drive permission. Signing
+in to Google alone does not grant Sastra access to Drive. If your authorization
+expires and cannot be refreshed, try the Drive action again to see the connection
+button. You can also open **Settings → Profile → Google Drive** at any time
+and choose **Reconnect Google Drive**. This opens Google account selection and
+asks for Drive access again. Save unfinished work before connecting; you will
+leave the current page to visit Google. If you cancel or Google refuses access,
+Sastra returns you to Profile settings so you can try again. The selected account
+still needs access to the shared drive or folder. Reconnecting does not change
+Google's file-sharing permissions.
 
 Uploads show their filenames and progress while saving. Successfully uploaded
 files appear in the open dialog; you do not need to choose **Save changes**.
@@ -282,10 +336,19 @@ invoice when no coordinator is assigned) and remain ordinary, reassignable
 tasks. Their status follows the payment from action needed, to awaiting
 confirmation, to paid. They carry a **Printer payment** badge on task lists.
 
-Budget approval requests create a different kind of protected task. It carries
-a **Budget approval** badge and links to the current quotation. Only its assigned
-approver can choose **Approve** or **Request changes**, and a change request
-requires a note. Ordinary Done, drag, reassignment, and delete controls are not
+Budget and proposal approval requests create a different kind of protected task.
+It carries a **Budget approval** badge and links to the current quotation.
+Choose **Review proposal and attachment** for a partner proposal, or **Review
+budget quotation** for the project budget. Only the assigned reviewer can choose
+**Approve proposal**, **Approve budget**, or **Request changes**. Approval does
+not send an email. A change request requires a **What needs to change?** note;
+choose **Send change request** to record it. If saving fails, your note stays
+available for another attempt. The review opens with its task title and decision
+controls; approval is recorded there, without a separate Save step. **Supporting
+files** are separate review documents; use the review link for the quotation’s
+own attachment. The footer
+shows **Close**. If a manager changes the due date, **Save due date** appears
+to save that separate change. Ordinary Done, drag, reassignment, and delete controls are not
 available because those actions do not represent an approval decision. Managers
 and admins can still change its due date; for a current approval round, the
 shared deadline updates on every approver's task and on the Budget approval card.
@@ -349,7 +412,7 @@ schedule requires management access to its project; standalone schedules need
 a workspace manager. Editing a schedule updates its unfinished occurrence and
 all future occurrences; completed tasks remain unchanged as history. Schedules
 from license obligations remain restricted to workspace managers, and edits
-also correct the matching obligation on the Rights tab.
+also correct the matching obligation on the Rights & MOUs tab.
 
 Generated task cards carry a **Recurring** badge. Editing one generated task
 changes only that occurrence; use **Edit** on the recurring schedule to correct

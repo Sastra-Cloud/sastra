@@ -233,7 +233,7 @@ When a funder's email states a **dated deliverable** — for example, "we will n
 a final grant report submitted... the due date for that final report is August
 31, 2025" — AI proposes a **grant reminder** on the thread. A single deadline
 becomes a one-off **dated task**; an ongoing "report every month / quarter / year"
-duty becomes a recurring **grant obligation** on the project's Rights tab.
+duty becomes a recurring **grant obligation** on the project's Rights & MOUs tab.
 Grant reminders require a known or high-confidence funding-partner context. A
 printer or other vendor promising to send a proof, file, quote, or delivery does
 not qualify, and a one-off reminder is not proposed unless the email gives an
@@ -310,7 +310,7 @@ adds a review card to the thread. Ordinary email and unrelated attachments do
 not trigger document extraction. The suggested agreement step, holder, signed
 date, territory, formats, or payment can be corrected before approval.
 
-This workflow is always review-first. A detected agreement does not mark Rights
+This workflow is always review-first. A detected agreement does not mark Rights & MOUs
 complete, and a receipt does not mark a fee paid, until a manager selects
 **Approve rights update** or **Approve payment**. Approval attaches the original
 PDF to the rights step or payment, completes the matching open task when there
@@ -331,7 +331,7 @@ publisher, Sastra only chooses among that verified set and only when the message
 uniquely identifies one. If a manager links the project manually, the same
 document check runs after linking; reprocessing can also run it for older
 captured threads. A payment receipt needs an unpaid license-fee entry on the
-project's Rights page so the manager can choose which fee it settles. If the
+project's Rights & MOUs page so the manager can choose which fee it settles. If the
 project has no fee record yet, the manager can verify the receipt amount and
 currency and create the initial paid fee record during approval.
 

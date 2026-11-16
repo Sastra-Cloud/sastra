@@ -726,7 +726,7 @@ export function EpisodesManager({
       )}
 
       {canEdit && selected.size > 0 ? (
-        <div className="fixed inset-x-3 bottom-20 z-40 mx-auto max-w-6xl rounded-2xl border bg-popover/95 p-3 shadow-2xl backdrop-blur md:bottom-5">
+        <div className="fixed inset-x-3 bottom-20 z-40 mx-auto max-w-6xl rounded-2xl border bg-popover/95 p-3 shadow-2xl backdrop-blur low-power:bg-popover low-power:backdrop-filter-none md:bottom-5">
           <div className="flex flex-wrap items-center gap-2">
             <div className="mr-1 flex items-center gap-2 border-r pr-3">
               <span className="grid size-7 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">{selected.size}</span>

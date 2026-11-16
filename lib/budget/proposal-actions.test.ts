@@ -35,8 +35,9 @@ beforeEach(() => {
     const tx = {
       execute: vi.fn(),
       select: () => ({ from: (table: Parameters<typeof getTableName>[0]) => {
-        const rows = getTableName(table) === "projects" ? (mocks.existing ? [{ id: input.requestId, slug: "proposed-book" }] : []) : [{ data: { fingerprint: mocks.fingerprint } }];
-        return { where: () => Object.assign(Promise.resolve(rows), { limit: async () => rows }) };
+        const rows = getTableName(table) === "default_project_people" ? [] : getTableName(table) === "projects" ? (mocks.existing ? [{ id: input.requestId, slug: "proposed-book" }] : []) : [{ data: { fingerprint: mocks.fingerprint } }];
+        const query = { innerJoin: () => query, where: () => Object.assign(Promise.resolve(rows), { limit: async () => rows }) };
+        return query;
       } }),
       insert: (table: Parameters<typeof getTableName>[0]) => ({ values: (value: Record<string, unknown> | Record<string, unknown>[]) => {
         const name = getTableName(table), values = Array.isArray(value) ? value : [value];

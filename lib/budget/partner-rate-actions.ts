@@ -8,6 +8,7 @@ import { budgetItems, budgetScopePresentations } from "@/lib/db/schema";
 import { grossTargetCents, partnerQuoteTotalCents, suggestPartnerRates, sumAmountCents } from "./compute";
 import { applyPartnerRates, type PartnerRateChange, type PartnerRateResult } from "./partner-line-state";
 import { revalidateBudget } from "./revalidate";
+import { partnerBaseItems } from "./print-options";
 
 const scopeSchema = z.object({ projectId: z.uuid(), printRunId: z.uuid().nullable() });
 const rateSchema = z.string().regex(/^\d{1,10}(?:\.\d{1,4})?$/);
@@ -31,8 +32,9 @@ export async function applySuggestedPartnerRates(projectId: string, printRunId: 
       const [presentation] = await tx.select().from(budgetScopePresentations)
         .where(scopeFilter(budgetScopePresentations, projectId, printRunId)).for("update");
       if (!presentation) throw new Error("Set up the partner quote first.");
-      const items = await tx.select().from(budgetItems)
+      const allItems = await tx.select().from(budgetItems)
         .where(scopeFilter(budgetItems, projectId, printRunId)).orderBy(budgetItems.id).for("update");
+      const items = partnerBaseItems(allItems, presentation.mode === "itemized" ? presentation.printOptions : []);
       const rates = suggestPartnerRates(items, new Set(selectedIds), presentation.deductionBps);
       if (partnerQuoteTotalCents(applyPartnerRates(items, rates)) < grossTargetCents(sumAmountCents(items), presentation.deductionBps)) {
         throw new Error("The suggested rates did not fully cover the funding target. No rates were changed.");

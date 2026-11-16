@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
@@ -14,8 +15,8 @@ export type ActiveTimer = {
   startedAt: string;
 };
 
-/** The user's single running timer (null if none). */
-export async function getActiveTimer(userId: string): Promise<ActiveTimer | null> {
+/** Deduplicate layout/page reads in one render; subsequent requests read fresh. */
+export const getActiveTimer = cache(async (userId: string): Promise<ActiveTimer | null> => {
   const [row] = await db
     .select({
       entryId: timeEntries.id,
@@ -37,7 +38,7 @@ export async function getActiveTimer(userId: string): Promise<ActiveTimer | null
     projectSlug: row.projectSlug,
     startedAt: row.startedAt.toISOString(),
   };
-}
+});
 
 export type TimeEntryRow = {
   id: string;

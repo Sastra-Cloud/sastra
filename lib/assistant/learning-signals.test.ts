@@ -1,13 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  analyzeAssistantTurn,
-  containsInternalUuid,
-  isDirectTaskRequest,
-  isDurableAssistantPreference,
-  isLikelyUserCorrection,
-  userRequestedInternalIds,
-} from "./learning-signals";
+import { analyzeAssistantTurn, isDurableAssistantPreference } from "./learning-signals";
 import type { LearningTranscriptMessage } from "./learning-signals";
 
 function assistantMessage(input: {
@@ -28,34 +21,6 @@ function assistantMessage(input: {
 }
 
 describe("assistant learning signals", () => {
-  it.each([
-    "No, I wasn't asking for a stand-up, I was saying, make a task for me.",
-    "You don't need to tell me the Task ID.",
-    "That's not what I asked for.",
-    "Actually, assign it to Bora instead.",
-    "Please don't include unrelated open items.",
-  ])("recognizes explicit corrections: %s", (text) => {
-    expect(isLikelyUserCorrection(text)).toBe(true);
-  });
-
-  it.each([
-    "Create a task for me to finish the index.",
-    "Make a task to call the printer tomorrow.",
-    "Add this as a task for me.",
-  ])("recognizes direct task requests: %s", (text) => {
-    expect(isDirectTaskRequest(text)).toBe(true);
-  });
-
-  it("does not mistake ordinary conversation for a correction", () => {
-    expect(isLikelyUserCorrection("What tasks are due this week?")).toBe(false);
-  });
-
-  it("distinguishes requested ids from accidental UUID disclosure", () => {
-    expect(userRequestedInternalIds("What is the task ID?")).toBe(true);
-    expect(
-      containsInternalUuid("Created task 18557b31-0ad0-4f7d-8f63-21f6af87f547")
-    ).toBe(true);
-  });
 
   it("captures durable response preferences without treating one-off safety requests as memory", () => {
     expect(

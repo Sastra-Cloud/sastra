@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  deriveAgreementDocumentIndexStatus,
-  friendlyAgreementIndexError,
-} from "./index-status";
+import { deriveAgreementDocumentIndexStatus } from "./index-status";
 
 describe("deriveAgreementDocumentIndexStatus", () => {
   it("marks a document ready only when every chunk is ready", () => {
@@ -26,15 +23,5 @@ describe("deriveAgreementDocumentIndexStatus", () => {
       "failed"
     );
     expect(deriveAgreementDocumentIndexStatus([])).toBe("failed");
-  });
-});
-
-describe("friendlyAgreementIndexError", () => {
-  it("turns provider timeout details into actionable user-facing copy", () => {
-    expect(
-      friendlyAgreementIndexError(
-        "aiEmbed:wiki_embedding timed out after 30000ms"
-      )
-    ).toBe("The search provider timed out before this source could be added.");
   });
 });

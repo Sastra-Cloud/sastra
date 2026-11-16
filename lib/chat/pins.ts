@@ -8,8 +8,6 @@ import {
   isNotNull,
   isNull,
   ne,
-  notInArray,
-  or,
   type SQL,
 } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
@@ -22,8 +20,8 @@ import {
   projects,
   user,
 } from "@/lib/db/schema";
+import { channelAccessCondition } from "./access-sql";
 import { requireChannelAccess } from "@/lib/chat/access";
-import { MEMBER_SCOPED_CHANNEL_KINDS } from "@/lib/chat/channel-members";
 import {
   PINNED_LIST_LIMIT,
   pinExcerpt,
@@ -185,11 +183,7 @@ export async function listAccessiblePins(
     isNull(chatMessages.deletedAt),
     ne(chatChannels.kind, "standup"),
   ];
-  const readable = or(
-    notInArray(chatChannels.kind, [...MEMBER_SCOPED_CHANNEL_KINDS]),
-    isNotNull(pinMembership.userId)
-  );
-  if (readable) filters.push(readable);
+  filters.push(channelAccessCondition(currentUserId));
   if (options.projectId) {
     filters.push(eq(chatChannels.projectId, options.projectId));
   }

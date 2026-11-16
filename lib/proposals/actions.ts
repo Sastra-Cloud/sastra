@@ -17,11 +17,13 @@ import {
 import { formatDate } from "@/lib/format";
 import { getBudgetData } from "@/lib/budget/queries";
 import {
+  buildAllocatedQuotationBuffer,
   buildPartnerQuotationBuffer,
   buildQuotationBuffer,
 } from "@/lib/budget/quotation-file";
 import { buildPerCopyQuotationPdf } from "@/lib/budget/pdf";
 import { budgetApprovalTotal } from "@/lib/budget/approval-fingerprint";
+import { partnerQuotePrices } from "@/lib/budget/print-options";
 import { draftWithAi } from "@/lib/print/actions";
 import { sendEmail } from "@/lib/gmail";
 import { buildKey, putObject } from "@/lib/r2";
@@ -30,6 +32,13 @@ import { currentBudgetApprovalAuthorization } from "@/lib/budget/approval-servic
 import { fundingProposalFallback } from "@/lib/email/operational-drafts";
 import { getWorkspaceSettings } from "@/lib/workspace/queries";
 import { removeEmailDraftForUser } from "@/lib/email/draft-store";
+
+import {
+  PartnerQuotationError,
+  partnerQuotationVersion,
+} from "@/lib/budget/partner-quotations";
+import { listPartnerQuotations } from "@/lib/budget/partner-quotation-queries";
+import { getPartnerQuotationContext } from "@/lib/budget/partner-quotation-context";
 
 const XLSX_MIME =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -50,7 +59,11 @@ function moneyLabel(value: number, currency: string): string {
   }
 }
 
-async function proposalContext(projectId: string, printRunId?: string | null) {
+async function proposalContext(
+  projectId: string,
+  printRunId?: string | null,
+  quotationId?: string | null,
+) {
   const [project] = await db
     .select({
       id: projects.id,
@@ -72,32 +85,51 @@ async function proposalContext(projectId: string, printRunId?: string | null) {
     .limit(1);
   const { settings, items, presentation } = await getBudgetData(
     projectId,
-    printRunId ?? undefined
+    printRunId ?? undefined,
   );
-  const total = Number(budgetApprovalTotal(items, presentation));
+  let allocation: Awaited<ReturnType<typeof getPartnerQuotationContext>> | null;
+  try {
+    allocation = quotationId
+      ? await getPartnerQuotationContext(projectId, printRunId, quotationId)
+      : null;
+  } catch (error) {
+    if (error instanceof PartnerQuotationError) return { error: error.message };
+    throw error;
+  }
+  const total =
+    allocation?.total ?? Number(budgetApprovalTotal(items, presentation));
   return {
     project,
-    settings,
+    settings: allocation?.settings ?? settings,
     total,
-    items,
-    presentation,
+    items: allocation?.items ?? items,
+    presentation: allocation ? { mode: "itemized" as const, printOptions: allocation.printOptions ?? [] } : presentation,
+    allocation,
     realCompletionDeadline: rights?.completeByDate ?? null,
   };
 }
 
 export async function draftMouProposal(
   projectId: string,
-  printRunId?: string | null
+  printRunId?: string | null,
+  quotationId?: string | null,
 ) {
   const { user: actor } = await requireRole("manager");
   const [ctx, workspace] = await Promise.all([
-    proposalContext(projectId, printRunId),
+    proposalContext(projectId, printRunId, quotationId),
     getWorkspaceSettings(),
   ]);
   if (!ctx) return { error: "Project not found." };
-  const { project, settings, total, presentation, realCompletionDeadline } = ctx;
+  if ("error" in ctx) return { error: ctx.error };
+  const { project, settings, total, presentation, realCompletionDeadline } =
+    ctx;
   const currency = settings.currency || "USD";
-  const totalLabel = moneyLabel(total, currency);
+  const printOptions =
+    presentation?.mode === "itemized" ? presentation.printOptions : [];
+  const { baseCents } = partnerQuotePrices(ctx.items, printOptions);
+  const totalLabel = printOptions?.length
+    ? `funding from ${moneyLabel(total, currency)}, depending on the print quantity chosen`
+    : moneyLabel(total, currency);
   const firstName = settings.partnerContactFirstName ?? null;
   const fullName =
     [settings.partnerContactFirstName, settings.partnerContactLastName]
@@ -114,11 +146,12 @@ export async function draftMouProposal(
 
   const draft = await draftWithAi({
     purpose:
-      "Propose a funding partnership / MoU to a sponsor and invite them to review the attached budget quotation.",
+      "Propose a funding partnership to a partner and invite them to review the attached budget quotation. The partner may fund it through an MoU, by agreeing without an MoU, or by giving a donation.",
     fallback: fundingProposalFallback({
       recipientFirstName: firstName,
       projectTitle: project.title,
       totalLabel,
+      scopeLabel: ctx.allocation?.quote.title,
       completionLabel: proposedCompletionLabel,
       senderName: actor.name,
       organizationName: workspace.orgName?.trim() || "Sastra workspace",
@@ -134,7 +167,27 @@ export async function draftMouProposal(
       contactFirstName: firstName,
       projectTitle: project.title,
       workDescription: settings.workDescription,
+      includedWork: ctx.allocation?.quote.lines.map((line) => ({
+        work: line.label,
+        amount: moneyLabel(line.amountCents / 100, currency),
+      })),
+      scopeInstructions: ctx.allocation
+        ? "Ask only for this partner’s listed share. Other work on the project is outside this proposal."
+        : undefined,
       totalAmount: totalLabel,
+      ...(printOptions?.length
+        ? {
+            printingChoices: printOptions.map((option) => ({
+              quantity: option.quantity,
+              projectPrice: moneyLabel(
+                (baseCents + option.partnerAmountCents) / 100,
+                currency,
+              ),
+            })),
+            printingChoiceInstructions:
+              "These are alternative quantities. Ask the partner to choose one. Do not add prices together or present a single agreed total.",
+          }
+        : {}),
       currency,
       ...(proposedCompletionLabel
         ? { proposedCompletionDate: proposedCompletionLabel }
@@ -146,7 +199,7 @@ export async function draftMouProposal(
       senderName: actor.name,
       organizationName: workspace.orgName?.trim() || "Sastra workspace",
       requestedTone:
-        "Warm, concise, and appreciative. State the requested amount and project first, identify the attached quotation, and give the concrete next step: prepare an MoU or reply with changes." +
+        "Warm, concise, and appreciative. State the requested amount and project first, identify the attached quotation, and give the concrete next step: reply to say how they would like to proceed (we can prepare an MoU, they can agree by email, or they can give a donation) or reply with changes. Do not assume an MoU is required." +
         (proposedCompletionLabel
           ? ` Offer ${proposedCompletionLabel} as our proposed completion date for the work, framed as our target timeline.`
           : ""),
@@ -170,7 +223,7 @@ const proposedDateSchema = z
 /** Set (or clear) the project's proposed completion date used in proposals. */
 export async function updateProposedCompletionDate(
   projectId: string,
-  value: string | null
+  value: string | null,
 ): Promise<{ error?: string }> {
   await requireRole("manager");
   const normalized = value && value.length > 0 ? value : null;
@@ -189,12 +242,14 @@ const sendSchema = z.object({
   subject: z.string().min(1).max(500),
   body: z.string().min(1).max(20000),
   ccEmails: z.array(z.string()).optional(),
+  quotationFingerprint: z.string().max(100000).optional(),
 });
 
 export async function sendMouProposal(
   projectId: string,
   input: z.input<typeof sendSchema>,
-  printRunId?: string | null
+  printRunId?: string | null,
+  quotationId?: string | null,
 ): Promise<{
   error?: string;
   proposal?: {
@@ -213,21 +268,41 @@ export async function sendMouProposal(
 }> {
   const { user: actor } = await requireRole("manager");
   const data = sendSchema.parse(input);
-  const ctx = await proposalContext(projectId, printRunId);
+  if (
+    !quotationId &&
+    (await listPartnerQuotations(projectId, printRunId)).length
+  )
+    return {
+      error:
+        "Choose a partner quotation in Partners & proposals before sending.",
+    };
+  const ctx = await proposalContext(projectId, printRunId, quotationId);
   if (!ctx) return { error: "Project not found." };
+  if ("error" in ctx) return { error: ctx.error };
   const { project, settings, presentation, total } = ctx;
+  const allocationVersion = ctx.allocation
+    ? partnerQuotationVersion(ctx.allocation.quote)
+    : null;
+  if (allocationVersion && data.quotationFingerprint !== allocationVersion)
+    return {
+      error:
+        "This partner quotation changed. Close and review the proposal again before sending.",
+    };
 
+  if (quotationId && !settings.partnerName?.trim()) return { error: "Choose a partner or enter a partner name in this quotation before sending." };
   const to = (settings.partnerContactEmail ?? "").trim();
   if (!isEmail(to)) {
     return {
-      error: "Add a valid funding contact email in Quotation settings first.",
+      error: quotationId
+        ? "Add a valid contact email in this partner quotation first."
+        : "Add a valid funding contact email in Quotation settings first.",
     };
   }
   const cc = [
     ...new Set(
       (data.ccEmails ?? [])
         .map((email) => email.trim().toLowerCase())
-        .filter(Boolean)
+        .filter(Boolean),
     ),
   ];
   const badCc = cc.find((email) => !isEmail(email));
@@ -235,7 +310,8 @@ export async function sendMouProposal(
 
   const approval = await currentBudgetApprovalAuthorization(
     projectId,
-    printRunId
+    printRunId,
+    quotationId,
   );
   if (!approval.ok) return { error: approval.error };
   const approvedTotal = total;
@@ -254,45 +330,60 @@ export async function sendMouProposal(
         "Set a copy quantity and partner price per copy before sending the proposal.",
     };
   }
-  const buffer = perCopy
-    ? await buildPerCopyQuotationPdf({
-        issuerName: workspace.legalName || workspace.orgName,
-        accentColor: workspace.accentColor,
-        projectTitle: project.title,
-        partnerName: settings.partnerName,
-        contactName:
-          [
-            settings.partnerContactFirstName,
-            settings.partnerContactLastName,
-          ]
-            .filter(Boolean)
-            .join(" ") || null,
-        description:
-          presentation.publicDescription ||
-          settings.workDescription ||
-          project.title,
-        quantity: presentation.perCopyQuantity ?? 0,
-        unitPrice: Number(presentation.perCopyUnitPrice ?? 0),
-        currency: settings.currency,
-      })
-    : presentation
-      ? await buildPartnerQuotationBuffer(
+  let buffer: Buffer;
+  try {
+    buffer = quotationId
+      ? await buildAllocatedQuotationBuffer(
           projectId,
           project.title,
+          quotationId,
           printRunId ?? undefined,
-          project.kind
+          project.kind,
         )
-      : await buildQuotationBuffer(
-          projectId,
-          project.title,
-          printRunId ?? undefined,
-          project.kind
-        );
+      : perCopy
+        ? await buildPerCopyQuotationPdf({
+            issuerName: workspace.legalName || workspace.orgName,
+            accentColor: workspace.accentColor,
+            projectTitle: project.title,
+            partnerName: settings.partnerName,
+            contactName:
+              [
+                settings.partnerContactFirstName,
+                settings.partnerContactLastName,
+              ]
+                .filter(Boolean)
+                .join(" ") || null,
+            description:
+              presentation.publicDescription ||
+              settings.workDescription ||
+              project.title,
+            quantity: presentation.perCopyQuantity ?? 0,
+            unitPrice: Number(presentation.perCopyUnitPrice ?? 0),
+            currency: settings.currency,
+          })
+        : presentation
+          ? await buildPartnerQuotationBuffer(
+              projectId,
+              project.title,
+              printRunId ?? undefined,
+              project.kind,
+            )
+          : await buildQuotationBuffer(
+              projectId,
+              project.title,
+              printRunId ?? undefined,
+              project.kind,
+            );
+  } catch (error) {
+    if (error instanceof PartnerQuotationError) return { error: error.message };
+    throw error;
+  }
   // Recompute immediately after building the attachment. A quotation edit that
   // raced the first check must not authorize a file from a different budget.
   const confirmedApproval = await currentBudgetApprovalAuthorization(
     projectId,
-    printRunId
+    printRunId,
+    quotationId,
   );
   if (
     !confirmedApproval.ok ||
@@ -327,7 +418,8 @@ export async function sendMouProposal(
   // irreversible email side effect if the budget changed during file storage.
   const sendApproval = await currentBudgetApprovalAuthorization(
     projectId,
-    printRunId
+    printRunId,
+    quotationId,
   );
   if (
     !sendApproval.ok ||
@@ -341,6 +433,23 @@ export async function sendMouProposal(
     };
   }
 
+  try {
+    if (quotationId) {
+      const latest = await getPartnerQuotationContext(
+        projectId,
+        printRunId,
+        quotationId,
+      );
+      if (partnerQuotationVersion(latest.quote) !== allocationVersion)
+        return {
+          error:
+            "The partner quotation changed before sending. Review the proposal again.",
+        };
+    }
+  } catch (error) {
+    if (error instanceof PartnerQuotationError) return { error: error.message };
+    throw error;
+  }
   let res;
   try {
     res = await sendEmail({
@@ -382,7 +491,10 @@ export async function sendMouProposal(
     .values({
       projectId,
       printRunId: printRunId ?? null,
+      partnerQuotationId: quotationId ?? null,
       sentByUserId: actor.id,
+      partnerName: settings.partnerName?.trim() || null,
+      partnerId: settings.partnerId ?? null,
       recipientName,
       recipientEmail: to,
       ccEmails: cc.length ? cc : null,
@@ -407,15 +519,15 @@ export async function sendMouProposal(
     projectId,
     entityType: "budget",
     action: "proposal",
-    summary: `Sent MoU proposal to ${to} (${moneyLabel(
+    summary: `Sent funding proposal to ${to} (${moneyLabel(
       approvedTotal,
-      approvedCurrency
+      approvedCurrency,
     )})`,
   });
   await removeEmailDraftForUser(
     actor.id,
     "funding_proposal",
-    printRunId ?? projectId
+    quotationId ?? printRunId ?? projectId,
   );
   revalidatePath(`/projects/${project.slug}/budget`);
   return {
@@ -433,26 +545,4 @@ export async function sendMouProposal(
       sentByName: actor.name,
     },
   };
-}
-
-export async function updateProposalStatus(
-  id: string,
-  status: "sent" | "accepted" | "declined"
-): Promise<{ error?: string }> {
-  await requireRole("manager");
-  const value = z.enum(["sent", "accepted", "declined"]).parse(status);
-  const [row] = await db
-    .update(proposalSubmissions)
-    .set({ status: value, updatedAt: new Date() })
-    .where(eq(proposalSubmissions.id, id))
-    .returning({ projectId: proposalSubmissions.projectId });
-  if (row) {
-    const [project] = await db
-      .select({ slug: projects.slug })
-      .from(projects)
-      .where(eq(projects.id, row.projectId))
-      .limit(1);
-    if (project) revalidatePath(`/projects/${project.slug}/budget`);
-  }
-  return {};
 }

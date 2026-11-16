@@ -2143,7 +2143,7 @@ function InvoiceReviewForm({
               <option value="">Choose a payment…</option>
               {target.payments.map((payment) => (
                 <option key={payment.id} value={payment.id}>
-                  {payment.currency} {Number(payment.amount).toFixed(2)} · {payment.notes || "MoU payment"}
+                  {payment.currency} {Number(payment.amount).toFixed(2)} · {payment.notes || "Expected payment"}
                   {payment.paidAt ? " · already received" : ""}
                   {payment.invoiceNumber ? ` · invoice ${payment.invoiceNumber}` : ""}
                 </option>

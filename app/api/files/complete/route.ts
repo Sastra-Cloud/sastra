@@ -11,6 +11,12 @@ import { ensurePrintPaymentTask } from "@/lib/print/payment-tasks";
 import { enqueueAndProcessAgreementAttachment } from "@/lib/agreement-chat/indexing";
 import { canMutateAttachmentTarget } from "@/lib/files/target-access";
 import { assertStorageAvailable } from "@/lib/hosted/storage-usage";
+import { VOICE_MAX_MS, VOICE_PEAK_COUNT } from "@/lib/chat/voice-metadata";
+
+const voiceMetadataSchema = z.object({
+  durationMs: z.number().int().positive().max(VOICE_MAX_MS + 1000),
+  peaks: z.array(z.number().min(0).max(1)).length(VOICE_PEAK_COUNT).optional(),
+}).strict();
 
 const schema = z.object({
   fileId: z.string().uuid(),
@@ -29,6 +35,7 @@ const schema = z.object({
     .optional(),
   targetId: z.string().uuid().optional(),
   label: z.string().max(40).optional(),
+  audioMetadata: voiceMetadataSchema.optional(),
 }).refine((value) => !!value.targetType === !!value.targetId, {
   message: "Attachment target type and ID must be supplied together",
 });
@@ -41,7 +48,7 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
-  const { fileId, targetType, targetId, label } = parsed.data;
+  const { fileId, targetType, targetId, label, audioMetadata } = parsed.data;
   if (
     targetType && targetId &&
     !(await canMutateAttachmentTarget(targetType, targetId, session.user))
@@ -60,6 +67,9 @@ export async function POST(request: Request) {
   }
   if (file.purpose !== "workspace_attachment" || file.status !== "pending") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  if (audioMetadata && (targetType !== "message" || label !== "voice" || !file.mimeType.startsWith("audio/"))) {
+    return NextResponse.json({ error: "Invalid voice recording metadata." }, { status: 400 });
   }
   // Confirm the object actually landed in the bucket and re-read its real size.
   let size = file.sizeBytes;
@@ -98,7 +108,7 @@ export async function POST(request: Request) {
 
   await db
     .update(files)
-    .set({ status: "ready", sizeBytes: size })
+    .set({ status: "ready", sizeBytes: size, ...(audioMetadata ? { audioMetadata } : {}) })
     .where(eq(files.id, fileId));
   await recordR2Operation({
     classType: "A",

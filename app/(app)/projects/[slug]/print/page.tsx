@@ -7,8 +7,7 @@ import { getProjectHeader } from "@/lib/projects/queries";
 import { getPrintData } from "@/lib/print/queries";
 import { listAttachmentsByTargets } from "@/lib/files/queries";
 import { PrintManager } from "@/components/print/print-manager";
-import { GuidancePanel } from "@/components/guidance/guidance-panel";
-import { WalkMeThrough } from "@/components/guidance/walk-me-through";
+import { listBookSpecPresets } from "@/lib/print/spec-preset-queries";
 import { listEmailDraftsForProject } from "@/lib/email/draft-store";
 
 export const metadata = { title: "Print" };
@@ -29,12 +28,13 @@ export default async function ProjectPrintPage({
   const data = await getPrintData(project.id);
   const quoteIds = data.quotes.map((quote) => quote.id);
   const paymentIds = data.payments.map((payment) => payment.id);
-  const [quoteAttachments, paymentAttachments, emailDrafts] = await Promise.all([
+  const [quoteAttachments, paymentAttachments, emailDrafts, specPresets] = await Promise.all([
     listAttachmentsByTargets("print_quote", quoteIds),
     listAttachmentsByTargets("print_payment", paymentIds),
     canEdit
       ? listEmailDraftsForProject(session.user.id, project.id)
       : Promise.resolve([]),
+    canEdit ? listBookSpecPresets() : Promise.resolve([]),
   ]);
 
   const toAttachmentObject = (map: Awaited<typeof quoteAttachments>) =>
@@ -42,18 +42,6 @@ export default async function ProjectPrintPage({
 
   return (
     <div className="space-y-5">
-      {canEdit ? (
-        <GuidancePanel
-          guidanceKey="print-whats-next"
-          slug="print"
-          heading="Printing in five steps"
-          title="New to printing? Here is the flow"
-          action={
-            <WalkMeThrough prompt="Please walk me through printing this book, step by step. Explain in simple words what I should do next." />
-          }
-        />
-      ) : null}
-      {canEdit ? <PrintEstimateSection projectId={project.id} userId={session.user.id} /> : null}
       <PrintManager
       key={`${data.sourcePageCount ?? 0}:${data.settings.trimWidthIn}:${data.settings.trimHeightIn}:${data.settings.measurementUnit}:${data.settings.languageExpansionFactor}`}
       projectId={project.id}
@@ -190,6 +178,12 @@ export default async function ProjectPrintPage({
       }))}
       quoteAttachments={toAttachmentObject(quoteAttachments)}
       paymentAttachments={toAttachmentObject(paymentAttachments)}
+      specPresets={specPresets}
+      estimateSection={
+        canEdit ? (
+          <PrintEstimateSection projectId={project.id} userId={session.user.id} />
+        ) : null
+      }
       initialEmailDrafts={emailDrafts.filter(
         (draft) => draft.kind === "print_rfq" || draft.kind === "print_wire"
       )}

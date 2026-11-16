@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { getSession } from "@/lib/auth/guards";
+import { can } from "@/lib/auth/policy";
 import { getProjectHeader } from "@/lib/projects/queries";
 import {
+  buildAllocatedQuotationBuffer,
   buildPartnerQuotationBuffer,
   buildQuotationBuffer,
 } from "@/lib/budget/quotation-file";
@@ -12,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ slug: string }> }
+  { params }: { params: Promise<{ slug: string }> },
 ) {
   const session = await getSession();
   if (!session) {
@@ -27,27 +29,38 @@ export async function GET(
 
   const url = new URL(request.url);
   const runId = url.searchParams.get("run") || undefined;
+  const quotationId = url.searchParams.get("quotation");
+  // Same boundary as sending the proposal: every role that may edit budgets.
+  if (quotationId && !can(session.user, "budget.edit"))
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const audience = url.searchParams.get("audience");
   let buffer: Buffer;
   try {
-    buffer =
-      audience === "partner"
+    buffer = quotationId
+      ? await buildAllocatedQuotationBuffer(
+          project.id,
+          project.title,
+          quotationId,
+          runId,
+          project.kind,
+        )
+      : audience === "partner"
         ? await buildPartnerQuotationBuffer(
             project.id,
             project.title,
             runId,
-            project.kind
+            project.kind,
           )
         : await buildQuotationBuffer(
             project.id,
             project.title,
             runId,
-            project.kind
+            project.kind,
           );
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Could not export." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 

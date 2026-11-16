@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 
 import { addReceipt, deleteReceipt, updateReceipt } from "@/lib/budget/actions";
+import { linkReceiptToProposal } from "@/lib/proposals/answer-actions";
 import { DonationMouLink } from "@/components/budget/donation-mou-link";
 import type { DonationMouLinkOption } from "@/lib/donations/mou-link";
 import { Button } from "@/components/ui/button";
@@ -37,8 +38,10 @@ export type Receipt = {
   source: string | null;
   note: string | null;
   locked?: boolean;
-  lockLabel?: "MoU" | "Donation";
+  lockLabel?: "Expected payment" | "Donation";
   mouPaymentLabel?: string;
+  /** The proposal this money answers, when it is not an expected payment. */
+  proposalId?: string | null;
   mouLink?: {
     allocationId: string;
     options: DonationMouLinkOption[];
@@ -113,6 +116,7 @@ export function FundingReceipts({
   canEdit,
   canReconcileDonation = false,
   receipts,
+  proposals = [],
 }: {
   projectId: string;
   printRunId?: string | null;
@@ -120,9 +124,42 @@ export function FundingReceipts({
   canEdit: boolean;
   canReconcileDonation?: boolean;
   receipts: Receipt[];
+  /** Sent proposals in this budget scope that received money can answer. */
+  proposals?: { id: string; label: string }[];
 }) {
   const router = useRouter();
   const [visibleReceipts, setVisibleReceipts] = usePropState(receipts);
+  const [linkingId, setLinkingId] = useState<string | null>(null);
+  const [, startLink] = useTransition();
+
+  function linkProposal(receipt: Receipt, proposalId: string | null) {
+    const previous = visibleReceipts;
+    setVisibleReceipts((current) =>
+      current.map((item) =>
+        item.id === receipt.id ? { ...item, proposalId } : item
+      )
+    );
+    setLinkingId(receipt.id);
+    startLink(async () => {
+      try {
+        const result = await linkReceiptToProposal({
+          receiptId: receipt.id,
+          proposalId,
+        });
+        if (result.error) throw new Error(result.error);
+        router.refresh();
+      } catch (error) {
+        setVisibleReceipts(previous);
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Couldn’t save the link. Check your internet and try again."
+        );
+      } finally {
+        setLinkingId(null);
+      }
+    });
+  }
   const total = visibleReceipts.reduce((s, r) => s + Number(r.amount), 0);
   const available = visibleReceipts.reduce(
     (sum, receipt) =>
@@ -365,7 +402,7 @@ export function FundingReceipts({
                       {receipt.locked ? (
                         <span className="inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs text-muted-foreground">
                           <Lock className="size-3" />
-                          {receipt.lockLabel ?? "MoU"}
+                          {receipt.lockLabel ?? "Expected payment"}
                         </span>
                       ) : null}
                       <span className="shrink-0 text-right font-medium tabular-nums">
@@ -408,7 +445,48 @@ export function FundingReceipts({
                       ) : null}
                       </div>
                       {receipt.mouPaymentLabel ? (
-                        <p className="mt-2 text-xs text-muted-foreground">Linked to MoU payment: {receipt.mouPaymentLabel}</p>
+                        <p className="mt-2 text-xs text-muted-foreground">Linked to expected payment: {receipt.mouPaymentLabel}</p>
+                      ) : null}
+                      {receipt.proposalId ? (
+                        <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                          <span>
+                            Answers the proposal to{" "}
+                            {proposals.find((option) => option.id === receipt.proposalId)
+                              ?.label ?? "a partner"}
+                          </span>
+                          {canEdit ? (
+                            <Button
+                              variant="ghost"
+                              size="xs"
+                              disabled={linkingId === receipt.id}
+                              onClick={() => linkProposal(receipt, null)}
+                            >
+                              Remove link
+                            </Button>
+                          ) : null}
+                        </p>
+                      ) : canEdit &&
+                        proposals.length > 0 &&
+                        !receipt.mouPaymentLabel &&
+                        Number(receipt.amount) > 0 ? (
+                        <label className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <span>Link to proposal</span>
+                          <select
+                            className="h-8 max-w-full rounded-md border bg-background px-2 text-xs text-foreground"
+                            value=""
+                            disabled={linkingId === receipt.id}
+                            onChange={(event) => {
+                              if (event.target.value) linkProposal(receipt, event.target.value);
+                            }}
+                          >
+                            <option value="">Choose proposal</option>
+                            {proposals.map((option) => (
+                              <option key={option.id} value={option.id}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
                       ) : null}
                       {canReconcileDonation && receipt.mouLink ? (
                         <DonationMouLink

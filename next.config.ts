@@ -6,6 +6,11 @@ import path from "node:path";
 
 const sharedConfig: NextConfig = {
   experimental: {
+    // Keep quick section switches in the current tab's Router Cache. Next's
+    // default is 0s for dynamic pages and 5m for full prefetches; use the same
+    // short freshness window for both. Server Actions still invalidate it.
+    // This does not cache authenticated HTML/API responses or server data.
+    staleTimes: { dynamic: 30, static: 30 },
     // Keep prerender workers from competing with the other apps on the host.
     cpus: 2,
     staticGenerationMaxConcurrency: 2,

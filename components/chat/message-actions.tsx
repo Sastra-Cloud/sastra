@@ -77,9 +77,9 @@ export function MessageActions({ m, isOwn, pin, time, reactionPending, pinPendin
   const selected = (emoji: string) => m.reactions.some(item => item.emoji === emoji && item.mine);
   function react(emoji: string) {
     if (reactionPending) return;
-    onReact(emoji);
     setOpen(false);
     setPicker(false);
+    onReact(emoji);
   }
   async function copyMessageText() {
     if (copyingRef.current) return;
@@ -168,14 +168,15 @@ export function MessageActions({ m, isOwn, pin, time, reactionPending, pinPendin
         </div>
       </div>
       <Menu.Portal>
-        <Menu.Positioner anchor={surface} positionMethod="fixed" side={layout.split ? "bottom" : "top"} align={isOwn ? "end" : "start"}
+        <Menu.Positioner anchor={reactionsOnly ? reactionTrigger : surface} positionMethod="fixed" side={layout.split ? "bottom" : "top"}
+          align={isOwn ? "start" : "end"}
           sideOffset={layout.split ? ({ anchor }) => -anchor.height - layout.reactionHeight - 8 : 8}
           sticky collisionBoundary={layout.boundary} collisionPadding={12} collisionAvoidance={{ side: "shift", align: "shift" }} className="isolate z-50">
           <Menu.Popup ref={setMenu} finalFocus={() => replyHandoff.current ? getComposerInput() : picker || editHandoff ? false : (reactionsOnly ? reactionTrigger : trigger).current} aria-label="Message actions"
             data-layout={layout.split ? "split" : "compact"}
-            style={{ gap: layout.gap, maxHeight: layout.height || "calc(100dvh - 24px)" }}
+            style={{ gap: layout.gap, maxHeight: layout.height || "calc(100dvh - 24px)", maxWidth: layout.width || "calc(100dvw - 24px)" }}
             className="conversation-message-menu flex w-72 max-w-[calc(100vw-1.5rem)] flex-col rounded-2xl text-popover-foreground outline-none duration-150 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 motion-reduce:animate-none">
-            <Menu.Group ref={reactionBar} aria-label="Reactions" className="conversation-message-reactions grid shrink-0 grid-cols-6 p-2"
+            <Menu.Group ref={reactionBar} aria-label="Reactions" className="conversation-message-reactions grid shrink-0 grid-cols-[repeat(auto-fit,minmax(2.75rem,1fr))] p-2"
               onKeyDown={event => {
                 if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
                 const items = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('[role^="menuitem"]:not([data-disabled])'));
@@ -186,7 +187,7 @@ export function MessageActions({ m, isOwn, pin, time, reactionPending, pinPendin
                 items[(index + (event.key === "ArrowRight" ? 1 : items.length - 1)) % items.length]?.focus();
               }}>
               {frequentEmojis.slice(0, 5).map(emoji => <Menu.CheckboxItem key={emoji} disabled={reactionPending} onClick={() => react(emoji)}
-                aria-label={`React ${emoji}`} checked={selected(emoji)} closeOnClick={false}
+                aria-label={`React ${emoji}`} checked={selected(emoji)} closeOnClick
                 className="flex size-11 cursor-default items-center justify-center rounded-xl text-2xl outline-none data-highlighted:bg-muted data-checked:bg-primary/15 data-checked:ring-1 data-checked:ring-primary/50 data-disabled:opacity-50">{emoji}</Menu.CheckboxItem>)}
               <Menu.Item className="flex size-11 cursor-default items-center justify-center rounded-xl outline-none data-highlighted:bg-muted data-disabled:opacity-50" aria-label="More reactions"
                 disabled={reactionPending} closeOnClick={false} onClick={() => { setOpen(false); setPicker(true); }}><Plus className="size-5" /></Menu.Item>

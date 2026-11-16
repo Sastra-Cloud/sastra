@@ -31,7 +31,7 @@ overview can also show how many later stages are waiting on it.
 
 The project overview shows a compact **Attention needed** panel with critical
 and warning counts. It previews the highest-priority root issues and links to
-the relevant task pipeline, Episodes/Videos, Rights, or Budget surface. When there are
+the relevant task pipeline, Episodes/Videos, Rights & MOUs, or Budget surface. When there are
 more issues, use the grouped links instead of scanning a long repeated list.
 
 ## The health dot

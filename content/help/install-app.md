@@ -39,8 +39,9 @@ If **Add to Dock** is missing from Safari's menu, check your macOS version.
 
 File downloads keep your current Sastra page open. Use the browser or app's
 Downloads button to open the saved file. Invoice previews open the document
-itself. In email attachment review, **Download attachment** saves files that
-cannot be previewed, such as Excel workbooks.
+itself. In email attachment review, files that cannot be previewed, such as
+Excel workbooks, show **Download** instead of **Preview**. If the file cannot
+be made or you may not download it, Sastra shows the reason under the file.
 
 If an older version left an empty window after a download, close that window
 and open Sastra from the Dock again. The downloaded file remains in Downloads.

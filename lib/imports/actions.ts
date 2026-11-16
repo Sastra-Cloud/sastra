@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { and, asc, eq, gte, inArray, isNull, lt, ne, notInArray, sql } from "drizzle-orm";
 import { z } from "zod";
 
+import { addDefaultProjectPeople } from "@/lib/projects/people";
 import { requireRole } from "@/lib/auth/guards";
 import { defaultProjectChannelRows } from "@/lib/chat/project-channels";
 import { db } from "@/lib/db";
@@ -21,8 +22,6 @@ import {
   licenseObligations,
   mouPaymentProjects,
   mouPayments,
-  partnerContacts,
-  partners,
   projectBudgetSettings,
   projectPrintSettings,
   projects,
@@ -66,6 +65,7 @@ import {
 import { recomputeProjectBlockers } from "@/lib/blockers/engine";
 import { generateObligationTasksForProject } from "@/lib/obligations/generate";
 import { logActivity } from "@/lib/activity/log";
+import { findOrCreatePartnerContact } from "@/lib/partners/find-or-create";
 import {
   budgetPartnerFromExtraction,
   hasInboundAgreementFunding,
@@ -480,6 +480,11 @@ function mouPaymentRowsFor(
     return {
       projectId,
       sharedMouGroupId: sharedMouGroupId ?? null,
+      // An imported MoU schedule is backed by that MoU; a funded license is not.
+      fundingBasis:
+        sharedMouGroupId || data.agreementType !== "license_only"
+          ? ("mou" as const)
+          : null,
       amount: (payment.amount ?? 0).toFixed(2),
       currency,
       trigger: payment.trigger,
@@ -738,50 +743,12 @@ async function resolvePartner(
   }
   const org = data.partnerOrg?.trim();
   if (!org) return { partnerId: null, partnerContactId: null };
-
-  const [existing] = await tx
-    .select({ id: partners.id })
-    .from(partners)
-    .where(sql`lower(${partners.name}) = lower(${org})`)
-    .limit(1);
-  const partnerId =
-    existing?.id ??
-    (
-      await tx.insert(partners).values({ name: org }).returning({
-        id: partners.id,
-      })
-    )[0].id;
-
-  const contactName = data.contactName?.trim();
-  const email = data.contactEmail?.trim() || null;
-  const phone = data.contactPhone?.trim() || null;
-  if (!contactName && !email) return { partnerId, partnerContactId: null };
-
-  const [dupe] = await tx
-    .select({ id: partnerContacts.id })
-    .from(partnerContacts)
-    .where(
-      email
-        ? sql`${partnerContacts.partnerId} = ${partnerId} and lower(${partnerContacts.email}) = lower(${email})`
-        : sql`${partnerContacts.partnerId} = ${partnerId} and lower(trim(coalesce(${partnerContacts.firstName}, '') || ' ' || coalesce(${partnerContacts.lastName}, ''))) = lower(${contactName})`
-    )
-    .limit(1);
-  if (dupe) return { partnerId, partnerContactId: dupe.id };
-
-  const parts = (contactName ?? "").split(/\s+/).filter(Boolean);
-  const [inserted] = await tx
-    .insert(partnerContacts)
-    .values({
-      partnerId,
-      firstName: parts[0] || null,
-      lastName: parts.length > 1 ? parts.slice(1).join(" ") : null,
-      email,
-      phone,
-      // A brand-new partner's first contact becomes its primary.
-      isPrimary: !existing,
-    })
-    .returning({ id: partnerContacts.id });
-  return { partnerId, partnerContactId: inserted.id };
+  return findOrCreatePartnerContact(tx, {
+    org,
+    contactName: data.contactName,
+    email: data.contactEmail,
+    phone: data.contactPhone,
+  });
 }
 
 export type BudgetMode = "add" | "replace" | "skip";
@@ -1233,6 +1200,7 @@ export async function commitImport(
           createdBy: user.id,
         })
         .returning({ id: projects.id });
+      await addDefaultProjectPeople(tx, project.id, user.id);
       committedIds.push(project.id);
       committedByIndex.set(d.index, project.id);
 

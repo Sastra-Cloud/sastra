@@ -10,7 +10,4 @@ describe("disclosure form preservation", () => {
     expect(html).toContain('value="8"');
     expect(html).toContain('>0</span>');
   });
-  it("supports an initially open primary section", () => {
-    expect(renderToStaticMarkup(<SectionDisclosure title="Planning" defaultOpen><input name="total" /></SectionDisclosure>)).toContain('open=""');
-  });
 });

@@ -23,6 +23,11 @@ individual's or organization's bill-to name. A contact email is optional until
 you send the invoice. Saved partners fill their billing address and contact email;
 you can change these for this sponsorship.
 
+Saving the draft also adds a new bill-to partner, contact email, and billing
+address to **Settings → Partners** for reuse. Matching names reuse the saved
+partner. Existing directory details are preserved; edit them in Partners to
+change the defaults for future invoices.
+
 In each **Book** field, type part of a title to search, then choose a matching
 book project. You can also open the list to browse, or use the arrow keys and
 Enter to choose a book. Add the number of sponsored copies and agreed price per

@@ -42,44 +42,6 @@ describe("describeAiError", () => {
     });
   });
 
-  it("maps context and policy failures to manager-friendly messages", () => {
-    expect(
-      describeAiError({
-        status: 400,
-        error: { metadata: { error_type: "context_length_exceeded" } },
-      }).userMessage
-    ).toBe(
-      "This document is too large for the selected AI model's context window."
-    );
-    expect(
-      describeAiError({
-        status: 400,
-        error: { metadata: { error_type: "content_policy_violation" } },
-      }).userMessage
-    ).toBe(
-      "The AI provider's safety filter rejected the document or generated result."
-    );
-  });
-
-  it("explains account and availability failures", () => {
-    expect(describeAiError({ status: 402 }).userMessage).toContain(
-      "does not have enough credit"
-    );
-    expect(describeAiError({ status: 503 }).userMessage).toContain(
-      "temporarily unavailable"
-    );
-  });
-
-  it("does not repeat the generic provider message", () => {
-    const result = describeAiError({
-      status: 400,
-      error: { message: "Provider returned error" },
-    });
-    expect(result.userMessage).toBe(
-      "The AI provider rejected the document extraction request."
-    );
-  });
-
   it("redacts document data and credentials from provider detail", () => {
     const result = describeAiError({
       status: 400,

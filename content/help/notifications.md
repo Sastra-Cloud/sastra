@@ -2,9 +2,9 @@
 title: "Notifications"
 category: "Communication"
 roles: [member, manager, admin]
-keywords: [notification, bell, alert, bell not updating, idle, paused, email, email branding, workspace name, project subject, view agreement, bundled email, daily digest, immediate email, digest time, project-first digest, preheader, push, web push, quiet hours, work hours, unsubscribe, stop workflow emails, stop standup emails, mention, overdue task, due date changed, reschedule, stale notification, enable notifications, install, add to home screen, test notification, devices, blocked, badge, correspondence badge, actions for you, needs review, app icon badge, unread count, number on icon, email assistant, task suggestions, proof review, task learning, forwarded email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice]
+keywords: [notification, bell, alert, bell not updating, read chat, read message, direct message, idle, paused, email, email branding, workspace name, project subject, view agreement, bundled email, daily digest, immediate email, digest time, project-first digest, preheader, push, web push, quiet hours, work hours, unsubscribe, stop workflow emails, stop standup emails, mention, overdue task, due date changed, reschedule, stale notification, enable notifications, install, add to home screen, test notification, devices, blocked, badge, correspondence badge, actions for you, needs review, app icon badge, unread count, number on icon, email assistant, task suggestions, proof review, task learning, forwarded email, shared mou funding, invoice owner, delivery evidence, signing invoice, final invoice]
 order: 105
-summary: "Menu badges explained: personal due work, shared email reviews, unread chats and waiting standups; the bell, project context and branding in notification email, and web-push scheduling."
+summary: "Menu badges, automatic notification read updates when reading chat, the bell, project context and branding in notification email, and web-push scheduling."
 ---
 
 Notifications keep you posted about work that needs you. The **bell** in the top
@@ -13,10 +13,17 @@ Routine captured email stays in **Correspondence**, so it does not crowd out
 these work alerts or increase the bell number.
 Opening or marking notifications read updates the bell and list immediately. If
 the server cannot save the read state, the unread marker returns with an error.
-The bell checks for new notifications every 20 seconds while you use Sastra. If
-you stop typing, clicking, or scrolling for 10 minutes, it stops checking. It
+The bell checks for new notifications every 20 seconds while you use Sastra.
+While it is closed, it checks only the unread count. Opening it loads the
+notification details. If they cannot load, select **Try again**.
+If you stop typing, clicking, or scrolling for 10 minutes, it stops checking. It
 catches up as soon as you come back. Chat and the online dots work the same way.
 Push notifications still reach you while it is paused.
+
+Reading a chat conversation also marks its direct-message and chat-mention
+notifications as read after your read position saves. Newer messages and alerts
+from other conversations stay unread. The bell and app icon count refresh then;
+you do not need to open each alert separately.
 
 ## Badges in the menu
 
@@ -48,7 +55,8 @@ the full count and its meaning. A dot on the mobile menu button lets you know
 there is work or unread chat inside.
 
 Badges check for updates every 20 seconds while you are active and catch up when
-you return or change pages. My Work reflects task and review changes immediately
+you return. Recent counts are reused as you change pages. Saved read receipts
+and work updates refresh the counts immediately. My Work reflects task and review changes immediately
 and restores the count if saving fails. A temporary connection failure preserves
 the last known count. Opening a menu destination does not clear work that still
 needs action. **Mark all read** in the bell only clears bell notifications;

@@ -2,7 +2,7 @@ import { AssistantShortcut } from "@/components/assistant/assistant-shortcut";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, ChevronRight, Hash, FolderKanban } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronRight, Hash, FolderKanban, Users } from "lucide-react";
 
 import { requireUser } from "@/lib/auth/guards";
 import { can } from "@/lib/auth/policy";
@@ -50,6 +50,10 @@ export default async function ChatChannelPage({
   const isDirect = channel.kind === "direct";
   const isCustom = channel.kind === "custom";
   const isStandup = channel.kind === "standup";
+  const conversation = loadChannelConversation(channel, user.id);
+  // The Suspense child rethrows errors. Handle early rejection while the
+  // independent header queries are still in flight.
+  void conversation.catch(() => {});
   const [projectChannels, directCandidates, pins] = await Promise.all([
     isProject && channel.projectId
       ? listProjectChannels(channel.projectId, user.id)
@@ -90,6 +94,7 @@ export default async function ChatChannelPage({
                 canManage={canManageMembers}
               />
             ) : null}
+            {isProject && projectSlug ? <Link href={`/projects/${projectSlug}/members`} className="inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm font-medium hover:bg-muted"><Users className="size-4" />People</Link> : null}
             {isProject && projectSlug ? (
               <Link
                 href={`/projects/${projectSlug}`}
@@ -111,7 +116,7 @@ export default async function ChatChannelPage({
     >
       <div className="flex h-full min-w-0 min-h-0 flex-col lg:gap-3">
         <div className="shrink-0 lg:hidden">
-          <ConversationHeader title={mobileTitle ?? channel.name} subtitle={mobileContext} backHref={CHAT_LIST_HREF} actions={channelActions} />
+          <ConversationHeader refreshable title={mobileTitle ?? channel.name} subtitle={mobileContext} backHref={CHAT_LIST_HREF} actions={channelActions} />
         </div>
         <div className="surface-shadow hidden shrink-0 flex-wrap lg:flex items-center justify-between gap-2 rounded-xl border bg-card p-2 lg:gap-3 lg:p-4">
           <div className="flex min-w-0 flex-1 items-center gap-2 lg:block">
@@ -202,32 +207,41 @@ export default async function ChatChannelPage({
             />
           }
         >
-          <ChannelConversation channel={channel} user={user} timeZone={timeZone} />
+          <ChannelConversation channel={channel} user={user} timeZone={timeZone} conversation={conversation} />
         </Suspense>
       </div>
     </MessagePinsProvider>
   );
 }
 
-async function ChannelConversation({
-  channel,
-  user,
-  timeZone,
-}: {
-  timeZone: string;
-  channel: NonNullable<Awaited<ReturnType<typeof getChannelById>>>;
-  user: Awaited<ReturnType<typeof requireUser>>["user"];
-}) {
-  const isProject = channel.kind === "project";
-  const isDirect = channel.kind === "direct";
-  const [messages, members] = await Promise.all([
-    getRecentMessages(channel.id, user.id),
-    isDirect || channel.kind === "custom"
+function loadChannelConversation(
+  channel: NonNullable<Awaited<ReturnType<typeof getChannelById>>>,
+  userId: string
+) {
+  return Promise.all([
+    getRecentMessages(channel.id, userId),
+    channel.kind === "direct" || channel.kind === "custom"
       ? listMentionTargetsByIds(channel.participantIds)
       : channel.projectId
         ? listProjectMentionTargets(channel.projectId)
         : listAllMentionTargets(),
   ]);
+}
+
+async function ChannelConversation({
+  channel,
+  user,
+  timeZone,
+  conversation,
+}: {
+  timeZone: string;
+  channel: NonNullable<Awaited<ReturnType<typeof getChannelById>>>;
+  user: Awaited<ReturnType<typeof requireUser>>["user"];
+  conversation: ReturnType<typeof loadChannelConversation>;
+}) {
+  const isProject = channel.kind === "project";
+  const isDirect = channel.kind === "direct";
+  const [messages, members] = await conversation;
 
   return (
     <ChatThread

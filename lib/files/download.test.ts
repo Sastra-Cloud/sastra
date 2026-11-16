@@ -29,3 +29,11 @@ it("requires conversation file access before issuing a longer-lived playback URL
   expect(mocks.presignGet).toHaveBeenCalledWith("private/video.mp4", undefined, 3600);
   expect(response.headers.get("Cache-Control")).toContain("private");
 });
+
+it("refreshes private audio access without caching an expiring redirect", async () => {
+  mocks.limit.mockResolvedValue([{ id: "voice", status: "ready", purpose: "workspace_attachment", mimeType: "audio/webm;codecs=opus", r2Key: "private/voice.webm", originalName: "voice.webm" }]);
+  mocks.canAccessFile.mockResolvedValue(true);
+  const response = await GET(new Request("http://localhost/api/files/voice/download?inline=1&voiceAttempt=2"), { params: Promise.resolve({ id: "voice" }) });
+  expect(mocks.presignGet).toHaveBeenCalledWith("private/voice.webm", undefined, 3600);
+  expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+});

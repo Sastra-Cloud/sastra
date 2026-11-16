@@ -39,6 +39,8 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/auth/auth-card-shell.tsx`
 - `components/auth/bootstrap-admin-form.tsx`
 - `components/auth/forgot-password-form.tsx`
+- `components/auth/google-drive-connect-button.test.tsx`
+- `components/auth/google-drive-connect-button.tsx`
 - `components/auth/login-form.tsx`
 - `components/auth/reset-password-form.tsx`
 - `components/auth/sign-out-button.tsx`
@@ -53,8 +55,10 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/settings/charts/usage-area-chart.tsx`
 - `components/settings/charts/usage-model-donut.tsx`
 - `components/settings/copy-address-button.tsx`
+- `components/settings/default-project-people.tsx`
 - `components/settings/dependency-security-check-button.tsx`
 - `components/settings/dictionary-manager.tsx`
+- `components/settings/document-colors-fields.tsx`
 - `components/settings/document-learning-manager.tsx`
 - `components/settings/email-learning-manager.tsx`
 - `components/settings/email-task-preferences.tsx`
@@ -64,6 +68,7 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/settings/invoice-sequence-card.tsx`
 - `components/settings/modules-settings.tsx`
 - `components/settings/notification-prefs.tsx`
+- `components/settings/partners-manager.test.tsx`
 - `components/settings/partners-manager.tsx`
 - `components/settings/profile-form.tsx`
 - `components/settings/publishers-manager.tsx`
@@ -86,14 +91,9 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/settings/typesafe-toggle.tsx`
 - `components/settings/workspace-branding-card.tsx`
 - `components/settings/workspace-modules-provider.tsx`
+- `components/settings/workspace-settings-form.test.tsx`
 - `components/settings/workspace-settings-form.tsx`
 - `components/settings/workspace-setup-form.tsx`
 - `lib/auth/assurance-actions.ts`
 - `lib/auth/assurance.ts`
-- `lib/auth/auth.ts`
-- `lib/auth/client.ts`
-- `lib/auth/guards.test.ts`
-- `lib/auth/guards.ts`
-- `lib/auth/lectio-sso.ts`
-- `lib/auth/magic-link-security.test.ts`
-... 17 more
+... 22 more

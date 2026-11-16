@@ -165,6 +165,15 @@ that one job, so existing scheduled tasks can be replaced one at a time. To run
 a specific job on demand, send `{"jobs":["standup"],"force":true}` as the JSON
 body of the tick request.
 
+Coolify's rolling updates run the old and new containers together, and a task
+with no container set fails during that overlap, with a failure notification. To
+avoid this, set the application's **Container Name Prefix** to
+`<name>-<application uuid>` and each task's **Container** to `<name>`. The prefix
+keeps rolling updates on, may be at most 30 characters, and takes effect on the
+next deployment. Give a task whose job can run long, such as `gmail-poll`, a timeout
+longer than its slowest normal run. A per-job route answers `200` with
+`"skipped": "already-running"` when an earlier run of that job has not finished.
+
 ## 6. Cloudflare R2 — bucket + CORS
 
 Keep the bucket **private**. The browser uploads files directly to R2 with a

@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import {
   ExternalLink,
@@ -12,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 
-import { authClient } from "@/lib/auth/client";
+import { GoogleDriveConnectButton } from "@/components/auth/google-drive-connect-button";
 import {
   addTaskDriveFile,
   getDriveAttachContext,
@@ -59,7 +60,9 @@ function pickerBuilder(g: any, ctx: DriveAttachContext, token: string) {
 
 function showDriveOpenError(error: unknown) {
   console.error("Google Picker could not open", error);
-  toast.error("Couldn't open Google Drive. Check your internet and try again.");
+  toast.error("Couldn't open Google Drive. Try again, or reconnect in Profile settings.", {
+    action: <Button variant="secondary" size="sm" nativeButton={false} render={<Link href="/settings/profile#google-drive" />}>Open settings</Button>,
+  });
 }
 
 /**
@@ -89,14 +92,6 @@ function useDrive(activeInForm = true) {
     getDriveAttachContext()
       .then(setCtx)
       .catch(() => setCtx(null));
-  }, []);
-
-  const connect = useCallback(() => {
-    authClient.linkSocial({
-      provider: "google",
-      scopes: ["https://www.googleapis.com/auth/drive.file"],
-      callbackURL: window.location.href,
-    });
   }, []);
 
   /** Keep opening feedback visible until the iframe loads or opening fails. */
@@ -130,16 +125,14 @@ function useDrive(activeInForm = true) {
     }
   }, []);
 
-  return { ctx, connect, open };
+  return { ctx, open };
 }
 
 /** Loading → null; not configured → note; not connected → Connect button. */
 function DriveGate({
   ctx,
-  connect,
 }: {
   ctx: DriveAttachContext | null;
-  connect: () => void;
 }) {
   if (!ctx) return null;
   if (!ctx.configured) {
@@ -149,11 +142,7 @@ function DriveGate({
       </p>
     );
   }
-  return (
-    <Button type="button" variant="outline" size="sm" onClick={connect}>
-      Connect Google Drive
-    </Button>
-  );
+  return <GoogleDriveConnectButton />;
 }
 
 /** Connect Google / open the Drive Picker (shared drive) to attach files or folders to a task. */
@@ -164,7 +153,7 @@ export function DriveAttachButton({
   taskId: string;
   onChange: () => void;
 }) {
-  const { ctx, connect, open } = useDrive();
+  const { ctx, open } = useDrive();
   const [busy, setBusy] = useState(false);
 
   const openPicker = useCallback(async () => {
@@ -210,7 +199,7 @@ export function DriveAttachButton({
   }, [ctx, taskId, onChange, open]);
 
   if (!ctx || !ctx.configured || !ctx.connected) {
-    return <DriveGate ctx={ctx} connect={connect} />;
+    return <DriveGate ctx={ctx} />;
   }
   return (
     <Button
@@ -253,7 +242,7 @@ export function DriveFolderPickerButton({
     url: string;
   }) => void | Promise<void>;
 }) {
-  const { ctx, connect, open } = useDrive(active);
+  const { ctx, open } = useDrive(active);
   const [busy, setBusy] = useState(false);
 
   const openPicker = useCallback(async () => {
@@ -290,7 +279,7 @@ export function DriveFolderPickerButton({
 
   if (!ctx || !ctx.configured || !ctx.connected) {
     if (quiet) return null;
-    return <DriveGate ctx={ctx} connect={connect} />;
+    return <DriveGate ctx={ctx} />;
   }
   return (
     <Button
@@ -332,17 +321,13 @@ export function TaskDriveFolderPicker({
   label?: string;
   hint?: string;
 }) {
-  const { ctx, connect } = useDrive();
+  const { ctx } = useDrive();
 
   if (!ctx || !ctx.configured) return null; // stay quiet unless Drive is set up
 
   let control: ReactNode;
   if (!ctx.connected) {
-    control = (
-      <Button type="button" variant="outline" size="sm" onClick={connect}>
-        Connect Google Drive
-      </Button>
-    );
+    control = <GoogleDriveConnectButton />;
   } else if (value) {
     control = (
       <div className="flex flex-wrap items-center gap-2">
@@ -403,7 +388,7 @@ export function TaskDriveFilesPicker({
   onChange: (files: TaskDriveFileSelection[]) => void;
   defaultFolderId?: string | null;
 }) {
-  const { ctx, connect, open } = useDrive(active);
+  const { ctx, open } = useDrive(active);
   const [busy, setBusy] = useState(false);
 
   const openPicker = useCallback(async () => {
@@ -509,15 +494,7 @@ export function TaskDriveFilesPicker({
           {busy ? "Opening Google Drive…" : "Add or upload files"}
         </Button>
       ) : (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="w-fit"
-          onClick={connect}
-        >
-          Connect Google Drive
-        </Button>
+        <GoogleDriveConnectButton />
       )}
       <p className="text-xs text-muted-foreground">
         Uploads are placed in Google Drive immediately and linked when you
@@ -550,7 +527,7 @@ export function DriveUploadButton({
   quiet?: boolean;
   onChange: () => void;
 }) {
-  const { ctx, connect, open } = useDrive();
+  const { ctx, open } = useDrive();
   const [busy, setBusy] = useState(false);
 
   const uploadInto = useCallback(
@@ -590,7 +567,7 @@ export function DriveUploadButton({
 
   if (!ctx || !ctx.configured || !ctx.connected) {
     if (quiet) return null;
-    return <DriveGate ctx={ctx} connect={connect} />;
+    return <DriveGate ctx={ctx} />;
   }
 
   // `configured` guarantees a shared drive id, which gives every upload a

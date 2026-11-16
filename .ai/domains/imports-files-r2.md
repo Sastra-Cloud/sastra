@@ -25,6 +25,8 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/files/actions.ts`
 - `lib/files/crop-image.ts`
 - `lib/files/download.test.ts`
+- `lib/files/fetch-download.test.ts`
+- `lib/files/fetch-download.ts`
 - `lib/files/link-attributes.test.ts`
 - `lib/files/link-attributes.ts`
 - `lib/files/queries.ts`
@@ -33,6 +35,8 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/files/upload-client.ts`
 - `lib/files/upload-progress.test.ts`
 - `lib/files/upload-progress.ts`
+- `lib/files/upload-rules.test.ts`
+- `lib/files/upload-rules.ts`
 - `lib/imports/actions-file-access.test.ts`
 - `lib/imports/actions.ts`
 - `lib/imports/extraction-access.test.ts`

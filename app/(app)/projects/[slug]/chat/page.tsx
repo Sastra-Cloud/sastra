@@ -1,4 +1,9 @@
 import { getWorkspaceSettings } from "@/lib/workspace/queries";
+import Link from "next/link";
+import { projectChatAccessCondition } from "@/lib/chat/access-sql";
+import { db } from "@/lib/db";
+import { projects } from "@/lib/db/schema";
+import { and, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 
 import { requireUser } from "@/lib/auth/guards";
@@ -27,6 +32,14 @@ export default async function ProjectChatPage({
   const { user } = await requireUser();
   const [project, workspace] = await Promise.all([getProjectHeader(slug), getWorkspaceSettings()]);
   if (!project) notFound();
+
+  const [allowed] = await db.select({ id: projects.id }).from(projects)
+    .where(and(eq(projects.id, project.id), projectChatAccessCondition(project.id, user.id))).limit(1);
+  if (!allowed) return <div className="space-y-3 p-4">
+    <h2 className="text-lg font-semibold">Join the project to use its chats</h2>
+    <p className="text-sm text-muted-foreground">Ask a project manager or workspace admin to add you. Project chats and their files are available to project people.</p>
+    <Link href={`/projects/${slug}/members`} className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4">View project people</Link>
+  </div>;
 
   const channels = await listProjectChannels(project.id, user.id);
   const channel =

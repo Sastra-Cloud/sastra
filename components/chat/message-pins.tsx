@@ -24,6 +24,7 @@ import {
   type ChatPinnedMessage,
   type PinChange,
 } from "@/lib/chat/pin-state";
+import { reuseChatSnapshot } from "@/lib/chat/snapshot";
 import { useOptimisticAction } from "@/hooks/use-optimistic-action";
 import { usePropState } from "@/hooks/use-prop-state";
 import { Button } from "@/components/ui/button";
@@ -119,7 +120,7 @@ export function MessagePinsProvider({
     const startedAt = performance.now();
     return (next: ChatPinnedMessage[]) => {
       if (inFlight.current > 0 || startedAt < lastSettledAt.current) return;
-      setServerPins(next);
+      setServerPins(current => reuseChatSnapshot(current, next));
     };
   }, [setServerPins]);
 
@@ -260,6 +261,9 @@ function showMessageInChat(messageId: string) {
   const reduceMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)"
   ).matches;
+  // Focus tells the thread this is deliberate history navigation and keeps
+  // delayed media/viewport resizes from pulling the selected message away.
+  element.focus({ preventScroll: true });
   element.scrollIntoView({
     block: "center",
     behavior: reduceMotion ? "auto" : "smooth",

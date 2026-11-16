@@ -19,10 +19,9 @@ export function legacyCronRoute(name: CronJobName) {
     const report = await runScheduledTick({ only: [name], force: true });
     const ran = report.ran.find((r) => r.name === name);
     if (!ran) {
-      return NextResponse.json(
-        { ok: false, error: "This job is already running.", nextDueAt: report.nextDueAt },
-        { status: 409 }
-      );
+      // A slow run overlapping the next schedule is normal: the earlier run is
+      // still doing this work, so the scheduler should not report a failure.
+      return NextResponse.json({ ok: true, skipped: "already-running", nextDueAt: report.nextDueAt });
     }
     return NextResponse.json(
       { ok: ran.ok, ...ran.result, note: ran.note, nextDueAt: report.nextDueAt },

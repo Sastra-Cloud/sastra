@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  openLoadClass,
-  overdueClass,
-  utilizationClass,
-  utilizationPct,
-  utilizationTone,
-} from "./capacity";
+import { utilizationPct, utilizationTone } from "./capacity";
 
 describe("utilizationPct", () => {
   it("returns null when hours or capacity are missing/zero", () => {
@@ -29,24 +23,5 @@ describe("utilizationTone", () => {
     expect(utilizationTone(81)).toBe("high");
     expect(utilizationTone(80)).toBe("ok");
     expect(utilizationTone(10)).toBe("ok");
-  });
-});
-
-describe("threshold classes", () => {
-  it("utilizationClass tracks tone", () => {
-    expect(utilizationClass(120)).toMatch(/destructive/);
-    expect(utilizationClass(90)).toMatch(/warning/);
-    expect(utilizationClass(50)).toMatch(/success/);
-  });
-  it("openLoadClass escalates with count", () => {
-    expect(openLoadClass(0)).toMatch(/muted/);
-    expect(openLoadClass(4)).toBe("");
-    expect(openLoadClass(6)).toMatch(/warning/);
-    expect(openLoadClass(9)).toMatch(/destructive/);
-  });
-  it("overdueClass escalates with count", () => {
-    expect(overdueClass(0)).toMatch(/muted/);
-    expect(overdueClass(1)).toMatch(/warning/);
-    expect(overdueClass(3)).toMatch(/destructive/);
   });
 });

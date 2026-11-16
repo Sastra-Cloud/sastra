@@ -82,6 +82,7 @@ Table and enum exports parsed from `lib/db/schema/`.
 - `mouPaymentProjects` (pgTable)
 - `mouPayments` (pgTable)
 - `projectBudgetSettings` (pgTable)
+- `projectPartnerQuotations` (pgTable)
 - `proposalSubmissions` (pgTable)
 - `royaltyPayments` (pgTable)
 - `sharedMouReceiptAllocations` (pgTable)
@@ -246,10 +247,12 @@ Table and enum exports parsed from `lib/db/schema/`.
 
 ## `lib/db/schema/projects.ts`
 
+- `defaultProjectPeople` (pgTable)
 - `phases` (pgTable)
 - `podcastStageSettings` (pgTable)
 - `projectManagers` (pgTable)
 - `projectMembers` (pgTable)
+- `projectPeople` (pgTable)
 - `projects` (pgTable)
 - `units` (pgTable)
 
@@ -291,6 +294,7 @@ Table and enum exports parsed from `lib/db/schema/`.
 - `taskComments` (pgTable)
 - `taskDependencies` (pgTable)
 - `taskDriveFiles` (pgTable)
+- `taskPins` (pgTable)
 - `taskQueues` (pgTable)
 - `tasks` (pgTable)
 

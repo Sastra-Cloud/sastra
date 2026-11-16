@@ -9,7 +9,7 @@ import { syncBudgetApprovalState } from "./approval-service";
 
 export async function revalidateBudget(projectId: string) {
   const activeApprovalScopes = await db
-    .selectDistinct({ printRunId: budgetApprovalRequests.printRunId })
+    .selectDistinct({ printRunId: budgetApprovalRequests.printRunId, quotationId: budgetApprovalRequests.partnerQuotationId })
     .from(budgetApprovalRequests)
     .where(
       and(
@@ -17,15 +17,10 @@ export async function revalidateBudget(projectId: string) {
         ne(budgetApprovalRequests.status, "superseded")
       )
     );
-  const scopes = new Set<string | null>([
-    null,
-    ...activeApprovalScopes.map((row) => row.printRunId),
-  ]);
-  await Promise.all(
-    [...scopes].map((printRunId) =>
-      syncBudgetApprovalState(projectId, printRunId)
-    )
-  );
+  const scopes = new Map<string, { printRunId: string | null; quotationId: string | null }>();
+  scopes.set("main", { printRunId: null, quotationId: null });
+  for (const scope of activeApprovalScopes) scopes.set(`${scope.printRunId ?? "main"}:${scope.quotationId ?? "budget"}`, scope);
+  await Promise.all([...scopes.values()].map(scope => syncBudgetApprovalState(projectId, scope.printRunId, scope.quotationId)));
   await recomputeProjectBlockers(projectId);
   const [p] = await db
     .select({ slug: projects.slug })
@@ -34,6 +29,7 @@ export async function revalidateBudget(projectId: string) {
     .limit(1);
   if (p) {
     revalidatePath(`/projects/${p.slug}/budget`);
+    revalidatePath(`/projects/${p.slug}/rights`);
     revalidatePath(`/projects/${p.slug}/print`);
     revalidatePath(`/projects/${p.slug}/tasks`);
     revalidatePath(`/projects/${p.slug}`);

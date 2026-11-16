@@ -13,7 +13,8 @@ export type PrintReviewFlagKind =
   | "payment_split_mismatch"
   | "currency_defaulted"
   | "ambiguous_date"
-  | "ai_failed";
+  | "ai_failed"
+  | "reused_quote";
 
 export type PrintReviewFlag = {
   field: string;
@@ -39,6 +40,7 @@ const FLAG_LABELS: Record<PrintReviewFlagKind, string> = {
   currency_defaulted: "Currency assumed (none stated)",
   ambiguous_date: "Date order was ambiguous",
   ai_failed: "AI extraction failed — pattern parser used",
+  reused_quote: "Price reused from another book",
 };
 
 export function flagLabel(kind: PrintReviewFlagKind): string {

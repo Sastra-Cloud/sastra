@@ -18,13 +18,13 @@ const KIND_META: Record<
 > = {
   task: { icon: CalendarClock, label: "Task" },
   milestone: { icon: Flag, label: "Milestone" },
-  mou_payment: { icon: CircleDollarSign, label: "MoU payment" },
+  mou_payment: { icon: CircleDollarSign, label: "Expected payment" },
   royalty_payment: { icon: CircleDollarSign, label: "Royalty" },
   license_fee: { icon: CircleDollarSign, label: "License fee" },
   print_payment: { icon: Printer, label: "Print payment" },
   license_renewal: { icon: FileSignature, label: "License renewal" },
   mou_expiry: { icon: FileSignature, label: "MoU expiry" },
-  rights_complete_by: { icon: FileSignature, label: "Rights deadline" },
+  rights_complete_by: { icon: FileSignature, label: "Rights & MOUs deadline" },
   project_due: { icon: BookText, label: "Project due" },
 };
 

@@ -29,7 +29,7 @@ async function loadPlan(input: BudgetLineInvoiceInput) {
     currency: budget.settings.currency,
     items: budget.items,
     recipientName: details.recipientName,
-    recipientEmail: budget.settings.partnerContactEmail,
+    recipientEmail: budget.settings.partnerContactEmail?.trim() || details.contactEmail || null,
     recipientAddress: details.billingAddress,
   });
 }

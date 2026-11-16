@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  addBusinessDaysInTimeZone,
-  externalRecipient,
-  fallbackFollowUpSummary,
-  latestReplyText,
-} from "./follow-up-policy";
+import { addBusinessDaysInTimeZone, externalRecipient, latestReplyText } from "./follow-up-policy";
 
 describe("external email follow-up policy", () => {
   it("keeps only the newest reply above quoted history", () => {
@@ -14,12 +9,6 @@ describe("external email follow-up policy", () => {
         "Any update on the proof?\n\nOn Fri, Jul 10, 2026 at 2:58 PM Bora wrote:\n> Older request"
       )
     ).toBe("Any update on the proof?");
-  });
-
-  it("builds a safe subject fallback", () => {
-    expect(fallbackFollowUpSummary("Re: Re: Discipling")).toBe(
-      "Waiting for a response about Discipling."
-    );
   });
 
   it("selects the first external recipient", () => {

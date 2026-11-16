@@ -10,7 +10,7 @@ import {
 } from "./compute";
 
 const unitSchema = z.enum(["words", "pages", "cover", "project", "flat"]);
-const lineSchema = z.object({
+export const proposalCostSchema = z.object({
   category: z.enum(["translation", "proofreading", "editing", "cover_design", "typesetting", "project_management", "print_ship", "audiobook", "video_series", "custom"]),
   label: z.string().trim().min(1, "Give each cost a name.").max(200),
   unit: unitSchema,
@@ -33,7 +33,7 @@ export const proposalBudgetSchema = z.object({
   wordsPerPage: z.number().int().min(1).max(100_000),
   languageExpansionFactor: z.string().regex(/^\d+(?:\.\d{1,2})?$/).refine(value => Number(value) > 0 && Number(value) <= 999.99),
   currency: z.string().regex(/^[A-Z]{3}$/, "Use a three-letter currency code."),
-  lines: z.array(lineSchema).min(1, "Include at least one cost.").max(40),
+  lines: z.array(proposalCostSchema).min(1, "Include at least one cost.").max(40),
 });
 
 export type ProposalBudgetInput = z.infer<typeof proposalBudgetSchema>;

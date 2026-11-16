@@ -107,7 +107,7 @@ export function TimerWidget() {
           title={active.taskTitle}
         >
           <span className="relative flex size-2.5 shrink-0" aria-hidden>
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-70" />
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-70 motion-reduce:animate-none low-power:animate-none" />
             <span className="relative inline-flex size-2.5 rounded-full bg-success" />
           </span>
           <span className="shrink-0 tabular-nums text-sm font-medium">

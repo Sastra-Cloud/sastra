@@ -18,8 +18,8 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `components/notifications/notifications-list.tsx`
 - `components/presence/presence-menu.tsx`
 - `components/presence/presence-provider.tsx`
-- `components/pwa/enable-push-flow.test.tsx`
 - `components/pwa/enable-push-flow.tsx`
+- `components/pwa/pull-to-refresh.test.tsx`
 - `components/pwa/pull-to-refresh.tsx`
 - `components/pwa/push-nudge.tsx`
 - `components/pwa/pwa-provider.tsx`
@@ -28,6 +28,8 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/db/schema/presence.ts`
 - `lib/notifications/actions.ts`
 - `lib/notifications/client-events.ts`
+- `lib/notifications/client-feed.test.ts`
+- `lib/notifications/client-feed.ts`
 - `lib/notifications/email-policy.test.ts`
 - `lib/notifications/email-policy.ts`
 - `lib/notifications/email-queue.ts`
@@ -40,11 +42,11 @@ Read this when the task touches this domain. Use the file list as a starting map
 - `lib/notifications/push.test.ts`
 - `lib/notifications/push.ts`
 - `lib/notifications/queries.ts`
+- `lib/notifications/recent-route.test.ts`
 - `lib/notifications/work-hours.test.ts`
 - `lib/notifications/work-hours.ts`
 - `lib/presence/actions.ts`
 - `lib/presence/queries.ts`
-- `lib/presence/status.test.ts`
 - `lib/presence/status.ts`
 - `lib/push/client.test.ts`
 - `lib/push/client.ts`

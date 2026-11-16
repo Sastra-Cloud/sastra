@@ -251,6 +251,9 @@ async function storeAttachment(
   label?: string
 ): Promise<string | null> {
   if (!isAllowedMime(att.mimeType)) return null;
+  // Calendar invites can be shared by hand, but captured email keeps skipping
+  // them: every meeting invitation would otherwise add a file to Correspondence.
+  if (att.mimeType.toLowerCase().startsWith("text/calendar")) return null;
   const bytes = att.content;
   if (bytes.byteLength === 0 || bytes.byteLength > MAX_FILE_BYTES) return null;
 

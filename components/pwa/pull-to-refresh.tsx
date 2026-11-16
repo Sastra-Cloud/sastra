@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { RefreshCw } from "lucide-react";
 
 import {
@@ -15,16 +16,23 @@ const IGNORED_TARGETS = [
   "input",
   "textarea",
   "select",
+  "form",
   "[contenteditable=true]",
+  "[role=menu]",
+  "[role=listbox]",
+  "[role=dialog]",
   "[data-slot=sheet-content]",
   "[data-slot=dialog-content]",
   "[data-pull-refresh-ignore]",
 ].join(",");
 
-/** Mobile-only, native-feeling full-page refresh for the installed PWA/Safari. */
+/** Mobile page reloads and draft-preserving conversation refresh. */
 export function PullToRefresh() {
+  const router = useRouter();
   const [distance, setDistance] = useState(0);
-  const [refreshing, setRefreshing] = useState(false);
+  const [reloading, setReloading] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const refreshing = reloading || pending;
   const distanceRef = useRef(0);
 
   useEffect(() => {
@@ -36,16 +44,43 @@ export function PullToRefresh() {
     let tracking = false;
     let startX = 0;
     let startY = 0;
+    let refreshConversation = false;
 
     const updateDistance = (next: number) => {
       distanceRef.current = next;
       setDistance(next);
     };
 
+    const cancel = () => {
+      tracking = false;
+      updateDistance(0);
+    };
+
     const onTouchStart = (event: TouchEvent) => {
-      if (refreshing || event.touches.length !== 1 || window.scrollY > 0) return;
+      cancel();
+      if (
+        refreshing || !mobileTouch.matches || event.defaultPrevented ||
+        event.touches.length !== 1 || window.scrollY > 0
+      ) return;
       const target = event.target;
-      if (target instanceof Element && target.closest(IGNORED_TARGETS)) return;
+      if (!(target instanceof Element) || target.closest(IGNORED_TARGETS)) return;
+      // A chat pull must start on its fixed header or at the transcript's true
+      // top. Reaching the top during a history-scrolling gesture never arms it.
+      const transcript = target.closest('[data-slot="message-scroller-viewport"]');
+      refreshConversation = !!target.closest("[data-conversation-refresh]") ||
+        !!transcript && transcript.scrollTop <= 0;
+      if (target.closest("[data-mobile-conversation]") && !refreshConversation) return;
+      // Other inner scroll panels keep their own gestures, including when
+      // they are at the top or too short to overflow.
+      for (
+        let element: Element | null = target;
+        element && element !== document.body && element !== document.documentElement;
+        element = element.parentElement
+      ) {
+        if (refreshConversation && element === transcript) continue;
+        const { overflowY } = window.getComputedStyle(element);
+        if (overflowY === "auto" || overflowY === "scroll") return;
+      }
       const touch = event.touches[0];
       if (!touch) return;
       tracking = true;
@@ -55,39 +90,48 @@ export function PullToRefresh() {
     };
 
     const onTouchMove = (event: TouchEvent) => {
-      if (!tracking || event.touches.length !== 1) return;
+      if (!tracking) return;
+      if (event.touches.length !== 1 || event.defaultPrevented) {
+        cancel();
+        return;
+      }
       const touch = event.touches[0];
       if (!touch) return;
       const deltaX = touch.clientX - startX;
       const deltaY = touch.clientY - startY;
       if (deltaY <= 0 || Math.abs(deltaX) > deltaY || window.scrollY > 0) {
-        tracking = false;
-        updateDistance(0);
+        cancel();
         return;
       }
-      event.preventDefault();
       updateDistance(resistedPullDistance(deltaY));
     };
 
-    const finish = () => {
+    const finish = (event: TouchEvent) => {
       if (!tracking) return;
+      if (event.touches.length !== 0) {
+        cancel();
+        return;
+      }
       tracking = false;
       if (shouldRefreshAfterPull(distanceRef.current)) {
-        setRefreshing(true);
-        updateDistance(56);
-        window.setTimeout(() => window.location.reload(), 180);
+        updateDistance(0);
+        if (refreshConversation) {
+          // Merge fresh server data without throwing away the composer draft.
+          startTransition(() => router.refresh());
+        } else {
+          setReloading(true);
+          window.setTimeout(() => window.location.reload(), 180);
+        }
       } else {
         updateDistance(0);
       }
     };
 
-    const cancel = () => {
-      tracking = false;
-      updateDistance(0);
-    };
-
     window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    // Root overscroll CSS prevents the browser's duplicate refresh. Merely
+    // observe movement: Safari can deliver non-cancelable moves, and nested
+    // scrolling must never depend on a dynamically installed blocking listener.
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
     window.addEventListener("touchend", finish, { passive: true });
     window.addEventListener("touchcancel", cancel, { passive: true });
     return () => {
@@ -96,8 +140,9 @@ export function PullToRefresh() {
       window.removeEventListener("touchend", finish);
       window.removeEventListener("touchcancel", cancel);
     };
-  }, [refreshing]);
+  }, [refreshing, router, startTransition]);
 
+  const visibleDistance = refreshing ? 56 : distance;
   const armed = shouldRefreshAfterPull(distance);
   const visible = distance > 4 || refreshing;
 
@@ -110,8 +155,8 @@ export function PullToRefresh() {
         !visible && "invisible"
       )}
       style={{
-        opacity: Math.min(1, distance / 32),
-        transform: `translate3d(0, ${distance - 48}px, 0)`,
+        opacity: Math.min(1, visibleDistance / 32),
+        transform: `translate3d(0, ${visibleDistance - 48}px, 0)`,
         transition: refreshing || distance === 0 ? "transform 180ms ease-out, opacity 150ms ease-out" : "none",
       }}
     >

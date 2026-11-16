@@ -25,6 +25,12 @@ import { budgetCategory, budgetGroup, budgetUnit } from "./enums";
 import { sharedMouGroups, sharedMouMemberships } from "./agreements";
 import { sponsorships } from "./sponsorships";
 import type { BudgetInvoiceSnapshot } from "@/lib/budget/line-invoice";
+import type { PartnerQuotationLine } from "@/lib/budget/partner-quotations";
+import type { PartnerPrintOption } from "@/lib/budget/print-options";
+import type {
+  ExpectedPaymentBasis,
+  ProposalFundingPath,
+} from "@/lib/budget/funding-path";
 
 /** Itemized quotation line (QTY × unit price = amount), grouped + funded. */
 export const budgetItems = pgTable(
@@ -95,6 +101,7 @@ export const budgetScopePresentations = pgTable(
       .default("itemized"),
     deductionBps: integer("deduction_bps").notNull().default(1300),
     publicDescription: text("public_description"),
+    printOptions: jsonb("print_options").$type<PartnerPrintOption[]>().notNull().default([]),
     perCopyQuantity: integer("per_copy_quantity"),
     perCopyUnitPrice: numeric("per_copy_unit_price", {
       precision: 14,
@@ -119,6 +126,25 @@ export const budgetScopePresentations = pgTable(
     index("budget_scope_presentations_project_idx").on(t.projectId),
   ]
 );
+
+/** One saved partner share of a project's main or reprint budget. Public fields are snapshots. */
+export const projectPartnerQuotations = pgTable("project_partner_quotations", {
+  id: uuid("id").primaryKey(),
+  projectId: uuid("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  printRunId: uuid("print_run_id").references(() => printRuns.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  partnerId: uuid("partner_id").references(() => partners.id, { onDelete: "set null" }),
+  partnerName: text("partner_name").notNull(),
+  contactName: text("contact_name").notNull().default(""),
+  contactEmail: text("contact_email").notNull().default(""),
+  description: text("description").notNull().default(""),
+  currency: text("currency").notNull(),
+  lines: jsonb("lines").$type<PartnerQuotationLine[]>().notNull(),
+  printOptions: jsonb("print_options").$type<PartnerPrintOption[]>().notNull().default([]),
+  sourceFingerprint: text("source_fingerprint").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, t => [index("project_partner_quotations_scope_idx").on(t.projectId, t.printRunId)]);
 
 /** Per-project quotation settings: word count, rates, partner info (1:1). */
 export const projectBudgetSettings = pgTable(
@@ -217,6 +243,7 @@ export const budgetApprovalRequests = pgTable(
     printRunId: uuid("print_run_id").references(() => printRuns.id, {
       onDelete: "cascade",
     }),
+    partnerQuotationId: uuid("partner_quotation_id").references(() => projectPartnerQuotations.id, { onDelete: "cascade" }),
     requesterId: text("requester_id")
       .notNull()
       .references(() => user.id, { onDelete: "restrict" }),
@@ -244,10 +271,13 @@ export const budgetApprovalRequests = pgTable(
     index("budget_approval_requests_project_idx").on(t.projectId, t.createdAt),
     uniqueIndex("budget_approval_requests_current_main_uq")
       .on(t.projectId)
-      .where(sql`${t.printRunId} is null and ${t.status} <> 'superseded'`),
+      .where(sql`${t.partnerQuotationId} is null and ${t.printRunId} is null and ${t.status} <> 'superseded'`),
     uniqueIndex("budget_approval_requests_current_run_uq")
       .on(t.projectId, t.printRunId)
-      .where(sql`${t.printRunId} is not null and ${t.status} <> 'superseded'`),
+      .where(sql`${t.partnerQuotationId} is null and ${t.printRunId} is not null and ${t.status} <> 'superseded'`),
+    uniqueIndex("budget_approval_requests_current_quotation_uq")
+      .on(t.partnerQuotationId)
+      .where(sql`${t.partnerQuotationId} is not null and ${t.status} <> 'superseded'`),
     index("budget_approval_requests_print_run_idx").on(t.printRunId),
   ]
 );
@@ -286,7 +316,7 @@ export const budgetApprovalAssignments = pgTable(
 );
 
 /**
- * History of MoU / funding proposals emailed to a sponsor from a project. Each
+ * History of funding proposals emailed to a partner from a project. Each
  * row captures the recipient, the quoted total, the exact quotation file sent
  * (a `files.id`, bytes in R2), the linked email thread, and a status the manager
  * can advance (sent → accepted / declined).
@@ -301,7 +331,13 @@ export const proposalSubmissions = pgTable(
     printRunId: uuid("print_run_id").references(() => printRuns.id, {
       onDelete: "set null",
     }),
+    partnerQuotationId: uuid("partner_quotation_id").references(() => projectPartnerQuotations.id, { onDelete: "set null" }),
     sentByUserId: text("sent_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    /** Partner organization at send time; `recipientName` is the contact person. */
+    partnerName: text("partner_name"),
+    partnerId: uuid("partner_id").references(() => partners.id, {
       onDelete: "set null",
     }),
     recipientName: text("recipient_name"),
@@ -322,6 +358,18 @@ export const proposalSubmissions = pgTable(
       onDelete: "set null",
     }),
     status: text("status").notNull().default("sent"),
+    /**
+     * How an accepted proposal is funded: a signed MoU, an agreement without an
+     * MoU, or a donation through the giving platform. Null until answered.
+     */
+    fundingPath: text("funding_path").$type<ProposalFundingPath>(),
+    /** Amount the partner agreed to; null when a donation amount is not fixed. */
+    agreedAmount: numeric("agreed_amount", { precision: 14, scale: 2 }),
+    answeredOn: date("answered_on"),
+    answerNote: text("answer_note"),
+    answeredBy: text("answered_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
     notes: text("notes"),
     sentAt: timestamp("sent_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -393,6 +441,10 @@ export const fundingReceipts = pgTable(
     receivedDate: date("received_date"),
     source: text("source"), // who paid (e.g. "9Marks")
     note: text("note"),
+    /** The proposal this money answers, when it was not a scheduled payment. */
+    proposalId: uuid("proposal_id").references(() => proposalSubmissions.id, {
+      onDelete: "set null",
+    }),
     recordedBy: text("recorded_by").references(() => user.id, {
       onDelete: "set null",
     }),
@@ -402,6 +454,7 @@ export const fundingReceipts = pgTable(
   (t) => [
     index("funding_receipts_project_idx").on(t.projectId),
     index("funding_receipts_print_run_idx").on(t.printRunId),
+    index("funding_receipts_proposal_idx").on(t.proposalId),
   ]
 );
 
@@ -477,9 +530,10 @@ export const sharedMouReceiptAllocations = pgTable(
 );
 
 /**
- * Scheduled incoming MoU payments a partner owes the project, distinct from
- * `fundingReceipts` (money actually in). Marking one received sets `paidAt`
- * and links the `fundingReceipts` row it created.
+ * Expected payments a partner promised the project, with or without an MoU
+ * (the table keeps its original name). Distinct from `fundingReceipts` (money
+ * actually in). Marking one received sets `paidAt` and links the
+ * `fundingReceipts` row it created.
  */
 export const mouPayments = pgTable(
   "mou_payments",
@@ -498,6 +552,14 @@ export const mouPayments = pgTable(
     amount: numeric("amount", { precision: 14, scale: 2 }).notNull().default("0"),
     currency: text("currency").notNull().default("USD"),
     trigger: text("trigger").notNull().default("custom"),
+    /** Whether an MoU backs this promise. Null on payments recorded before this was tracked. */
+    fundingBasis: text("funding_basis").$type<ExpectedPaymentBasis>(),
+    /** Who promised the money, when it is not the project's default partner. */
+    partnerName: text("partner_name"),
+    /** The proposal the partner answered to create this promise. */
+    proposalId: uuid("proposal_id").references(() => proposalSubmissions.id, {
+      onDelete: "set null",
+    }),
     dueDate: date("due_date"),
     notes: text("notes"),
     /** Partner-safe invoice description, separate from internal scheduling notes. */
@@ -532,6 +594,7 @@ export const mouPayments = pgTable(
     index("mou_payments_project_idx").on(t.projectId),
     index("mou_payments_shared_group_idx").on(t.sharedMouGroupId),
     index("mou_payments_print_run_idx").on(t.printRunId),
+    index("mou_payments_proposal_idx").on(t.proposalId),
   ]
 );
 
@@ -616,7 +679,7 @@ export const invoices = pgTable(
       registrationNumber: string | null;
       taxId: string | null;
       paymentInstructions: string | null;
-      invoicePaymentDetails?: { issuerName?: string; logoFileId?: string | null; title: string; fields: Array<{ label: string; value: string }> } | null;
+      invoicePaymentDetails?: { issuerName?: string; logoFileId?: string | null; colors?: { accentColor: string; tableHeaderColor: string }; title: string; fields: Array<{ label: string; value: string }> } | null;
     }>(),
     createdBy: text("created_by").references(() => user.id, {
       onDelete: "set null",

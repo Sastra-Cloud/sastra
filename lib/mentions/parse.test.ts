@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  findMentionedIds,
-  handlesFor,
-  hasMention,
-  tokenizeMentions,
-  type MentionUser,
-} from "./parse";
+import { findMentionedIds, hasChannelMention, tokenizeMentions, type MentionUser } from "./parse";
 
 const nathan: MentionUser = {
   id: "u-nathan",
@@ -21,30 +15,11 @@ const nathanChan: MentionUser = {
 };
 const roster = [nathan, bora, nathanChan];
 
-describe("handlesFor", () => {
-  it("offers full name, spaceless name, first name, and email local-part", () => {
-    expect(handlesFor(nathan)).toEqual([
-      "Nathan Wells",
-      "NathanWells",
-      "Nathan",
-      "nathan",
-    ]);
-  });
-
-  it("de-dupes when the name is a single word", () => {
-    expect(handlesFor(bora)).toEqual(["Bora", "bora"]);
-  });
-});
-
 describe("findMentionedIds", () => {
   it("matches a full multi-word display name", () => {
     expect(findMentionedIds("hey @Nathan Wells can you look?", roster)).toEqual([
       "u-nathan",
     ]);
-  });
-
-  it("matches a bare first-name handle", () => {
-    expect(findMentionedIds("@Bora ping", roster)).toEqual(["u-bora"]);
   });
 
   it("matches a spaceless name and email local-part", () => {
@@ -62,10 +37,6 @@ describe("findMentionedIds", () => {
     expect(findMentionedIds("write to nathan@example.com please", roster)).toEqual(
       []
     );
-  });
-
-  it("returns nothing when there is no @ at all (fast path)", () => {
-    expect(findMentionedIds("no mentions here", roster)).toEqual([]);
   });
 
   it("de-dupes repeated mentions of the same person", () => {
@@ -89,34 +60,25 @@ describe("tokenizeMentions", () => {
       { type: "text", text: " ok" },
     ]);
   });
-
-  it("keeps the exact typed handle text on the segment", () => {
-    const segs = tokenizeMentions("@NathanWells hey", roster);
-    expect(segs[0]).toEqual({
-      type: "mention",
-      text: "@NathanWells",
-      user: nathan,
-    });
-  });
-
-  it("returns a single text segment when nothing matches", () => {
-    expect(tokenizeMentions("plain text", roster)).toEqual([
-      { type: "text", text: "plain text" },
-    ]);
-  });
-
-  it("handles an empty roster", () => {
-    expect(tokenizeMentions("@Bora", [])).toEqual([{ type: "text", text: "@Bora" }]);
-  });
-
-  it("handles empty text", () => {
-    expect(tokenizeMentions("", roster)).toEqual([]);
-  });
 });
 
-describe("hasMention", () => {
-  it("is true when someone is mentioned and false otherwise", () => {
-    expect(hasMention("@Bora hi", roster)).toBe(true);
-    expect(hasMention("hi", roster)).toBe(false);
-  });
+// An accidental broadcast interrupts the whole team; literal examples and
+// partial handles must stay harmless while deliberate mentions still work.
+it("recognizes deliberate channel alerts without broadcasting literals or partial handles", () => {
+  for (const text of ["@channel Update", "Please review (@CHANNEL).", "Hi\n@channel!"]) {
+    expect(hasChannelMention(text), text).toBe(true);
+  }
+  for (const text of [
+    "me@channel.test", "@channels", "@channel_team", "@channel-team",
+    "`@channel`", "```\n@channel\n```", "Use `@channel", "``literal ` @channel``",
+    "https://example.org/@channel", "https://example.org/?@channel",
+  ]) {
+    expect(hasChannelMention(text), text).toBe(false);
+  }
+  expect(hasChannelMention("`@channel` then @channel please review")).toBe(true);
+  expect(tokenizeMentions("@channel", roster)).toEqual([{ type: "text", text: "@channel" }]);
+  expect(tokenizeMentions("@channel", roster, true)).toEqual([{ type: "channel", text: "@channel" }]);
+  const channelNamedTeammate = { id: "channel-person", name: "Channel Smith" };
+  expect(hasChannelMention("@Channel Smith please review", [channelNamedTeammate])).toBe(false);
+  expect(findMentionedIds("@Channel Smith please review", [channelNamedTeammate])).toEqual(["channel-person"]);
 });

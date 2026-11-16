@@ -1,7 +1,15 @@
 export type BudgetAttentionSeverity = "critical" | "warning" | "info";
 
 export type BudgetAttentionItem = {
-  id: "approval" | "funding" | "receivables" | "reconciliation" | "setup";
+  id:
+    | "approval"
+    | "funding"
+    | "receivables"
+    | "reconciliation"
+    | "setup"
+    | "proposal-answers"
+    | "expected-payments"
+    | "funding-review";
   severity: BudgetAttentionSeverity;
   label: string;
   value: string;
@@ -34,6 +42,13 @@ export function buildBudgetAttentionSummary(input: {
   overdueReceivableCount: number;
   overdueReceivableCents: number;
   reconciliationIssueCount: number;
+  /** Sent proposals with no recorded partner answer. */
+  proposalsWaitingCount?: number;
+  oldestProposalWaitingDays?: number;
+  /** Partners who agreed to a set amount with no expected payments added. */
+  agreedWithoutPaymentsCount?: number;
+  /** Unconfirmed amounts, unlinked receipts, or outgoing fees in the schedule. */
+  fundingReviewCount?: number;
 }): BudgetAttentionSummary {
   const items: BudgetAttentionItem[] = [];
 
@@ -59,7 +74,16 @@ export function buildBudgetAttentionSummary(input: {
     0,
     input.quotationTotalCents - input.committedFundingCents
   );
-  if (fundingRemainingCents > 0) {
+  if (input.fundingReviewCount) {
+    items.push({
+      id: "funding-review",
+      severity: "warning",
+      label: "Review funding details",
+      value: "Confirm payment amounts, receipt links, and fee direction",
+      href: "#agreements-fees",
+    });
+  }
+  if (fundingRemainingCents > 0 && !input.fundingReviewCount) {
     items.push({
       id: "funding",
       severity: "info",
@@ -69,11 +93,34 @@ export function buildBudgetAttentionSummary(input: {
     });
   }
 
-  if (input.overdueReceivableCount > 0) {
+  // The funding gap is wrong until an agreed amount has expected payments.
+  if ((input.agreedWithoutPaymentsCount ?? 0) > 0) {
+    items.push({
+      id: "expected-payments",
+      severity: "warning",
+      label: "Partner agreed",
+      value: "Add expected payments",
+      href: "#partner-proposals",
+    });
+  }
+
+  if ((input.proposalsWaitingCount ?? 0) > 0) {
+    const count = input.proposalsWaitingCount ?? 0;
+    const days = input.oldestProposalWaitingDays ?? 0;
+    items.push({
+      id: "proposal-answers",
+      severity: "info",
+      label: `${count} proposal${count === 1 ? "" : "s"} waiting for an answer`,
+      value: days > 0 ? `Oldest sent ${days} day${days === 1 ? "" : "s"} ago` : "Sent today",
+      href: "#partner-proposals",
+    });
+  }
+
+  if (input.overdueReceivableCount > 0 && !input.fundingReviewCount) {
     items.push({
       id: "receivables",
       severity: "critical",
-      label: "Overdue receivables",
+      label: "Overdue expected payments",
       value: `${input.overdueReceivableCount} totaling ${formatBudgetMoney(input.overdueReceivableCents, input.currency)}`,
       href: "#cash-reconciliation",
     });

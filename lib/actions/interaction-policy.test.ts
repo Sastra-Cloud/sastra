@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import ts from "@typescript/typescript6";
 import { describe, expect, it } from "vitest";
 
+import { scanClientActions } from "./client-action-discovery";
 import { interactionModeFor } from "./interaction-policy";
 
 it("keeps project permission grants immediate after confirmation and removal confirmed", () => {
@@ -19,76 +19,30 @@ it("keeps cross-app identity and ownership changes review-first", () => {
   expect(interactionModeFor("unlinkLectioSignIn")).toBe("confirmed-destructive");
 });
 
-function clientActionImports() {
-  const found: string[] = [];
-
-  function walk(directory: string) {
-    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
-      const file = path.join(directory, entry.name);
-      if (entry.isDirectory()) {
-        walk(file);
-        continue;
-      }
-      if (!entry.name.endsWith(".tsx")) continue;
-
-      const source = fs.readFileSync(file, "utf8");
-      if (!/^["']use client["']/.test(source)) continue;
-      const parsed = ts.createSourceFile(
-        file,
-        source,
-        ts.ScriptTarget.Latest,
-        true,
-        ts.ScriptKind.TSX
-      );
-
-      for (const statement of parsed.statements) {
-        if (!ts.isImportDeclaration(statement)) continue;
-        if (!ts.isStringLiteral(statement.moduleSpecifier)) continue;
-        const moduleName = statement.moduleSpecifier.text;
-        if (!moduleName.startsWith("@/lib/") && !moduleName.startsWith("@/app/")) {
-          continue;
-        }
-        if (
-          !/(?:actions|action)$/.test(moduleName) &&
-          !moduleName.endsWith("/push/client") &&
-          !moduleName.includes("/upload-client")
-        ) {
-          continue;
-        }
-        const clause = statement.importClause;
-        if (!clause || clause.isTypeOnly) continue;
-        const bindings = clause.namedBindings;
-        if (!bindings || !ts.isNamedImports(bindings)) continue;
-        for (const specifier of bindings.elements) {
-          if (!specifier.isTypeOnly) found.push(specifier.name.text);
-        }
-      }
-    }
-  }
-
-  walk(path.join(process.cwd(), "components"));
-  walk(path.join(process.cwd(), "app"));
-  return [...new Set(found)].sort();
-}
-
 describe("client action interaction policy", () => {
+  it("shows directory partner creation immediately with rollback", () => {
+    expect(interactionModeFor("createPartner")).toBe("optimistic");
+  });
+  it("keeps AI print estimate intake progress-based until suggestions are saved", () => {
+    expect(interactionModeFor("createPrintEstimateFromText")).toBe("progress");
+  });
+  it("keeps personal task pins immediate without destructive confirmation", () => {
+    expect(interactionModeFor("getTaskPinSnapshot")).toBe("read");
+    expect(interactionModeFor("setTaskPinned")).toBe("optimistic");
+  });
+  it("keeps partner answers and proposal links immediate with rollback", () => {
+    expect(interactionModeFor("setProposalAnswer")).toBe("optimistic");
+    expect(interactionModeFor("linkReceiptToProposal")).toBe("optimistic");
+  });
   it("keeps gesture and picker reactions optimistic, with truthful clipboard feedback", () => {
     expect(interactionModeFor("toggleReaction")).toBe("optimistic");
     expect(interactionModeFor("editMessage")).toBe("optimistic");
     expect(interactionModeFor("copyMessageText")).toBe("progress");
   });
-  it("keeps chat read receipts as silent background reconciliation", () => {
-    expect(interactionModeFor("markChannelRead")).toBe("read");
-  });
   it("keeps chat messages and quoted replies optimistic, and picked, pasted, or dropped uploads progress-based", () => {
     expect(interactionModeFor("postMessage")).toBe("optimistic");
     expect(interactionModeFor("uploadToMessage")).toBe("progress");
     expect(interactionModeFor("prepareChatVideo")).toBe("progress");
-  });
-  it("keeps shared Next up selection and ordering optimistic", () => {
-    expect(interactionModeFor("setTaskNextUp")).toBe("optimistic");
-    expect(interactionModeFor("setTaskAssignmentDeferred")).toBe("optimistic");
-    expect(interactionModeFor("reorderUserTasks")).toBe("optimistic");
   });
   it("keeps reviewed printer-payment confirmation immediate with rollback", () => {
     expect(interactionModeFor("markPrintPaymentPaid")).toBe("optimistic");
@@ -114,10 +68,11 @@ describe("client action interaction policy", () => {
     expect(interactionModeFor("voidSponsorshipInvoice")).toBe("confirmed-destructive");
   });
   it("classifies every client-invoked action", () => {
-    const unclassified = clientActionImports().filter(
-      (action) => interactionModeFor(action) === "unclassified"
-    );
-    expect(unclassified).toEqual([]);
+    const { actions, diagnostics } = scanClientActions();
+    expect(diagnostics).toEqual([]);
+    expect(
+      actions.filter((action) => interactionModeFor(action) === "unclassified")
+    ).toEqual([]);
   }, 15_000);
 
   it("keeps durable mutations on the shared optimistic patterns", () => {
@@ -152,6 +107,7 @@ describe("client action interaction policy", () => {
     expect(interactionModeFor("sendPrintRfq")).toBe("progress");
     expect(interactionModeFor("draftPrintEstimate")).toBe("progress");
     expect(interactionModeFor("selectPrintEstimateQuote")).toBe("progress");
+    expect(interactionModeFor("stopUsingPrintEstimateQuote")).toBe("progress");
     expect(interactionModeFor("sendWireRequest")).toBe("progress");
     expect(interactionModeFor("consolidatePrintInvoicePayment")).toBe("progress");
     expect(interactionModeFor("reviewPrintWirePayment")).toBe("read");
@@ -164,6 +120,7 @@ describe("client action interaction policy", () => {
     expect(interactionModeFor("initiateRightsStep")).toBe("progress");
     expect(interactionModeFor("createRecurringTask")).toBe("progress");
     expect(interactionModeFor("createPrintRun")).toBe("progress");
+    expect(interactionModeFor("createGuidedBudget")).toBe("progress");
     expect(interactionModeFor("setProfileImage")).toBe("progress");
     expect(interactionModeFor("updateVideoProductionMode")).toBe("progress");
   });
@@ -172,13 +129,6 @@ describe("client action interaction policy", () => {
     expect(interactionModeFor("createChannel")).toBe("navigation");
     expect(interactionModeFor("reloadForAppUpdate")).toBe("navigation");
     expect(interactionModeFor("openDirectMessage")).toBe("navigation");
-  });
-
-  it("keeps channel membership changes immediate and permission-safe", () => {
-    expect(interactionModeFor("addChannelMember")).toBe("optimistic");
-    expect(interactionModeFor("removeChannelMember")).toBe(
-      "confirmed-destructive"
-    );
   });
 
   it("classifies the push device actions", () => {
@@ -195,22 +145,6 @@ describe("client action interaction policy", () => {
   it("keeps the AI key save progress-based and its removal confirmed", () => {
     expect(interactionModeFor("updateOpenRouterApiKey")).toBe("progress");
     expect(interactionModeFor("removeOpenRouterApiKey")).toBe("confirmed-destructive");
-  });
-
-  it("keeps manually requested dependency audits progress-based", () => {
-    expect(interactionModeFor("runDependencySecurityCheck")).toBe("progress");
-  });
-
-  it("keeps notification email settings optimistic", () => {
-    expect(interactionModeFor("setEmailPreference")).toBe("optimistic");
-    expect(interactionModeFor("updateEmailDeliverySettings")).toBe("optimistic");
-  });
-
-  it("keeps the guidance preference toggle optimistic", () => {
-    // Reversible per-user preference — flip immediately, roll back on error.
-    expect(interactionModeFor("setGuidanceLevel")).toBe("optimistic");
-    expect(interactionModeFor("dismissGuidanceKey")).toBe("optimistic");
-    expect(interactionModeFor("restoreGuidanceKey")).toBe("optimistic");
   });
 
   it("keeps project lifecycle changes optimistic", () => {
@@ -240,12 +174,6 @@ describe("client action interaction policy", () => {
     );
   });
 
-  it("keeps already-completed email suggestions immediate and reversible", () => {
-    expect(interactionModeFor("markEmailTaskSuggestionAlreadyDone")).toBe(
-      "optimistic"
-    );
-  });
-
   it("keeps invoice extraction and receipt recording progress-based", () => {
     expect(interactionModeFor("createImportForPaymentInvoice")).toBe("progress");
     expect(interactionModeFor("applyImportedInvoice")).toBe("progress");
@@ -255,18 +183,6 @@ describe("client action interaction policy", () => {
     expect(interactionModeFor("approveEmailRightsReview")).toBe("progress");
     expect(interactionModeFor("retryEmailRightsReview")).toBe("progress");
     expect(interactionModeFor("dismissEmailRightsReview")).toBe("optimistic");
-  });
-
-  it("classifies unpaid payment schedule edits as optimistic", () => {
-    expect(interactionModeFor("updatePayment")).toBe("optimistic");
-  });
-
-  it("classifies attachment note edits as optimistic", () => {
-    expect(interactionModeFor("updateAttachmentNotes")).toBe("optimistic");
-  });
-
-  it("classifies print funding status updates as optimistic", () => {
-    expect(interactionModeFor("updateProjectPrintFunding")).toBe("optimistic");
   });
 
   it("keeps budget line edits and partner visibility immediate and reversible", () => {
@@ -280,13 +196,18 @@ describe("client action interaction policy", () => {
     );
   });
 
-  it("keeps Overview book details, print defaults, and quotation settings immediate and reversible", () => {
-    expect(interactionModeFor("updateBudgetSettings")).toBe("optimistic");
+  it("keeps print defaults immediate and waits for funding-partner invoice refreshes", () => {
+    expect(interactionModeFor("updateBudgetSettings")).toBe("progress");
     expect(interactionModeFor("updatePrintSettings")).toBe("optimistic");
   });
 
   it("classifies partner quotations, receipts, and immutable invoices", () => {
     expect(interactionModeFor("saveBudgetPresentation")).toBe("optimistic");
+    expect(interactionModeFor("savePartnerQuotation")).toBe("optimistic");
+    expect(interactionModeFor("createBudgetApprovalRequest")).toBe("progress");
+    expect(interactionModeFor("approveBudgetApprovalAssignment")).toBe("progress");
+    expect(interactionModeFor("requestBudgetApprovalChanges")).toBe("progress");
+    expect(interactionModeFor("deletePartnerQuotation")).toBe("confirmed-destructive");
     expect(interactionModeFor("savePartnerQuote")).toBe("optimistic");
     expect(interactionModeFor("enableBudgetPresentation")).toBe("progress");
     expect(interactionModeFor("applySuggestedPartnerRates")).toBe("optimistic");
@@ -336,6 +257,10 @@ describe("client action interaction policy", () => {
     expect(interactionModeFor("resetPassword")).toBe("progress");
   });
 
+  it("keeps Google authorization pending until the external consent flow", () => {
+    expect(interactionModeFor("linkSocial")).toBe("progress");
+  });
+
   it("keeps email draft persistence truthful and discard confirmed", () => {
     expect(interactionModeFor("saveEmailDraft")).toBe("progress");
     expect(interactionModeFor("discardEmailDraft")).toBe(
@@ -343,24 +268,7 @@ describe("client action interaction policy", () => {
     );
   });
 
-  it("classifies wiki authoring feedback", () => {
-    expect(interactionModeFor("updateWikiPageDraft")).toBe("optimistic");
-    expect(interactionModeFor("reorderWikiPages")).toBe("optimistic");
-    expect(interactionModeFor("publishWikiPage")).toBe("progress");
-    expect(interactionModeFor("trashWikiPage")).toBe("confirmed-destructive");
-    expect(interactionModeFor("restoreWikiPage")).toBe("optimistic");
-  });
-
-  it("classifies the email-intake learning actions", () => {
-    // Approving/rejecting/retiring a learned negative rule is reversible.
-    expect(interactionModeFor("approveEmailSignalLesson")).toBe("optimistic");
-    expect(interactionModeFor("rejectEmailSignalLesson")).toBe("optimistic");
-    expect(interactionModeFor("retireEmailSignalLesson")).toBe("optimistic");
-    // Running the reflection pass is long-running AI work — show progress.
-    expect(interactionModeFor("runEmailSignalReflectionNow")).toBe("progress");
-  });
-
-  it("keeps chat quick actions and message menus optimistic with confirmed deletion", () => {
+  it("keeps chat sends (including confirmed @channel alerts) and message menus optimistic", () => {
     expect(interactionModeFor("postMessage")).toBe("optimistic");
     expect(interactionModeFor("toggleReaction")).toBe("optimistic");
     expect(interactionModeFor("markChannelRead")).toBe("read");

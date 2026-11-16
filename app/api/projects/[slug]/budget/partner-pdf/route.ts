@@ -50,6 +50,7 @@ export async function GET(
   const buffer = await buildPerCopyQuotationPdf({
     issuerName: workspace.legalName || workspace.orgName,
     accentColor: workspace.accentColor,
+    colors: workspace.invoicePaymentDetails?.colors,
     projectTitle: project.title,
     partnerName: settings.partnerName,
     contactName,

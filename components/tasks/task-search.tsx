@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Circle, Loader2, Search, SearchX, X } from "lucide-react";
 
 import type { MyWorkTaskRow } from "@/lib/tasks/queries";
@@ -10,7 +10,9 @@ import {
   myWorkTaskLocations,
   otherTaskReason,
   rankTaskSearchMatches,
+  splitOtherTaskResults,
   taskSearchTerms,
+  type TaskSearchScope,
 } from "@/lib/tasks/search";
 import { TaskStatusBadge } from "@/components/badges";
 import { Button } from "@/components/ui/button";
@@ -19,6 +21,14 @@ import { dueLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const SEARCH_DELAY_MS = 250;
+
+const SCOPES: { value: TaskSearchScope; label: string }[] = [
+  { value: "all", label: "All tasks" },
+  { value: "mine", label: "Assigned to me" },
+];
+
+const countTasks = (count: number, word = "task") =>
+  `${count} ${word}${count === 1 ? "" : "s"}`;
 
 type RemoteResult = {
   key: string;
@@ -68,10 +78,12 @@ export function useOtherTaskSearch(query: string, revision: unknown) {
 export function TaskSearchField({
   value,
   onValueChange,
+  scope,
   className,
 }: {
   value: string;
   onValueChange: (value: string) => void;
+  scope: TaskSearchScope;
   className?: string;
 }) {
   return (
@@ -88,7 +100,7 @@ export function TaskSearchField({
           }
         }}
         className="h-10 pr-10 pl-9 [&::-webkit-search-cancel-button]:hidden"
-        placeholder="Search all tasks"
+        placeholder={scope === "mine" ? "Search my tasks" : "Search all tasks"}
         aria-label="Search tasks"
         autoComplete="off"
         enterKeyHint="search"
@@ -111,6 +123,8 @@ export function TaskSearchField({
 
 export function TaskSearchResults({
   query,
+  scope,
+  onScopeChange,
   tasks,
   other,
   todayIso,
@@ -119,6 +133,8 @@ export function TaskSearchResults({
   onOpen,
 }: {
   query: string;
+  scope: TaskSearchScope;
+  onScopeChange: (scope: TaskSearchScope) => void;
   tasks: MyWorkTaskRow[];
   other: ReturnType<typeof useOtherTaskSearch>;
   todayIso: string;
@@ -126,14 +142,9 @@ export function TaskSearchResults({
   currentUserId: string;
   onOpen: (task: MyWorkTaskRow) => void;
 }) {
+  const allScopeButton = useRef<HTMLButtonElement>(null);
   const terms = taskSearchTerms(query);
-  if (terms.length === 0) {
-    return (
-      <p className="rounded-xl border bg-card px-4 py-6 text-center text-sm text-muted-foreground">
-        Type at least 2 letters to search.
-      </p>
-    );
-  }
+  const mineOnly = scope === "mine";
 
   const locations = myWorkTaskLocations(tasks, todayIso, timeZone);
   const mine = rankTaskSearchMatches(
@@ -141,86 +152,161 @@ export function TaskSearchResults({
     terms
   );
   const loadedIds = new Set(tasks.map((task) => task.id));
-  const others = (other.result?.tasks ?? []).filter((task) => !loadedIds.has(task.id));
+  const found = (other.result?.tasks ?? []).filter((task) => !loadedIds.has(task.id));
+  const split = splitOtherTaskResults(found, other.result?.hasMore ?? false, currentUserId);
+  const others = mineOnly ? split.mine : found;
+  const hasMore = mineOnly ? split.mineHasMore : Boolean(other.result?.hasMore);
+  const hiddenCount = mineOnly ? split.notMineCount : 0;
   const settled = !other.loading && !other.result?.failed;
   const nothingFound = mine.length === 0 && others.length === 0 && settled;
   const total = mine.length + others.length;
+  const summary = other.loading
+    ? "Searching…"
+    : other.result?.failed
+      ? ""
+      : `Found ${hasMore ? "more than " : ""}${countTasks(total)}${mineOnly ? " assigned to you" : ""}`;
+
+  // The button that was pressed disappears, so move focus to the filter.
+  const showAllTasks = () => {
+    onScopeChange("all");
+    allScopeButton.current?.focus();
+  };
 
   return (
     <div className="space-y-5">
-      <p className="sr-only" aria-live="polite">
-        {other.loading ? "Searching" : `${total} ${total === 1 ? "task" : "tasks"} found`}
-      </p>
-
-      {nothingFound ? (
-        <div className="rounded-xl border bg-card px-4 py-10 text-center">
-          <SearchX className="mx-auto mb-2 size-6 text-muted-foreground" />
-          <p className="font-medium">No tasks match “{query.trim()}”</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Check the spelling or use fewer words. Deleted tasks cannot be found.
-          </p>
+      <div className="flex flex-col gap-2 sm:flex-row-reverse sm:items-center sm:justify-between">
+        <div
+          role="group"
+          aria-label="Tasks to show"
+          className="grid shrink-0 grid-cols-2 gap-1 rounded-lg bg-muted p-1 sm:inline-grid"
+        >
+          {SCOPES.map((item) => (
+            <button
+              key={item.value}
+              ref={item.value === "all" ? allScopeButton : undefined}
+              type="button"
+              onClick={() => onScopeChange(item.value)}
+              aria-pressed={scope === item.value}
+              className={cn(
+                "flex min-h-10 items-center justify-center rounded-md px-3 text-sm font-medium transition-[background-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:min-h-9 sm:text-xs",
+                scope === item.value
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
-      ) : null}
-
-      {mine.length > 0 ? (
-        <ResultGroup
-          title="In My Work"
-          description="Your tasks, including ones in closed sections"
-          count={mine.length}
-        >
-          {mine.map((task) => (
-            <ResultRow
-              key={task.id}
-              task={task}
-              terms={terms}
-              todayIso={todayIso}
-              place={locations.get(task.id) ?? "In My Work"}
-              onOpen={onOpen}
-            />
-          ))}
-        </ResultGroup>
-      ) : null}
-
-      {others.length > 0 || !nothingFound ? (
-        <ResultGroup
-          title="Other tasks"
-          description="Older done work, and tasks assigned to someone else or not assigned"
-          count={other.loading ? null : others.length}
-        >
-          {others.map((task) => (
-            <ResultRow
-              key={task.id}
-              task={task}
-              terms={terms}
-              todayIso={todayIso}
-              place={otherTaskReason(task, currentUserId, todayIso, timeZone)}
-              onOpen={onOpen}
-            />
-          ))}
-          {other.loading && others.length === 0 ? (
-            <li className="flex items-center gap-2 px-4 py-4 text-sm text-muted-foreground" role="status">
-              <Loader2 className="size-4 animate-spin motion-reduce:animate-none" /> Searching all tasks…
-            </li>
-          ) : null}
-          {other.result?.failed ? (
-            <li className="flex flex-wrap items-center gap-3 px-4 py-4 text-sm" role="alert">
-              <span className="text-destructive">Couldn’t search other tasks. Check your internet and try again.</span>
-              <Button type="button" size="sm" variant="outline" onClick={other.retry}>
-                Try again
-              </Button>
-            </li>
-          ) : null}
-          {settled && others.length === 0 && mine.length > 0 ? (
-            <li className="px-4 py-4 text-sm text-muted-foreground">No other tasks match.</li>
-          ) : null}
-        </ResultGroup>
-      ) : null}
-
-      {other.result?.hasMore ? (
-        <p className="text-center text-xs text-muted-foreground">
-          Showing the first {others.length} other tasks. Add more words to find the task you need.
+        <p className="text-sm text-muted-foreground" aria-live="polite">
+          {terms.length > 0 ? summary : ""}
         </p>
-      ) : null}
+      </div>
+
+      {terms.length === 0 ? (
+        <p className="rounded-xl border bg-card px-4 py-6 text-center text-sm text-muted-foreground">
+          Type at least 2 letters to search.
+        </p>
+      ) : (
+        <>
+          {nothingFound ? (
+            <div className="rounded-xl border bg-card px-4 py-10 text-center">
+              <SearchX className="mx-auto mb-2 size-6 text-muted-foreground" />
+              <p className="font-medium">
+                {mineOnly ? "None of your tasks match" : "No tasks match"} “{query.trim()}”
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Check the spelling or use fewer words.
+                {hiddenCount === 0 ? " Deleted tasks cannot be found." : null}
+              </p>
+            </div>
+          ) : null}
+
+          {mine.length > 0 ? (
+            <ResultGroup
+              title="In My Work"
+              description="Your tasks, including ones in closed sections"
+              count={mine.length}
+            >
+              {mine.map((task) => (
+                <ResultRow
+                  key={task.id}
+                  task={task}
+                  terms={terms}
+                  todayIso={todayIso}
+                  place={locations.get(task.id) ?? "In My Work"}
+                  onOpen={onOpen}
+                />
+              ))}
+            </ResultGroup>
+          ) : null}
+
+          {(mineOnly ? others.length > 0 || !settled : others.length > 0 || !nothingFound) ? (
+            <ResultGroup
+              title={mineOnly ? "Done earlier" : "Other tasks"}
+              description={
+                mineOnly
+                  ? "Your tasks marked done more than a week ago"
+                  : "Older done work, and tasks assigned to someone else or not assigned"
+              }
+              count={other.loading ? null : others.length}
+            >
+              {others.map((task) => (
+                <ResultRow
+                  key={task.id}
+                  task={task}
+                  terms={terms}
+                  todayIso={todayIso}
+                  place={otherTaskReason(task, currentUserId, todayIso, timeZone)}
+                  onOpen={onOpen}
+                />
+              ))}
+              {other.loading && others.length === 0 ? (
+                <li className="flex items-center gap-2 px-4 py-4 text-sm text-muted-foreground" role="status">
+                  <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />{" "}
+                  {mineOnly ? "Searching your older tasks…" : "Searching all tasks…"}
+                </li>
+              ) : null}
+              {other.result?.failed ? (
+                <li className="flex flex-wrap items-center gap-3 px-4 py-4 text-sm" role="alert">
+                  <span className="text-destructive">
+                    {mineOnly
+                      ? "Couldn’t search your older tasks. Check your internet and try again."
+                      : "Couldn’t search other tasks. Check your internet and try again."}
+                  </span>
+                  <Button type="button" size="sm" variant="outline" onClick={other.retry}>
+                    Try again
+                  </Button>
+                </li>
+              ) : null}
+              {!mineOnly && settled && others.length === 0 && mine.length > 0 ? (
+                <li className="px-4 py-4 text-sm text-muted-foreground">No other tasks match.</li>
+              ) : null}
+            </ResultGroup>
+          ) : null}
+
+          {hasMore ? (
+            <p className="text-center text-xs text-muted-foreground">
+              Showing the first {others.length} {mineOnly ? "older done tasks" : "other tasks"}. Add more
+              words to find the task you need.
+            </p>
+          ) : null}
+
+          {hiddenCount > 0 ? (
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-xl border border-dashed px-4 py-3 text-center text-sm text-muted-foreground">
+              <span>
+                {other.result?.hasMore
+                  ? `More than ${hiddenCount} other tasks match.`
+                  : `${countTasks(hiddenCount, "other task")} ${hiddenCount === 1 ? "matches" : "match"}.`}{" "}
+                Assigned to someone else or not assigned.
+              </span>
+              <Button type="button" size="sm" variant="outline" onClick={showAllTasks}>
+                Show all tasks
+              </Button>
+            </div>
+          ) : null}
+        </>
+      )}
     </div>
   );
 }

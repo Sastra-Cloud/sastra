@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { printPaymentFollowUp, selectPersonalWork, splitTasksByAttention } from "./attention";
+import { previewAttentionTasks, printPaymentFollowUp, selectPersonalWork, splitTasksByAttention } from "./attention";
 
 type Task = { id: string; dueDate: string | null; status: string };
 
@@ -8,6 +8,17 @@ const task = (id: string, dueDate: string | null, status = "todo"): Task => ({
   id,
   dueDate,
   status,
+});
+
+it("keeps new direct assignments visible beyond the preview without reordering the queue", () => {
+  const tasks = [
+    ...Array.from({ length: 6 }, (_, index) => ({ id: `queued-${index}`, assignmentSource: "unknown" })),
+    { id: "new-task", assignmentSource: "direct", assignedAt: "2026-11-04T00:01:00Z" },
+    { id: "yesterday", assignmentSource: "direct", assignedAt: "2026-11-03T06:59:00Z" },
+    { id: "generated", assignmentSource: "system", assignedAt: "2026-11-04T00:01:00Z" },
+  ];
+  expect(previewAttentionTasks(tasks, "2026-11-03", "America/Los_Angeles").map(task => task.id))
+    .toEqual(["queued-0", "queued-1", "queued-2", "queued-3", "queued-4", "new-task"]);
 });
 
 describe("splitTasksByAttention", () => {

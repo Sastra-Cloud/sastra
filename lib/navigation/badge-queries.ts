@@ -15,6 +15,7 @@ import {
   standups,
   tasks,
 } from "@/lib/db/schema";
+import { channelAccessCondition } from "@/lib/chat/access-sql";
 import { canManage } from "@/lib/auth/policy";
 import { listPendingEmailTaskSuggestionsForUser } from "@/lib/email/task-suggestions";
 import { externalFollowUpEffectiveDueAt, listMyExternalFollowUps } from "@/lib/email/follow-ups";
@@ -44,6 +45,7 @@ async function unreadChatCount(userId: string) {
     ))
     .where(and(
       ne(chatChannels.kind, "standup"),
+      channelAccessCondition(userId),
       or(
         and(eq(chatChannels.kind, "project"), notInArray(projects.status, ["completed", "cancelled"])),
         and(isNull(chatChannels.projectId), eq(chatChannels.kind, "general")),

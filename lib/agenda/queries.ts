@@ -109,7 +109,7 @@ export async function getAgendaItems(opts: {
       items.push({
         id: `mou_payment:${p.id}`,
         kind: "mou_payment",
-        title: `MoU payment · ${p.groupName ?? p.projectTitle}`,
+        title: `Expected payment · ${p.groupName ?? p.projectTitle}`,
         date: p.dueDate!,
         projectId: p.groupId ? null : p.projectId,
         projectSlug: p.groupId ? null : p.slug,
@@ -273,7 +273,7 @@ export async function getAgendaItems(opts: {
         items.push({
           id: `rights_complete_by:${r.projectId}`,
           kind: "rights_complete_by",
-          title: `Rights needed by · ${r.projectTitle}`,
+          title: `Rights & MOUs needed by · ${r.projectTitle}`,
           date: r.completeByDate,
           projectId: r.projectId,
           projectSlug: r.slug,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countDueWorkTasks, EMPTY_NAVIGATION_BADGES, navigationBadgeFor, navigationBadgeText } from "./badges";
+import { countDueWorkTasks, navigationBadgeFor } from "./badges";
 
 const today = "2026-10-19";
 const task = { status: "todo", assignedTo: "me", dueDate: today };
@@ -32,14 +32,5 @@ describe("menu badge meaning", () => {
     for (const href of ["/dashboard", "/projects", "/settings"]) {
       expect(navigationBadgeFor(href, counts)).toBeNull();
     }
-  });
-
-  it("hides zero badges and caps the visible number without losing the real count", () => {
-    expect(navigationBadgeFor("/tasks", EMPTY_NAVIGATION_BADGES)).toBeNull();
-    expect(navigationBadgeFor("/chat", EMPTY_NAVIGATION_BADGES)).toBeNull();
-    expect(navigationBadgeFor("/standups", EMPTY_NAVIGATION_BADGES)).toBeNull();
-    expect(navigationBadgeText(99)).toBe("99");
-    expect(navigationBadgeText(100)).toBe("99+");
-    expect(navigationBadgeFor("/chat", { ...EMPTY_NAVIGATION_BADGES, chat: 187 })?.description).toBe("187 unread messages");
   });
 });

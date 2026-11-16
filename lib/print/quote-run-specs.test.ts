@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { quoteHasProductionSpecs, quoteRunSpecPatch } from "./quote-run-specs";
+import {
+  quoteHasProductionSpecs,
+  quoteRunSpecPatch,
+  runQuotedTextPages,
+} from "./quote-run-specs";
 
 describe("quoteRunSpecPatch", () => {
   it("converts quote millimetres to run inches and carries reviewed specs", () => {
@@ -41,5 +45,31 @@ describe("quoteRunSpecPatch", () => {
 
     expect(quoteRunSpecPatch(quote)).toEqual({});
     expect(quoteHasProductionSpecs(quote)).toBe(false);
+  });
+});
+
+describe("runQuotedTextPages", () => {
+  const quote = (reviewStatus: string, textPages: number | null) => ({
+    reviewStatus,
+    textPages,
+  });
+
+  it("uses an unreviewed quote's pages when the run has none recorded", () => {
+    expect(
+      runQuotedTextPages({ quotedTextPages: null }, [
+        quote("rejected", 200),
+        quote("suggested", 84),
+      ])
+    ).toBe(84);
+  });
+
+  it("prefers the accepted quote and treats zero as unknown", () => {
+    expect(
+      runQuotedTextPages({ quotedTextPages: 90 }, [
+        quote("suggested", 84),
+        quote("accepted", 96),
+      ])
+    ).toBe(96);
+    expect(runQuotedTextPages({ quotedTextPages: 0 }, [])).toBeNull();
   });
 });

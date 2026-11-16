@@ -4,6 +4,7 @@ import {
   isoDate,
   reconcilePrintPaymentAmounts,
   type ParsedPrinterQuote,
+  cleanQuoteTitle,
 } from "@/lib/print/parser";
 
 /**
@@ -177,7 +178,7 @@ export function normalizePrintQuoteExtract(
     kind,
     invoiceNumber: str(r.invoiceNumber),
     issueDate: isoDate(str(r.issueDate)),
-    title: str(r.title),
+    title: cleanQuoteTitle(str(r.title)),
     quantityCps: intOrNull(r.quantityCps),
     unitPrice: rate(r.unitPrice),
     totalAmount: money(r.totalAmount),

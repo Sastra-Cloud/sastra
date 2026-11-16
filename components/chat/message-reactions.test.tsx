@@ -42,16 +42,19 @@ describe("message reaction disclosure", () => {
     expect(render().button("Remove your 👍")["aria-pressed"]).toBe(true);
     expect(render().button("Add your ❤️")["aria-pressed"]).toBe(false);
   });
-  it("changes only the selected reaction and prevents writes while pending", () => {
+  it("closes after selecting a reaction and prevents writes while pending", () => {
     (render().root.onOpenChange as (open: boolean) => void)(true);
     (render().button("Add your ❤️").onClick as () => void)();
     expect(react).toHaveBeenCalledExactlyOnceWith("❤️");
+    expect(render().root.open).toBe(false);
+    (render().root.onOpenChange as (open: boolean) => void)(true);
     expect(render(reactions, true).button("Add your ❤️").disabled).toBe(true);
     (render(reactions, true).button("Add your ❤️").onClick as () => void)();
     expect(react).toHaveBeenCalledTimes(1);
+    expect(render(reactions, true).root.open).toBe(true);
     expect(render(reactions, true).button("View 10 reactions").disabled).toBeUndefined();
   });
-  it("keeps the details open when the last reaction is removed", () => {
+  it("keeps the details open when reactions disappear in a background update", () => {
     (render().root.onOpenChange as (open: boolean) => void)(true);
     const empty = render([]);
     expect(empty.root.open).toBe(true);

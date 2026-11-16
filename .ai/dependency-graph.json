@@ -164,11 +164,10 @@
     "@/components/badges",
     "@/components/tasks/my-tasks-list",
     "@/components/tasks/create-task-dialog",
-    "@/components/dashboard/manager-review-queue",
+    "@/components/dashboard/streamed-sections",
     "@/lib/dashboard/attention",
     "@/components/projects/print-funding-badge",
     "@/components/pwa/push-nudge",
-    "@/components/dashboard/onboarding-checklist",
     "@/lib/onboarding/queries",
     "@/lib/auth/policy",
     "@/lib/projects/visibility",
@@ -233,7 +232,9 @@
     "@/lib/assistant/queries",
     "@/lib/ops/version",
     "@/lib/ops/source-url",
-    "@/lib/navigation/badge-queries"
+    "@/lib/navigation/badge-queries",
+    "@/lib/logger",
+    "@/lib/observability/performance-intake"
   ],
   "app/(app)/loading.tsx": [
     "@/components/ui/skeleton"
@@ -302,6 +303,9 @@
     "@/components/page-skeleton"
   ],
   "app/(app)/projects/[slug]/budget/page.tsx": [
+    "@/components/budget/partner-quotations-panel",
+    "@/lib/budget/partner-quotation-queries",
+    "@/lib/budget/approval-fingerprint",
     "@/components/print/print-estimate-section",
     "next/link",
     "next/navigation",
@@ -314,6 +318,7 @@
     "@/lib/mentions/roster",
     "@/lib/episodes/queries",
     "@/lib/budget/queries",
+    "@/lib/budget/print-options",
     "@/lib/rights/queries",
     "@/lib/ai/usage-queries",
     "@/lib/budget/reconcile",
@@ -328,7 +333,12 @@
     "@/components/budget/budget-manager",
     "@/components/budget/proposal-panel",
     "@/lib/proposals/queries",
+    "@/lib/agenda/queries",
+    "@/components/budget/funding-path-panel",
+    "@/lib/budget/funding-path",
     "@/lib/partners/queries",
+    "@/lib/budget/funding-partner",
+    "@/components/budget/funding-partner-notice",
     "@/components/budget/funding-receipts",
     "@/lib/donations/mou-link",
     "@/components/budget/mou-payments",
@@ -342,7 +352,8 @@
     "@/lib/budget/approval-queries",
     "@/components/budget/budget-approval-panel",
     "@/components/budget/budget-attention-summary",
-    "@/components/guidance/guidance-panel",
+    "@/components/guidance/step-list",
+    "@/lib/budget/steps",
     "@/components/guidance/walk-me-through",
     "@/components/budget/budget-section",
     "@/lib/budget/attention",
@@ -350,13 +361,21 @@
     "@/lib/budget/compute",
     "@/lib/email/draft-store",
     "@/lib/workspace/queries",
-    "@/lib/donations/queries"
+    "@/lib/donations/queries",
+    "@/lib/projects/funding-overview-queries",
+    "@/components/projects/project-funding-overview",
+    "@/lib/budget/payment-percentage"
   ],
   "app/(app)/projects/[slug]/chat/loading.tsx": [
     "@/components/page-skeleton"
   ],
   "app/(app)/projects/[slug]/chat/page.tsx": [
     "@/lib/workspace/queries",
+    "next/link",
+    "@/lib/chat/access-sql",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "drizzle-orm",
     "next/navigation",
     "@/lib/auth/guards",
     "@/lib/projects/queries",
@@ -413,20 +432,21 @@
     "@/components/page-skeleton"
   ],
   "app/(app)/projects/[slug]/members/page.tsx": [
+    "next/navigation",
+    "drizzle-orm",
     "@/lib/auth/guards",
     "@/lib/auth/project-access",
-    "@/lib/projects/manager-queries",
-    "@/components/projects/project-managers",
+    "@/lib/auth/policy",
     "@/lib/db",
     "@/lib/db/schema",
-    "drizzle-orm",
-    "@/lib/auth/policy",
-    "next/navigation",
+    "@/lib/projects/manager-queries",
+    "@/lib/projects/people",
     "@/lib/projects/queries",
     "@/lib/capacity/queries",
     "@/lib/planning/queries",
     "@/lib/planning/groups",
-    "@/components/projects/members-manager"
+    "@/components/projects/project-managers",
+    "@/components/projects/project-people-manager"
   ],
   "app/(app)/projects/[slug]/page.tsx": [
     "@/components/section-disclosure",
@@ -493,8 +513,7 @@
     "@/lib/print/queries",
     "@/lib/files/queries",
     "@/components/print/print-manager",
-    "@/components/guidance/guidance-panel",
-    "@/components/guidance/walk-me-through",
+    "@/lib/print/spec-preset-queries",
     "@/lib/email/draft-store"
   ],
   "app/(app)/projects/[slug]/rights/loading.tsx": [
@@ -518,7 +537,9 @@
     "@/components/rights/compliance-card",
     "@/components/rights/project-correspondence",
     "@/components/projects/project-surface-notes",
-    "@/lib/agreement-chat/actions"
+    "@/lib/agreement-chat/actions",
+    "@/lib/projects/funding-overview-queries",
+    "@/components/projects/project-funding-overview"
   ],
   "app/(app)/projects/[slug]/tasks/generate/loading.tsx": [
     "@/components/page-skeleton"
@@ -627,6 +648,7 @@
     "lucide-react",
     "@/lib/auth/guards",
     "@/lib/projects/queries",
+    "@/lib/projects/people",
     "@/components/projects/new-project-entry",
     "@/lib/workspace/queries",
     "@/components/cockpit",
@@ -835,7 +857,9 @@
     "@/components/settings/profile-form",
     "@/components/settings/avatar-uploader",
     "@/components/settings/auto-timer-toggle",
-    "@/components/settings/guidance-toggle"
+    "@/components/settings/guidance-toggle",
+    "@/components/auth/google-drive-connect-button",
+    "@/lib/tasks/drive-actions"
   ],
   "app/(app)/settings/publishers/page.tsx": [
     "@/lib/auth/guards",
@@ -891,6 +915,8 @@
     "@/lib/assistant/queries",
     "@/components/settings/team-manager",
     "@/components/settings/role-capacity-matrix",
+    "@/components/settings/default-project-people",
+    "@/lib/projects/people",
     "@/lib/auth/policy"
   ],
   "app/(app)/settings/templates/page.tsx": [
@@ -902,9 +928,7 @@
     "@/lib/workspace/queries"
   ],
   "app/(app)/settings/workspace/page.tsx": [
-    "@/components/settings/workspace-branding-card",
     "@/components/settings/workspace-settings-form",
-    "@/components/settings/invoice-sequence-card",
     "@/components/settings/hosted-plan-card",
     "@/lib/auth/guards",
     "@/lib/hosted/entitlements",
@@ -1131,6 +1155,15 @@
     "@/lib/chat/actions",
     "@/lib/security/request-origin"
   ],
+  "app/api/chat/messages/[messageId]/link-preview/route.ts": [
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/chat/access",
+    "@/lib/chat/message-links",
+    "@/lib/chat/link-preview",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
   "app/api/chat/reactions/route.ts": [
     "next/server",
     "@/lib/auth/guards",
@@ -1241,7 +1274,8 @@
     "@/lib/print/payment-tasks",
     "@/lib/agreement-chat/indexing",
     "@/lib/files/target-access",
-    "@/lib/hosted/storage-usage"
+    "@/lib/hosted/storage-usage",
+    "@/lib/chat/voice-metadata"
   ],
   "app/api/files/presign/route.ts": [
     "crypto",
@@ -1336,6 +1370,13 @@
     "@/lib/auth/guards",
     "@/lib/notifications/queries"
   ],
+  "app/api/observability/performance/route.ts": [
+    "@/lib/auth/guards",
+    "@/lib/logger",
+    "@/lib/observability/performance-intake",
+    "@/lib/ops/version",
+    "@/lib/security/request-origin"
+  ],
   "app/api/presence/heartbeat/route.ts": [
     "next/server",
     "@/lib/auth/guards",
@@ -1349,6 +1390,7 @@
   "app/api/projects/[slug]/budget/export/route.ts": [
     "next/server",
     "@/lib/auth/guards",
+    "@/lib/auth/policy",
     "@/lib/projects/queries",
     "@/lib/budget/quotation-file"
   ],
@@ -1528,7 +1570,6 @@
     "next",
     "next/font/google",
     "@/components/theme-provider",
-    "@/components/motion/motion-provider",
     "@/components/ui/sonner",
     "@/components/pwa/service-worker-register",
     "@/components/pwa/pwa-provider",
@@ -1599,7 +1640,9 @@
     "@/components/ui/button",
     "@/components/ui/input",
     "@/components/ui/textarea",
-    "@/lib/email/operational-drafts"
+    "@/lib/email/operational-drafts",
+    "@/hooks/use-settle",
+    "@/components/ui/done-check"
   ],
   "components/agreements/payment-delivery.tsx": [
     "react",
@@ -1635,9 +1678,8 @@
   ],
   "components/app-nav.tsx": [
     "react",
-    "next/link",
+    "@/components/navigation-link",
     "next/navigation",
-    "motion/react",
     "@/components/ui/tooltip",
     "@/lib/utils",
     "@/lib/navigation",
@@ -1657,6 +1699,7 @@
     "@/components/topbar",
     "@/components/assistant/floating-assistant",
     "@/components/guidance/guidance-provider",
+    "@/components/observability/performance-reporter",
     "@/components/presence/presence-provider",
     "@/components/pwa/pull-to-refresh",
     "@/components/route-scroll-manager",
@@ -1667,7 +1710,10 @@
     "@/lib/auth/policy",
     "@/components/settings/workspace-modules-provider",
     "@/components/navigation-badges-provider",
-    "@/lib/navigation/badges"
+    "@/lib/navigation/badges",
+    "@/components/chat/frequent-reactions-provider",
+    "@/components/chat/voice-playback-provider",
+    "@/components/tasks/pinned-tasks-provider"
   ],
   "components/assistant/assistant-message-content.test.tsx": [
     "vitest",
@@ -1711,14 +1757,17 @@
   "components/assistant/floating-assistant.tsx": [
     "react",
     "next/navigation",
+    "next/dynamic",
     "lucide-react",
     "@/lib/assistant/actions",
     "@/lib/assistant/launcher",
-    "@/components/assistant/assistant-workspace",
     "@/components/guidance/guidance-provider",
     "@/components/ui/button",
     "@/components/ui/sheet",
-    "@/hooks/use-conversation-viewport"
+    "@/hooks/use-conversation-viewport",
+    "@/components/tasks/pinned-tasks-provider",
+    "@/components/assistant/assistant-workspace",
+    "@/components/assistant/assistant-workspace"
   ],
   "components/assistant/memory-manager.tsx": [
     "@/lib/dialog-requests",
@@ -1779,6 +1828,18 @@
     "@/components/ui/input",
     "@/components/ui/label"
   ],
+  "components/auth/google-drive-connect-button.test.tsx": [
+    "react",
+    "react-dom/client",
+    "vitest",
+    "./google-drive-connect-button"
+  ],
+  "components/auth/google-drive-connect-button.tsx": [
+    "react",
+    "lucide-react",
+    "@/lib/auth/client",
+    "@/components/ui/button"
+  ],
   "components/auth/login-form.tsx": [
     "react",
     "next/link",
@@ -1827,6 +1888,12 @@
   "components/brand.tsx": [
     "@/lib/utils"
   ],
+  "components/budget/approval-decision-controls.test.tsx": [
+    "react",
+    "react-dom/client",
+    "vitest",
+    "./approval-decision-controls"
+  ],
   "components/budget/approval-decision-controls.tsx": [
     "react",
     "next/navigation",
@@ -1834,12 +1901,14 @@
     "sonner",
     "@/lib/budget/approval-actions",
     "@/components/ui/button",
-    "@/components/ui/textarea"
+    "@/components/ui/textarea",
+    "@/components/ui/label"
   ],
   "components/budget/budget-approval-panel.tsx": [
     "react",
     "next/navigation",
     "next/link",
+    "@/components/files/file-link",
     "lucide-react",
     "sonner",
     "@/lib/budget/approval-actions",
@@ -1850,7 +1919,8 @@
     "@/components/ui/checkbox",
     "@/components/ui/input",
     "@/components/ui/label",
-    "@/lib/utils"
+    "@/lib/utils",
+    "@/lib/format"
   ],
   "components/budget/budget-attention-summary.tsx": [
     "next/link",
@@ -1881,7 +1951,7 @@
     "sonner",
     "lucide-react",
     "@/lib/budget/actions",
-    "@/lib/partners/actions",
+    "@/components/partners/partner-fields",
     "@/lib/budget/compute",
     "@/components/ui/badge",
     "@/components/ui/button",
@@ -1891,9 +1961,13 @@
     "@/components/ui/label",
     "@/lib/utils",
     "@/hooks/use-prop-state",
+    "@/hooks/use-settle",
     "@/hooks/use-optimistic-action",
+    "./budget-setup-guide",
     "@/components/budget/partner-quote-panel",
-    "@/lib/budget/partner-line-state"
+    "@/lib/budget/partner-line-state",
+    "@/lib/budget/print-options",
+    "@/lib/budget/presentation-input"
   ],
   "components/budget/budget-section.test.tsx": [
     "react-dom/server",
@@ -1904,7 +1978,22 @@
     "react",
     "react-dom",
     "motion/react",
+    "@/components/motion/motion-provider",
     "@/components/ui/tabs"
+  ],
+  "components/budget/budget-setup-guide.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/guidance/guided-steps",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/lib/budget/compute",
+    "@/lib/budget/proposal-builder",
+    "@/lib/budget/setup",
+    "@/lib/budget/setup-actions"
   ],
   "components/budget/cashflow-card.tsx": [
     "lucide-react",
@@ -1921,6 +2010,13 @@
     "@/components/ui/dialog",
     "@/lib/utils"
   ],
+  "components/budget/donation-mou-link.test.tsx": [
+    "react",
+    "react-dom/client",
+    "vitest",
+    "./donation-mou-link",
+    "@/lib/donations/actions"
+  ],
   "components/budget/donation-mou-link.tsx": [
     "react",
     "next/navigation",
@@ -1932,6 +2028,37 @@
     "@/lib/donations/actions",
     "@/lib/donations/mou-link"
   ],
+  "components/budget/funding-partner-notice.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/button",
+    "@/lib/actions/result",
+    "@/lib/budget/funding-partner-actions",
+    "@/lib/utils"
+  ],
+  "components/budget/funding-path-panel.tsx": [
+    "react",
+    "next/link",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/checkbox",
+    "@/components/ui/dialog",
+    "@/components/ui/help-tip",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/hooks/use-prop-state",
+    "@/hooks/use-settle",
+    "@/lib/budget/funding-path",
+    "@/lib/format",
+    "@/lib/proposals/answer-actions",
+    "@/lib/utils"
+  ],
   "components/budget/funding-receipts.tsx": [
     "@/lib/dialog-requests",
     "react",
@@ -1940,6 +2067,7 @@
     "lucide-react",
     "sonner",
     "@/lib/budget/actions",
+    "@/lib/proposals/answer-actions",
     "@/components/budget/donation-mou-link",
     "@/lib/donations/mou-link",
     "@/components/ui/button",
@@ -1953,9 +2081,16 @@
     "next/navigation",
     "lucide-react",
     "sonner",
+    "@/components/ui/dropdown-menu",
     "@/components/ui/button",
     "@/lib/files/upload-client",
     "@/lib/imports/actions"
+  ],
+  "components/budget/mou-payments.test.tsx": [
+    "react",
+    "react-dom/client",
+    "vitest",
+    "./mou-payments"
   ],
   "components/budget/mou-payments.tsx": [
     "@/components/files/file-link",
@@ -1970,14 +2105,62 @@
     "@/components/ui/card",
     "@/components/ui/input",
     "@/components/ui/label",
+    "@/components/ui/dropdown-menu",
+    "@/lib/format",
     "@/hooks/use-prop-state",
+    "@/hooks/use-settle",
+    "@/components/ui/done-check",
     "@/components/budget/invoice-import-button",
     "@/lib/budget/compute",
+    "@/lib/budget/funding-path",
+    "@/components/ui/help-tip",
+    "./payment-amount-field",
+    "@/lib/budget/payment-percentage",
     "@/components/email/outgoing-attachment-review",
     "@/components/email/outgoing-email-status",
     "@/components/email/email-draft-controls",
     "@/lib/email/draft-actions",
     "@/lib/email/draft-types"
+  ],
+  "components/budget/partner-print-options.tsx": [
+    "react",
+    "lucide-react",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/lib/budget/compute",
+    "@/lib/budget/print-options"
+  ],
+  "components/budget/partner-quotations-panel.test.tsx": [
+    "react",
+    "react-dom/client",
+    "vitest",
+    "./partner-quotations-panel"
+  ],
+  "components/budget/partner-quotations-panel.tsx": [
+    "react",
+    "@/components/guidance/guided-steps",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea",
+    "@/components/ui/badge",
+    "@/components/ui/checkbox",
+    "@/components/ui/dialog",
+    "@/components/files/file-link",
+    "./budget-approval-panel",
+    "@/lib/budget/print-options",
+    "./proposal-panel",
+    "./budget-manager",
+    "@/lib/email/draft-types",
+    "@/lib/budget/partner-line-state",
+    "@/lib/budget/partner-quotations",
+    "@/lib/budget/partner-quotation-actions",
+    "@/hooks/use-optimistic-action",
+    "@/lib/dialog-requests",
+    " : "
   ],
   "components/budget/partner-quote-panel.tsx": [
     "@/components/files/file-link",
@@ -1996,7 +2179,16 @@
     "@/components/ui/help-tip",
     "@/components/ui/input",
     "@/components/ui/label",
-    "@/lib/utils"
+    "@/lib/utils",
+    "@/lib/budget/print-options",
+    "./partner-print-options"
+  ],
+  "components/budget/payment-amount-field.tsx": [
+    "react",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/button",
+    "@/lib/budget/payment-percentage"
   ],
   "components/budget/proposal-budget-builder.tsx": [
     "next/link",
@@ -2010,6 +2202,12 @@
     "@/components/ui/textarea",
     "@/lib/budget/proposal-actions",
     "@/lib/budget/proposal-builder"
+  ],
+  "components/budget/proposal-panel.test.tsx": [
+    "react",
+    "react-dom/client",
+    "vitest",
+    "./proposal-panel"
   ],
   "components/budget/proposal-panel.tsx": [
     "@/components/files/file-link",
@@ -2031,6 +2229,9 @@
     "@/lib/proposals/actions",
     "@/lib/print/actions",
     "@/hooks/use-prop-state",
+    "@/hooks/use-settle",
+    "@/components/ui/done-check",
+    "@/lib/budget/funding-path",
     "@/components/email/email-draft-controls",
     "@/lib/email/draft-actions",
     "@/lib/email/draft-types"
@@ -2071,7 +2272,7 @@
   ],
   "components/chat/channel-list.tsx": [
     "react",
-    "next/link",
+    "@/components/navigation-link",
     "lucide-react",
     "@/lib/chat/queries",
     "@/lib/users/avatar",
@@ -2095,13 +2296,12 @@
     "@/components/ui/user-avatar"
   ],
   "components/chat/chat-image-gallery.tsx": [
-    "@/components/files/file-link",
     "react",
     "lucide-react",
     "@/components/ui/button",
     "@/lib/chat/images",
     "@/lib/files/queries",
-    "@/lib/format",
+    "@/lib/utils",
     "./chat-image-viewer"
   ],
   "components/chat/chat-image-viewer.tsx": [
@@ -2122,18 +2322,22 @@
     "@/lib/chat/actions",
     "@/lib/chat/queries",
     "@/lib/chat/replies",
+    "@/lib/chat/read-client",
     "@/lib/dialog-requests",
     "sonner",
     "./chat-thread",
     "@/lib/chat/edit-actions",
     "@/lib/chat/edit-state",
     "@/lib/chat/video-client",
+    "@/lib/chat/voice-client",
     "@/lib/files/upload-progress",
     "@/components/chat/voice-recorder",
+    "@/components/ui/message-scroller",
     "react"
   ],
   "components/chat/chat-thread.tsx": [
     "@/components/files/file-link",
+    "@/components/observability/use-useful-work",
     "@/lib/dialog-requests",
     "react",
     "lucide-react",
@@ -2153,8 +2357,11 @@
     "@/components/ui/message",
     "@/components/ui/message-scroller",
     "@/components/mentions/mention-input",
-    "@/components/mentions/mention-text",
+    "@/components/chat/message-text",
+    "@/components/chat/message-link-preview",
+    "@/lib/chat/message-links",
     "@/lib/mentions/roster",
+    "@/lib/mentions/parse",
     "@/lib/format",
     "@/lib/utils",
     "@/components/chat/voice-recorder",
@@ -2164,17 +2371,22 @@
     "@/components/chat/chat-image-gallery",
     "@/components/chat/chat-video",
     "@/lib/chat/video",
+    "@/lib/files/upload-rules",
     "@/lib/chat/video-client",
     "@/lib/files/upload-progress",
     "@/lib/chat/conversation",
     "@/lib/chat/composer-key",
     "@/components/chat/message-actions",
     "@/components/chat/message-reactions",
+    "@/components/chat/message-receipt",
     "@/components/chat/message-editor",
     "@/lib/chat/edit-actions",
     "@/lib/chat/edit-state",
     "@/lib/chat/reaction-state",
-    "@/components/chat/use-frequent-reactions"
+    "@/components/chat/use-frequent-reactions",
+    "@/lib/chat/snapshot",
+    "@/lib/chat/voice-client",
+    "@/lib/chat/voice-metadata"
   ],
   "components/chat/chat-video.tsx": [
     "react",
@@ -2225,6 +2437,10 @@
     "@/components/ui/label",
     "@/components/ui/user-avatar"
   ],
+  "components/chat/frequent-reactions-provider.tsx": [
+    "react",
+    "@/lib/chat/frequent-reactions-cache"
+  ],
   "components/chat/message-actions.test.tsx": [
     "react",
     "vitest",
@@ -2258,6 +2474,11 @@
     "@/lib/chat/edit-state",
     "@/lib/mentions/roster"
   ],
+  "components/chat/message-link-preview.tsx": [
+    "react",
+    "lucide-react",
+    "@/lib/utils"
+  ],
   "components/chat/message-pins.tsx": [
     "react",
     "lucide-react",
@@ -2265,6 +2486,7 @@
     "@/lib/chat/queries",
     "@/lib/chat/pin-actions",
     "@/lib/chat/pin-state",
+    "@/lib/chat/snapshot",
     "@/hooks/use-optimistic-action",
     "@/hooks/use-prop-state",
     "@/components/ui/button",
@@ -2288,6 +2510,20 @@
     "@/lib/chat/reaction-summary",
     "@/lib/utils"
   ],
+  "components/chat/message-receipt.tsx": [
+    "lucide-react",
+    "@/lib/chat/queries",
+    "@/components/ui/popover"
+  ],
+  "components/chat/message-text.test.tsx": [
+    "react-dom/server",
+    "vitest",
+    "./message-text"
+  ],
+  "components/chat/message-text.tsx": [
+    "@/components/mentions/mention-text",
+    "@/lib/chat/message-links"
+  ],
   "components/chat/new-direct-message-popover.tsx": [
     "react",
     "next/navigation",
@@ -2300,22 +2536,19 @@
     "@/components/ui/button",
     "@/components/ui/popover"
   ],
-  "components/chat/project-channel-tabs.test.tsx": [
-    "node:fs",
-    "node:path",
-    "vitest"
-  ],
   "components/chat/project-channel-tabs.tsx": [
     "lucide-react",
     "@/lib/chat/queries",
     "@/components/cockpit",
     "@/components/chat/chat-navigation-context",
-    "@/components/motion/tab-link",
+    "@/components/tab-link",
     "@/lib/utils"
   ],
   "components/chat/project-chat-view.tsx": [
     "@/components/assistant/assistant-shortcut",
     "@/components/chat/conversation-header",
+    "next/link",
+    "lucide-react",
     "react",
     "@/lib/chat/queries",
     "@/lib/chat/pin-state",
@@ -2344,11 +2577,14 @@
   "components/chat/use-frequent-reactions.test.tsx": [
     "vitest",
     "./use-frequent-reactions",
-    "@/lib/chat/reaction-suggestions"
+    "@/lib/chat/reaction-suggestions",
+    "@/lib/chat/frequent-reactions-cache",
+    "react"
   ],
   "components/chat/use-frequent-reactions.ts": [
     "react",
-    "@/lib/chat/reaction-suggestions"
+    "@/lib/chat/reaction-suggestions",
+    "./frequent-reactions-provider"
   ],
   "components/chat/use-message-hold.ts": [
     "react",
@@ -2360,18 +2596,19 @@
   "components/chat/voice-message-player.tsx": [
     "react",
     "lucide-react",
-    "@/lib/utils"
+    "@/lib/utils",
+    "./voice-playback-provider",
+    "@/lib/chat/voice-metadata"
+  ],
+  "components/chat/voice-playback-provider.tsx": [
+    "react",
+    "@/lib/chat/voice-player"
   ],
   "components/chat/voice-recorder.tsx": [
     "react",
     "lucide-react",
     "sonner",
     "@/components/ui/button"
-  ],
-  "components/cockpit.test.tsx": [
-    "react-dom/server",
-    "vitest",
-    "./cockpit"
   ],
   "components/cockpit.tsx": [
     "react",
@@ -2454,10 +2691,6 @@
     "@/components/ui/textarea",
     "@/lib/email/actions",
     "@/lib/email/project-update-suggestion-policy"
-  ],
-  "components/correspondence/reprocess-feedback.test.tsx": [
-    "vitest",
-    "./reprocess-feedback"
   ],
   "components/correspondence/reprocess-feedback.ts": [
     "@/lib/email/actions"
@@ -2549,6 +2782,28 @@
     "@/lib/utils",
     "@/lib/onboarding/steps"
   ],
+  "components/dashboard/section-recovery.test.tsx": [
+    "react",
+    "react-dom/client",
+    "vitest",
+    "@/lib/dashboard/attention",
+    "./streamed-sections"
+  ],
+  "components/dashboard/streamed-sections.test.tsx": [
+    "react-dom/server",
+    "vitest",
+    "@/lib/dashboard/attention",
+    "./streamed-sections"
+  ],
+  "components/dashboard/streamed-sections.tsx": [
+    "react",
+    "next/navigation",
+    "@/components/ui/button",
+    "@/components/dashboard/manager-review-queue",
+    "@/components/dashboard/onboarding-checklist",
+    "@/lib/dashboard/attention",
+    "@/lib/onboarding/queries"
+  ],
   "components/donations/donation-csv-format-dialog.tsx": [
     "react",
     "lucide-react",
@@ -2614,18 +2869,15 @@
     "react",
     "lucide-react",
     "@/lib/format",
+    "@/lib/files/fetch-download",
     "@/lib/files/link-attributes",
     "@/components/files/file-link",
     "@/components/ui/button",
     "@/components/ui/dialog"
   ],
-  "components/email/outgoing-email-status.test.tsx": [
-    "react-dom/server",
-    "vitest",
-    "./outgoing-email-status"
-  ],
   "components/email/outgoing-email-status.tsx": [
     "lucide-react",
+    "@/components/ui/done-check",
     "@/lib/utils"
   ],
   "components/episodes/episodes-manager.tsx": [
@@ -2656,6 +2908,7 @@
     "@/lib/files/actions",
     "@/components/ui/button",
     "@/components/ui/textarea",
+    "@/lib/files/upload-rules",
     "@/lib/format",
     "@/hooks/use-optimistic-action",
     "@/hooks/use-prop-state"
@@ -2682,6 +2935,7 @@
   "components/guidance/guidance-provider.tsx": [
     "sonner",
     "react",
+    "react",
     "@/hooks/use-optimistic-action",
     "@/lib/guidance/actions",
     "@/lib/guidance/state"
@@ -2691,6 +2945,16 @@
     "lucide-react",
     "@/components/ui/button",
     "@/components/ui/stepper",
+    "@/lib/utils"
+  ],
+  "components/guidance/step-list.tsx": [
+    "react",
+    "next/link",
+    "lucide-react",
+    "@/components/ui/button",
+    "@/components/ui/done-check",
+    "@/components/guidance/guidance-provider",
+    "@/lib/guidance/steps",
     "@/lib/utils"
   ],
   "components/guidance/walk-me-through.tsx": [
@@ -2853,6 +3117,7 @@
     "react-dom",
     "lucide-react",
     "@/lib/mentions/actions",
+    "@/lib/mentions/menu-position",
     "@/lib/mentions/roster",
     "@/components/ui/textarea",
     "@/components/ui/user-avatar",
@@ -2864,7 +3129,6 @@
     "@/lib/utils"
   ],
   "components/motion/animated-bar.tsx": [
-    "motion/react",
     "@/lib/utils"
   ],
   "components/motion/animated-number.tsx": [
@@ -2875,16 +3139,7 @@
     "motion/react"
   ],
   "components/motion/reveal.tsx": [
-    "react",
-    "motion/react",
-    "@/lib/utils"
-  ],
-  "components/motion/tab-link.tsx": [
-    "next/link",
-    "next/link",
-    "lucide-react",
-    "motion/react",
-    "@/lib/utils"
+    "react"
   ],
   "components/navigation-badges-provider.tsx": [
     "react",
@@ -2897,6 +3152,10 @@
   "components/navigation-icons.ts": [
     "lucide-react"
   ],
+  "components/navigation-link.tsx": [
+    "react",
+    "next/link"
+  ],
   "components/notifications/notification-bell.tsx": [
     "react",
     "next/navigation",
@@ -2908,7 +3167,8 @@
     "@/components/ui/popover",
     "@/lib/utils",
     "@/lib/notifications/client-events",
-    "@/hooks/use-user-active"
+    "@/hooks/use-user-active",
+    "@/lib/notifications/client-feed"
   ],
   "components/notifications/notification-navigation.test.tsx": [
     "vitest",
@@ -2925,6 +3185,18 @@
     "@/components/ui/button",
     "@/lib/utils"
   ],
+  "components/observability/performance-reporter.tsx": [
+    "react",
+    "next/web-vitals",
+    "@/lib/observability/performance-buffer",
+    "@/lib/observability/performance-report",
+    "@/lib/observability/useful-work"
+  ],
+  "components/observability/use-useful-work.ts": [
+    "react",
+    "@/lib/observability/performance-report",
+    "@/lib/observability/useful-work"
+  ],
   "components/page-skeleton.tsx": [
     "react",
     "lucide-react",
@@ -2932,17 +3204,31 @@
     "@/lib/utils",
     "@/components/chat/conversation-header"
   ],
+  "components/partners/partner-fields.tsx": [
+    "react",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/textarea"
+  ],
   "components/portfolio/capacity-heatmap.tsx": [
     "@/lib/utils",
     "@/lib/capacity",
     "@/lib/time"
   ],
+  "components/portfolio/charts/rag-donut-chart.tsx": [
+    "recharts"
+  ],
   "components/portfolio/charts/rag-donut.tsx": [
+    "next/dynamic",
+    "./rag-donut-chart"
+  ],
+  "components/portfolio/charts/trend-line-chart.tsx": [
+    "react",
     "recharts"
   ],
   "components/portfolio/charts/trend-line.tsx": [
-    "react",
-    "recharts"
+    "next/dynamic",
+    "./trend-line-chart"
   ],
   "components/portfolio/missing-due-dates.tsx": [
     "react",
@@ -3000,6 +3286,23 @@
     "@/components/ui/dialog",
     "@/components/correspondence/thread-message-list"
   ],
+  "components/print/print-estimate-intake.test.tsx": [
+    "react",
+    "react-dom/client",
+    "vitest",
+    "./print-estimate-intake"
+  ],
+  "components/print/print-estimate-intake.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/lib/print/estimate-intake-actions",
+    "@/components/ui/button",
+    "@/components/ui/checkbox",
+    "@/components/ui/label",
+    "@/components/ui/textarea"
+  ],
   "components/print/print-estimate-panel.tsx": [
     "react",
     "next/link",
@@ -3013,6 +3316,8 @@
     "@/lib/email/draft-actions",
     "@/lib/email/draft-types",
     "@/hooks/use-optimistic-action",
+    "@/hooks/use-settle",
+    "@/components/ui/done-check",
     "@/lib/files/upload-client",
     "@/lib/print/estimate-policy",
     "@/lib/print/quote-economics",
@@ -3027,15 +3332,19 @@
     "@/components/ui/textarea",
     "@/components/ui/checkbox",
     "@/lib/print/estimate",
-    "@/lib/print/spec-presets"
+    "@/lib/print/spec-presets",
+    "./print-estimate-intake"
   ],
   "components/print/print-estimate-section.tsx": [
     "drizzle-orm",
     "@/lib/db",
     "@/lib/db/schema",
+    "@/lib/print/estimate-intake",
+    "@/lib/email/follow-up-policy",
     "@/lib/print/queries",
     "@/lib/print/estimate",
     "@/lib/print/estimate-policy",
+    "@/lib/print/quote-economics",
     "@/lib/email/draft-store",
     "./print-estimate-panel",
     "@/lib/print/spec-preset-queries"
@@ -3043,6 +3352,11 @@
   "components/print/print-manager.tsx": [
     "@/components/files/file-link",
     "@/components/section-disclosure",
+    "@/components/guidance/step-list",
+    "@/components/guidance/walk-me-through",
+    "@/components/print/print-run-guide",
+    "@/lib/print/steps",
+    "@/lib/print/spec-presets",
     "@/lib/dialog-requests",
     "react",
     "next/link",
@@ -3053,6 +3367,8 @@
     "@/lib/files/upload-client",
     "@/hooks/use-optimistic-action",
     "@/hooks/use-prop-state",
+    "@/hooks/use-settle",
+    "@/components/ui/done-check",
     "@/lib/files/queries",
     "@/lib/print/review-flags",
     "@/lib/print/estimate",
@@ -3078,6 +3394,19 @@
     "@/components/email/outgoing-email-status",
     "@/lib/email/draft-actions",
     "@/lib/email/draft-types"
+  ],
+  "components/print/print-run-guide.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "sonner",
+    "@/components/guidance/guided-steps",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/lib/print/actions",
+    "@/lib/print/estimate",
+    "@/lib/print/spec-presets"
   ],
   "components/print/quote-comparison.tsx": [
     "lucide-react",
@@ -3122,19 +3451,6 @@
     "@/lib/forecast/velocity",
     "@/lib/utils"
   ],
-  "components/projects/members-manager.tsx": [
-    "@/lib/dialog-requests",
-    "react",
-    "next/navigation",
-    "lucide-react",
-    "sonner",
-    "@/lib/projects/member-actions",
-    "@/components/ui/badge",
-    "@/components/ui/button",
-    "@/components/ui/card",
-    "@/components/ui/user-avatar",
-    "@/hooks/use-prop-state"
-  ],
   "components/projects/new-project-entry.tsx": [
     "@/lib/projects/actions",
     "next/link",
@@ -3178,8 +3494,7 @@
     "react-dom/server",
     "vitest",
     "@/app/(app)/projects/page",
-    "./members-manager",
-    "@/components/ai/ai-setup-guidance",
+    "./project-people-manager",
     "./project-draft"
   ],
   "components/projects/overdue-reason.tsx": [
@@ -3253,6 +3568,12 @@
     "@/components/ui/button",
     "@/hooks/use-prop-state"
   ],
+  "components/projects/project-funding-overview.test.tsx": [
+    "react-dom/server",
+    "vitest",
+    "@/lib/projects/funding-overview",
+    "./project-funding-overview"
+  ],
   "components/projects/project-funding-overview.tsx": [
     "next/link",
     "lucide-react",
@@ -3273,6 +3594,19 @@
     "@/components/ui/button",
     "@/components/ui/card",
     "@/components/ui/user-avatar"
+  ],
+  "components/projects/project-people-manager.tsx": [
+    "react",
+    "next/navigation",
+    "lucide-react",
+    "@/lib/projects/people-actions",
+    "@/lib/projects/member-actions",
+    "@/lib/dialog-requests",
+    "@/hooks/use-optimistic-action",
+    "@/components/ui/button",
+    "@/components/ui/badge",
+    "@/components/ui/user-avatar",
+    "@/components/ui/label"
   ],
   "components/projects/project-settings-dialog.tsx": [
     "@/lib/dialog-requests",
@@ -3314,7 +3648,7 @@
     "react",
     "next/navigation",
     "@/components/cockpit",
-    "@/components/motion/tab-link",
+    "@/components/tab-link",
     "@/components/navigation-icons",
     "@/lib/navigation"
   ],
@@ -3328,10 +3662,6 @@
     "lucide-react",
     "react",
     "@/components/ui/button"
-  ],
-  "components/projects/project-workspace-frame.test.tsx": [
-    "vitest",
-    "@/lib/chat/conversation"
   ],
   "components/projects/project-workspace-frame.tsx": [
     "next/navigation",
@@ -3383,11 +3713,6 @@
     "@/lib/format",
     "@/hooks/use-prop-state"
   ],
-  "components/pwa/enable-push-flow.test.tsx": [
-    "react-dom/server",
-    "vitest",
-    "./enable-push-flow"
-  ],
   "components/pwa/enable-push-flow.tsx": [
     "react",
     "next/navigation",
@@ -3401,8 +3726,15 @@
     "@/components/motion/reveal",
     "@/lib/utils"
   ],
+  "components/pwa/pull-to-refresh.test.tsx": [
+    "react",
+    "vitest",
+    "./pull-to-refresh",
+    "react"
+  ],
   "components/pwa/pull-to-refresh.tsx": [
     "react",
+    "next/navigation",
     "lucide-react",
     "@/lib/pwa/pull-to-refresh",
     "@/lib/utils"
@@ -3661,6 +3993,16 @@
     "sonner",
     "@/components/ui/button"
   ],
+  "components/settings/default-project-people.tsx": [
+    "react",
+    "next/navigation",
+    "next/link",
+    "sonner",
+    "@/lib/projects/people-actions",
+    "@/lib/dialog-requests",
+    "@/components/ui/button",
+    "@/components/ui/user-avatar"
+  ],
   "components/settings/dependency-security-check-button.tsx": [
     "react",
     "next/navigation",
@@ -3683,6 +4025,11 @@
     "@/components/ui/label",
     "@/components/ui/textarea",
     "@/hooks/use-prop-state"
+  ],
+  "components/settings/document-colors-fields.tsx": [
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/lib/workspace/document-colors"
   ],
   "components/settings/document-learning-manager.tsx": [
     "react",
@@ -3734,14 +4081,12 @@
     "@/lib/utils"
   ],
   "components/settings/invoice-sequence-card.tsx": [
-    "react",
     "lucide-react",
-    "sonner",
-    "@/components/ui/button",
     "@/components/ui/card",
     "@/components/ui/input",
     "@/components/ui/label",
-    "@/lib/workspace/actions"
+    "./field-errors",
+    "@/hooks/use-prop-state"
   ],
   "components/settings/modules-settings.tsx": [
     "next/link",
@@ -3761,6 +4106,12 @@
     "@/hooks/use-optimistic-action",
     "@/lib/utils"
   ],
+  "components/settings/partners-manager.test.tsx": [
+    "react",
+    "react-dom/client",
+    "vitest",
+    "./partners-manager"
+  ],
   "components/settings/partners-manager.tsx": [
     "@/lib/dialog-requests",
     "react",
@@ -3768,6 +4119,7 @@
     "sonner",
     "lucide-react",
     "@/lib/partners/actions",
+    "@/components/partners/partner-fields",
     "@/components/ui/badge",
     "@/components/ui/button",
     "@/components/ui/card",
@@ -3880,13 +4232,13 @@
   ],
   "components/settings/settings-nav.tsx": [
     "react",
-    "next/link",
+    "@/components/navigation-link",
     "next/navigation",
     "lucide-react",
     "./workspace-modules-provider",
     "@/lib/navigation",
     "@/components/navigation-icons",
-    "@/components/motion/tab-link",
+    "@/components/tab-link",
     "@/components/ui/sheet",
     "@/lib/utils"
   ],
@@ -4004,7 +4356,8 @@
     "@/components/ui/label",
     "@/lib/files/upload-client",
     "@/lib/workspace/actions",
-    "@/hooks/use-prop-state"
+    "@/hooks/use-prop-state",
+    "./field-errors"
   ],
   "components/settings/workspace-modules-provider.tsx": [
     "react",
@@ -4012,6 +4365,13 @@
     "@/hooks/use-optimistic-action",
     "@/lib/workspace/actions",
     "@/lib/workspace/modules"
+  ],
+  "components/settings/workspace-settings-form.test.tsx": [
+    "react",
+    "react-dom/client",
+    "vitest",
+    "./workspace-settings-form",
+    "@/lib/workspace/queries"
   ],
   "components/settings/workspace-settings-form.tsx": [
     "@/lib/files/upload-client",
@@ -4023,12 +4383,15 @@
     "@/components/ui/button",
     "@/components/ui/card",
     "@/components/ui/input",
+    "./document-colors-fields",
     "./timezone-control",
     "@/components/ui/label",
     "@/lib/workspace/actions",
     "@/lib/workspace/queries",
     "@/components/settings/capacity-groups-editor",
-    "@/lib/planning/groups"
+    "@/lib/planning/groups",
+    "./workspace-branding-card",
+    "./invoice-sequence-card"
   ],
   "components/settings/workspace-setup-form.tsx": [
     "./field-errors",
@@ -4041,6 +4404,21 @@
     "./timezone-control",
     "@/components/ui/label",
     "@/lib/workspace/actions"
+  ],
+  "components/shell-snapshot-recovery.test.tsx": [
+    "react",
+    "react-dom/client",
+    "vitest",
+    "./guidance/guidance-provider",
+    "./navigation-badges-provider",
+    "@/lib/navigation/badges",
+    "@/lib/notifications/client-events"
+  ],
+  "components/shell-snapshots.test.tsx": [
+    "react-dom/server",
+    "vitest",
+    "@/components/guidance/guidance-provider",
+    "@/components/navigation-badges-provider"
   ],
   "components/source-link.tsx": [
     "lucide-react",
@@ -4092,7 +4470,9 @@
     "@/components/ui/input",
     "@/components/ui/label",
     "@/components/ui/textarea",
-    "@/components/email/outgoing-attachment-review"
+    "@/components/email/outgoing-attachment-review",
+    "@/hooks/use-settle",
+    "@/components/ui/done-check"
   ],
   "components/sponsorships/sponsorship-form.tsx": [
     "react",
@@ -4148,6 +4528,12 @@
     "@/lib/utils",
     "@/hooks/use-prop-state"
   ],
+  "components/tab-link.tsx": [
+    "@/components/navigation-link",
+    "next/link",
+    "lucide-react",
+    "@/lib/utils"
+  ],
   "components/tasks/create-task-dialog.tsx": [
     "@/components/projects/project-management-provider",
     "react",
@@ -4169,9 +4555,10 @@
   ],
   "components/tasks/drive-picker.tsx": [
     "react",
+    "next/link",
     "sonner",
     "lucide-react",
-    "@/lib/auth/client",
+    "@/components/auth/google-drive-connect-button",
     "@/lib/tasks/drive-actions",
     "@/lib/tasks/drive-file-selection",
     "@/components/ui/button",
@@ -4218,11 +4605,13 @@
     "./my-tasks-list"
   ],
   "components/tasks/my-tasks-list.tsx": [
+    "@/components/observability/use-useful-work",
     "@/lib/dialog-requests",
     "react",
     "next/link",
     "next/navigation",
     "motion/react",
+    "@/components/motion/motion-provider",
     "lucide-react",
     "@/lib/tasks/queries",
     "@/lib/tasks/completion-feedback",
@@ -4239,14 +4628,8 @@
     "@/components/tasks/task-detail-dialog",
     "@/components/tasks/task-attachment-shortcut",
     "@/lib/tasks/attention",
-    "@/lib/tasks/task-source"
-  ],
-  "components/tasks/my-work-attention-summary.test.tsx": [
-    "react",
-    "react-dom/server",
-    "vitest",
-    "./my-work-attention-summary",
-    "@/lib/navigation/badges"
+    "@/lib/tasks/task-source",
+    "./pinned-tasks-provider"
   ],
   "components/tasks/my-work-attention-summary.tsx": [
     "next/link",
@@ -4257,8 +4640,10 @@
     "react",
     "next/link",
     "next/navigation",
+    "next/dynamic",
     "lucide-react",
     "motion/react",
+    "@/components/motion/motion-provider",
     "sonner",
     "@/lib/agenda/bucket",
     "@/lib/agenda/bucket",
@@ -4274,7 +4659,7 @@
     "@/components/agenda/agenda-view",
     "@/components/badges",
     "@/components/tasks/create-task-dialog",
-    "@/components/tasks/personal-task-board",
+    "@/components/ui/skeleton",
     "@/components/tasks/task-complete-button",
     "@/components/tasks/task-detail-dialog",
     "@/components/tasks/task-attachment-shortcut",
@@ -4296,9 +4681,13 @@
     "@/lib/email/follow-ups",
     "@/components/correspondence/external-follow-up-card",
     "@/components/tasks/task-search",
+    "@/lib/tasks/search",
     "@/components/navigation-badges-provider",
     "@/lib/navigation/badges",
-    "@/components/tasks/my-work-attention-summary"
+    "@/components/tasks/my-work-attention-summary",
+    "./pinned-tasks-provider",
+    "@/components/tasks/personal-task-board",
+    "@/components/tasks/personal-task-board"
   ],
   "components/tasks/personal-task-board.tsx": [
     "react",
@@ -4315,7 +4704,42 @@
     "@/lib/flow",
     "@/lib/format",
     "@/lib/time",
-    "@/lib/utils"
+    "@/lib/utils",
+    "./pinned-tasks-provider"
+  ],
+  "components/tasks/pinned-tasks-panel.tsx": [
+    "react",
+    "next/link",
+    "lucide-react",
+    "./pinned-tasks-provider",
+    "@/components/ui/button",
+    "@/components/ui/input",
+    "./task-complete-button",
+    "@/lib/tasks/task-source"
+  ],
+  "components/tasks/pinned-tasks-provider.test.tsx": [
+    "react",
+    "react-dom/client",
+    "vitest",
+    "@/lib/tasks/queries",
+    "./pinned-tasks-provider",
+    "./pinned-tasks-panel"
+  ],
+  "components/tasks/pinned-tasks-provider.tsx": [
+    "react",
+    "next/navigation",
+    "next/dynamic",
+    "lucide-react",
+    "sonner",
+    "@/components/ui/button",
+    "@/hooks/use-optimistic-action",
+    "@/lib/tasks/pin-actions",
+    "@/lib/tasks/actions",
+    "@/lib/tasks/completion-feedback",
+    "@/lib/tasks/task-source",
+    "@/lib/tasks/queries",
+    "@/lib/utils",
+    "./pinned-tasks-panel"
   ],
   "components/tasks/recurring-list.tsx": [
     "@/lib/dialog-requests",
@@ -4338,11 +4762,6 @@
     "@/lib/tasks/queries",
     "@/lib/tasks/assignment",
     "@/components/ui/button"
-  ],
-  "components/tasks/task-attachment-shortcut.test.tsx": [
-    "react-dom/server",
-    "vitest",
-    "./task-attachment-shortcut"
   ],
   "components/tasks/task-attachment-shortcut.tsx": [
     "lucide-react",
@@ -4462,7 +4881,7 @@
     "@/lib/utils"
   ],
   "components/team-planning-nav.tsx": [
-    "next/link",
+    "@/components/navigation-link",
     "next/navigation",
     "@/components/ui/button"
   ],
@@ -4503,12 +4922,6 @@
     "@/lib/utils",
     "@/hooks/use-prop-state"
   ],
-  "components/timeline/timeline-responsive.test.tsx": [
-    "react-dom/server",
-    "vitest",
-    "./gantt",
-    "./timeline"
-  ],
   "components/timeline/timeline.tsx": [
     "next/link",
     "@/lib/utils"
@@ -4530,7 +4943,8 @@
     "@/components/time/timer-widget",
     "@/lib/utils",
     "@/lib/auth/policy",
-    "@/components/navigation-badges-provider"
+    "@/components/navigation-badges-provider",
+    "@/components/tasks/pinned-tasks-provider"
   ],
   "components/ui/app-dialogs.tsx": [
     "react",
@@ -4587,6 +5001,9 @@
     "@/lib/utils",
     "@/components/ui/button",
     "lucide-react"
+  ],
+  "components/ui/done-check.tsx": [
+    "@/lib/utils"
   ],
   "components/ui/dropdown-menu.tsx": [
     "react",
@@ -4735,10 +5152,6 @@
     "@/lib/utils",
     "./wiki-private-video"
   ],
-  "components/wiki/wiki-editor-extensions.test.tsx": [
-    "vitest",
-    "./wiki-editor-extensions"
-  ],
   "components/wiki/wiki-editor-extensions.ts": [
     "@tiptap/core",
     "@tiptap/extension-placeholder",
@@ -4867,6 +5280,10 @@
     "@/lib/push/setup-state",
     "@/components/pwa/pwa-provider"
   ],
+  "hooks/use-settle.ts": [
+    "react",
+    "@/lib/ui/settle"
+  ],
   "hooks/use-task-assignment-planning.ts": [
     "react",
     "next/navigation",
@@ -4878,11 +5295,32 @@
     "react",
     "@/lib/activity/tracker"
   ],
-  "lib/actions/interaction-policy.test.ts": [
+  "lib/actions/client-action-discovery.test.ts": [
+    "vitest",
+    "./client-action-discovery",
+    "react",
+    "${ACTIONS}",
+    "${ACTIONS}",
+    "${ACTIONS}",
+    "${ACTIONS}",
+    "${ACTIONS}",
+    "${ACTIONS}",
+    "@/lib/format",
+    "${ACTIONS}",
+    "${ACTIONS}",
+    "${ACTIONS}"
+  ],
+  "lib/actions/client-action-discovery.ts": [
     "node:fs",
     "node:path",
     "@typescript/typescript6",
+    "@/lib/x/actions"
+  ],
+  "lib/actions/interaction-policy.test.ts": [
+    "node:fs",
+    "node:path",
     "vitest",
+    "./client-action-discovery",
     "./interaction-policy"
   ],
   "lib/actions/interaction-policy.ts": [],
@@ -4976,10 +5414,6 @@
     "@/lib/hosted/tick-request",
     "pdfjs-dist/legacy/build/pdf.mjs",
     "mammoth"
-  ],
-  "lib/agreement-chat/prompt.test.ts": [
-    "vitest",
-    "./prompt"
   ],
   "lib/agreement-chat/prompt.ts": [],
   "lib/agreement-chat/retrieval.test.ts": [
@@ -5112,6 +5546,7 @@
     "next/navigation",
     "next/cache",
     "drizzle-orm",
+    "@/lib/projects/people",
     "@/lib/auth/guards",
     "@/lib/chat/project-channels",
     "@/lib/db",
@@ -5263,10 +5698,6 @@
     "@/lib/db",
     "@/lib/db/schema",
     "./reflection"
-  ],
-  "lib/assistant/launcher.test.ts": [
-    "vitest",
-    "./launcher"
   ],
   "lib/assistant/launcher.ts": [],
   "lib/assistant/learning-actions.ts": [
@@ -5476,10 +5907,12 @@
   "lib/auth/guards.test.ts": [
     "vitest",
     "./guards",
+    "./assurance",
     "@/app/api/reports/portfolio/route",
     "@/app/api/chat/[channelId]/recent/route"
   ],
   "lib/auth/guards.ts": [
+    "react",
     "next/headers",
     "next/navigation",
     "drizzle-orm",
@@ -5580,7 +6013,8 @@
     "@/lib/budget/compute",
     "@/lib/notifications",
     "@/lib/blockers/compute",
-    "@/lib/forecast/queries"
+    "@/lib/forecast/queries",
+    "@/lib/proposals/queries"
   ],
   "lib/blockers/queries.ts": [
     "drizzle-orm",
@@ -5607,6 +6041,7 @@
     "@/lib/budget/royalty-recurring",
     "@/lib/budget/compute",
     "@/lib/budget/queries",
+    "@/lib/budget/print-options",
     "@/lib/episodes/queries",
     "@/lib/activity/log",
     "@/lib/notifications",
@@ -5625,7 +6060,17 @@
     "@/lib/r2",
     "@/lib/r2",
     "@/lib/gmail",
-    "@/lib/email/draft-store"
+    "@/lib/email/draft-store",
+    "@/lib/partners/find-or-create"
+  ],
+  "lib/budget/allocated-export-route.test.ts": [
+    "vitest",
+    "@/app/api/projects/[slug]/budget/export/route"
+  ],
+  "lib/budget/approval-actions.test.ts": [
+    "vitest",
+    "drizzle-orm",
+    "./approval-actions"
   ],
   "lib/budget/approval-actions.ts": [
     "next/cache",
@@ -5641,6 +6086,8 @@
     "@/lib/budget/approval-rules",
     "@/lib/tasks/create",
     "@/lib/tasks/due-date-notifications",
+    "./partner-quotation-context",
+    "./partner-quotations",
     "@/lib/format"
   ],
   "lib/budget/approval-fingerprint.test.ts": [
@@ -5651,7 +6098,8 @@
   "lib/budget/approval-fingerprint.ts": [
     "node:crypto",
     "@/lib/budget/queries",
-    "@/lib/budget/compute"
+    "./partner-quotations",
+    "./print-options"
   ],
   "lib/budget/approval-queries.ts": [
     "drizzle-orm",
@@ -5667,10 +6115,21 @@
   "lib/budget/approval-rules.ts": [
     "@/lib/db/schema/budget"
   ],
+  "lib/budget/approval-service.test.ts": [
+    "vitest",
+    "drizzle-orm/pg-core",
+    "drizzle-orm",
+    "./queries",
+    "./partner-quotations",
+    "./approval-service"
+  ],
   "lib/budget/approval-service.ts": [
     "drizzle-orm",
     "@/lib/db",
     "@/lib/db/schema",
+    "node:crypto",
+    "./partner-quotations",
+    "./partner-quotation-queries",
     "@/lib/budget/queries",
     "@/lib/budget/approval-fingerprint",
     "@/lib/notifications",
@@ -5694,9 +6153,45 @@
   ],
   "lib/budget/export.ts": [
     "exceljs",
+    "@/lib/workspace/document-colors",
     "@/lib/budget/queries",
-    "@/lib/budget/compute"
+    "@/lib/budget/compute",
+    "./print-options"
   ],
+  "lib/budget/funding-partner-actions.test.ts": [
+    "vitest",
+    "./funding-partner-actions"
+  ],
+  "lib/budget/funding-partner-actions.ts": [
+    "drizzle-orm",
+    "zod",
+    "@/lib/activity/log",
+    "@/lib/actions/result",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/partners/find-or-create",
+    "./funding-partner",
+    "./queries",
+    "./revalidate"
+  ],
+  "lib/budget/funding-partner-pick.test.ts": [
+    "vitest",
+    "./funding-partner-pick"
+  ],
+  "lib/budget/funding-partner-pick.ts": [],
+  "lib/budget/funding-partner.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/partners/queries",
+    "./funding-partner-pick"
+  ],
+  "lib/budget/funding-path.test.ts": [
+    "vitest",
+    "./funding-path"
+  ],
+  "lib/budget/funding-path.ts": [],
   "lib/budget/invoice-description.test.ts": [
     "vitest",
     "./invoice-description"
@@ -5711,6 +6206,7 @@
     "drizzle-orm",
     "@/lib/db",
     "@/lib/db/schema",
+    "./funding-partner",
     "./invoice-description",
     "./line-invoice"
   ],
@@ -5767,6 +6263,64 @@
     "./partner-line-state"
   ],
   "lib/budget/partner-line-state.ts": [],
+  "lib/budget/partner-quotation-actions.test.ts": [
+    "drizzle-orm",
+    "drizzle-orm/pg-core",
+    "vitest",
+    "./partner-quotation-actions",
+    "./partner-quotations"
+  ],
+  "lib/budget/partner-quotation-actions.ts": [
+    "drizzle-orm",
+    "next/cache",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/partners/find-or-create",
+    "./print-options",
+    "./approval-fingerprint",
+    "./approval-service",
+    "./partner-quotations"
+  ],
+  "lib/budget/partner-quotation-context.test.ts": [
+    "vitest",
+    "exceljs",
+    "./queries",
+    "./partner-quotations",
+    "./approval-fingerprint",
+    "./partner-quotation-context",
+    "./quotation-file"
+  ],
+  "lib/budget/partner-quotation-context.ts": [
+    "./print-options",
+    "./queries",
+    "./approval-fingerprint",
+    "./partner-quotation-queries",
+    "./partner-quotations"
+  ],
+  "lib/budget/partner-quotation-queries.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./partner-quotations"
+  ],
+  "lib/budget/partner-quotation.test.ts": [
+    "vitest",
+    "exceljs",
+    "./queries",
+    "./quotation-file"
+  ],
+  "lib/budget/partner-quotations.test.ts": [
+    "vitest",
+    "./partner-quotations",
+    "./partner-line-state"
+  ],
+  "lib/budget/partner-quotations.ts": [
+    "zod",
+    "./print-options",
+    "./compute",
+    "./partner-line-state"
+  ],
   "lib/budget/partner-quote-route.test.ts": [
     "vitest",
     "drizzle-orm",
@@ -5786,6 +6340,7 @@
     "drizzle-orm/pg-core",
     "drizzle-orm",
     "./partner-line-state",
+    "./print-options",
     "drizzle-orm",
     "./partner-rate-actions"
   ],
@@ -5797,18 +6352,49 @@
     "@/lib/db/schema",
     "./compute",
     "./partner-line-state",
-    "./revalidate"
+    "./revalidate",
+    "./print-options"
   ],
+  "lib/budget/partner-settings.test.ts": [
+    "node:fs",
+    "@typescript/typescript6",
+    "zod",
+    "vitest"
+  ],
+  "lib/budget/payment-invoice-edit.test.ts": [
+    "node:fs",
+    "@typescript/typescript6",
+    "vitest",
+    "zod"
+  ],
+  "lib/budget/payment-percentage.test.ts": [
+    "vitest",
+    "./payment-percentage"
+  ],
+  "lib/budget/payment-percentage.ts": [],
   "lib/budget/pdf.ts": [
     "pdfkit",
+    "@/lib/workspace/document-colors",
     "@/lib/workspace/queries"
   ],
   "lib/budget/presentation-input.ts": [
-    "zod"
+    "zod",
+    "./print-options"
   ],
   "lib/budget/presentation.test.ts": [
     "vitest",
     "./compute"
+  ],
+  "lib/budget/print-options.test.ts": [
+    "vitest",
+    "./print-options",
+    "./compute",
+    "./partner-line-state"
+  ],
+  "lib/budget/print-options.ts": [
+    "zod",
+    "./compute",
+    "./partner-line-state"
   ],
   "lib/budget/proposal-actions.test.ts": [
     "drizzle-orm",
@@ -5841,10 +6427,14 @@
     "drizzle-orm",
     "@/lib/db",
     "@/lib/db/schema",
-    "@/lib/workspace/queries"
+    "@/lib/workspace/queries",
+    "@/lib/print/quote-economics",
+    "./print-options"
   ],
   "lib/budget/quotation-file.ts": [
     "@/lib/budget/queries",
+    "./partner-quotation-context",
+    "./print-options",
     "@/lib/budget/export",
     "@/lib/r2",
     "@/lib/workspace/queries"
@@ -5874,6 +6464,40 @@
     "@/lib/db/schema",
     "@/lib/tasks/create",
     "@/lib/recurring/schedule"
+  ],
+  "lib/budget/setup-actions.test.ts": [
+    "vitest",
+    "./setup-actions"
+  ],
+  "lib/budget/setup-actions.ts": [
+    "next/cache",
+    "drizzle-orm",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/partners/find-or-create",
+    "./compute",
+    "./proposal-builder",
+    "./queries",
+    "./revalidate",
+    "./setup"
+  ],
+  "lib/budget/setup.test.ts": [
+    "vitest",
+    "./setup"
+  ],
+  "lib/budget/setup.ts": [
+    "zod",
+    "./compute",
+    "./proposal-builder"
+  ],
+  "lib/budget/steps.test.ts": [
+    "vitest",
+    "./steps"
+  ],
+  "lib/budget/steps.ts": [
+    "@/lib/budget/attention",
+    "@/lib/guidance/steps"
   ],
   "lib/build.test.ts": [
     "node:child_process",
@@ -5909,8 +6533,14 @@
     "./roles"
   ],
   "lib/capacity/roles.ts": [],
+  "lib/chat/access-sql.ts": [
+    "drizzle-orm",
+    "@/lib/db/schema",
+    "./channel-members"
+  ],
   "lib/chat/access.ts": [
     "drizzle-orm",
+    "./access-sql",
     "@/lib/chat/channel-members",
     "@/lib/db",
     "@/lib/db/schema",
@@ -5949,6 +6579,10 @@
     "./channel-members"
   ],
   "lib/chat/channel-members.ts": [],
+  "lib/chat/channel-page.test.ts": [
+    "vitest",
+    "@/app/(app)/chat/[channelId]/page"
+  ],
   "lib/chat/chat-index.test.ts": [
     "vitest",
     "@/app/(app)/chat/page",
@@ -6006,6 +6640,7 @@
     "drizzle-orm/pg-proxy",
     "./access"
   ],
+  "lib/chat/frequent-reactions-cache.ts": [],
   "lib/chat/frequent-reactions-route.test.ts": [
     "vitest",
     "@/lib/auth/guards",
@@ -6033,14 +6668,35 @@
   "lib/chat/images.ts": [
     "@/lib/files/queries"
   ],
+  "lib/chat/link-preview-route.test.ts": [
+    "vitest",
+    "drizzle-orm/pg-proxy",
+    "@/app/api/chat/messages/[messageId]/link-preview/route"
+  ],
+  "lib/chat/link-preview.test.ts": [
+    "vitest",
+    "./preview-fetch",
+    "./link-preview",
+    "sharp"
+  ],
+  "lib/chat/link-preview.ts": [
+    "htmlparser2",
+    "sharp",
+    "@/lib/chat/preview-fetch"
+  ],
   "lib/chat/message-hold.test.ts": [
     "vitest",
     "./message-hold"
   ],
   "lib/chat/message-hold.ts": [],
+  "lib/chat/message-links.test.ts": [
+    "vitest",
+    "./message-links"
+  ],
+  "lib/chat/message-links.ts": [
+    "linkify-it"
+  ],
   "lib/chat/navigation.test.ts": [
-    "node:fs",
-    "node:path",
     "vitest",
     "@/lib/chat/navigation"
   ],
@@ -6070,11 +6726,24 @@
     "drizzle-orm/pg-core",
     "@/lib/db",
     "@/lib/db/schema",
+    "./access-sql",
     "@/lib/chat/access",
-    "@/lib/chat/channel-members",
     "@/lib/chat/pin-state",
     "@/lib/chat/queries",
     "@/lib/files/queries"
+  ],
+  "lib/chat/preview-fetch.test.ts": [
+    "node:events",
+    "node:stream",
+    "vitest",
+    "./preview-fetch"
+  ],
+  "lib/chat/preview-fetch.ts": [
+    "node:dns/promises",
+    "node:http",
+    "node:https",
+    "node:net",
+    "ipaddr.js"
   ],
   "lib/chat/project-channels.ts": [
     "drizzle-orm",
@@ -6084,13 +6753,19 @@
   "lib/chat/queries.test.ts": [
     "vitest",
     "drizzle-orm/pg-proxy",
-    "./queries"
+    "./queries",
+    "project_people",
+    "channel_reads",
+    "chat_messages",
+    "channel_reads",
+    "project_people"
   ],
   "lib/chat/queries.ts": [
     "drizzle-orm",
     "drizzle-orm/pg-core",
     "@/lib/db",
     "@/lib/db/schema",
+    "./access-sql",
     "@/lib/chat/access",
     "@/lib/chat/replies",
     "@/lib/chat/channel-members",
@@ -6109,17 +6784,14 @@
   "lib/chat/reaction-state.ts": [
     "./queries"
   ],
-  "lib/chat/reaction-suggestions.test.ts": [
-    "vitest",
-    "./reaction-suggestions"
-  ],
   "lib/chat/reaction-suggestions.ts": [],
-  "lib/chat/reaction-summary.test.ts": [
-    "vitest",
-    "./reaction-summary"
-  ],
   "lib/chat/reaction-summary.ts": [
     "./queries"
+  ],
+  "lib/chat/read-actions.test.ts": [
+    "vitest",
+    "drizzle-orm/pg-proxy",
+    "./actions"
   ],
   "lib/chat/read-client.test.ts": [
     "vitest",
@@ -6135,6 +6807,11 @@
     "./sidebar-order"
   ],
   "lib/chat/sidebar-order.ts": [],
+  "lib/chat/snapshot.test.ts": [
+    "vitest",
+    "./snapshot"
+  ],
+  "lib/chat/snapshot.ts": [],
   "lib/chat/video-client.test.ts": [
     "vitest",
     "./video-client"
@@ -6160,6 +6837,40 @@
     "./video"
   ],
   "lib/chat/video.ts": [],
+  "lib/chat/voice-client.test.ts": [
+    "vitest",
+    "./voice-client"
+  ],
+  "lib/chat/voice-client.ts": [
+    "./voice-metadata"
+  ],
+  "lib/chat/voice-metadata.ts": [],
+  "lib/chat/voice-playback.test.ts": [
+    "vitest",
+    "./voice-playback"
+  ],
+  "lib/chat/voice-playback.ts": [],
+  "lib/chat/voice-player.test.ts": [
+    "vitest",
+    "./voice-player"
+  ],
+  "lib/chat/voice-player.ts": [
+    "./voice-playback"
+  ],
+  "lib/chat/voice-preparation.test.ts": [
+    "node:fs/promises",
+    "vitest",
+    "mediabunny",
+    "./voice-preparation"
+  ],
+  "lib/chat/voice-preparation.ts": [
+    "mediabunny",
+    "./voice-metadata"
+  ],
+  "lib/chat/voice-preparation.worker.ts": [
+    "./voice-preparation",
+    "./voice-metadata"
+  ],
   "lib/cron/auth.ts": [
     "node:crypto"
   ],
@@ -6200,6 +6911,10 @@
     "./runs",
     "./schedule",
     "./tick"
+  ],
+  "lib/cron/legacy-route.test.ts": [
+    "vitest",
+    "./legacy-route"
   ],
   "lib/cron/legacy-route.ts": [
     "next/server",
@@ -6328,7 +7043,10 @@
     "./enums",
     "./agreements",
     "./sponsorships",
-    "@/lib/budget/line-invoice"
+    "@/lib/budget/line-invoice",
+    "@/lib/budget/partner-quotations",
+    "@/lib/budget/print-options",
+    "@/lib/budget/funding-path"
   ],
   "lib/db/schema/chat.ts": [
     "drizzle-orm",
@@ -6383,7 +7101,8 @@
   "lib/db/schema/files.ts": [
     "drizzle-orm/pg-core",
     "./auth",
-    "./enums"
+    "./enums",
+    "@/lib/chat/voice-metadata"
   ],
   "lib/db/schema/hosted.ts": [
     "drizzle-orm/pg-core"
@@ -6641,7 +7360,8 @@
   "lib/donations/actions-mou-link.test.ts": [
     "vitest",
     "drizzle-orm",
-    "./actions"
+    "./actions",
+    "next/cache"
   ],
   "lib/donations/actions.ts": [
     "node:crypto",
@@ -6656,6 +7376,7 @@
     "./csv",
     "./import-ledger",
     "./invoice-posting",
+    "./proposal-match",
     "./types"
   ],
   "lib/donations/allocation-draft.test.ts": [
@@ -6764,6 +7485,7 @@
   ],
   "lib/donations/match.ts": [
     "./csv",
+    "./proposal-match",
     "./invoice-match",
     "./types"
   ],
@@ -6771,7 +7493,16 @@
     "vitest",
     "./mou-link"
   ],
-  "lib/donations/mou-link.ts": [],
+  "lib/donations/mou-link.ts": [
+    "@/lib/budget/payment-percentage"
+  ],
+  "lib/donations/proposal-match.test.ts": [
+    "vitest",
+    "./proposal-match"
+  ],
+  "lib/donations/proposal-match.ts": [
+    "./csv"
+  ],
   "lib/donations/queries.ts": [
     "drizzle-orm",
     "@/lib/db",
@@ -6799,6 +7530,7 @@
     "next/server",
     "drizzle-orm",
     "zod",
+    "@/lib/projects/people",
     "@/lib/auth/guards",
     "@/lib/db",
     "@/lib/db/schema",
@@ -7322,7 +8054,9 @@
     "drizzle-orm",
     "drizzle-orm/pg-core",
     "@/lib/db/schema",
-    "./actions"
+    "./actions",
+    "chat_channel_members",
+    "project_people"
   ],
   "lib/files/actions.ts": [
     "drizzle-orm",
@@ -7337,6 +8071,11 @@
     "vitest",
     "@/app/api/files/[id]/download/route"
   ],
+  "lib/files/fetch-download.test.ts": [
+    "vitest",
+    "./fetch-download"
+  ],
+  "lib/files/fetch-download.ts": [],
   "lib/files/link-attributes.test.ts": [
     "vitest",
     "./link-attributes"
@@ -7345,7 +8084,8 @@
   "lib/files/queries.ts": [
     "drizzle-orm",
     "@/lib/db",
-    "@/lib/db/schema"
+    "@/lib/db/schema",
+    "@/lib/chat/voice-metadata"
   ],
   "lib/files/target-access.test.ts": [
     "vitest",
@@ -7364,17 +8104,21 @@
     "@/lib/tasks/access"
   ],
   "lib/files/upload-client.ts": [
-    "sonner"
+    "sonner",
+    "@/lib/files/upload-rules"
   ],
   "lib/files/upload-progress.test.ts": [
     "vitest",
     "./upload-progress"
   ],
-  "lib/files/upload-progress.ts": [],
-  "lib/flow.test.ts": [
-    "vitest",
-    "./flow"
+  "lib/files/upload-progress.ts": [
+    "@/lib/files/upload-rules"
   ],
+  "lib/files/upload-rules.test.ts": [
+    "vitest",
+    "./upload-rules"
+  ],
+  "lib/files/upload-rules.ts": [],
   "lib/flow.ts": [],
   "lib/forecast/queries.ts": [
     "drizzle-orm",
@@ -7528,6 +8272,7 @@
     "./state"
   ],
   "lib/guidance/state.ts": [],
+  "lib/guidance/steps.ts": [],
   "lib/help/content.ts": [
     "node:fs",
     "node:path",
@@ -7616,6 +8361,7 @@
     "next/cache",
     "drizzle-orm",
     "zod",
+    "@/lib/projects/people",
     "@/lib/auth/guards",
     "@/lib/chat/project-channels",
     "@/lib/db",
@@ -7637,6 +8383,7 @@
     "@/lib/blockers/engine",
     "@/lib/obligations/generate",
     "@/lib/activity/log",
+    "@/lib/partners/find-or-create",
     "@/lib/imports/partner",
     "@/lib/imports/payments",
     "@/lib/imports/podcast-workflow",
@@ -7745,6 +8492,7 @@
   "lib/imports/schema.ts": [
     "zod",
     "@/lib/budget/compute",
+    "@/lib/budget/payment-percentage",
     "./types"
   ],
   "lib/imports/types.ts": [
@@ -8160,6 +8908,16 @@
     "@/lib/auth/guards",
     "./roster"
   ],
+  "lib/mentions/menu-position.test.ts": [
+    "vitest",
+    "./menu-position"
+  ],
+  "lib/mentions/menu-position.ts": [],
+  "lib/mentions/notify.test.ts": [
+    "vitest",
+    "@/lib/notifications",
+    "./notify"
+  ],
   "lib/mentions/notify.ts": [
     "@/lib/notifications",
     "./parse"
@@ -8199,13 +8957,15 @@
     "vitest",
     "drizzle-orm",
     "drizzle-orm/pg-core",
-    "./badge-queries"
+    "./badge-queries",
+    "project_people"
   ],
   "lib/navigation/badge-queries.ts": [
     "drizzle-orm",
     "date-fns-tz",
     "@/lib/db",
     "@/lib/db/schema",
+    "@/lib/chat/access-sql",
     "@/lib/auth/policy",
     "@/lib/email/task-suggestions",
     "@/lib/email/follow-ups",
@@ -8235,6 +8995,11 @@
     "@/lib/notifications/email-queue"
   ],
   "lib/notifications/client-events.ts": [],
+  "lib/notifications/client-feed.test.ts": [
+    "vitest",
+    "./client-feed"
+  ],
+  "lib/notifications/client-feed.ts": [],
   "lib/notifications/email-policy.test.ts": [
     "vitest",
     "./email-policy"
@@ -8311,6 +9076,10 @@
     "@/lib/email/counterparty-match",
     "./email-policy"
   ],
+  "lib/notifications/recent-route.test.ts": [
+    "vitest",
+    "@/app/api/notifications/recent/route"
+  ],
   "lib/notifications/work-hours.test.ts": [
     "vitest",
     "./push-gate",
@@ -8340,20 +9109,40 @@
     "@/lib/db",
     "@/lib/db/schema"
   ],
+  "lib/observability/performance-buffer.ts": [
+    "./performance-report"
+  ],
+  "lib/observability/performance-intake.test.ts": [
+    "vitest",
+    "./performance-intake"
+  ],
+  "lib/observability/performance-intake.ts": [
+    "./performance-report"
+  ],
+  "lib/observability/performance-report.test.ts": [
+    "vitest",
+    "./performance-report"
+  ],
+  "lib/observability/performance-report.ts": [],
   "lib/observability/sentry-scrub.test.ts": [
     "vitest",
     "./sentry-scrub"
   ],
   "lib/observability/sentry-scrub.ts": [],
+  "lib/observability/useful-work.test.ts": [
+    "vitest",
+    "./performance-buffer",
+    "./performance-report",
+    "./useful-work"
+  ],
+  "lib/observability/useful-work.ts": [
+    "./performance-report"
+  ],
   "lib/onboarding/queries.ts": [
     "drizzle-orm",
     "@/lib/db",
     "@/lib/db/schema",
     "./steps",
-    "./steps"
-  ],
-  "lib/onboarding/steps.test.ts": [
-    "vitest",
     "./steps"
   ],
   "lib/onboarding/steps.ts": [
@@ -8380,11 +9169,23 @@
     "node:path",
     "@/package.json"
   ],
+  "lib/partners/actions.test.ts": [
+    "drizzle-orm",
+    "drizzle-orm/pg-core",
+    "vitest",
+    "./actions"
+  ],
   "lib/partners/actions.ts": [
     "next/cache",
     "drizzle-orm",
     "zod",
     "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./find-or-create"
+  ],
+  "lib/partners/find-or-create.ts": [
+    "drizzle-orm",
     "@/lib/db",
     "@/lib/db/schema"
   ],
@@ -8435,10 +9236,6 @@
     "drizzle-orm",
     "@/lib/db",
     "@/lib/db/schema",
-    "./status"
-  ],
-  "lib/presence/status.test.ts": [
-    "vitest",
     "./status"
   ],
   "lib/presence/status.ts": [],
@@ -8526,6 +9323,10 @@
     "@/lib/email/thread-projects",
     "@/lib/email/known-project-match"
   ],
+  "lib/print/email-text-extract.test.ts": [
+    "vitest",
+    "./email-text-extract"
+  ],
   "lib/print/email-text-extract.ts": [
     "drizzle-orm",
     "@/lib/ai/openrouter",
@@ -8538,6 +9339,7 @@
     "@/lib/print/text-quote-reconcile",
     "@/lib/print/extraction-jobs",
     "@/lib/print/extract-schema",
+    "@/lib/print/estimate-intake",
     "@/lib/print/parser",
     "@/lib/print/quote-reconciliation",
     "@/lib/print/review-flags",
@@ -8545,7 +9347,8 @@
   ],
   "lib/print/email-text-quote.test.ts": [
     "vitest",
-    "./email-text-quote"
+    "./email-text-quote",
+    "./estimate-intake"
   ],
   "lib/print/email-text-quote.ts": [
     "drizzle-orm",
@@ -8571,6 +9374,30 @@
   "lib/print/estimate-draft.test.ts": [
     "vitest",
     "./estimate-actions"
+  ],
+  "lib/print/estimate-intake-actions.test.ts": [
+    "drizzle-orm",
+    "vitest",
+    "./estimate-intake-actions",
+    "./parser"
+  ],
+  "lib/print/estimate-intake-actions.ts": [
+    "drizzle-orm",
+    "next/cache",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./email-text-extract",
+    "./suggested-quote-values",
+    "./estimate-policy",
+    "./estimate",
+    "./queries",
+    "./estimate-intake",
+    "./quote-reconciliation"
+  ],
+  "lib/print/estimate-intake.ts": [
+    "./review-flags"
   ],
   "lib/print/estimate-policy.test.ts": [
     "vitest",
@@ -8634,7 +9461,8 @@
     "@/lib/print/extraction-jobs",
     "@/lib/print/parser",
     "@/lib/print/quote-reconciliation",
-    "@/lib/print/review-flags",
+    "./suggested-quote-values",
+    "./suggested-quote-values",
     "mammoth"
   ],
   "lib/print/extraction-access.test.ts": [
@@ -8727,6 +9555,18 @@
     "./spec-presets"
   ],
   "lib/print/spec-presets.ts": [],
+  "lib/print/steps.test.ts": [
+    "vitest",
+    "./steps"
+  ],
+  "lib/print/steps.ts": [
+    "@/lib/guidance/steps"
+  ],
+  "lib/print/suggested-quote-values.ts": [
+    "@/lib/db/schema",
+    "./parser",
+    "./review-flags"
+  ],
   "lib/print/text-extract-schema.ts": [
     "@/lib/print/extract-schema"
   ],
@@ -8778,14 +9618,11 @@
     "./activity-time"
   ],
   "lib/projects/activity-time.ts": [],
-  "lib/projects/book-format.test.ts": [
-    "vitest",
-    "./book-format"
-  ],
   "lib/projects/book-format.ts": [
     "./print-funding"
   ],
   "lib/projects/create-from-blueprint.ts": [
+    "./people",
     "next/cache",
     "drizzle-orm",
     "@/lib/auth/guards",
@@ -8809,6 +9646,7 @@
     "@/lib/assistant/tools"
   ],
   "lib/projects/create-from-project.ts": [
+    "./people",
     "node:crypto",
     "drizzle-orm",
     "next/cache",
@@ -8822,6 +9660,7 @@
     "./project-copy"
   ],
   "lib/projects/create.ts": [
+    "./people",
     "zod",
     "@/lib/db",
     "@/lib/db/schema",
@@ -8879,7 +9718,9 @@
     "./funding-overview"
   ],
   "lib/projects/funding-overview.ts": [
-    "@/lib/budget/reconcile-math"
+    "@/lib/budget/funding-path",
+    "@/lib/budget/reconcile-math",
+    "@/lib/budget/payment-percentage"
   ],
   "lib/projects/funding-queries.ts": [
     "drizzle-orm",
@@ -8887,11 +9728,8 @@
     "@/lib/budget/compute",
     "@/lib/db",
     "@/lib/db/schema",
+    "@/lib/proposals/queries",
     "./print-funding"
-  ],
-  "lib/projects/kinds.test.ts": [
-    "vitest",
-    "./kinds"
   ],
   "lib/projects/kinds.ts": [],
   "lib/projects/lectio-creation.test.ts": [
@@ -8940,6 +9778,30 @@
   "lib/projects/overdue.ts": [
     "@/lib/format"
   ],
+  "lib/projects/people-access.test.ts": [
+    "node:sqlite",
+    "drizzle-orm/pg-proxy",
+    "vitest",
+    "@/lib/chat/access",
+    "@/lib/mentions/roster",
+    "./people-actions",
+    "./people"
+  ],
+  "lib/projects/people-actions.ts": [
+    "drizzle-orm",
+    "next/cache",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/auth/project-access",
+    "@/lib/auth/policy",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
+  "lib/projects/people.ts": [
+    "drizzle-orm",
+    "@/lib/db",
+    "@/lib/db/schema"
+  ],
   "lib/projects/phase-actions.ts": [
     "next/cache",
     "drizzle-orm",
@@ -8985,6 +9847,7 @@
     "./status"
   ],
   "lib/projects/queries.ts": [
+    "react",
     "drizzle-orm",
     "@/lib/db",
     "@/lib/db/schema",
@@ -9083,6 +9946,12 @@
     "./visibility"
   ],
   "lib/projects/visibility.ts": [],
+  "lib/proposals/actions.test.ts": [
+    "vitest",
+    "@/lib/budget/partner-quotations",
+    "drizzle-orm",
+    "./actions"
+  ],
   "lib/proposals/actions.ts": [
     "crypto",
     "next/cache",
@@ -9096,6 +9965,7 @@
     "@/lib/budget/quotation-file",
     "@/lib/budget/pdf",
     "@/lib/budget/approval-fingerprint",
+    "@/lib/budget/print-options",
     "@/lib/print/actions",
     "@/lib/gmail",
     "@/lib/r2",
@@ -9103,7 +9973,34 @@
     "@/lib/budget/approval-service",
     "@/lib/email/operational-drafts",
     "@/lib/workspace/queries",
-    "@/lib/email/draft-store"
+    "@/lib/email/draft-store",
+    "@/lib/budget/partner-quotations",
+    "@/lib/budget/partner-quotation-queries",
+    "@/lib/budget/partner-quotation-context"
+  ],
+  "lib/proposals/answer-actions.test.ts": [
+    "vitest",
+    "./answer-actions"
+  ],
+  "lib/proposals/answer-actions.ts": [
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "@/lib/activity/log",
+    "@/lib/budget/queries",
+    "@/lib/budget/revalidate",
+    "@/lib/budget/funding-path",
+    "./answer-plan"
+  ],
+  "lib/proposals/answer-plan.test.ts": [
+    "vitest",
+    "./answer-plan"
+  ],
+  "lib/proposals/answer-plan.ts": [
+    "zod",
+    "@/lib/budget/funding-path"
   ],
   "lib/proposals/queries.ts": [
     "drizzle-orm",
@@ -9173,7 +10070,8 @@
     "@aws-sdk/client-s3",
     "@aws-sdk/s3-request-presigner",
     "@/lib/ai/usage",
-    "@/lib/r2/config"
+    "@/lib/r2/config",
+    "@/lib/files/upload-rules"
   ],
   "lib/recurring/schedule.test.ts": [
     "vitest",
@@ -9349,6 +10247,7 @@
     "@/lib/db/schema",
     "./compute",
     "@/lib/workspace/queries",
+    "@/lib/partners/find-or-create",
     "@/lib/budget/invoice-number",
     "@/lib/budget/pdf",
     "@/lib/r2"
@@ -9574,6 +10473,10 @@
     "./drive-file-selection"
   ],
   "lib/tasks/drive-file-selection.ts": [],
+  "lib/tasks/drive-oauth-token.test.ts": [
+    "vitest",
+    "./drive-actions"
+  ],
   "lib/tasks/due-date-copy.ts": [
     "@/lib/format"
   ],
@@ -9606,6 +10509,20 @@
   "lib/tasks/my-work.ts": [
     "date-fns-tz",
     "@/lib/agenda/bucket"
+  ],
+  "lib/tasks/pin-actions.test.ts": [
+    "drizzle-orm/pg-core",
+    "drizzle-orm/postgres-js",
+    "vitest",
+    "./pin-actions"
+  ],
+  "lib/tasks/pin-actions.ts": [
+    "drizzle-orm",
+    "zod",
+    "@/lib/auth/guards",
+    "@/lib/db",
+    "@/lib/db/schema",
+    "./queries"
   ],
   "lib/tasks/project-access-actions.test.ts": [
     "vitest",
@@ -9712,6 +10629,7 @@
     "./time-service"
   ],
   "lib/tasks/time-queries.ts": [
+    "react",
     "drizzle-orm",
     "@/lib/db",
     "@/lib/db/schema"
@@ -9777,15 +10695,15 @@
   "lib/tokens.ts": [
     "crypto"
   ],
+  "lib/ui/device-tier.ts": [],
+  "lib/ui/settle.ts": [
+    "react-dom"
+  ],
   "lib/users/avatar-data.test.ts": [
     "vitest",
     "./avatar-data"
   ],
   "lib/users/avatar-data.ts": [],
-  "lib/users/avatar.test.ts": [
-    "vitest",
-    "./avatar"
-  ],
   "lib/users/avatar.ts": [],
   "lib/utils.ts": [
     "clsx",
@@ -9849,7 +10767,13 @@
     "vitest",
     "../../next.config"
   ],
+  "lib/workspace/actions.test.ts": [
+    "vitest",
+    "./actions",
+    "@/lib/db/schema"
+  ],
   "lib/workspace/actions.ts": [
+    "./document-colors",
     "next/cache",
     "drizzle-orm",
     "zod",
@@ -9865,6 +10789,9 @@
     "@/lib/workspace/modules",
     "@/lib/lectio/cloud-eligibility"
   ],
+  "lib/workspace/document-colors.ts": [
+    "zod"
+  ],
   "lib/workspace/invoice-issuer.test.ts": [
     "vitest",
     "./queries"
@@ -9879,6 +10806,7 @@
   ],
   "lib/workspace/modules.ts": [],
   "lib/workspace/queries.ts": [
+    "react",
     "drizzle-orm",
     "@/lib/db",
     "@/lib/db/schema"
@@ -9899,6 +10827,38 @@
     "./database-preflight.mjs",
     "../lib/projects/default-templates.json",
     "user"
+  ],
+  "scripts/browser-performance.mjs": [
+    "node:fs",
+    "node:path",
+    "@playwright/test",
+    "./browser-tests-lib.mjs"
+  ],
+  "scripts/browser-tests-lib.mjs": [
+    "node:child_process",
+    "node:fs",
+    "node:http",
+    "node:https",
+    "node:crypto",
+    "node:fs",
+    "node:net",
+    "node:module",
+    "node:os",
+    "node:path",
+    "postgres"
+  ],
+  "scripts/browser-tests-lib.test.mjs": [
+    "node:assert/strict",
+    "node:test",
+    "node:fs",
+    "node:os",
+    "node:path",
+    "./browser-tests-lib.mjs"
+  ],
+  "scripts/browser-tests.mjs": [
+    "node:module",
+    "node:child_process",
+    "./browser-tests-lib.mjs"
   ],
   "scripts/build.mjs": [
     "node:child_process",

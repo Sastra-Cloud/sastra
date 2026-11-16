@@ -81,7 +81,7 @@ export function SponsorshipDetail({ detail, options, defaultCc, today }: { detai
         onError: message => { failure(message); setFailedInput(input); setEditing(true); router.refresh(); },
         onSuccess: () => { toast.success("Sponsorship saved."); router.refresh(); },
       });
-    }} /> : <section className="space-y-4 rounded-xl border bg-card p-4 md:p-5">
+    }} /> : <section data-sponsorship-invoice className="scroll-mt-24 space-y-4 rounded-xl border bg-card p-4 md:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-base font-semibold">{invoice ? `Invoice ${invoice.invoiceNumber}` : "Review sponsorship invoice"}</h2>
         {optimistic.pending && <p role="status" className="text-sm text-muted-foreground">Saving change…</p>}</div>
       <div className="grid gap-4 text-sm sm:grid-cols-2"><div><p className="text-muted-foreground">Bill to</p><p className="mt-1 font-medium">{record.recipientName}</p>{record.recipientAddress && <p className="mt-1 whitespace-pre-wrap break-words">{record.recipientAddress}</p>}</div>

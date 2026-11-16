@@ -2,14 +2,15 @@
 title: "Print runs, printer quote requests & quotes"
 category: "Publishing"
 roles: [manager, admin]
-keywords: [same specs as, reuse book specs, copy book specifications, print estimate size, book details, English page count, book size, English PDF, preliminary print estimate, budget estimate request, estimated printing cost, confirm printer paid, confirm payment in my work, publishing, print defaults and printer contacts, active runs, request printer quotes, source page count, full payment, consolidate payments, wrong wire amount, print, print run, reprint, previous print, historical print, old print, collapse print run, show print details, old quote, legacy quote, copy specs, apply specs, measurement unit, millimetres, millimeters, mm, inches, trim size, rfq, quote request, printer, printing coordinator, payment task, payment confirmation task, quantity, tier, total price, price per copy, quote learning, document learning, printing in five steps, print steps, first print run, walk me through printing, how to print, recommended balance, economic elbow, sell-through, lowest cost per copy, total cost, cost per copy, incremental cost, comparison, wire, finance, funding received, printer paid, deposit, balance, proof, proof attachment, proof download, proof files, printer waiting for approval, proofing status, suggested project update, invoice, deposit invoice, final invoice, invoice attachment, attachment preview, preview invoice, estimate vs actual, accept quote, accepted, collapse quotes, hide other quotes, show other quotes, reopen quote, un-accept, unaccept, reject quote, reverse acceptance, ai email draft, generated sign-off, learns from edits, email style, draft tone, awaiting payment, wire requested, run status, print correspondence, printer email, email thread, open thread, view thread, missing price, per copy price, cover pdf, book pdf, artwork not a quote, file note, attachment note, payment follow up, awaiting payment confirmation, confirm printer received payment]
+keywords: [add quote with AI, paste quote, reuse quote, similar book prices, reused printing estimate, AI quote intake, printing steps, guided setup, guided print run, set up a print run, what to do next printing, prices waiting for review, hide steps, forwarded printer quote, forward quote to project email, use forwarded quote for budget, from print run, same specs as, reuse book specs, copy book specifications, print estimate size, book details, English page count, book size, English PDF, preliminary print estimate, budget estimate request, estimated printing cost, confirm printer paid, confirm payment in my work, publishing, print defaults and printer contacts, active runs, request printer quotes, source page count, full payment, consolidate payments, wrong wire amount, print, print run, reprint, previous print, historical print, old print, collapse print run, show print details, old quote, legacy quote, copy specs, apply specs, measurement unit, millimetres, millimeters, mm, inches, trim size, rfq, quote request, printer, printing coordinator, payment task, payment confirmation task, quantity, tier, total price, price per copy, quote learning, document learning, printing in five steps, print steps, first print run, walk me through printing, how to print, recommended balance, economic elbow, sell-through, lowest cost per copy, total cost, cost per copy, incremental cost, comparison, wire, finance, funding received, printer paid, deposit, balance, proof, proof attachment, proof download, proof files, printer waiting for approval, proofing status, suggested project update, invoice, deposit invoice, final invoice, invoice attachment, attachment preview, preview invoice, estimate vs actual, accept quote, accepted, collapse quotes, hide other quotes, show other quotes, reopen quote, un-accept, unaccept, reject quote, reverse acceptance, ai email draft, generated sign-off, learns from edits, email style, draft tone, awaiting payment, wire requested, run status, print correspondence, printer email, email thread, open thread, view thread, missing price, per copy price, cover pdf, book pdf, artwork not a quote, file note, attachment note, payment follow up, awaiting payment confirmation, confirm printer received payment]
 order: 70
-summary: "Request print estimates with editable size and reusable book specs; review quotes, payments, proofs, and payment confirmations."
+summary: "Paste or reuse printing prices with AI for review before building a partner proposal. Request print estimates with editable size and reusable book specs; review quotes, payments, proofs, and payment confirmations."
 ---
 
 Open the project’s **Print** tab. Status, the next unpaid payment, proof, funding
-warnings, quote comparisons, and active runs come before setup defaults. Use
-**Set up print run** for a new run; it starts expanded when there are no runs.
+warnings, quote comparisons, and active runs come before setup defaults.
+**Printing steps** at the top shows what is done and what to do next. When there
+is no print run, **Set up a print run** opens with guided setup.
 Expand **Print defaults and printer contacts** for estimate, trim, recipient,
 and contact settings. Completed or cancelled previous runs start collapsed;
 ongoing runs remain open. Expand **Run specifications and quantity** for the
@@ -33,6 +34,17 @@ deactivates its example; managers can also disable or remove examples in
 **Settings ▸ Document learning**. Learning never accepts a quote automatically.
 
 ## Early printer estimates for a budget
+
+If you already have a quote or want to reuse prices from a similar book, choose
+**Add quote with AI** under **Estimated printing cost**. Paste the email or note,
+optionally choose the printer, and mark **Reused from another book** if needed.
+**Read quote with AI** adds the copy quantities, prices, and specifications as
+planning options for review. You do not need to prepare a printer request first.
+**View pasted source** shows the original text. Reused prices are labelled **Reused quote**.
+Check the specifications and choose **Use for budget estimate** on one option.
+You can then use it in the partner quotation. Importing does not place an order,
+send an email, or create payments. Failed reads and closing the intake preserve
+your pasted text.
 
 Managers can open **Estimated printing cost** on the main **Budget ▸ Quotation**
 or **Print** tab for a proposed or active book project. Choose **Request estimate**,
@@ -80,6 +92,29 @@ separate budgets. Actual spend still comes only from recorded paid print payment
 Select another tier to replace the estimate, or **Remove selected estimate** to
 stop using it. The request and original quote remain in the history.
 
+**Forwarded printer quotes also appear here.** If a printer quote reaches the
+first print run, for example when you forward it to the project email, its copy
+quantities appear under **Estimated printing cost** marked **From print run**.
+You do not need to send an estimate request first. Check the details and choose
+**Use for budget estimate** on one quantity. Sastra does not choose one for you.
+The quote stays on the print run, and it shows **budget estimate** on the Print
+tab. **Remove selected estimate** returns it to review. Review or reject it on
+the Print tab. Accepting it there replaces the estimate as usual. If a print run
+already has a reviewed quote, that quote sets the budget and these options are
+hidden.
+
+## Printing steps
+
+**Printing steps** is a short list at the top of the Print tab. It follows the
+current print run and reads its saved records. The **next** step says what is
+missing and has one button that opens the right place: guided setup, the price
+request email, the first price waiting for your review, or the next unpaid
+payment. A print run that Sastra made from a forwarded email shows what it still
+needs, such as a printer.
+
+Choose **Hide steps** if you do not need the list. **Show steps** brings it
+back. Steps never send or accept anything by themselves.
+
 ## Printing in five steps
 
 New to printing? The Print tab works in this order:
@@ -121,7 +156,22 @@ actually pricing rather than a word-count guess.
 
 ## Setting up a print run
 
-**Set up a print run** creates an internal record — a title, a printer contact,
+**Set up a print run** uses guided setup with four short steps:
+
+1. **Printer.** The project’s default printer, the last printer used, or the
+   only saved printer is already chosen. Choose **A new printer…** to add one.
+2. **Copies.** The copy amounts to ask prices for. Remove an amount with its
+   **×** button, or add another. You can also enter the copies you plan to print.
+3. **Book details.** Size comes from book details and pages from the page
+   estimate. Paper, cover, and binding start from the last print run or a
+   similar book. **Same specs as…** copies them from another book.
+4. **Review.** Choose **Create print run**. Leave **Write the price request
+   email next** ticked to open the email for review right after.
+
+Your entries stay in the form if saving fails. **Use the short form** shows the
+older three-field form.
+
+A print run is an internal record — a title, a printer contact, book details,
 and printer quote request **quantity tiers**. Saving it does **not** send any email. Use
 **Reprints** to copy specs from a prior run and track reprint-only budget,
 funding, tasks, quotes, and payments.

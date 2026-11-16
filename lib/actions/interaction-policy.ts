@@ -9,11 +9,18 @@ export type MutationInteractionMode =
 // `sync*` are silent, idempotent background reconciliations (no user gesture,
 // no pending/progress UI) — treated like reads for the interaction contract.
 const READ = /^(reviewPrintWirePayment|get|list|load|current|is[A-Z]|sync|pushSupported)/;
-const READ_ACTIONS = new Set(["markChannelRead", "readSchedule", "reviewLectioLink", "findLectioProjectMatches"]); // signed review reads
+const READ_ACTIONS = new Set(["previewDefaultProjectPeople", "markChannelRead", "readSchedule", "reviewLectioLink", "findLectioProjectMatches", "permissionState"]); // signed review reads; permissionState is a synchronous browser permission read
 const DESTRUCTIVE = /^(delete|remove|revoke|clear|discard|trash)/;
 const PROGRESS = /^(send|submit|draft|generate|publish|refresh|reprocess|repair|retry|upload|extract|startParse|startNow|startReprint|resume|applyImport|commitImport|attachAgreement|createImport|createProjectsFrom|enablePush|disablePush|runAssistant|request|invite|learn|seed)/;
 const PROGRESS_ACTIONS = new Set([
+  "updatePayment", // An unsent invoice and its payment save atomically after the PDF is ready.
+  "updateBudgetSettings", // Partner saves may refresh unsent PDF invoices; wait for canonical files.
+  "saveDefaultProjectPeople", // Reviewed defaults affect future project access.
+  "applyDefaultProjectPeople", // Reviewed bulk grants await canonical counts.
+  "createPrintEstimateFromText", // AI extraction then atomic suggestions; budget selection stays explicit.
+  "linkSocial", // Google consent is external; show pending until navigation, then re-read the grant.
   "selectPrintEstimateQuote", // Reviewed financial estimate selection; await canonical budget sync.
+  "stopUsingPrintEstimateQuote", // Reverses that selection; await canonical budget sync.
   "linkLectioProject",
   "createLectioProjectForReview",
   "confirmLectioPerson",
@@ -43,6 +50,7 @@ const PROGRESS_ACTIONS = new Set([
   "updateWorkspaceSettings",
   "updateStandup",
   "approveFundingReview",
+  "saveAgreementFundingPartner", // Reviewed partner link: wait for the saved partner before invoices use it.
   "consolidatePrintInvoicePayment",
   "confirmSharedMouDelivery",
   "approveAllAssistantActions",
@@ -51,11 +59,14 @@ const PROGRESS_ACTIONS = new Set([
   "acceptEmailProjectUpdateSuggestion",
   "bulkCreateEpisodes",
   "bulkUpdateEpisodes",
-  "createBudgetApprovalRequest",
+  "approveBudgetApprovalAssignment", // Financial sign-off waits for canonical approval and protected task updates.
+  "requestBudgetApprovalChanges",
+  "createBudgetApprovalRequest", // Budget or individual proposal sign-off: wait for server-created review tasks.
   "createBudgetLineInvoice", // Reviewed financial calculation and PDF generation.
   "previewBudgetLineInvoice", // Read-only review; no invoice is created.
   "createDonationImportFromFile",
   "createPrintRun",
+  "createGuidedBudget", // Guided setup saves size, costs, and partner together; keep the form on failure.
   "createQuoteFromFile",
   "createQuoteFromText",
   "createRecurringTask",
@@ -98,10 +109,14 @@ const CONFIRMED_DESTRUCTIVE_ACTIONS = new Set([
   "cancelSponsorship",
 ]);
 const OPTIMISTIC_ACTIONS = new Set([
+  "createPartner", // Show the partner/contact together; remove both on failure and keep the form draft.
+  "addProjectPerson", // Review chat-history access, then show the person immediately.
+  "setTaskPinned", // Personal reference only; immediate pin/unpin with rollback.
   "updatePrintSettings", // Overview book details and Print share immediate values with rollback.
   "addProjectManager", // Explicit permission confirmation precedes immediate assignment feedback.
   // Message menus retain immediate text/reaction feedback; uploads have their own progress action.
   // Quoted replies use the same optimistic send and restore draft/context on failure.
+  // @channel asks for confirmation first, then uses the same send/rollback flow.
   "postMessage",
   "toggleReaction", // Desktop quick actions and message menus share immediate feedback and rollback.
   "editMessage", // Text and Edited marker update immediately; failure restores the edit draft.
@@ -118,7 +133,8 @@ const OPTIMISTIC_ACTIONS = new Set([
   "undoSuggestedPartnerRates", // Restore public rates immediately, with conflict checks and rollback.
   "applySuggestedPerCopyPrice",
   "saveBudgetPresentation",
-  "savePartnerQuote", // Draft stays visible; stable save URL survives app updates.
+  "savePartnerQuotation", // Partner-specific shares update immediately, then reconcile or restore the draft.
+  "savePartnerQuote", // Typed quote edits stay visible drafts. "Apply fee coverage" shows new prices at once, saves them with the line rates, and restores the draft on failure.
   "updateBudgetLine", // Includes partner visibility: immediate totals and per-line rollback.
   "splitFundingIntoTwoPayments",
 ]);

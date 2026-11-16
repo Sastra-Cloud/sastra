@@ -70,7 +70,7 @@ beforeEach(() => {
   mocks.select.mockImplementation((fields) => ({ from: (table: Parameters<typeof getTableName>[0]) => {
     const name = getTableName(table);
     const data = name === "projects" && fields ? (mocks.duplicate ? [{ id: "duplicate" }] : []) : mocks.data[name] ?? [];
-    const query = { where: () => query, orderBy: () => query, limit: () => query,
+    const query = { innerJoin: () => query, where: () => query, orderBy: () => query, limit: () => query,
       then: (resolve: (value: unknown[]) => unknown) => Promise.resolve(data).then(resolve) };
     return query;
   } }));

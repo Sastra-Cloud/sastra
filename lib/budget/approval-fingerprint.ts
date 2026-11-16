@@ -5,7 +5,8 @@ import type {
   BudgetPresentation,
   BudgetSettings,
 } from "@/lib/budget/queries";
-import { partnerQuoteTotalCents } from "@/lib/budget/compute";
+import type { PartnerQuotationDTO } from "./partner-quotations";
+import { partnerQuotePrices } from "./print-options";
 
 function decimal(value: string | number | null | undefined): string | null {
   if (value == null) return null;
@@ -20,9 +21,28 @@ function decimal(value: string | number | null | undefined): string | null {
 export function budgetApprovalFingerprint(
   settings: BudgetSettings,
   items: BudgetLine[],
-  presentation?: BudgetPresentation | null
+  presentation?: BudgetPresentation | null,
+  partnerQuotations: PartnerQuotationDTO[] = [],
 ): string {
   const quotation = {
+    ...(partnerQuotations.length
+      ? {
+          partnerQuotations: partnerQuotations
+            .map((q) => ({
+              id: q.id,
+              title: q.title,
+              partnerId: q.partnerId,
+              partnerName: q.partnerName,
+              contactName: q.contactName,
+              contactEmail: q.contactEmail,
+              description: q.description,
+              currency: q.currency,
+              lines: q.lines,
+              ...(q.printOptions?.length ? { printOptions: q.printOptions } : {}),
+            }))
+            .sort((a, b) => a.id.localeCompare(b.id)),
+        }
+      : {}),
     settings: {
       wordCount: settings.wordCount,
       sourcePageCount: settings.sourcePageCount,
@@ -68,6 +88,9 @@ export function budgetApprovalFingerprint(
           publicDescription: presentation.publicDescription,
           perCopyQuantity: presentation.perCopyQuantity,
           perCopyUnitPrice: decimal(presentation.perCopyUnitPrice),
+          ...(presentation.printOptions?.length
+            ? { printOptions: presentation.printOptions }
+            : {}),
         }
       : null,
   };
@@ -77,7 +100,7 @@ export function budgetApprovalFingerprint(
 
 export function budgetApprovalTotal(
   items: BudgetLine[],
-  presentation?: BudgetPresentation | null
+  presentation?: BudgetPresentation | null,
 ): string {
   if (!presentation) {
     return items
@@ -90,5 +113,8 @@ export function budgetApprovalTotal(
       Number(presentation.perCopyUnitPrice ?? 0)
     ).toFixed(2);
   }
-  return (partnerQuoteTotalCents(items) / 100).toFixed(2);
+  // Legacy single-amount records use the lowest available choice, never the sum.
+  return (
+    partnerQuotePrices(items, presentation.printOptions).minimumCents / 100
+  ).toFixed(2);
 }

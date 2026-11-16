@@ -140,7 +140,7 @@ state and are not changed by this bulk action.
 
 The publishing lifecycle remains **draft → scheduled → published**. Production
 readiness is advisory: a manager must explicitly mark the episode scheduled or
-published. Podcast published-count milestones and episode-triggered MoU payments
+published. Podcast published-count milestones and episode-triggered expected payments
 count only episodes actually marked **published**, not episodes that merely
 completed production. Video series do not use the podcast 52/104 milestones or
 their finance trigger.

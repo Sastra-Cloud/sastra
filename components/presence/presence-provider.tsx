@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -28,6 +29,11 @@ const PresenceContext = createContext<PresenceContextValue>({
 
 const HEARTBEAT_MS = 30_000;
 const POLL_MS = 30_000;
+
+function samePresence(a: PresenceMap, b: PresenceMap) {
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length && keys.every((key) => a[key] === b[key]);
+}
 
 export function PresenceProvider({
   userId,
@@ -78,7 +84,9 @@ export function PresenceProvider({
       const r = await fetch("/api/presence");
       if (!r.ok) return;
       const d = await r.json();
-      setStatuses(d.statuses ?? {});
+      const next: PresenceMap = d.statuses ?? {};
+      // Most polls change nothing; keep the same object so avatars stay still.
+      setStatuses((current) => (samePresence(current, next) ? current : next));
     } catch {
       // transient — keep the last known map
     }
@@ -110,8 +118,13 @@ export function PresenceProvider({
     [userId, refresh]
   );
 
+  const value = useMemo(
+    () => ({ statuses, selfId: userId, setManual }),
+    [statuses, userId, setManual]
+  );
+
   return (
-    <PresenceContext.Provider value={{ statuses, selfId: userId, setManual }}>
+    <PresenceContext.Provider value={value}>
       {children}
     </PresenceContext.Provider>
   );

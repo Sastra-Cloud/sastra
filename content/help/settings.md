@@ -2,9 +2,9 @@
 title: "Settings"
 category: "Settings"
 roles: [member, manager, admin]
-keywords: [project manager, assigned project management, modules, sponsorships, sponsorship funds, enable module, disable module, without AI, missing AI key, self-hosted AI, search settings, find a setting, email assistant preferences, active email preferences, personal, publishing, AI usage, document learning, pause learning, reviewed examples, voice dictionary, project roles, IANA, pending invitations, file space, storage, storage full, out of space, upload limit, your plan, manage plan, people limit, billing address, partner address, invoice description, settings, setup, profile, timezone, languages, currency, invoice issuer, payment instructions, invoice numbering, organization donation fee, organization fee, admin fee, donation deduction, net available, templates, avatar, team, invite, roles, super admin, publishers, printers, email, default cc, cc recipients, outbound email defaults, dictionary, voice, ai, model, model routing, fallback models, Haiku, Sonnet, GPT, Gemini, DeepSeek, budget, costs, usage, cloudflare, r2, openrouter, ai key, api key, openrouter key, credits, ai credits, credits used up, buy credits, branding, logo, workspace, organization identity, aliases, internal domains, mobile settings, planning capacity, projects at once, project duration, completion date planner, work path, work paths, creative path, project type capacity, books at once, articles podcasts and video, guidance, show helpful guidance, guided setup, tips, hide tips, expert mode, security, passkey, fingerprint, trusted browser, two factor, dependency audit, security updates, check again, run security check, GitHub Actions, fast AI pre-checks, pre-check, typesafe, jev, skip AI calls]
+keywords: [document colors, invoice colors, table header color, quotation colors, default project team, default people, project membership, add to existing projects, google drive, reconnect google drive, drive permission, project manager, assigned project management, modules, sponsorships, sponsorship funds, enable module, disable module, without AI, missing AI key, self-hosted AI, search settings, find a setting, email assistant preferences, active email preferences, personal, publishing, AI usage, document learning, pause learning, reviewed examples, voice dictionary, project roles, IANA, pending invitations, file space, storage, storage full, out of space, upload limit, your plan, manage plan, people limit, billing address, partner address, invoice description, settings, setup, profile, timezone, languages, currency, invoice issuer, payment instructions, invoice numbering, organization donation fee, organization fee, admin fee, donation deduction, net available, templates, avatar, team, invite, roles, super admin, publishers, printers, email, default cc, cc recipients, outbound email defaults, dictionary, voice, ai, model, model routing, fallback models, Haiku, Sonnet, GPT, Gemini, DeepSeek, budget, costs, usage, cloudflare, r2, openrouter, ai key, api key, openrouter key, credits, ai credits, credits used up, buy credits, branding, logo, workspace, organization identity, aliases, internal domains, mobile settings, planning capacity, projects at once, project duration, completion date planner, work path, work paths, creative path, project type capacity, books at once, articles podcasts and video, guidance, show helpful guidance, guided setup, tips, hide tips, expert mode, security, passkey, fingerprint, trusted browser, two factor, dependency audit, security updates, check again, run security check, GitHub Actions, fast AI pre-checks, pre-check, typesafe, jev, skip AI calls]
 order: 140
-summary: "Search personal and shared settings, manage Profile email preferences, workspace defaults, publishing, AI availability, and model routing."
+summary: "Search personal and shared settings, reconnect Google Drive, manage Profile email preferences, the default project team, workspace defaults, publishing, AI availability, and model routing."
 ---
 
 **Settings** holds your personal preferences and the workspace's shared
@@ -28,11 +28,27 @@ while saving. A failed save restores the prior setting. Device push setup,
 uploads, invitations, and sign-in show progress until their external result is
 confirmed.
 
+## Default project team
+
+Under **Settings → Team**, workspace admins can select the people added to every
+new project. Choose **Save default team** after reviewing the selection. This
+gives project membership and chat access without assigning work roles. Adding
+someone to the workspace does not automatically select them for future projects.
+
+Use **Preview adding to existing projects** to review the saved people and
+project count, then confirm. This includes completed projects, skips duplicates,
+and keeps existing people, work roles, and management grants. It never removes someone excluded from
+the default team. Manage removals under **Project → People**.
+
 ## Everyone
 
 - **Profile** — your **name**, **timezone** (drives standup timing and due
   dates), **avatar**, the **Show helpful guidance** toggle, and the
-  **auto-start time-tracking** toggle. Expand **Email assistant preferences**
+  **auto-start time-tracking** toggle. When Drive is set up for the workspace,
+  **Google Drive** lets you connect or reconnect your own Google account.
+  Reconnect if Drive shows an access error, choose the correct Google account,
+  and approve Drive access. Save unfinished work before leaving the page.
+  Expand **Email assistant preferences**
   for task suggestions, learning, and active personal email rules. Guidance turns the guided setup steps and
   on-screen tips on or off; leave it on while you are learning the app and turn
   it off once you know it well. You can also hide any single tip with its close
@@ -63,7 +79,7 @@ confirmed.
   *who does what work*, not who may edit — that's the workspace role. Each role
   also has a **typical stage duration** (days) that drives the task-date cascade.
 - **Publishers** — reusable rights holders and contacts; edit details, merge
-  shorthand duplicates without losing project links, and export a rights report
+  shorthand duplicates without losing project links, and export a Rights & MOUs report
   (`.xlsx`). See *Publishers directory*.
 - **Partners** — a reusable directory of funding partners / MoU sponsors, each
   with multiple contacts; pick them on a project's quotation. See *Partners
@@ -220,17 +236,36 @@ leading zeros. Save settings to apply the reviewed details to new invoices.
 New PDFs use a letterhead, invoice number and date, Bill To block, and a
 description/unit price/total table. Payment details appear on a separate payment
 request page. Each issued invoice retains its reviewed issuer snapshot and PDF;
-changing settings does not alter earlier invoices.
+changing settings does not alter earlier invoices until an eligible unsent invoice
+is refreshed. Sent and imported invoices retain their original PDFs.
+
+**Invoice & quotation colors** lets you choose a color for **Headings & rules**
+and another for the **Table & invoice header**. Use the color picker or enter a
+six-digit hex color. The live preview shows the result, and header text switches
+between black and white for contrast. Save workspace settings to apply the colors
+to new or refreshed invoice PDFs, quotation PDFs, and quotation spreadsheets.
+Workspace branding stays separate.
 
 Funding partners have a reusable **Billing address** in their edit form. New
 invoices can use that address, with per-invoice overrides. Changing a partner
-address does not rewrite issued invoices.
+address is used on new invoices and when an unsent generated invoice is refreshed.
+Saving a different default funding partner refreshes that project's unsent invoices
+automatically. Sent, imported, shared-agreement, and separately reviewed budget-line
+invoices keep their recorded recipient; use their own review workflow.
 
 ## Settings groups and shared defaults
 
 Settings has four groups: **Personal**, **Workspace**, **Publishing**, and **AI & email**. Profile and Notifications affect only you. Project roles, Voice dictionary, templates, publishing directories, workspace defaults, AI behavior, and email setup are shared settings.
 
 Setup starts with organization and publishing defaults. Legal details, aliases, internal domains, and AI context are optional and expandable. Existing projects retain their overrides when workspace defaults change.
+
+In **Settings → Workspace**, the floating **Save workspace settings** button saves
+identity, branding, languages, schedules, publishing defaults, invoice details,
+and any invoice-numbering edits together. Saving does not repeat first-run setup.
+Required names and languages cannot be cleared; a validation error appears beside
+the field to correct, and your edits stay in the form. If invoice numbering needs
+correction, none of the edited settings are saved until it is fixed. Workspace
+logo uploads and removal apply immediately and show their own progress.
 
 Timezone fields in setup, Profile, Workspace, and Standups share a searchable list. Any valid IANA timezone is accepted; existing aliases remain unchanged. Invalid zones are rejected before saving.
 

@@ -1,18 +1,27 @@
 ---
-title: "Rights & licensing"
+title: "Rights & MOUs"
 category: "Publishing"
 roles: [member, manager, admin]
-keywords: [publishing, rights summary, next step, expiry, rights, license, licence, mou, commercial, publisher, holder, formats, copyright, obligation, compliance, agreement, multiple projects, multi-project mou, shared agreement pdf, agreement chat, ask about agreements, citations, source selection, mobile, sources, conversation details, keyboard, latest messages, indexing, retry index, compare agreements, initiate request, signed email, payment receipt, license fee, file note, attachment note, license fee task, mark license fee paid]
+keywords: [agreement funding, promised funding, received funding, percentage installments, funding summary, publishing, rights & mous, mous, rights summary, next step, expiry, rights, license, licence, mou, commercial, publisher, holder, formats, copyright, obligation, compliance, agreement, multiple projects, multi-project mou, shared agreement pdf, agreement chat, ask about agreements, citations, source selection, mobile, sources, conversation details, keyboard, latest messages, indexing, retry index, compare agreements, initiate request, signed email, payment receipt, license fee, file note, attachment note, license fee task, mark license fee paid]
 order: 50
-summary: "Review the project’s Rights tab: status, deadlines, permitted formats, agreement steps, and obligations."
+summary: "Review the project’s Rights & MOUs tab: status, permitted formats, agreement steps, promised funding, received money, and obligations."
 ---
 
-Open the project’s **Rights** tab. The summary shows permitted formats, the
+Open the project’s **Rights & MOUs** tab. The summary shows permitted formats, the
 complete-by date, agreement expiry dates, unpaid license fees, and a link to the
 next incomplete agreement step. Expand the MoU or license to edit its fields
 and documents. Fees and renewal details, permission details, agreement type,
 and copyright remain available in expandable sections. These sections retain
 unsaved input when closed. Print funding is a separate project setting.
+
+Managers and admins also see **Agreement funding** when this project has funding
+records. It shows promised funding, received money, the unpaid balance when
+confirmed, and available funds. Individual installments include their payment
+terms, due dates, and any percentage calculation awaiting review. **Review
+payments** opens Budget's Payments tab; **Review received funding** opens Cash
+flow. Shared agreement allocations link to their agreement page. Reprints and
+sponsorship funds stay separate. A signed rights agreement alone does not mean
+money has been received.
 
 Every project has **one rights record** answering a single question: *do we have
 the rights we need?* Everyone can view it; editing is a manager action.
@@ -48,7 +57,7 @@ manager actions, including when a document is uploaded directly.
 
 ## Ask about agreements
 
-Select **Ask about agreements** beside the overall Rights status to ask a
+Select **Ask about agreements** beside the overall Rights & MOUs status to ask a
 read-only question about the MoU and License files attached directly to this
 project. This is a private conversation for you and this project; it does not
 appear in project Chat or in your general Sastra Assistant transcript. Agreement
@@ -106,8 +115,8 @@ warning.
 ## Obligations and payments
 
 The **compliance** card tracks standing **license obligations** — recurring
-duties like royalty reporting or renewals. You can also record threaded **rights
-notes** and **license-fee payments**. Managers see a linked **correspondence**
+duties like royalty reporting or renewals. You can also record threaded
+**Rights & MOUs notes** and **license-fee payments**. Managers see a linked **correspondence**
 panel of related email threads.
 
 Marking a license-fee payment paid completes its linked task. Undoing the paid
@@ -121,7 +130,7 @@ agreement marks only the selected MoU or License step signed. If the email is
 linked to several projects, the manager chooses which projects the agreement
 covers; one approval updates each selected Rights record and attaches the PDF
 to each one. Approving a receipt marks the selected license-fee ledger entry paid
-and keeps the receipt available beside that payment on both Rights and Budget.
+and keeps the receipt available beside that payment on both Rights & MOUs and Budget.
 When the project has one unlinked legacy task that clearly names the same
 publisher and rights work, approval completes and links that task too. Ambiguous
 or unrelated tasks are left for a manager.
@@ -135,7 +144,7 @@ priority over that default.
 These report obligations appear as **recurring schedules** on the project Tasks
 tab even when there are no other project tasks. Managers can correct an
 AI-extracted title, requirement, cadence, first due date, or owner there; the
-linked obligation on Rights and its unfinished task occurrence stay in sync.
+linked obligation on Rights & MOUs and its unfinished task occurrence stay in sync.
 
 Reusable publishers and contacts live in **Settings ▸ Publishers**, or add one
 inline with the **+** button. AI import reuses matching publisher records when

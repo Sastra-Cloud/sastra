@@ -12,6 +12,8 @@ import { getPlanningDefaults } from "@/lib/planning/queries";
 import { getAssistantBudgetMap } from "@/lib/assistant/queries";
 import { TeamManager } from "@/components/settings/team-manager";
 import { RoleCapacityMatrix } from "@/components/settings/role-capacity-matrix";
+import { DefaultProjectPeople } from "@/components/settings/default-project-people";
+import { listDefaultProjectPeople } from "@/lib/projects/people";
 import { isAdminRole } from "@/lib/auth/policy";
 
 export const metadata = { title: "Team settings" };
@@ -23,7 +25,7 @@ export default async function TeamSettingsPage() {
   const seats = hosted ? await seatUsage() : null;
   const accountUrl = hostedAccountUrl();
   const isAdmin = isAdminRole(user);
-  const [members, invitations, assistantBudgets, roleRows, capacities, planning] =
+  const [members, invitations, assistantBudgets, roleRows, capacities, planning, defaultPeople] =
     await Promise.all([
       listTeamMembers(),
       listPendingInvitations(),
@@ -31,6 +33,7 @@ export default async function TeamSettingsPage() {
       listAllProjectRoles(),
       listUserRoleCapacity(),
       getPlanningDefaults(),
+      isAdmin ? listDefaultProjectPeople() : Promise.resolve([]),
     ]);
 
   return (
@@ -44,6 +47,7 @@ export default async function TeamSettingsPage() {
         currentUserRole={user.role}
         assistantBudgets={assistantBudgets}
       />
+      {isAdmin ? <DefaultProjectPeople people={members.filter(person => person.isActive)} defaultIds={defaultPeople.map(person => person.id)} /> : null}
       <RoleCapacityMatrix
         people={members
           .filter((m) => m.isActive)

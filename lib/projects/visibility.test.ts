@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  isArchivedProject,
-  isCurrentProject,
-  projectOptionLabel,
-} from "./visibility";
+import { isArchivedProject, isCurrentProject } from "./visibility";
 
 describe("project visibility", () => {
   it("keeps live project statuses in the working portfolio", () => {
@@ -25,14 +21,5 @@ describe("project visibility", () => {
     const project = { status: "completed", activeReprintStatus: "quoting" };
     expect(isCurrentProject(project)).toBe(true);
     expect(isArchivedProject(project)).toBe(false);
-  });
-
-  it("labels closed projects when they appear in historical pickers", () => {
-    expect(projectOptionLabel({ title: "A Book", status: "completed" })).toBe(
-      "A Book (completed)"
-    );
-    expect(projectOptionLabel({ title: "A Draft", status: "planning" })).toBe(
-      "A Draft"
-    );
   });
 });

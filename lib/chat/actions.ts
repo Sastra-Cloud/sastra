@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, ilike, inArray, isNull, ne } from "drizzle-orm";
+import { and, eq, gt, ilike, inArray, isNull, lte, ne, notExists, or, sql } from "drizzle-orm";
 import { uuidv7 } from "uuidv7";
 import { z } from "zod";
 
@@ -13,6 +13,7 @@ import {
   chatChannels,
   chatMessages,
   messageReactions,
+  notifications,
   projectChatPins,
   projects,
   user,
@@ -42,6 +43,7 @@ import { notify } from "@/lib/notifications";
  */
 async function handleMentions(
   channelId: string,
+  messageId: string,
   content: string | undefined,
   authorId: string,
   authorName: string
@@ -51,11 +53,13 @@ async function handleMentions(
     .select({
       projectId: chatChannels.projectId,
       kind: chatChannels.kind,
+      name: chatChannels.name,
     })
     .from(chatChannels)
     .where(eq(chatChannels.id, channelId))
     .limit(1);
-  const members = channel?.projectId
+  if (!channel) return [] as string[];
+  const members = channel.projectId
     ? await listProjectMentionTargets(channel.projectId)
     : channel && isMemberScopedChannel(channel.kind)
       ? await db
@@ -72,12 +76,15 @@ async function handleMentions(
     actorId: authorId,
     actorName: authorName,
     link: `/chat/${channelId}`,
-    data: { channelId },
+    data: { channelId, messageId },
+    channelMentions: channel.kind !== "direct" && channel.kind !== "standup",
+    context: `#${channel.name}`,
   });
 }
 
 async function notifyDirectRecipient(
   channelId: string,
+  messageId: string,
   actorId: string,
   actorName: string,
   content: string | undefined,
@@ -104,7 +111,7 @@ async function notifyDirectRecipient(
       title: `${actorName} sent you a direct message`,
       body: content?.trim().slice(0, 160) || "Shared an attachment",
       link: `/chat/${channelId}`,
-      data: { channelId, sentBy: actorId },
+      data: { channelId, messageId, sentBy: actorId },
       email: false,
     });
   } catch (error) {
@@ -443,12 +450,14 @@ export async function postMessage(input: {
   });
   const mentionedIds = await handleMentions(
     input.channelId,
+    id,
     input.content,
     actor.id,
     actor.name
   );
   await notifyDirectRecipient(
     input.channelId,
+    id,
     actor.id,
     actor.name,
     input.content,
@@ -528,16 +537,57 @@ export async function markChannelRead(
 ) {
   const { user } = await requireUser();
   await requireChannelAccess(channelId, user.id);
+  const readAt = new Date();
   const update = lastMessageId
-    ? { lastReadMessageId: lastMessageId, updatedAt: new Date() }
-    : { updatedAt: new Date() };
+    ? {
+        // An older tab or cached route must not move the read cursor backward.
+        lastReadMessageId: sql`greatest(${channelReads.lastReadMessageId}, ${lastMessageId}::uuid)`,
+        updatedAt: readAt,
+      }
+    : { updatedAt: readAt };
 
-  await db
-    .insert(channelReads)
-    .values({ channelId, userId: user.id, lastReadMessageId: lastMessageId })
-    .onConflictDoUpdate({
-      target: [channelReads.channelId, channelReads.userId],
-      set: update,
-    });
+  await db.transaction(async (tx) => {
+    if (lastMessageId) {
+      const [message] = await tx.select({ id: chatMessages.id }).from(chatMessages)
+        .where(and(eq(chatMessages.id, lastMessageId), eq(chatMessages.channelId, channelId)))
+        .limit(1);
+      if (!message) throw new Error("Message not found in this conversation.");
+    }
+
+    await tx.insert(channelReads)
+      .values({ channelId, userId: user.id, lastReadMessageId: lastMessageId })
+      .onConflictDoUpdate({
+        target: [channelReads.channelId, channelReads.userId],
+        set: update,
+      });
+    if (!lastMessageId) return;
+
+    const viewedMessages = tx.select({ id: sql<string>`${chatMessages.id}::text` })
+      .from(chatMessages)
+      .where(and(eq(chatMessages.channelId, channelId), lte(chatMessages.id, lastMessageId)));
+    // Older alerts have only a channel id. Clear them up to the next unseen
+    // message's arrival, conservatively retaining any ambiguous newer alerts.
+    const unseenMessageBeforeAlert = tx.select({ id: chatMessages.id }).from(chatMessages)
+      .where(and(
+        eq(chatMessages.channelId, channelId),
+        gt(chatMessages.id, lastMessageId),
+        lte(chatMessages.createdAt, notifications.createdAt)
+      ));
+    await tx.update(notifications).set({ readAt }).where(and(
+      eq(notifications.userId, user.id),
+      isNull(notifications.readAt),
+      inArray(notifications.type, ["direct_message", "mention"]),
+      sql`(${notifications.data} ->> 'channelId') = ${channelId}`,
+      or(
+        inArray(sql<string>`(${notifications.data} ->> 'messageId')`, viewedMessages),
+        and(
+          sql`(${notifications.data} ->> 'messageId') is null`,
+          lte(notifications.createdAt, readAt),
+          notExists(unseenMessageBeforeAlert)
+        )
+      )
+    ));
+  });
   revalidatePath("/chat");
+  revalidatePath("/notifications");
 }

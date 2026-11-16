@@ -9,16 +9,17 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { CHAT_LIST_HREF } from "@/lib/chat/navigation";
 
 /** One compact mobile header, with complete identity and secondary actions on demand. */
-export function ConversationHeader({ title, subtitle, backHref, onClose, actions, children }: {
+export function ConversationHeader({ title, subtitle, backHref, onClose, actions, children, refreshable = false }: {
   title: string;
   subtitle: string;
   backHref?: string;
   onClose?: () => void;
   actions?: ReactNode;
   children?: ReactNode;
+  refreshable?: boolean;
 }) {
   return (
-    <header className="conversation-header flex shrink-0 items-center gap-2 border-b bg-background px-3 py-2 lg:rounded-xl lg:border lg:p-3">
+    <header data-conversation-refresh={refreshable ? "" : undefined} className="conversation-header flex shrink-0 items-center gap-2 border-b bg-background px-3 py-2 lg:rounded-xl lg:border lg:p-3">
       {onClose ? (
         <Button type="button" variant="ghost" size="icon" className="size-11 shrink-0" aria-label="Close conversation" onClick={onClose}><ArrowLeft className="size-5" /></Button>
       ) : backHref ? (

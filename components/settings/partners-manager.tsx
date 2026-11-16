@@ -16,6 +16,7 @@ import {
   updatePartner,
   updatePartnerContact,
 } from "@/lib/partners/actions";
+import { PartnerFields, emptyPartnerValues, type PartnerValues } from "@/components/partners/partner-fields";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -59,8 +60,49 @@ export function PartnersManager({
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
-  const [name, setName] = useState("");
-  const [website, setWebsite] = useState("");
+  const [creating, startCreate] = useTransition();
+  const [creatingId, setCreatingId] = useState<string | null>(null);
+  const [values, setValues] = useState<PartnerValues>(emptyPartnerValues);
+  const [visiblePartners, setVisiblePartners] = usePropState(partners);
+  const [visibleContacts, setVisibleContacts] = usePropState(contacts);
+
+  function addPartner(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (creating || !values.name.trim()) return;
+    const id = crypto.randomUUID();
+    setCreatingId(id);
+    const partner = { id, name: values.name.trim(), website: values.website.trim() || null,
+      billingAddress: values.billingAddress.trim() || null, notes: values.notes.trim() || null };
+    const hasContact = [values.firstName, values.lastName, values.email, values.phone, values.role].some((value) => value.trim());
+    const contact = { id: crypto.randomUUID(), partnerId: id, firstName: values.firstName.trim() || null,
+      lastName: values.lastName.trim() || null, email: values.email.trim() || null,
+      phone: values.phone.trim() || null, role: values.role.trim() || null, isPrimary: true };
+    setVisiblePartners((rows) => [partner, ...rows]);
+    if (hasContact) setVisibleContacts((rows) => [...rows, contact]);
+    startCreate(async () => {
+      try {
+        const saved = await createPartner({ ...values, contact: {
+          firstName: values.firstName, lastName: values.lastName, email: values.email,
+          phone: values.phone, role: values.role,
+        } });
+        setVisiblePartners((rows) => rows.some((row) => row.id === saved.id && row.id !== id)
+          ? rows.filter((row) => row.id !== id)
+          : rows.map((row) => row.id === id ? { ...partner, id: saved.id } : row));
+        setVisibleContacts((rows) => rows.filter((row) => row.id !== contact.id).concat(
+          hasContact && saved.contactId && !rows.some((row) => row.id === saved.contactId)
+            ? [{ ...contact, id: saved.contactId, partnerId: saved.id }] : []));
+        setValues(emptyPartnerValues);
+        router.refresh();
+        toast.success("Partner saved");
+      } catch (err) {
+        setVisiblePartners((rows) => rows.filter((row) => row.id !== id));
+        setVisibleContacts((rows) => rows.filter((row) => row.id !== contact.id));
+        toast.error(err instanceof Error ? err.message : "Could not add the partner. Your details are still here. Try again.");
+      } finally {
+        setCreatingId(null);
+      }
+    });
+  }
 
   const run: Run = (fn, ok, rollback) =>
     start(async () => {
@@ -80,49 +122,29 @@ export function PartnersManager({
     <div className="space-y-5">
       <Card className="max-w-3xl">
         <CardContent className="py-4">
-          <p className="mb-2 text-sm font-medium">Add a funding partner</p>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Input
-              placeholder="e.g. 9Marks"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="flex-1"
-            />
-            <Input
-              placeholder="Website (optional)"
-              value={website}
-              onChange={(e) => setWebsite(e.target.value)}
-              className="sm:w-56"
-            />
-            <Button
-              disabled={pending || !name.trim()}
-              onClick={() =>
-                run(async () => {
-                  await createPartner({ name, website: website || undefined });
-                  setName("");
-                  setWebsite("");
-                }, "Partner added")
-              }
-            >
-              Add
+          <form className="space-y-4" onSubmit={addPartner}>
+            <p className="text-sm font-medium">Add a funding partner</p>
+            <PartnerFields value={values} onChange={setValues} disabled={creating} />
+            <Button type="submit" disabled={creating || !values.name.trim()}>
+              {creating ? "Saving partner…" : "Add partner"}
             </Button>
-          </div>
+          </form>
         </CardContent>
       </Card>
 
-      {partners.length === 0 ? (
+      {visiblePartners.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           No partners yet. Add a sponsor or MoU counterparty above — or let
           document import fill one in.
         </p>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,36rem),1fr))] items-start gap-5">
-        {partners.map((partner) => (
+        {visiblePartners.map((partner) => (
           <PartnerCard
             key={partner.id}
             partner={partner}
-            contacts={contacts.filter((c) => c.partnerId === partner.id)}
-            pending={pending}
+            contacts={visibleContacts.filter((c) => c.partnerId === partner.id)}
+            pending={pending || partner.id === creatingId}
             run={run}
           />
         ))}
@@ -241,6 +263,7 @@ function PartnerCard({
                 variant="ghost"
                 size="icon-xs"
                 aria-label="Edit partner"
+                disabled={pending}
                 onClick={() => setEditing(true)}
               >
                 <Pencil className="size-4" />
@@ -249,6 +272,7 @@ function PartnerCard({
                 variant="ghost"
                 size="icon-xs"
                 aria-label="Delete partner"
+                disabled={pending}
                 onClick={async () => {
                   if ((await confirmDialog(`Delete "${partner.name}" and its contacts?`))) {
                     setRemoved(true);
@@ -353,6 +377,7 @@ function ContactRow({
           variant="ghost"
           size="icon-xs"
           aria-label="Edit contact"
+          disabled={pending}
           onClick={() => setEditing(true)}
         >
           <Pencil className="size-3.5" />
@@ -395,6 +420,7 @@ function AddContact({
         variant="ghost"
         size="sm"
         className="text-muted-foreground"
+        disabled={pending}
         onClick={() => setOpen(true)}
       >
         <Plus className="size-3.5" /> Add contact

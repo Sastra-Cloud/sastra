@@ -41,7 +41,7 @@ import {
 
 // Google is optional: only wired when creds are present, so login works without it.
 // Requested with offline access so the Drive access token can be refreshed
-// server-side; the drive.file scope is what the Drive Picker needs.
+// server-side. Drive permission is requested only from the Drive connect control.
 const googleProvider =
   process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
     ? {
@@ -49,8 +49,6 @@ const googleProvider =
           clientId: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
           accessType: "offline" as const,
-          prompt: "consent" as const,
-          scope: ["https://www.googleapis.com/auth/drive.file"],
           disableImplicitSignUp: true,
           disableSignUp: true,
         },
@@ -268,7 +266,11 @@ export const auth = betterAuth({
           if (!seat.ok) {
             throw new APIError("FORBIDDEN", { message: seat.error });
           }
-          return { data: { ...withWorkspaceTimezone, role: invite.role } };
+          // The invite reached this mailbox, and a Magic Link sign-in on an
+          // unverified account removes its password and linked Google account.
+          return {
+            data: { ...withWorkspaceTimezone, role: invite.role, emailVerified: true },
+          };
         },
         // Mark any pending invitations for this email as accepted.
         after: async (createdUser) => {

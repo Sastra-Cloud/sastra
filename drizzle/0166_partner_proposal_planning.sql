@@ -1,0 +1,8 @@
+DROP INDEX "budget_approval_requests_current_main_uq";--> statement-breakpoint
+DROP INDEX "budget_approval_requests_current_run_uq";--> statement-breakpoint
+ALTER TABLE "budget_approval_requests" ADD COLUMN "partner_quotation_id" uuid;--> statement-breakpoint
+ALTER TABLE "project_partner_quotations" ADD COLUMN "print_options" jsonb DEFAULT '[]'::jsonb NOT NULL;--> statement-breakpoint
+ALTER TABLE "budget_approval_requests" ADD CONSTRAINT "budget_approval_requests_partner_quotation_id_project_partner_quotations_id_fk" FOREIGN KEY ("partner_quotation_id") REFERENCES "public"."project_partner_quotations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "budget_approval_requests_current_quotation_uq" ON "budget_approval_requests" USING btree ("partner_quotation_id") WHERE "budget_approval_requests"."partner_quotation_id" is not null and "budget_approval_requests"."status" <> 'superseded';--> statement-breakpoint
+CREATE UNIQUE INDEX "budget_approval_requests_current_main_uq" ON "budget_approval_requests" USING btree ("project_id") WHERE "budget_approval_requests"."partner_quotation_id" is null and "budget_approval_requests"."print_run_id" is null and "budget_approval_requests"."status" <> 'superseded';--> statement-breakpoint
+CREATE UNIQUE INDEX "budget_approval_requests_current_run_uq" ON "budget_approval_requests" USING btree ("project_id","print_run_id") WHERE "budget_approval_requests"."partner_quotation_id" is null and "budget_approval_requests"."print_run_id" is not null and "budget_approval_requests"."status" <> 'superseded';

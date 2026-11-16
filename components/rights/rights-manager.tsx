@@ -4,7 +4,7 @@ import { SectionDisclosure } from "@/components/section-disclosure";
 import { daysUntil, formatDate } from "@/lib/format";
 import { promptDialog } from "@/lib/dialog-requests";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -50,8 +50,8 @@ const selectClass =
 
 const OVERALL: Record<string, { label: string; className: string }> = {
   none: { label: "Not started", className: "bg-secondary text-secondary-foreground" },
-  in_progress: { label: "Rights in progress", className: "bg-warning text-warning-foreground" },
-  complete: { label: "Rights complete", className: "bg-success text-success-foreground" },
+  in_progress: { label: "Rights & MOUs in progress", className: "bg-warning text-warning-foreground" },
+  complete: { label: "Rights & MOUs complete", className: "bg-success text-success-foreground" },
 };
 
 const STEP_OPTIONS = [
@@ -117,6 +117,7 @@ export function RightsPanel({
   feePayments,
   creatorName,
   agreementChat,
+  fundingSummary,
 }: {
   projectId: string;
   slug: string;
@@ -129,6 +130,7 @@ export function RightsPanel({
   feePayments: FeePayment[];
   creatorName: string | null;
   agreementChat: AgreementChatSnapshot;
+  fundingSummary?: ReactNode;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -343,7 +345,7 @@ export function RightsPanel({
         </div>
       </div>
 
-      <section className="space-y-2 rounded-xl border bg-card px-4 py-3" aria-label="Rights summary">
+      <section className="space-y-2 rounded-xl border bg-card px-4 py-3" aria-label="Rights & MOUs summary">
         <p className="text-sm"><span className="font-medium">Permitted formats: </span>{[[f.formatPrint, "Print"], [f.formatEbook, "eBook"], [f.formatAudio, "Audio"], [f.formatVideo, "Video"]].filter(([allowed]) => allowed).map(([, label]) => label).join(" · ") || "None recorded"}</p>
         <p className="text-xs text-muted-foreground">{f.completeByDate ? `Complete by ${formatDate(f.completeByDate)}` : "No complete-by date"} · Rights permission and print funding are tracked separately.</p>
         {[[showMou && !["signed", "not_needed"].includes(f.mouStatus), "mou", "Review the MoU"], [showLicense && !["signed", "not_needed"].includes(f.licenseStatus), "license", "Review the commercial license"]].filter(([incomplete]) => incomplete).slice(0, 1).map(([, step, label]) => <a key={String(step)} href={`#rights-${step}`} className="inline-flex min-h-11 items-center text-sm font-medium text-primary">Next step: {label}</a>)}
@@ -351,6 +353,7 @@ export function RightsPanel({
         {feePayments.filter(payment => !payment.paidAt).map(payment => <p key={payment.id} className={cn("text-xs", (daysUntil(payment.dueDate) ?? 0) < 0 ? "font-medium text-destructive" : "text-muted-foreground")}>Unpaid license fee: {payment.amount} {payment.currency}{payment.dueDate ? ` · Due ${formatDate(payment.dueDate)}` : ""}</p>)}
       </section>
 
+      {fundingSummary}
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] xl:items-start 2xl:grid-cols-[minmax(0,1fr)_minmax(22rem,27rem)]">
         <div className="min-w-0 space-y-5">
           {/* Agreement type */}

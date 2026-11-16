@@ -41,8 +41,10 @@ function MessageScrollerViewport({
   return (
     <MessageScrollerPrimitive.Viewport
       data-slot="message-scroller-viewport"
+      // The transcript has a definite viewport. Size containment prevents its
+      // messages from re-entering ancestor intrinsic sizing on each draft edit.
       className={cn(
-        "size-full min-h-0 min-w-0 scroll-fade-b scrollbar-thin scrollbar-gutter-stable overflow-y-auto overscroll-contain contain-content data-autoscrolling:scrollbar-none",
+        "size-full min-h-0 min-w-0 scroll-fade-b scrollbar-thin scrollbar-gutter-stable overflow-y-auto overscroll-contain contain-strict data-autoscrolling:scrollbar-none",
         className
       )}
       {...props}
@@ -72,8 +74,11 @@ function MessageScrollerItem({
     <MessageScrollerPrimitive.Item
       data-slot="message-scroller-item"
       scrollAnchor={scrollAnchor}
+      // The recent window is bounded to 100 messages. Keep their natural layout:
+      // Safari 26 can repeatedly relayout or leave stale boxes when skipped
+      // content re-enters view (WebKit #318216 and #321501).
       className={cn(
-        "min-w-0 shrink-0 [contain-intrinsic-size:auto_10rem] [content-visibility:auto]",
+        "min-w-0 shrink-0",
         className
       )}
       {...props}

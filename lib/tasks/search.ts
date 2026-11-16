@@ -11,6 +11,9 @@ const MIN_QUERY_LENGTH = 2;
 const MAX_QUERY_LENGTH = 100;
 const MAX_TERMS = 6;
 
+/** Which search results to show: every task, or only the person's own. */
+export type TaskSearchScope = "all" | "mine";
+
 type SearchableTask = Pick<MyWorkTaskRow, "title" | "description" | "projectTitle">;
 
 /** Lower-case search words, or none when the query is too short to run. */
@@ -93,4 +96,20 @@ export function otherTaskReason(
       : `Assigned to ${task.assigneeName ?? "a teammate"}`;
   const done = task.status === "done" ? doneLabel(task.completedAt, todayIso, timeZone) : null;
   return [done, owner].filter(Boolean).join(" · ");
+}
+
+/**
+ * Split the tasks found outside My Work for the "Assigned to me" filter, so
+ * changing the filter needs no second request. `searchTasksOutsideMyWork`
+ * lists the person's own tasks first, so the limit can only have cut off their
+ * tasks when every returned row is theirs.
+ */
+export function splitOtherTaskResults<T extends Pick<MyWorkTaskRow, "assignedTo">>(
+  others: T[],
+  hasMore: boolean,
+  currentUserId: string
+) {
+  const mine = others.filter((task) => task.assignedTo === currentUserId);
+  const notMineCount = others.length - mine.length;
+  return { mine, notMineCount, mineHasMore: hasMore && notMineCount === 0 };
 }

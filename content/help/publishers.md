@@ -8,7 +8,7 @@ summary: "Maintain publisher and rights-holder records, contacts, duplicate matc
 ---
 
 **Publishers** (Settings → Publishers) is the shared directory of licensors,
-copyright owners, and other rights holders used by project Rights and captured
+copyright owners, and other rights holders used by project Rights & MOUs and captured
 correspondence. Managers can edit a publisher's name, website, and notes, and
 add, edit, or remove its contacts.
 

@@ -28,6 +28,7 @@ import { TimerWidget } from "@/components/time/timer-widget";
 import { cn } from "@/lib/utils";
 import { isAdminRole } from "@/lib/auth/policy";
 import { useNavigationBadges } from "@/components/navigation-badges-provider";
+import { PinnedTasksToggle } from "@/components/tasks/pinned-tasks-provider";
 
 const ROLE_BADGE: Record<string, string> = {
   super_admin: "bg-primary text-primary-foreground",
@@ -72,7 +73,7 @@ export function Topbar({
   }
 
   return (
-    <header data-app-topbar className="sticky top-0 z-20 border-b bg-background/88 backdrop-blur-md">
+    <header data-app-topbar className="sticky top-0 z-20 border-b bg-background/88 backdrop-blur-md low-power:bg-background low-power:backdrop-filter-none">
       <div className="flex h-16 items-center gap-3 px-4 md:px-6">
         {/* Mobile nav */}
         <Sheet open={open} onOpenChange={setOpen}>
@@ -123,6 +124,7 @@ export function Topbar({
             />
           </div>
           <NotificationBell />
+          <PinnedTasksToggle />
           <TimerWidget />
           <ThemeToggle />
           <Sheet open={accountOpen} onOpenChange={setAccountOpen}>

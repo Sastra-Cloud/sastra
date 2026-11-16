@@ -28,8 +28,8 @@ vi.mock("@/lib/db", () => ({
 vi.mock("@/lib/r2", () => ({ deleteObject: mocks.deleteObject }));
 vi.mock("@/lib/workspace/queries", () => ({ getWorkspaceSettings: vi.fn() }));
 
-// Keep the real message access guard: a custom-channel row with no matching
-// membership must deny the action even when the attachment ID is already known.
+// Keep the real access predicate and guard call. The mock supplies filtered rows;
+// people-access.test.ts separately executes the predicates against SQL fixtures.
 import { chatMessages, fileAttachments, files, projectManagers, tasks } from "@/lib/db/schema";
 import { removeAttachment, updateAttachmentNotes } from "./actions";
 
@@ -51,7 +51,7 @@ beforeEach(() => {
     from: (table: unknown) => {
       let rows: Record<string, unknown>[];
       if (table === chatMessages) {
-        rows = [{ kind: "custom", memberUserId: mocks.memberUserId }];
+        rows = mocks.memberUserId === USER_ID ? [{ id: TARGET_ID }] : [];
       } else if (table === fileAttachments) {
         rows = "targetType" in fields
           ? [{ targetType: mocks.targetType, targetId: TARGET_ID }]
@@ -100,9 +100,11 @@ beforeEach(() => {
 function expectMessageAccessChecked() {
   const dialect = new PgDialect();
   expect(mocks.messageWhere).toHaveBeenCalledOnce();
-  expect(dialect.sqlToQuery(mocks.messageWhere.mock.calls[0][0]).params).toEqual([TARGET_ID]);
-  expect(mocks.membershipJoin).toHaveBeenCalledOnce();
-  expect(dialect.sqlToQuery(mocks.membershipJoin.mock.calls[0][0]).params).toEqual([USER_ID]);
+  const checked = dialect.sqlToQuery(mocks.messageWhere.mock.calls[0][0]);
+  expect(checked.params).toEqual(expect.arrayContaining([TARGET_ID, USER_ID, "custom", "project"]));
+  expect(checked.sql).toContain('from "chat_channel_members"');
+  expect(checked.sql).toContain('"chat_channel_members"."user_id" =');
+  expect(checked.sql).toContain('from "project_people"');
 }
 
 function expectNoWrites() {

@@ -23,6 +23,7 @@ import {
 import { notifyMany } from "@/lib/notifications";
 import { computeBlockers, healthFromBlockers } from "@/lib/blockers/compute";
 import { getProjectForecast } from "@/lib/forecast/queries";
+import { openDonationPromisesByProject } from "@/lib/proposals/queries";
 
 function todayYmd(): string {
   return new Date().toISOString().slice(0, 10);
@@ -188,6 +189,10 @@ export async function recomputeProjectBlockers(projectId: string) {
         scope.standaloneNetCents) /
       100;
   }
+
+  // A promised donation has no expected payment row; count what has not arrived.
+  scheduledFunding +=
+    (await openDonationPromisesByProject([projectId])).get(projectId) ?? 0;
 
   const openTaskCount = projectTasks.filter((t) => t.status !== "done").length;
   const forecast = await getProjectForecast({

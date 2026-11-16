@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { and, asc, eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
@@ -46,11 +47,11 @@ export type InvoiceIssuerSnapshot = {
   registrationNumber: string | null;
   taxId: string | null;
   paymentInstructions: string | null;
-  invoicePaymentDetails?: { issuerName?: string; logoFileId?: string | null; title: string; fields: Array<{ label: string; value: string }> } | null;
+  invoicePaymentDetails?: { issuerName?: string; logoFileId?: string | null; colors?: { accentColor: string; tableHeaderColor: string }; title: string; fields: Array<{ label: string; value: string }> } | null;
 };
 
-/** Read the workspace branding singleton, creating it on first access. */
-export async function getWorkspaceSettings(): Promise<WorkspaceSettings> {
+/** Deduplicate within a server render; each new request reads current settings. */
+export const getWorkspaceSettings = cache(async (): Promise<WorkspaceSettings> => {
   const [row] = await db
     .select()
     .from(workspaceSettings)
@@ -67,7 +68,7 @@ export async function getWorkspaceSettings(): Promise<WorkspaceSettings> {
     .where(eq(workspaceSettings.id, "workspace"))
     .limit(1);
   return created;
-}
+});
 
 export async function getInvoiceSequenceSettings() {
   const configuredStart = Number.parseInt(process.env.INVOICE_NUMBER_START ?? "1", 10);

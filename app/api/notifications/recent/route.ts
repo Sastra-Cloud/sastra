@@ -9,9 +9,14 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: { "Cache-Control": "private, no-store" } });
+  const summary = new URL(request.url).searchParams.get("summary") === "1";
+  if (summary) {
+    const unread = await getUnreadCount(session.user.id);
+    return NextResponse.json({ unread }, { headers: { "Cache-Control": "private, no-store" } });
+  }
   const [unread, rows] = await Promise.all([
     getUnreadCount(session.user.id),
     listBellNotifications(session.user.id, 15),
@@ -26,5 +31,5 @@ export async function GET() {
     readAt: n.readAt,
     createdAt: n.createdAt,
   }));
-  return NextResponse.json({ unread, items });
+  return NextResponse.json({ unread, items }, { headers: { "Cache-Control": "private, no-store" } });
 }

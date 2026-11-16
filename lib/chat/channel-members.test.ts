@@ -20,7 +20,7 @@ const bora: ChannelMember = {
 };
 
 describe("channel memberships", () => {
-  it("restricts direct, custom and standup channels without changing shared channels", () => {
+  it("identifies channels backed by explicit channel membership rather than project membership", () => {
     expect(isMemberScopedChannel("direct")).toBe(true);
     expect(isMemberScopedChannel("custom")).toBe(true);
     // A standup conversation belongs to the person answering it.

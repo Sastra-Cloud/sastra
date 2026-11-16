@@ -6,7 +6,7 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react";
-import Link from "next/link";
+import { NavigationLink as Link } from "@/components/navigation-link";
 import {
   FolderKanban,
   Hash,
@@ -369,7 +369,8 @@ function ProjectRow({
           className={cn(
             "mr-1 mt-1",
             !project.pinned &&
-              "opacity-70 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+              // Hidden until hover only where hover exists; touch tablets keep it visible.
+              "opacity-70 md:pointer-fine:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
           )}
         />
       </div>

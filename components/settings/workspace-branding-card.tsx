@@ -2,7 +2,7 @@
 
 import { confirmDialog } from "@/lib/dialog-requests";
 
-import { useRef, useState, useTransition } from "react";
+import { useContext, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ImageIcon, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -21,12 +21,14 @@ import { uploadFile } from "@/lib/files/upload-client";
 import {
   removeWorkspaceLogo,
   setWorkspaceLogo,
-  updateWorkspaceBranding,
 } from "@/lib/workspace/actions";
 import { usePropState } from "@/hooks/use-prop-state";
+import { FieldError, FieldErrorsContext } from "./field-errors";
 
 export function WorkspaceBrandingCard({
   settings,
+  saving,
+  onBusyChange,
 }: {
   settings: {
     logoFileId: string | null;
@@ -36,7 +38,10 @@ export function WorkspaceBrandingCard({
     internalEmailDomains: string[];
     preparedByNote: string | null;
   };
+  saving: boolean;
+  onBusyChange: (busy: boolean) => void;
 }) {
+  const errors = useContext(FieldErrorsContext);
   const router = useRouter();
   const [pending, start] = useTransition();
   const [uploading, setUploading] = useState(false);
@@ -52,22 +57,9 @@ export function WorkspaceBrandingCard({
     settings.preparedByNote ?? ""
   );
 
-  const run = (fn: () => Promise<{ error?: string } | void>) =>
-    start(async () => {
-      try {
-        const res = await fn();
-        if (res?.error) {
-          toast.error(res.error);
-          return;
-        }
-        router.refresh();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Could not save.");
-      }
-    });
-
   async function onLogoPicked(file: File) {
     setUploading(true);
+    onBusyChange(true);
     try {
       const fileId = await uploadFile(file);
       if (!fileId) return; // uploadFile already toasted
@@ -81,11 +73,12 @@ export function WorkspaceBrandingCard({
       router.refresh();
     } finally {
       setUploading(false);
+      onBusyChange(false);
     }
   }
 
   return (
-    <Card>
+    <Card className="@[80rem]/settings:col-span-2">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ImageIcon className="size-4" />
@@ -123,9 +116,10 @@ export function WorkspaceBrandingCard({
               }}
             />
             <Button
+              type="button"
               variant="outline"
               size="sm"
-              disabled={uploading || pending}
+              disabled={uploading || pending || saving}
               onClick={() => fileInput.current?.click()}
             >
               <Upload className="size-4" />
@@ -133,13 +127,15 @@ export function WorkspaceBrandingCard({
             </Button>
             {logoFileId ? (
               <Button
+                type="button"
                 variant="ghost"
                 size="sm"
-                disabled={uploading || pending}
+                disabled={uploading || pending || saving}
                 onClick={async () => {
                   if (!(await confirmDialog("Remove the workspace logo?"))) return;
                   const previous = logoFileId;
                   setLogoFileId(null);
+                  onBusyChange(true);
                   start(async () => {
                     try {
                       const res = await removeWorkspaceLogo();
@@ -148,6 +144,8 @@ export function WorkspaceBrandingCard({
                     } catch (error) {
                       setLogoFileId(previous);
                       toast.error(error instanceof Error ? error.message : "Could not remove the logo.");
+                    } finally {
+                      onBusyChange(false);
                     }
                   });
                 }}
@@ -163,10 +161,11 @@ export function WorkspaceBrandingCard({
             ) : null}
           </div>
         </div>
+        <p className="text-xs text-muted-foreground">Logo changes apply immediately. Save the other details with Save workspace settings.</p>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label>Accent color</Label>
+            <Label htmlFor="workspace-accentColor">Accent color</Label>
             <div className="flex items-center gap-2">
               <input
                 type="color"
@@ -176,79 +175,72 @@ export function WorkspaceBrandingCard({
                 aria-label="Accent color"
               />
               <Input
+                id="workspace-accentColor"
+                name="accentColor"
+                aria-invalid={!!errors.accentColor}
+                aria-describedby={errors.accentColor ? "accentColor-error" : undefined}
                 value={accentColor}
                 onChange={(e) => setAccentColor(e.target.value)}
                 placeholder="#B65C3A"
                 className="font-mono"
               />
             </div>
+            <FieldError name="accentColor" />
           </div>
           <div className="space-y-1.5">
-            <Label>Primary organization name</Label>
+            <Label htmlFor="orgName">Primary organization name</Label>
             <Input
+              id="orgName"
+              name="orgName"
+              aria-invalid={!!errors.orgName}
+              aria-describedby={errors.orgName ? "orgName-error" : undefined}
               value={orgName}
               onChange={(e) => setOrgName(e.target.value)}
               placeholder="e.g. Your translation ministry"
             />
+            <FieldError name="orgName" />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <Label>Organization aliases</Label>
+            <Label htmlFor="orgAliases">Organization aliases</Label>
             <Input
+              id="orgAliases"
+              name="orgAliases"
               value={orgAliases}
               onChange={(e) => setOrgAliases(e.target.value)}
               placeholder="Program names and abbreviations"
             />
+            <FieldError name="orgAliases" />
             <p className="text-xs text-muted-foreground">
               Comma-separated names the AI should recognize as your own organization.
             </p>
           </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <Label>Internal email domains</Label>
+            <Label htmlFor="internalEmailDomains">Internal email domains</Label>
             <Input
+              id="internalEmailDomains"
+              name="internalEmailDomains"
               value={internalEmailDomains}
               onChange={(e) => setInternalEmailDomains(e.target.value)}
               placeholder="yourorganization.org"
             />
+            <FieldError name="internalEmailDomains" />
             <p className="text-xs text-muted-foreground">
               Active team members and these domains are treated as internal by correspondence AI.
             </p>
           </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <Label>&quot;Prepared by&quot; note</Label>
+            <Label htmlFor="preparedByNote">&quot;Prepared by&quot; note</Label>
             <Input
+              id="preparedByNote"
+              name="preparedByNote"
               value={preparedByNote}
               onChange={(e) => setPreparedByNote(e.target.value)}
               placeholder="e.g. Prepared by the Sastra team"
             />
+            <FieldError name="preparedByNote" />
           </div>
         </div>
 
-        <div className="flex justify-end pr-14">
-          <Button
-            disabled={pending || uploading}
-            onClick={() =>
-              run(async () => {
-                const res = await updateWorkspaceBranding({
-                  accentColor,
-                  orgName,
-                  orgAliases: orgAliases
-                    .split(",")
-                    .map((value) => value.trim())
-                    .filter(Boolean),
-                  internalEmailDomains: internalEmailDomains
-                    .split(",")
-                    .map((value) => value.trim())
-                    .filter(Boolean),
-                  preparedByNote,
-                });
-                if (!res?.error) toast.success("Workspace settings saved");
-                return res;
-              })
-            }
-          >
-            Save workspace settings
-          </Button>
-        </div>
       </CardContent>
     </Card>
   );

@@ -27,6 +27,8 @@ import { logActivity } from "@/lib/activity/log";
 import { approvalStatusForDecisions } from "@/lib/budget/approval-rules";
 import { revalidateForTask } from "@/lib/tasks/create";
 import { reconcileTaskDueDateChange } from "@/lib/tasks/due-date-notifications";
+import { getPartnerQuotationContext } from "./partner-quotation-context";
+import { PartnerQuotationError } from "./partner-quotations";
 import { formatDate } from "@/lib/format";
 
 export type BudgetApprovalActionResult = { ok?: true; error?: string };
@@ -51,6 +53,7 @@ function revalidateApprovalPaths(slug: string) {
 const createSchema = z.object({
   projectId: z.string().uuid(),
   printRunId: z.string().uuid().nullable().optional(),
+  quotationId: z.uuid().nullable().optional(),
   approverIds: z.array(z.string().min(1)).min(1),
   dueDate: z.string().date(),
 });
@@ -58,6 +61,7 @@ const createSchema = z.object({
 export async function createBudgetApprovalRequest(input: {
   projectId: string;
   printRunId?: string | null;
+  quotationId?: string | null;
   approverIds: string[];
   dueDate: string;
 }): Promise<BudgetApprovalActionResult> {
@@ -71,7 +75,16 @@ export async function createBudgetApprovalRequest(input: {
     return { error: "You cannot approve your own request." };
   }
 
-  await syncBudgetApprovalState(data.projectId, data.printRunId);
+  let quotationTitle: string | undefined;
+  if (data.quotationId) {
+    try {
+      quotationTitle = (await getPartnerQuotationContext(data.projectId, data.printRunId, data.quotationId)).quote.title;
+    } catch (error) {
+      if (error instanceof PartnerQuotationError) return { error: error.message };
+      throw error;
+    }
+  }
+  await syncBudgetApprovalState(data.projectId, data.printRunId, data.quotationId);
   const scopeCondition = data.printRunId
     ? eq(budgetApprovalRequests.printRunId, data.printRunId)
     : isNull(budgetApprovalRequests.printRunId);
@@ -84,17 +97,18 @@ export async function createBudgetApprovalRequest(input: {
         and(
           eq(budgetApprovalRequests.projectId, data.projectId),
           scopeCondition,
+          data.quotationId ? eq(budgetApprovalRequests.partnerQuotationId, data.quotationId) : isNull(budgetApprovalRequests.partnerQuotationId),
           ne(budgetApprovalRequests.status, "superseded")
         )
       )
       .limit(1)
       .then((rows) => rows[0] ?? null),
     listEligibleBudgetApprovers(requester.id),
-    getBudgetApprovalSnapshot(data.projectId, data.printRunId),
+    getBudgetApprovalSnapshot(data.projectId, data.printRunId, data.quotationId),
   ]);
   if (!project) return { error: "Project not found." };
   if (current) {
-    return { error: "This project already has a current approval round." };
+    return { error: "This quotation already has a current approval round." };
   }
   const eligibleIds = new Set(eligible.map((candidate) => candidate.id));
   const invalid = approverIds.find((id) => !eligibleIds.has(id));
@@ -113,6 +127,7 @@ export async function createBudgetApprovalRequest(input: {
       .values({
         projectId: data.projectId,
         printRunId: data.printRunId ?? null,
+        partnerQuotationId: data.quotationId ?? null,
         requesterId: requester.id,
         dueDate: data.dueDate,
         fingerprint: snapshot.fingerprint,
@@ -125,6 +140,7 @@ export async function createBudgetApprovalRequest(input: {
       const taskId = await insertApprovalTask(tx, {
         projectId: data.projectId,
         projectTitle: project.title,
+        quotationTitle,
         approverId,
         requesterId: requester.id,
         dueDate: data.dueDate,
@@ -143,12 +159,12 @@ export async function createBudgetApprovalRequest(input: {
       notify({
         userId,
         type: "budget_approval_assigned",
-        title: "Budget approval requested",
+        title: quotationTitle ? "Proposal approval requested" : "Budget approval requested",
         body: `Review by ${formatDate(data.dueDate)}.`,
         project: project.title,
         link: `/projects/${project.slug}/budget${
           data.printRunId ? `?run=${data.printRunId}` : ""
-        }#budget-approval`,
+        }#${data.quotationId ? `proposal-${data.quotationId}` : "budget-approval"}`,
         data: {
           projectId: data.projectId,
           approvalRequestId: requestId,
@@ -188,6 +204,7 @@ export async function updateBudgetApprovalTaskDueDate(
       requestStatus: budgetApprovalRequests.status,
       projectId: budgetApprovalRequests.projectId,
       printRunId: budgetApprovalRequests.printRunId,
+      quotationId: budgetApprovalRequests.partnerQuotationId,
       projectSlug: projects.slug,
     })
     .from(budgetApprovalAssignments)
@@ -283,6 +300,7 @@ async function loadAssignment(assignmentId: string) {
       requesterId: budgetApprovalRequests.requesterId,
       projectId: budgetApprovalRequests.projectId,
       printRunId: budgetApprovalRequests.printRunId,
+      quotationId: budgetApprovalRequests.partnerQuotationId,
       projectTitle: projects.title,
       projectSlug: projects.slug,
     })
@@ -303,7 +321,7 @@ async function assertCurrentApprover(assignmentId: string, userId: string) {
   if (assignment.approverId !== userId) {
     return { error: "Only the assigned approver can respond." } as const;
   }
-  await syncBudgetApprovalState(assignment.projectId, assignment.printRunId);
+  await syncBudgetApprovalState(assignment.projectId, assignment.printRunId, assignment.quotationId);
   assignment = await loadAssignment(assignmentId);
   if (!assignment || assignment.requestStatus === "superseded") {
     return {
@@ -362,12 +380,12 @@ export async function approveBudgetApprovalAssignment(
     await notify({
       userId: assignment.requesterId,
       type: "budget_approval_complete",
-      title: "Budget approved",
-      body: "The current quotation has unanimous budget approval.",
+      title: assignment.quotationId ? "Proposal approved" : "Budget approved",
+      body: "Every assigned reviewer approved the current quotation.",
       project: assignment.projectTitle ?? undefined,
       link: `/projects/${assignment.projectSlug}/budget${
         assignment.printRunId ? `?run=${assignment.printRunId}` : ""
-      }#budget-approval`,
+      }#${assignment.quotationId ? `proposal-${assignment.quotationId}` : "budget-approval"}`,
       data: { approvalRequestId: assignment.requestId },
     });
   }
@@ -427,12 +445,12 @@ export async function requestBudgetApprovalChanges(
     await notify({
       userId: assignment.requesterId,
       type: "budget_changes_requested",
-      title: `${user.name} requested budget changes`,
+      title: `${user.name} requested ${assignment.quotationId ? "proposal" : "budget"} changes`,
       body: parsed.data,
       project: assignment.projectTitle ?? undefined,
       link: `/projects/${assignment.projectSlug}/budget${
         assignment.printRunId ? `?run=${assignment.printRunId}` : ""
-      }#budget-approval`,
+      }#${assignment.quotationId ? `proposal-${assignment.quotationId}` : "budget-approval"}`,
       data: { approvalRequestId: assignment.requestId },
     });
   }

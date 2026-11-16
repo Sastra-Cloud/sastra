@@ -1,12 +1,15 @@
 import "server-only";
 
 import ExcelJS from "exceljs";
+import { documentColors, type DocumentColors } from "@/lib/workspace/document-colors";
 
 import type { BudgetLine, BudgetSettings } from "@/lib/budget/queries";
 import { budgetGroupLabel } from "@/lib/budget/compute";
+import type { PartnerPrintOption } from "./print-options";
 
 export type QuotationBranding = {
   accentColor?: string | null;
+  colors?: DocumentColors;
   orgName?: string | null;
   preparedByNote?: string | null;
   logo?: { buffer: Buffer; extension: "png" | "jpeg" } | null;
@@ -82,7 +85,8 @@ export function buildQuotationWorkbook(
   items: BudgetLine[],
   projectTitle: string,
   branding: QuotationBranding = {},
-  projectKind?: string | null
+  projectKind?: string | null,
+  printOptions: Pick<PartnerPrintOption, "quantity" | "label" | "partnerAmountCents">[] = []
 ): ExcelJS.Workbook {
   const wb = new ExcelJS.Workbook();
   wb.creator = branding.orgName || "Sastra";
@@ -118,8 +122,10 @@ export function buildQuotationWorkbook(
     { key: "J", width: 2 },
   ];
 
-  const accent = toArgb(branding.accentColor);
-  const bandText = contrastText(accent);
+  const colors = branding.colors ? documentColors(branding.accentColor || "#B65C3A", branding.colors) : null;
+  const accent = toArgb(colors?.accentColor ?? branding.accentColor);
+  const bandFill = colors ? toArgb(colors.tableHeaderColor) : accent;
+  const bandText = colors ? toArgb(colors.tableHeaderTextColor) : contrastText(accent);
   const moneyFmt =
     settings.currency === "USD"
       ? '_("$"* #,##0.00_);_("$"* (#,##0.00);_("$"* "-"??_);_(@_)'
@@ -130,7 +136,7 @@ export function buildQuotationWorkbook(
   function band(rowNumber: number, label: string) {
     for (const col of "ABCDEFGHIJ") {
       const cell = ws.getCell(`${col}${rowNumber}`);
-      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: accent } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bandFill } };
     }
     const labelCell = ws.getCell(`A${rowNumber}`);
     labelCell.value = label;
@@ -211,7 +217,17 @@ export function buildQuotationWorkbook(
   row++;
   band(row, "DESCRIPTION OF WORK");
   row++;
-  ws.getCell(`A${row}`).value = settings.workDescription ?? projectTitle;
+  ws.getCell(`A${row}`).value = projectTitle;
+  ws.getCell(`A${row}`).font = { bold: true };
+  const description = settings.workDescription?.trim();
+  const normalizedTitle = projectTitle.trim().replace(/\s+/g, " ").toLowerCase();
+  if (description && description.replace(/\s+/g, " ").toLowerCase() !== normalizedTitle) {
+    row++;
+    ws.mergeCells(`A${row}:J${row}`);
+    ws.getCell(`A${row}`).value = description;
+    ws.getCell(`A${row}`).alignment = { wrapText: true, vertical: "middle" };
+    ws.getRow(row).height = Math.max(18, Math.ceil(description.length / 80) * 15);
+  }
   row += 2;
 
   // ── Itemized costs ───────────────────────────────────────────────────────
@@ -229,11 +245,6 @@ export function buildQuotationWorkbook(
     cell.alignment = { horizontal: align, vertical: "middle" };
   }
   row = headerRow + 1;
-
-  // Book / project title line above the first group.
-  ws.getCell(`A${row}`).value = projectTitle;
-  ws.getCell(`A${row}`).font = { bold: true };
-  row += 1;
 
   const subtotalCells: string[] = [];
   const order = ["book_publishing", "additional_media"] as const;
@@ -265,7 +276,7 @@ export function buildQuotationWorkbook(
       price.numFmt = moneyFmt;
       price.alignment = { horizontal: "right" };
       const amount = ws.getCell(`I${row}`);
-      amount.value = { formula: `E${row}*G${row}`, result: Number(it.amount) };
+      amount.value = { formula: `ROUND(E${row}*G${row},2)`, result: Number(it.amount) };
       amount.numFmt = moneyFmt;
       amount.alignment = { horizontal: "right" };
       row++;
@@ -291,17 +302,21 @@ export function buildQuotationWorkbook(
 
   // ── Grand total (highlighted) ────────────────────────────────────────────
   const totalRow = row;
-  for (const col of "GHIJ") {
+  for (const col of printOptions.length ? "BCDEFGHIJ" : "GHIJ") {
     ws.getCell(`${col}${totalRow}`).fill = {
       type: "pattern",
       pattern: "solid",
-      fgColor: { argb: accent },
+      fgColor: { argb: bandFill },
     };
   }
-  const totalLabel = ws.getCell(`G${totalRow}`);
-  totalLabel.value = "TOTAL";
+  if (printOptions.length) {
+    ws.mergeCells(`B${totalRow}:H${totalRow}`);
+    ws.mergeCells(`I${totalRow}:J${totalRow}`);
+  }
+  const totalLabel = ws.getCell(`${printOptions.length ? "B" : "G"}${totalRow}`);
+  totalLabel.value = printOptions.length ? "PROJECT COSTS BEFORE PRINTING" : "TOTAL";
   totalLabel.font = { bold: true, size: 12, color: { argb: bandText } };
-  totalLabel.alignment = { horizontal: "right", vertical: "middle" };
+  totalLabel.alignment = { horizontal: printOptions.length ? "left" : "right", vertical: "middle" };
   const total = ws.getCell(`I${totalRow}`);
   const totalResult = items.reduce((s, i) => s + Number(i.amount), 0);
   total.value = {
@@ -312,6 +327,59 @@ export function buildQuotationWorkbook(
   total.font = { bold: true, size: 12, color: { argb: bandText } };
   total.alignment = { horizontal: "right", vertical: "middle" };
   ws.getRow(totalRow).height = 20;
+
+  if (printOptions.length) {
+    row += 3;
+    band(row, "PRINTING OPTIONS — CHOOSE ONE QUANTITY");
+    ws.mergeCells(`A${row}:J${row}`);
+    row++;
+    ws.mergeCells(`A${row}:J${row}`);
+    ws.getCell(`A${row}`).value = "Project price includes the project costs above plus printing for that quantity.";
+    ws.getCell(`A${row}`).alignment = { wrapText: true, vertical: "middle" };
+    ws.getRow(row).height = 32;
+    row += 2;
+    ws.mergeCells(`B${row}:C${row}`);
+    ws.mergeCells(`D${row}:E${row}`);
+    ws.mergeCells(`G${row}:H${row}`);
+    ws.mergeCells(`I${row}:J${row}`);
+    ws.getCell(`B${row}`).value = "PRINTING";
+    ws.getCell(`D${row}`).value = "COPIES";
+    ws.getCell(`F${row}`).value = "PER COPY";
+    ws.getCell(`G${row}`).value = "PRINTING\nPRICE";
+    ws.getCell(`I${row}`).value = "PROJECT\nPRICE";
+    ws.getRow(row).font = { bold: true, size: 9 };
+    ws.getCell(`B${row}`).alignment = { horizontal: "left", vertical: "middle" };
+    for (const column of ["D", "F", "G", "I"]) {
+      ws.getCell(`${column}${row}`).alignment = { wrapText: true, horizontal: "center", vertical: "middle" };
+    }
+    ws.getRow(row).height = 28;
+    row++;
+    for (const option of [...printOptions].sort((a, b) => a.quantity - b.quantity)) {
+      ws.mergeCells(`B${row}:C${row}`);
+      ws.mergeCells(`D${row}:E${row}`);
+      ws.mergeCells(`G${row}:H${row}`);
+      ws.mergeCells(`I${row}:J${row}`);
+      ws.getCell(`B${row}`).value = option.label;
+      ws.getCell(`B${row}`).alignment = { wrapText: true, vertical: "middle" };
+      ws.getCell(`D${row}`).value = option.quantity;
+      ws.getCell(`D${row}`).numFmt = qtyFmt;
+      ws.getCell(`F${row}`).value = { formula: `G${row}/D${row}`, result: option.partnerAmountCents / 100 / option.quantity };
+      ws.getCell(`F${row}`).numFmt = moneyFmt;
+      ws.getCell(`G${row}`).value = option.partnerAmountCents / 100;
+      ws.getCell(`G${row}`).numFmt = moneyFmt;
+      ws.getCell(`I${row}`).value = { formula: `I${totalRow}+G${row}`, result: totalResult + option.partnerAmountCents / 100 };
+      ws.getCell(`I${row}`).numFmt = moneyFmt;
+      ws.getCell(`I${row}`).font = { bold: true };
+      ws.getRow(row).height = Math.max(24, Math.ceil(option.label.length / 28) * 15);
+      row++;
+    }
+    row++;
+    ws.mergeCells(`B${row}:J${row}`);
+    ws.getCell(`B${row}`).value = "Per copy is the average printing price, rounded for display. Project price includes all project costs.";
+    ws.getCell(`B${row}`).font = { size: 9, italic: true };
+    ws.getCell(`B${row}`).alignment = { wrapText: true, vertical: "middle" };
+    ws.getRow(row).height = 26;
+  }
 
   return wb;
 }

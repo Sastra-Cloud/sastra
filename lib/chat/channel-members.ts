@@ -10,7 +10,8 @@ export type ChannelMembershipChange =
   | { type: "remove"; member: ChannelMember };
 
 /**
- * Channel kinds only their members can open (the rest are workspace-wide).
+ * Channel kinds that use chat_channel_members. Project channels use the project
+ * people/work-role/manager roster instead; only general is workspace-wide.
  * A standup conversation's only member is the person answering it.
  */
 export const MEMBER_SCOPED_CHANNEL_KINDS = ["direct", "custom", "standup"] as const;

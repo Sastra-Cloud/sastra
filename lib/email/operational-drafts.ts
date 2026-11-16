@@ -50,6 +50,7 @@ export function fundingProposalFallback(input: DraftIdentity & {
   recipientFirstName?: string | null;
   projectTitle: string;
   totalLabel: string;
+  scopeLabel?: string | null;
   completionLabel?: string | null;
 }) {
   const greeting = input.recipientFirstName
@@ -60,12 +61,12 @@ export function fundingProposalFallback(input: DraftIdentity & {
     body: [
       greeting,
       "",
-      `We’re requesting ${input.totalLabel} to fund ${input.projectTitle}. The attached quotation sets out the work and budget.`,
+      `We’re requesting ${input.totalLabel} to fund ${input.scopeLabel ? `${input.scopeLabel} for ${input.projectTitle}` : input.projectTitle}. The attached quotation sets out the work and budget.`,
       ...(input.completionLabel
         ? ["", `We propose to complete the work by ${input.completionLabel}.`]
         : []),
       "",
-      "If the proposal works for you, we can prepare an MoU. Please reply with any changes you’d like us to make.",
+      "If the proposal works for you, please tell us how you would like to proceed. We can prepare an MoU, or you can confirm by email or give a donation. Please reply with any changes you’d like us to make.",
       "",
       ...closing(input),
     ].join("\n"),

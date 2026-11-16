@@ -1,8 +1,12 @@
+import { isOutgoingPaymentTerms } from "@/lib/budget/payment-percentage";
+
 export type DonationMouLinkOption = {
   paymentId: string;
   amount: string;
   currency: string;
   label: string;
+  /** The expected payment has no amount yet. Linking saves the amount received. */
+  amountUnset?: boolean;
 };
 
 /** Manual links stay within one project, print scope, and currency. */
@@ -33,12 +37,14 @@ export function donationMouLinkOptions(
       payment.printRunId === receipt.printRunId &&
       payment.currency === receipt.currency &&
       !payment.paidAt && !payment.receiptId && !payment.sharedMouGroupId &&
-      Number(payment.amount) > 0
+      // A payment with no amount yet can still be the one this money answers.
+      Number(payment.amount) >= 0 && !isOutgoingPaymentTerms(payment.notes)
     )
     .map((payment) => ({
       paymentId: payment.id,
       amount: payment.amount,
       currency: payment.currency,
       label: `${payment.notes?.trim() || labels[payment.trigger] || "Scheduled payment"}${payment.dueDate ? ` · due ${payment.dueDate}` : ""}`,
+      ...(Number(payment.amount) === 0 ? { amountUnset: true } : {}),
     }));
 }

@@ -2,16 +2,18 @@
 
 import {
   useCallback,
-  useEffect,
+  useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type KeyboardEvent,
 } from "react";
 import { createPortal } from "react-dom";
-import { Loader2 } from "lucide-react";
+import { Loader2, Users } from "lucide-react";
 
 import { getMentionTargets } from "@/lib/mentions/actions";
+import { mentionMenuPosition } from "@/lib/mentions/menu-position";
 import type { MentionTarget } from "@/lib/mentions/roster";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -21,6 +23,7 @@ const MAX_RESULTS = 8;
 const BOUNDARY_BEFORE = /[\s.,;:!?()[\]{}<>"'`~/\\|@#]/;
 
 type ActiveQuery = { start: number; query: string };
+type MentionOption = { kind: "person"; member: MentionTarget } | { kind: "channel" };
 
 /**
  * Find the mention the caret is currently editing: an `@` at a word boundary
@@ -29,7 +32,10 @@ type ActiveQuery = { start: number; query: string };
  */
 function detectActiveQuery(value: string, caret: number): ActiveQuery | null {
   let i = caret - 1;
-  while (i >= 0) {
+  // A mention query is limited to 40 characters. Pasted URLs and long words
+  // must not scan the whole draft on both input and keyup.
+  const earliest = Math.max(0, caret - 41);
+  while (i >= earliest) {
     const ch = value[i];
     if (ch === "@") {
       const before = value[i - 1];
@@ -69,13 +75,7 @@ function rankMembers(members: MentionTarget[], query: string): MentionTarget[] {
   return scored.slice(0, MAX_RESULTS).map((s) => s.member);
 }
 
-type MenuPosition = {
-  left: number;
-  top: number;
-  bottom: number;
-  width: number;
-  flip: boolean;
-};
+type MenuPosition = ReturnType<typeof mentionMenuPosition>;
 
 export type MentionInputProps = Omit<
   React.ComponentProps<"textarea">,
@@ -85,6 +85,8 @@ export type MentionInputProps = Omit<
   onChange: (value: string) => void;
   /** Preloaded roster; when omitted it's fetched lazily on first `@`. */
   members?: MentionTarget[];
+  /** Chat-only option; never added to the personal mention roster. */
+  channelMentions?: boolean;
   /** Scope the lazily-fetched roster to a project's team. */
   scope?: { projectId?: string | null };
   /** Class for the relative wrapper (carry layout like `flex-1` here). */
@@ -101,6 +103,7 @@ export function MentionInput({
   value,
   onChange,
   members: providedMembers,
+  channelMentions = false,
   scope,
   containerClassName,
   className,
@@ -109,6 +112,7 @@ export function MentionInput({
   disabled,
   ...textareaProps
 }: MentionInputProps) {
+  const menuId = useId();
   const ref = useRef<HTMLTextAreaElement>(null);
   const [fetched, setFetched] = useState<MentionTarget[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -120,10 +124,8 @@ export function MentionInput({
   const [activeIndex, setActiveIndex] = useState(0);
   const [menuPos, setMenuPos] = useState<MenuPosition | null>(null);
 
-  // An empty passed roster is treated as "none": fall back to lazy fetch so a
-  // surface that forgot to (or couldn't) supply members still gets a picker.
-  const providedRoster =
-    providedMembers && providedMembers.length > 0 ? providedMembers : null;
+  // An explicit empty roster is a closed scope, not permission to fetch everyone.
+  const providedRoster = providedMembers ?? null;
   const members = providedRoster ?? fetched;
 
   const loadMembers = useCallback(() => {
@@ -144,36 +146,48 @@ export function MentionInput({
     value[active.start] === "@" &&
     active.start !== dismissedStart;
 
-  const results = useMemo(
-    () => (open && active && members ? rankMembers(members, active.query) : []),
-    [open, active, members]
-  );
+  const results = useMemo<MentionOption[]>(() => {
+    if (!open || !active) return [];
+    const people: MentionOption[] = rankMembers(members ?? [], active.query)
+      .map(member => ({ kind: "person", member }));
+    // Keep people first for an empty query to avoid accidental broad alerts.
+    if (channelMentions && "channel".startsWith(active.query.toLowerCase())) {
+      people.push({ kind: "channel" });
+    }
+    return people;
+  }, [open, active, members, channelMentions]);
 
   const updatePosition = useCallback(() => {
     const el = ref.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    setMenuPos({
-      left: rect.left,
-      top: rect.top,
-      bottom: rect.bottom,
-      width: rect.width,
-      // Open upward when the composer sits near the viewport bottom.
-      flip: spaceBelow < 280 && rect.top > 280,
-    });
+    const viewport = window.visualViewport;
+    setMenuPos(mentionMenuPosition(rect, {
+      offsetLeft: viewport?.offsetLeft ?? 0,
+      offsetTop: viewport?.offsetTop ?? 0,
+      width: viewport?.width ?? window.innerWidth,
+      height: viewport?.height ?? window.innerHeight,
+    }));
   }, []);
 
   // Keep the menu pinned to the textarea while scrolling/resizing.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!open) return;
     updatePosition();
+    const viewport = window.visualViewport;
     const handler = () => updatePosition();
     window.addEventListener("scroll", handler, true);
     window.addEventListener("resize", handler);
+    viewport?.addEventListener("resize", handler);
+    viewport?.addEventListener("scroll", handler);
+    const observer = new ResizeObserver(handler);
+    if (ref.current) observer.observe(ref.current);
     return () => {
       window.removeEventListener("scroll", handler, true);
       window.removeEventListener("resize", handler);
+      viewport?.removeEventListener("resize", handler);
+      viewport?.removeEventListener("scroll", handler);
+      observer.disconnect();
     };
   }, [open, updatePosition]);
 
@@ -204,13 +218,13 @@ export function MentionInput({
     }
   };
 
-  const insertMention = (member: MentionTarget) => {
+  const insertMention = (option: MentionOption) => {
     const el = ref.current;
     if (!el || !active) return;
     const caret = el.selectionStart ?? value.length;
     const before = value.slice(0, active.start);
     const after = value.slice(caret);
-    const token = `@${member.name} `;
+    const token = `@${option.kind === "channel" ? "channel" : option.member.name} `;
     const nextValue = before + token + after;
     const nextCaret = before.length + token.length;
 
@@ -259,20 +273,26 @@ export function MentionInput({
     open && active && menuPos && typeof document !== "undefined"
       ? createPortal(
           <div
+            id={menuId}
             role="listbox"
+            aria-label="Mention suggestions"
             className={cn(
-              "fixed z-50 max-h-64 overflow-y-auto overflow-x-hidden rounded-lg border bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10",
-              "animate-in fade-in-0 zoom-in-95 duration-100"
+              "fixed z-50 overflow-y-auto overflow-x-hidden overscroll-contain rounded-lg border bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10",
+              "animate-in fade-in-0 zoom-in-95 duration-100 motion-reduce:animate-none"
             )}
             style={{
               left: menuPos.left,
-              top: menuPos.flip ? menuPos.top - 6 : menuPos.bottom + 6,
-              width: Math.max(menuPos.width, 224),
-              transform: menuPos.flip ? "translateY(-100%)" : undefined,
+              top: menuPos.top,
+              translate: menuPos.flip ? "0 -100%" : undefined,
+              width: menuPos.width,
+              maxHeight: menuPos.maxHeight,
             }}
+            // Keep focus (and the software keyboard) in the composer while a
+            // touch chooses a name. Native scrolling of the list still works.
+            onPointerDown={(e) => e.preventDefault()}
             onMouseDown={(e) => e.preventDefault()}
           >
-            {loading && (!members || members.length === 0) ? (
+            {loading && results.length === 0 ? (
               <p className="flex items-center gap-2 px-2.5 py-2 text-sm text-muted-foreground">
                 <Loader2 className="size-3.5 animate-spin" /> Loading people…
               </p>
@@ -282,9 +302,10 @@ export function MentionInput({
               </p>
             ) : (
               <ul className="flex flex-col">
-                {results.map((member, index) => (
-                  <li key={member.id}>
+                {results.map((option, index) => (
+                  <li key={option.kind === "channel" ? "channel" : option.member.id}>
                     <button
+                      id={`${menuId}-${index}`}
                       type="button"
                       role="option"
                       aria-selected={index === highlighted}
@@ -295,26 +316,30 @@ export function MentionInput({
                           : undefined
                       }
                       onMouseEnter={() => setActiveIndex(index)}
-                      onClick={() => insertMention(member)}
+                      onClick={() => insertMention(option)}
                       className={cn(
-                        "flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
-                        index === activeIndex
+                        "flex min-h-11 w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+                        index === highlighted
                           ? "bg-accent text-accent-foreground"
                           : "hover:bg-accent/60"
                       )}
                     >
-                      <UserAvatar
-                        name={member.name}
-                        image={member.image}
+                      {option.kind === "channel" ? (
+                        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <Users aria-hidden className="size-4" />
+                        </span>
+                      ) : <UserAvatar
+                        name={option.member.name}
+                        image={option.member.image}
                         size="sm"
                         className="size-7 shrink-0"
-                      />
+                      />}
                       <span className="min-w-0 flex-1">
                         <span className="block truncate font-medium leading-tight">
-                          {member.name}
+                          {option.kind === "channel" ? "@channel" : option.member.name}
                         </span>
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {member.email}
+                        <span className={cn("block text-xs text-muted-foreground", option.kind === "channel" ? "text-wrap leading-snug" : "truncate")}>
+                          {option.kind === "channel" ? "Notify everyone in this channel" : option.member.email}
                         </span>
                       </span>
                     </button>
@@ -346,6 +371,8 @@ export function MentionInput({
         }}
         aria-autocomplete="list"
         aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
+        aria-activedescendant={open && results.length > 0 ? `${menuId}-${highlighted}` : undefined}
       />
       {menu}
     </div>

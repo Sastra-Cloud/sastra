@@ -2,6 +2,8 @@
 
 import { AssistantShortcut } from "@/components/assistant/assistant-shortcut";
 import { ConversationHeader } from "@/components/chat/conversation-header";
+import Link from "next/link";
+import { Users } from "lucide-react";
 import { useState } from "react";
 
 import type {
@@ -53,7 +55,7 @@ export function ProjectChatView({
       initialPins={pins}
     >
       <div className="flex w-full min-h-0 flex-1 flex-col lg:gap-2">
-        <ConversationHeader title={projectTitle} subtitle={`#${activeChannel.name}`} backHref={`/projects/${slug}`} actions={<><AssistantShortcut /><PinnedMessagesButton /></>} />
+        <ConversationHeader refreshable title={projectTitle} subtitle={`#${activeChannel.name}`} backHref={`/projects/${slug}`} actions={<><AssistantShortcut /><PinnedMessagesButton /><Link href={`/projects/${slug}/members`} className="inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm font-medium hover:bg-muted"><Users className="size-4" />People</Link></>} />
         <ProjectChannelTabs
           slug={slug}
           channels={channels}

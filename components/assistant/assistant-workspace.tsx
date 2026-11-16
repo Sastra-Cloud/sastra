@@ -1,7 +1,7 @@
 "use client";
 
 import { confirmDialog } from "@/lib/dialog-requests";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -88,7 +88,7 @@ export function AssistantWorkspace({
   initialComposerText?: string;
   /** Changes when a new prompt is seeded, so identical text re-prefills. */
   composerSeed?: number;
-  /** Called after a send/approve to refresh state (defaults to router.refresh). */
+  /** Refresh the embedded assistant snapshot after the app data is refreshed. */
   onAfterAction?: () => void | Promise<void>;
   /** Closes the floating mobile/desktop panel; omitted on the dedicated page. */
   onClose?: () => void;
@@ -112,7 +112,12 @@ export function AssistantWorkspace({
     projectSlug || runScope
       ? { projectSlug: projectSlug ?? undefined, runScope }
       : undefined;
-  const afterAction = onAfterAction ?? (() => router.refresh());
+  const afterAction = useCallback(async () => {
+    // Embedded snapshot refreshes must not replace the app refresh: a task or
+    // budget changed here also needs to update the page behind the assistant.
+    router.refresh();
+    await onAfterAction?.();
+  }, [router, onAfterAction]);
 
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
@@ -338,7 +343,7 @@ export function AssistantWorkspace({
     });
   }
 
-  function saveFeedback(messageId: string, rating: 1 | -1, comment?: string) {
+  const saveFeedback = useCallback((messageId: string, rating: 1 | -1, comment?: string) => {
     const previous = visibleMessages;
     setVisibleMessages((current) =>
       current.map((message) =>
@@ -358,7 +363,7 @@ export function AssistantWorkspace({
         toast.error("Couldn't save that feedback");
       }
     });
-  }
+  }, [visibleMessages, setVisibleMessages, startBusy, afterAction]);
 
   const page = variant !== "embedded";
   const wideHeader = page ? "@[72rem]/assistant:col-start-1 @[72rem]/assistant:row-start-1" : "";
@@ -409,6 +414,97 @@ export function AssistantWorkspace({
       </div>
   );
 
+  // Keep writing independent of the transcript, including response feedback.
+  const messageRows = useMemo(() => (
+    visibleMessages.map((m) => (
+      <div
+        key={m.id}
+        className={cn(
+          "flex",
+          m.role === "user" ? "justify-end" : "justify-start"
+        )}
+      >
+        <div
+          className={cn(
+            "flex min-w-0 max-w-[92%] flex-col gap-1 lg:max-w-[85%]",
+            m.role === "user" ? "items-end" : "items-start"
+          )}
+        >
+          <div
+            className={cn(
+              "max-w-[65ch] whitespace-pre-wrap rounded-xl px-3.5 py-2 text-[15px] leading-relaxed lg:text-sm",
+              m.role === "user"
+                ? "rounded-br-sm conversation-own-bubble bg-primary text-primary-foreground"
+                : "rounded-bl-sm bg-muted text-foreground"
+            )}
+          >
+            {m.role === "assistant" ? (
+              <AssistantMessageContent content={m.content} />
+            ) : (
+              m.content
+            )}
+          </div>
+          {m.role === "assistant" ? (
+            <div className="w-full space-y-1">
+              <div className="flex items-center gap-0.5 px-1">
+                <Button
+                  size="icon-xs"
+                  variant="ghost"
+                  aria-label="Helpful response"
+                  className={cn(m.feedback?.rating === 1 && "text-primary")}
+                  disabled={busy}
+                  onClick={() => saveFeedback(m.id, 1)}
+                >
+                  <ThumbsUp className="size-3.5" />
+                </Button>
+                <Button
+                  size="icon-xs"
+                  variant="ghost"
+                  aria-label="Response needs improvement"
+                  className={cn(m.feedback?.rating === -1 && "text-destructive")}
+                  disabled={busy}
+                  onClick={() => {
+                    setFeedbackId(feedbackId === m.id ? null : m.id);
+                    setFeedbackComment(m.feedback?.comment ?? "");
+                  }}
+                >
+                  <ThumbsDown className="size-3.5" />
+                </Button>
+              </div>
+              {feedbackId === m.id ? (
+                <div className="space-y-1.5 rounded-lg border bg-card p-2">
+                  <Textarea
+                    value={feedbackComment}
+                    onChange={(event) => setFeedbackComment(event.target.value)}
+                    rows={2}
+                    maxLength={1000}
+                    placeholder="What should it have done differently?"
+                  />
+                  <div className="flex justify-end gap-1.5">
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      onClick={() => setFeedbackId(null)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="xs"
+                      disabled={busy}
+                      onClick={() => saveFeedback(m.id, -1, feedbackComment)}
+                    >
+                      Send feedback
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    ))
+  ), [visibleMessages, busy, feedbackId, feedbackComment, saveFeedback]);
+
   const content = (
     <div ref={viewportRef} data-mobile-conversation={variant === "page" ? "" : undefined}
       className={cn(
@@ -456,93 +552,7 @@ export function AssistantWorkspace({
             </div>
           </div>
         ) : (
-          visibleMessages.map((m) => (
-            <div
-              key={m.id}
-              className={cn(
-                "flex",
-                m.role === "user" ? "justify-end" : "justify-start"
-              )}
-            >
-              <div
-                className={cn(
-                  "flex min-w-0 max-w-[92%] flex-col gap-1 lg:max-w-[85%]",
-                  m.role === "user" ? "items-end" : "items-start"
-                )}
-              >
-                <div
-                  className={cn(
-                    "max-w-[65ch] whitespace-pre-wrap rounded-xl px-3.5 py-2 text-[15px] leading-relaxed lg:text-sm",
-                    m.role === "user"
-                      ? "rounded-br-sm conversation-own-bubble bg-primary text-primary-foreground"
-                      : "rounded-bl-sm bg-muted text-foreground"
-                  )}
-                >
-                  {m.role === "assistant" ? (
-                    <AssistantMessageContent content={m.content} />
-                  ) : (
-                    m.content
-                  )}
-                </div>
-                {m.role === "assistant" ? (
-                  <div className="w-full space-y-1">
-                    <div className="flex items-center gap-0.5 px-1">
-                      <Button
-                        size="icon-xs"
-                        variant="ghost"
-                        aria-label="Helpful response"
-                        className={cn(m.feedback?.rating === 1 && "text-primary")}
-                        disabled={busy}
-                        onClick={() => saveFeedback(m.id, 1)}
-                      >
-                        <ThumbsUp className="size-3.5" />
-                      </Button>
-                      <Button
-                        size="icon-xs"
-                        variant="ghost"
-                        aria-label="Response needs improvement"
-                        className={cn(m.feedback?.rating === -1 && "text-destructive")}
-                        disabled={busy}
-                        onClick={() => {
-                          setFeedbackId(feedbackId === m.id ? null : m.id);
-                          setFeedbackComment(m.feedback?.comment ?? "");
-                        }}
-                      >
-                        <ThumbsDown className="size-3.5" />
-                      </Button>
-                    </div>
-                    {feedbackId === m.id ? (
-                      <div className="space-y-1.5 rounded-lg border bg-card p-2">
-                        <Textarea
-                          value={feedbackComment}
-                          onChange={(event) => setFeedbackComment(event.target.value)}
-                          rows={2}
-                          maxLength={1000}
-                          placeholder="What should it have done differently?"
-                        />
-                        <div className="flex justify-end gap-1.5">
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            onClick={() => setFeedbackId(null)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            size="xs"
-                            disabled={busy}
-                            onClick={() => saveFeedback(m.id, -1, feedbackComment)}
-                          >
-                            Send feedback
-                          </Button>
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          ))
+          messageRows
         )}
 
         {busy ? (

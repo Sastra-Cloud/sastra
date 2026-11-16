@@ -898,6 +898,19 @@ describe("podcast license extraction (episodes, non-commercial, split total)", (
       600, null,
     ]);
   });
+
+  it("fills percentage installments despite a separate known fee in the schedule", () => {
+    const filled = fillMouPaymentAmounts(normalizeExtraction({
+      agreementTotalAmount: 21670.56,
+      projects: [{ title: "A book", currency: "USD" }],
+      mouPaymentSchedule: [
+        { trigger: "on_signing", amount: null, notes: "50% of the Total Payment to Licensee (US$21,670.56)" },
+        { trigger: "on_signing", amount: 675, notes: "Administration fee" },
+        { trigger: "on_completion", amount: null, notes: "Remaining 50% of the Total Payment to Licensee" },
+      ],
+    }));
+    expect(filled.mouPaymentSchedule.map((row) => row.amount)).toEqual([10835.28, 675, 10835.28]);
+  });
 });
 
 describe("groupForCategory", () => {

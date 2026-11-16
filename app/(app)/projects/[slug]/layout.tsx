@@ -43,21 +43,28 @@ export default async function ProjectWorkspaceLayout({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const project = await getProjectHeader(slug);
+  // The header, session and workspace do not depend on each other. Request-
+  // scoped caches keep the later calls to the same readers to one lookup.
+  const [project, session, workspace] = await Promise.all([
+    getProjectHeader(slug),
+    getSession(),
+    getWorkspaceSettings(),
+  ]);
   if (!project) notFound();
-  const [activeReprint, fundingSummary] = await Promise.all([
+  const lectioEnabled = moduleEnabled(workspace.enabledModules, "lectio");
+  const workspaceManager = can(session?.user, "workspace.manage");
+  // Permission and the shared-MoU read are server-side gates that still
+  // finish before anything renders; they just overlap the finance reads.
+  const [activeReprint, fundingSummary, isManager, sharedMouGroups] = await Promise.all([
     getActiveReprintRun(project.id),
     getProjectFundingSummary(project.id),
+    session
+      ? hasProjectCapability(session.user, project.id, "project.edit")
+      : Promise.resolve(false),
+    workspaceManager
+      ? listSharedMouGroupsForProject(project.id)
+      : Promise.resolve([]),
   ]);
-
-  const session = await getSession();
-  const lectioEnabled = moduleEnabled((await getWorkspaceSettings()).enabledModules, "lectio");
-  const isManager =
-    !!session && await hasProjectCapability(session.user, project.id, "project.edit");
-  const workspaceManager = can(session?.user, "workspace.manage");
-  const sharedMouGroups = workspaceManager
-    ? await listSharedMouGroupsForProject(project.id)
-    : [];
 
   const isClosed = project.status === "completed" || project.status === "cancelled";
   const due = dueLabel(

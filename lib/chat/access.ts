@@ -2,6 +2,7 @@ import "server-only";
 
 import { and, eq } from "drizzle-orm";
 
+import { channelAccessCondition, projectChatAccessCondition } from "./access-sql";
 import { isMemberScopedChannel } from "@/lib/chat/channel-members";
 import { db } from "@/lib/db";
 import {
@@ -19,26 +20,9 @@ import { moduleEnabled } from "@/lib/workspace/modules";
 import { canReadTask } from "@/lib/tasks/access";
 
 export async function canAccessChannel(channelId: string, userId: string) {
-  const [channel] = await db
-    .select({
-      kind: chatChannels.kind,
-      memberUserId: chatChannelMembers.userId,
-    })
-    .from(chatChannels)
-    .leftJoin(
-      chatChannelMembers,
-      and(
-        eq(chatChannelMembers.channelId, chatChannels.id),
-        eq(chatChannelMembers.userId, userId)
-      )
-    )
-    .where(eq(chatChannels.id, channelId))
-    .limit(1);
-
-  if (!channel) return false;
-  return (
-    !isMemberScopedChannel(channel.kind) || channel.memberUserId === userId
-  );
+  const [channel] = await db.select({ id: chatChannels.id }).from(chatChannels)
+    .where(and(eq(chatChannels.id, channelId), channelAccessCondition(userId))).limit(1);
+  return !!channel;
 }
 
 export async function requireChannelAccess(channelId: string, userId: string) {
@@ -48,27 +32,10 @@ export async function requireChannelAccess(channelId: string, userId: string) {
 }
 
 export async function canAccessMessage(messageId: string, userId: string) {
-  const [message] = await db
-    .select({
-      kind: chatChannels.kind,
-      memberUserId: chatChannelMembers.userId,
-    })
-    .from(chatMessages)
+  const [message] = await db.select({ id: chatMessages.id }).from(chatMessages)
     .innerJoin(chatChannels, eq(chatChannels.id, chatMessages.channelId))
-    .leftJoin(
-      chatChannelMembers,
-      and(
-        eq(chatChannelMembers.channelId, chatChannels.id),
-        eq(chatChannelMembers.userId, userId)
-      )
-    )
-    .where(eq(chatMessages.id, messageId))
-    .limit(1);
-
-  if (!message) return false;
-  return (
-    !isMemberScopedChannel(message.kind) || message.memberUserId === userId
-  );
+    .where(and(eq(chatMessages.id, messageId), channelAccessCondition(userId))).limit(1);
+  return !!message;
 }
 
 export async function requireMessageAccess(messageId: string, userId: string) {
@@ -107,6 +74,7 @@ export async function canAccessFile(fileId: string, userId: string) {
     .select({
       targetType: fileAttachments.targetType,
       channelKind: chatChannels.kind,
+      projectChatAllowed: projectChatAccessCondition(chatChannels.projectId, userId),
       memberUserId: chatChannelMembers.userId,
       taskId: tasks.id,
       taskProjectId: tasks.projectId,
@@ -140,8 +108,8 @@ export async function canAccessFile(fileId: string, userId: string) {
   }
   const privateChats = attachments.filter((attachment) =>
     attachment.targetType === "message" && attachment.channelKind !== null &&
-    isMemberScopedChannel(attachment.channelKind));
-  if (privateChats.length > 0 && !privateChats.some((attachment) => attachment.memberUserId === userId)) {
+    (isMemberScopedChannel(attachment.channelKind) || attachment.channelKind === "project"));
+  if (privateChats.length > 0 && !privateChats.some((attachment) => attachment.channelKind === "project" ? attachment.projectChatAllowed : attachment.memberUserId === userId)) {
     return false;
   }
   return attachments.some((attachment) => {
@@ -151,7 +119,7 @@ export async function canAccessFile(fileId: string, userId: string) {
         return canManage(file.role);
       case "message":
         return attachment.channelKind !== null && (
-          !isMemberScopedChannel(attachment.channelKind) ||
+          (attachment.channelKind === "project" ? attachment.projectChatAllowed : !isMemberScopedChannel(attachment.channelKind)) ||
           attachment.memberUserId === userId
         );
       case "task":

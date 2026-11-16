@@ -3,7 +3,7 @@ import "server-only";
 import { and, asc, eq, inArray, or } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { projectManagers, projectMembers, user } from "@/lib/db/schema";
+import { projectManagers, projectMembers, projectPeople, user } from "@/lib/db/schema";
 
 /** A person who can be @mentioned: enough to render the picker and to match. */
 export type MentionTarget = {
@@ -47,12 +47,14 @@ export async function listMentionTargetsByIds(
     .orderBy(asc(user.name));
 }
 
-/** Project-role members, scoped project managers, and workspace managers/admins. */
+/** Project people, work-role members, project managers, and workspace admins. */
 export async function listProjectMentionTargets(
   projectId: string
 ): Promise<MentionTarget[]> {
   const members = db.select({ userId: projectMembers.userId }).from(projectMembers)
     .where(eq(projectMembers.projectId, projectId));
+  const people = db.select({ userId: projectPeople.userId }).from(projectPeople)
+    .where(eq(projectPeople.projectId, projectId));
   const managers = db.select({ userId: projectManagers.userId }).from(projectManagers)
     .where(eq(projectManagers.projectId, projectId));
 
@@ -64,7 +66,8 @@ export async function listProjectMentionTargets(
       eq(user.isBot, false),
       eq(user.isActive, true),
       or(
-        inArray(user.role, ["manager", "admin", "super_admin"]),
+        inArray(user.role, ["admin", "super_admin"]),
+        inArray(user.id, people),
         inArray(user.id, members),
         inArray(user.id, managers)
       )

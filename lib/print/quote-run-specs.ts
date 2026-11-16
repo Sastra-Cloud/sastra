@@ -63,3 +63,18 @@ export function quoteRunSpecPatch(
 export function quoteHasProductionSpecs(quote: QuoteProductionSpecs): boolean {
   return Object.keys(quoteRunSpecPatch(quote)).length > 0;
 }
+
+/**
+ * The printer's page count for a run. An unreviewed quote can state pages before
+ * the run records them, and it beats a word-count estimate that may still be 0.
+ */
+export function runQuotedTextPages(
+  run: { quotedTextPages: number | null } | null | undefined,
+  quotes: { reviewStatus: string; textPages: number | null }[]
+): number | null {
+  const accepted = quotes.find((quote) => quote.reviewStatus === "accepted");
+  const live = quotes.find(
+    (quote) => quote.reviewStatus !== "rejected" && quote.textPages
+  );
+  return accepted?.textPages || run?.quotedTextPages || live?.textPages || null;
+}
